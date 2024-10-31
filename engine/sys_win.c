@@ -4,6 +4,12 @@
 #include "winquake.h"
 
 
+static double		pfreq;
+static double		curtime = 0.0;
+static double		lastcurtime = 0.0;
+static int			lowshift;
+
+
 void MaskExceptions( void );
 void Sys_InitFloatTime( void );
 void Sys_PushFPCW_SetHigh( void );
@@ -260,8 +266,35 @@ Sys_Init
 */
 void Sys_Init( void )
 {
-	// TODO: Implement
+	LARGE_INTEGER	PerformanceFreq;
+	unsigned int	lowpart, highpart;
+	OSVERSIONINFO	vinfo;
+
+	MaskExceptions();
+	Sys_SetFPCW();
+
+	if (!QueryPerformanceFrequency(&PerformanceFreq))
+		Sys_Error("No hardware timer available");
+
+// get 32 out of the 64 time bits such that we have around
+// 1 microsecond resolution
+	lowpart = (unsigned int)PerformanceFreq.LowPart;
+	highpart = (unsigned int)PerformanceFreq.HighPart;
+	lowshift = 0;
+
+	while (highpart || (lowpart > 2000000.0))
+	{
+		lowshift++;
+		lowpart >>= 1;
+		lowpart |= (highpart & 1) << 31;
+		highpart >>= 1;
+	}
+
+	pfreq = 1.0 / (double)lowpart;
+
+	Sys_InitFloatTime();
 }
+
 
 void Sys_Error( char* error, ... )
 {
