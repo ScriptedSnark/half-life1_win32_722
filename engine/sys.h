@@ -35,5 +35,6 @@ void Sys_Warning( char* warning, ... );
 void Sys_Printf( char* fmt, ... );
 // send text to the console
 
+void Sys_Quit( void );
 
-
+double Sys_FloatTime( void );

@@ -12,7 +12,21 @@
 
 
 #include "common.h"
+#include "dll_state.h"
 #include "sys.h"
+
+
+
+
+
+
+
+
+
+
+
+#include "server.h"
+
 
 
 
@@ -37,3 +51,19 @@ typedef struct
 
 
 //=============================================================================
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+void Host_Shutdown( void );
