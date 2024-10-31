@@ -18,11 +18,22 @@ int	Sys_FileTime( char* path );
 void Sys_mkdir( char* path );
 int Sys_FileTell( int i );
 
+//
+// memory protection
+//
+void Sys_MakeCodeWriteable( unsigned long startaddr, unsigned long length );
+
+
 
 
 
 void Sys_Error( char* error, ... );
 // an error will cause the entire program to exit
+
+void Sys_Warning( char* warning, ... );
+
+void Sys_Printf( char* fmt, ... );
+// send text to the console
 
 
 

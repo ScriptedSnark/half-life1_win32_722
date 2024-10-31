@@ -3,11 +3,12 @@
 #include "quakedef.h"
 #include "winquake.h"
 
-
 static double		pfreq;
 static double		curtime = 0.0;
 static double		lastcurtime = 0.0;
 static int			lowshift;
+qboolean			isDedicated;
+
 
 
 void MaskExceptions( void );
@@ -19,7 +20,7 @@ void Sys_PopFPCW( void );
 
 int		(*VID_ForceUnlockedAndReturnState)( void );
 int		(*VID_ForceLockState)( int lk );
-
+void	(*Launcher_ConsolePrintf)( char* fmt, ... );
 
 volatile int					sys_checksum;
 
@@ -300,6 +301,38 @@ void Sys_Error( char* error, ... )
 {
 	// TODO: Implement
 }
+
+void Sys_Warning( char* warning, ... )
+{
+	// TODO: Implement
+}
+
+void Sys_Printf( char* fmt, ... )
+{
+	va_list		argptr;
+	char		text[1024];
+
+	if (isDedicated)
+	{
+		va_start(argptr, fmt);
+		vsprintf(text, fmt, argptr);
+		va_end(argptr);
+
+		if (Launcher_ConsolePrintf)
+		{
+			Launcher_ConsolePrintf(text);
+		}
+	}
+}
+
+
+
+
+
+
+
+
+
 
 
 
