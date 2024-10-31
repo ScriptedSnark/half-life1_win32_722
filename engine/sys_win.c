@@ -273,7 +273,6 @@ void Sys_Init( void )
 {
 	LARGE_INTEGER	PerformanceFreq;
 	unsigned int	lowpart, highpart;
-	OSVERSIONINFO	vinfo;
 
 	MaskExceptions();
 	Sys_SetFPCW();
@@ -411,11 +410,60 @@ double Sys_FloatTime( void )
 }
 
 
+/*
+================
+Sys_InitFloatTime
+================
+*/
+void Sys_InitFloatTime( void )
+{
+	int		j;
+
+	Sys_FloatTime();
+
+	j = COM_CheckParm("-starttime");
+
+	if (j)
+	{
+		curtime = (double)(Q_atof(com_argv[j + 1]));
+	}
+	else
+	{
+		curtime = 0.0;
+	}
+
+	lastcurtime = curtime;
+}
+
+void Sys_Sleep( void )
+{
+	Sleep(1);
+}
 
 
+void Sys_SendKeyEvents( void )
+{
+	// TODO: Implement
+}
 
+// TODO: Implement
 
-
+// Required DLL entry point
+BOOL WINAPI DllMain(
+	HINSTANCE hinstDLL,
+	DWORD fdwReason,
+	LPVOID lpvReserved)
+{
+	if (fdwReason == DLL_PROCESS_ATTACH)
+	{
+		// TODO: Implement
+	}
+	else if (fdwReason == DLL_PROCESS_DETACH)
+	{
+		// TODO: Implement
+	}
+	return TRUE;
+}
 
 
 
