@@ -18,6 +18,20 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\common\cl_entity.h" />
+    <ClInclude Include="..\..\common\const.h" />
+    <ClInclude Include="..\..\common\crc.h" />
+    <ClInclude Include="..\..\engine\anorms.h" />
+    <ClInclude Include="..\..\engine\anorm_dots.h" />
+    <ClInclude Include="..\..\engine\common.h" />
+    <ClInclude Include="..\..\engine\cvar.h" />
+    <ClInclude Include="..\..\engine\sys.h" />
+    <ClInclude Include="..\..\engine\winquake.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\engine\sys_win.c" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
@@ -142,18 +156,6 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
   </ItemDefinitionGroup>
-  <ItemGroup>
-    <ClCompile Include="..\..\engine\sys_win.c" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="..\..\common\cl_entity.h" />
-    <ClInclude Include="..\..\common\const.h" />
-    <ClInclude Include="..\..\common\crc.h" />
-    <ClInclude Include="..\..\engine\anorms.h" />
-    <ClInclude Include="..\..\engine\anorm_dots.h" />
-    <ClInclude Include="..\..\engine\common.h" />
-    <ClInclude Include="..\..\engine\cvar.h" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

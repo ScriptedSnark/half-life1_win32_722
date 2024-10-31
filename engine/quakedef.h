@@ -1,5 +1,21 @@
 // quakedef.h -- primary header for client
 
+#include <math.h>
+#include <string.h>
+#include <stdarg.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <setjmp.h>
+
+
+
+
+
+#include "sys.h"
+
+
+
+
 
 
 //=============================================================================

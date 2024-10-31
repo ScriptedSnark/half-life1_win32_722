@@ -29,6 +29,8 @@
     <ClInclude Include="..\..\engine\anorm_dots.h" />
     <ClInclude Include="..\..\engine\common.h" />
     <ClInclude Include="..\..\engine\cvar.h" />
+    <ClInclude Include="..\..\engine\sys.h" />
+    <ClInclude Include="..\..\engine\winquake.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
