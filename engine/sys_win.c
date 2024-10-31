@@ -219,19 +219,56 @@ SYSTEM IO
 ===============================================================================
 */
 
+/*
+================
+Sys_MakeCodeWriteable
+================
+*/
+void Sys_MakeCodeWriteable( unsigned long startaddr, unsigned long length )
+{
+	DWORD  flOldProtect;
+
+	if (!VirtualProtect((LPVOID)startaddr, length, PAGE_READWRITE, &flOldProtect))
+		Sys_Error("Protection change failed\n");
+}
 
 
+#ifndef _M_IX86
 
+void Sys_SetFPCW( void )
+{
+}
 
+void Sys_PushFPCW_SetHigh( void )
+{
+}
 
+void Sys_PopFPCW( void )
+{
+}
 
+void MaskExceptions( void )
+{
+}
 
+#endif
 
-
-
-// TODO: Implement
+/*
+================
+Sys_Init
+================
+*/
+void Sys_Init( void )
+{
+	// TODO: Implement
+}
 
 void Sys_Error( char* error, ... )
 {
 	// TODO: Implement
 }
+
+
+
+
+// TODO: Implement
