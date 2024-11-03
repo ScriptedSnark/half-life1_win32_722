@@ -2,6 +2,7 @@
 
 #include "quakedef.h"
 #include "winquake.h"
+#include "exefuncs.h"
 
 // 0 = not active, 1 = active, 2 = pause
 int					giActive = DLL_INACTIVE;
@@ -18,13 +19,15 @@ qboolean			isDedicated;
 void MaskExceptions( void );
 void Sys_InitFloatTime( void );
 void Sys_PushFPCW_SetHigh( void );
-void Sys_PopFPCW( void );
+void Sys_PopFPCW(void);
 
 
-
+void	(*VID_LockBuffer)( void );
+void	(*VID_UnlockBuffer)( void );
+void	(*VID_Shutdown)( void );
 int		(*VID_ForceUnlockedAndReturnState)( void );
 int		(*VID_ForceLockState)( int lk );
-void	(*Launcher_ConsolePrintf)( char* fmt, ... );
+void	(*Console_Printf)( char* fmt, ... );
 
 volatile int					sys_checksum;
 
@@ -305,7 +308,7 @@ void Sys_Error( char* error, ... )
 	// TODO: Implement
 }
 
-void Sys_Warning( char* warning, ... )
+void Sys_Warning( char* fmt, ... )
 {
 	// TODO: Implement
 }
@@ -321,9 +324,9 @@ void Sys_Printf( char* fmt, ... )
 		vsprintf(text, fmt, argptr);
 		va_end(argptr);
 
-		if (Launcher_ConsolePrintf)
+		if (Console_Printf)
 		{
-			Launcher_ConsolePrintf(text);
+			Console_Printf(text);
 		}
 	}
 }
@@ -446,9 +449,28 @@ void Sys_SendKeyEvents( void )
 	// TODO: Implement
 }
 
-// TODO: Implement
+/*
+==============================================================================
 
-// Required DLL entry point
+ WINDOWS CRAP
+
+==============================================================================
+*/
+
+
+/*
+==================
+WinMain
+==================
+*/
+HINSTANCE	global_hInstance;
+char* argv[MAX_NUM_ARGVS];
+static char* empty_string = "";
+
+void VID_Stub( void )
+{
+}
+
 BOOL WINAPI DllMain(
 	HINSTANCE hinstDLL,
 	DWORD fdwReason,
@@ -456,16 +478,80 @@ BOOL WINAPI DllMain(
 {
 	if (fdwReason == DLL_PROCESS_ATTACH)
 	{
-		// TODO: Implement
+		global_hInstance = hinstDLL;
 	}
 	else if (fdwReason == DLL_PROCESS_DETACH)
 	{
-		// TODO: Implement
+		VID_LockBuffer = VID_Stub;
+		VID_UnlockBuffer = VID_Stub;
+		VID_Shutdown = VID_Stub;
+
+		ReleaseEntityDlls();
 	}
 	return TRUE;
 }
 
+int	giSubState;
+
+void Dispatch_Substate( int iSubState )
+{
+	giSubState = iSubState;
+}
+
+void DLL_EXPORT GameSetSubState( int iSubState )
+{
+	if (iSubState & 2)
+	{
+		Dispatch_Substate(1);
+	}
+	else if (iSubState != 1)
+	{
+		Dispatch_Substate(iSubState);
+	}
+}
+
+void DLL_EXPORT GameSetState( int iState )
+{
+	giActive = iState;
+}
+
+qboolean gfBackground;
+
+void DLL_EXPORT GameSetBackground( qboolean bNewSetting )
+{
+	gfBackground = bNewSetting;
+}
+
+int DLL_EXPORT GameInit( char* lpCmdLine, unsigned char* pMem, int iSize, exefuncs_t* pef, void* pmainwindow, char* pszPlayerName, int dedicated )
+{
+	static	char	cwd[1024];
+
+	// TODO: Implement
+
+	isDedicated = dedicated;
+
+	Sys_Init();
+
+// because sound is off until we become active
+//	S_BlockSound(); TODO: Implement
+
+	Sys_Printf("Host_Init\n");
+
+	// TODO: Implement
+
+	/* return success of application */
+	return TRUE;
+}
 
 
+// TODO: Implement
+
+//
+// Release all entity dlls
+//
+void ReleaseEntityDlls( void )
+{
+	// TODO: Implement
+}
 
 // TODO: Implement

@@ -28,6 +28,7 @@
     <ClInclude Include="..\..\common\const.h" />
     <ClInclude Include="..\..\common\crc.h" />
     <ClInclude Include="..\..\common\dll_state.h" />
+    <ClInclude Include="..\..\common\exefuncs.h" />
     <ClInclude Include="..\..\engine\anorms.h" />
     <ClInclude Include="..\..\engine\anorm_dots.h" />
     <ClInclude Include="..\..\engine\common.h" />

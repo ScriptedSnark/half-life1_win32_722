@@ -30,7 +30,7 @@ void Sys_MakeCodeWriteable( unsigned long startaddr, unsigned long length );
 void Sys_Error( char* error, ... );
 // an error will cause the entire program to exit
 
-void Sys_Warning( char* warning, ... );
+void Sys_Warning( char* fmt, ... );
 
 void Sys_Printf( char* fmt, ... );
 // send text to the console
@@ -45,6 +45,13 @@ void Sys_Sleep( void );
 
 void Sys_SendKeyEvents( void );
 // Perform Key_Event () callbacks until the input que is empty
+
+// Loads Server DLL
+// szDllFilename - File name of dll to load
+void LoadThisDll( char* szDllFilename );
+
+// Releases all entity dlls
+void ReleaseEntityDlls( void );
 
 void Sys_LowFPPrecision( void );
 void Sys_HighFPPrecision( void );
