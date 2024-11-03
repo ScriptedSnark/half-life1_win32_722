@@ -354,12 +354,69 @@ void Sys_Init( void )
 
 void Sys_Error( char* error, ... )
 {
-	// TODO: Implement
+	va_list		argptr;
+	char		text[1024];
+	static qboolean bReentry = FALSE; // Don't meltdown
+
+	va_start(argptr, error);
+	vsprintf(text, error, argptr);
+	va_end(argptr);
+
+	if (bReentry)
+	{
+		fprintf(stderr, "%s\n", text);
+		longjmp(host_abortserver, 2);
+	}
+
+	bReentry = TRUE;
+
+	VID_ForceUnlockedAndReturnState();
+
+	if (isDedicated)
+	{
+		vsprintf(text, error, argptr);
+		if (Console_Printf)
+		{
+			Console_Printf("Error %s\n", text);
+		}
+	}
+	else
+	{
+		if (ErrorMessage)
+		{
+			ErrorMessage(0, text);
+		}
+	}
 }
 
 void Sys_Warning( char* fmt, ... )
 {
-	// TODO: Implement
+	va_list		argptr;
+	char		text[1024];
+
+	va_start(argptr, fmt);
+	vsprintf(text, fmt, argptr);
+	va_end(argptr);
+
+	VID_ForceUnlockedAndReturnState();
+
+	if (isDedicated)
+	{
+		vsprintf(text, fmt, argptr);
+		if (Console_Printf)
+		{
+			Console_Printf("WARNING:  %s\n", text);
+		}
+	}
+	else
+	{
+		if (ErrorMessage)
+		{
+			ErrorMessage(1, text);
+		}
+	}
+
+	giActive = DLL_PAUSED;
 }
 
 void Sys_Printf( char* fmt, ... )
