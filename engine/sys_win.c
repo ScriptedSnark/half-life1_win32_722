@@ -4,6 +4,23 @@
 #include "winquake.h"
 #include "exefuncs.h"
 
+
+DWORD				gProcessorSpeed;
+int					gHasMMXTechnology;
+
+#ifdef _WIN32
+DLL_EXPORT void		S_GetDSPointer( LPDIRECTSOUND* lpDS, LPDIRECTSOUNDBUFFER* lpDSBuf );
+DLL_EXPORT void		*S_GetWAVPointer( void );
+#endif
+
+qboolean			Win32AtLeastV4;
+
+#ifdef _WIN32
+HWND*				pmainwindow;
+#endif
+
+char				g_szProfileName[MAX_QPATH];
+
 // 0 = not active, 1 = active, 2 = pause
 int					giActive = DLL_INACTIVE;
 int					giStateInfo;
@@ -14,20 +31,41 @@ static double		lastcurtime = 0.0;
 static int			lowshift;
 qboolean			isDedicated;
 
-
-
-void MaskExceptions( void );
-void Sys_InitFloatTime( void );
-void Sys_PushFPCW_SetHigh( void );
-void Sys_PopFPCW(void);
-
-
 void	(*VID_LockBuffer)( void );
 void	(*VID_UnlockBuffer)( void );
 void	(*VID_Shutdown)( void );
+void	(*VID_Update)( struct vrect_s* rects );
 int		(*VID_ForceUnlockedAndReturnState)( void );
+void	(*VID_SetDefaultMode)( void );
+char*	(*VID_GetExtModeDescription)( int mode );
 int		(*VID_ForceLockState)( int lk );
+void	(*VID_GetVID)( struct viddef_s* pvid );
+int		(*D_SurfaceCacheForRes)( int width, int height );
+void	(*D_BeginDirectRect)( int width, int height, byte* data, int pic_width, int pic_height );
+void	(*D_EndDirectRect)( int width, int height, int pic_width, int pic_height );
+void	(*AppActivate)( int fActive, int minimize );
+void	(*CDAudio_Play)( int track, int looping );
+void	(*CDAudio_Pause)( void );
+void	(*CDAudio_Resume)( void );
+void	(*CDAudio_Update)( void );
+void	(*ErrorMessage)( int nLevel, const char* pszErrorMessage );
 void	(*Console_Printf)( char* fmt, ... );
+void	(*Launcher_InitCmds)( void );
+void	(*Launcher_GetCDKey)( char* pszCDKey, int* nLength, int* bDedicated );
+void	(*Launcher_GetClientID)( void* pID );
+void	(*Launcher_GetUUID)( void* pUUID, int* nLength, int* bDedicated );
+void*	(*Launcher_VerifyMessage)( int nLength, byte* pKey, int nMsgLength, char* pMsg, int nSignLength, byte* pSign );
+int		(*Launcher_GetCertificate)( void* pBuffer, int* nLength );
+int		(*Launcher_RequestNewClientCertificate)( void );
+int		(*Launcher_ValidateClientCertificate)( void* pBuffer, int nLength );
+
+void Sys_InitFloatTime( void );
+void SeedRandomNumberGenerator( void );
+
+void MaskExceptions( void );
+void Sys_PushFPCW_SetHigh( void );
+void Sys_PopFPCW( void );
+void Sys_TruncateFPU( void );
 
 volatile int					sys_checksum;
 
@@ -258,6 +296,10 @@ void Sys_PushFPCW_SetHigh( void )
 }
 
 void Sys_PopFPCW( void )
+{
+}
+
+void Sys_TruncateFPU( void )
 {
 }
 
@@ -498,7 +540,7 @@ void Dispatch_Substate( int iSubState )
 	giSubState = iSubState;
 }
 
-void DLL_EXPORT GameSetSubState( int iSubState )
+DLL_EXPORT void GameSetSubState( int iSubState )
 {
 	if (iSubState & 2)
 	{
@@ -510,39 +552,172 @@ void DLL_EXPORT GameSetSubState( int iSubState )
 	}
 }
 
-void DLL_EXPORT GameSetState( int iState )
+DLL_EXPORT void GameSetState( int iState )
 {
 	giActive = iState;
 }
 
 qboolean gfBackground;
 
-void DLL_EXPORT GameSetBackground( qboolean bNewSetting )
+DLL_EXPORT void GameSetBackground( qboolean bNewSetting )
 {
 	gfBackground = bNewSetting;
 }
 
-int DLL_EXPORT GameInit( char* lpCmdLine, unsigned char* pMem, int iSize, exefuncs_t* pef, void* pmainwindow, char* pszPlayerName, int dedicated )
+// Called when the game starts up
+DLL_EXPORT int GameInit( char* lpCmdLine, unsigned char* pMem, int iSize, exefuncs_t* pef, void* pwnd, char* profile, int bIsDedicated )
 {
+	quakeparms_t	parms;
 	static	char	cwd[1024];
 
-	// TODO: Implement
+	host_initialized = FALSE;
 
-	isDedicated = dedicated;
+	memset(g_szProfileName, 0, sizeof(g_szProfileName));
+	strcpy(g_szProfileName, profile);
+
+	// Grab main window pointer
+	pmainwindow = (HWND*)pwnd;
+
+	// Initialize exe funcs
+	Console_Printf							= pef->Console_Printf;
+
+	VID_LockBuffer							= pef->VID_LockBuffer;
+	VID_UnlockBuffer						= pef->VID_UnlockBuffer;
+	VID_Shutdown							= pef->VID_Shutdown;
+	VID_Update								= pef->VID_Update;
+	VID_ForceLockState						= pef->VID_ForceLockState;
+	VID_ForceUnlockedAndReturnState			= pef->VID_ForceUnlockedAndReturnState;
+	VID_SetDefaultMode						= pef->VID_SetDefaultMode;
+	VID_GetExtModeDescription				= pef->VID_GetExtModeDescription;
+
+	D_SurfaceCacheForRes					= pef->D_SurfaceCacheForRes;
+
+	VID_GetVID								= pef->VID_GetVID;
+	
+	D_BeginDirectRect						= pef->D_BeginDirectRect;
+	D_EndDirectRect							= pef->D_EndDirectRect;
+
+	AppActivate								= pef->AppActivate;
+
+	CDAudio_Play							= pef->CDAudio_Play;
+	CDAudio_Resume							= pef->CDAudio_Resume;
+	CDAudio_Pause							= pef->CDAudio_Pause;
+	CDAudio_Update							= pef->CDAudio_Update;
+
+	gHasMMXTechnology						= pef->fMMX;
+	gProcessorSpeed							= pef->iCPUMhz;
+
+	ErrorMessage							= pef->ErrorMessage;
+
+	Launcher_InitCmds						= pef->Launcher_InitCmds;
+	Launcher_GetCDKey						= pef->Launcher_GetCDKey;
+	Launcher_GetClientID					= pef->Launcher_GetClientID;
+	Launcher_VerifyMessage					= pef->Launcher_VerifyMessage;
+
+	Launcher_GetCertificate					= pef->Launcher_GetCertificate;
+	Launcher_RequestNewClientCertificate	= pef->Launcher_RequestNewClientCertificate;
+	Launcher_ValidateClientCertificate		= pef->Launcher_ValidateClientCertificate;
+
+	// Check that we are running on Win32
+	OSVERSIONINFO vinfo;
+	vinfo.dwOSVersionInfoSize = sizeof(vinfo);
+
+	if (!GetVersionEx(&vinfo))
+	{
+		Sys_Error("Couldn't get OS info");
+	}
+
+	if (vinfo.dwMajorVersion < 4)
+	{
+		Win32AtLeastV4 = FALSE;
+	}
+	else
+	{
+		Win32AtLeastV4 = TRUE;
+	}
+
+	SeedRandomNumberGenerator();
+
+	// Set default FPU control word to truncate (chop) mode for optimized _ftol()
+	// This does not "stick", the mode is restored somewhere down the line.
+	Sys_TruncateFPU();
+
+	if (!GetCurrentDirectory(sizeof(cwd), cwd))
+		Sys_Error("Couldn't determine current directory");
+
+	if (cwd[Q_strlen(cwd) - 1] == '/')
+		cwd[Q_strlen(cwd) - 1] = 0;
+
+	parms.basedir = cwd;
+	parms.cachedir = NULL;
+
+	parms.argc = 1;
+	argv[0] = empty_string;
+
+	while (*lpCmdLine && (parms.argc < MAX_NUM_ARGVS))
+	{
+		while (*lpCmdLine && ((*lpCmdLine <= 32) || (*lpCmdLine > 126)))
+			lpCmdLine++;
+
+		if (*lpCmdLine)
+		{
+			argv[parms.argc] = lpCmdLine;
+			parms.argc++;
+
+			while (*lpCmdLine && ((*lpCmdLine > 32) && (*lpCmdLine <= 126)))
+				lpCmdLine++;
+
+			if (*lpCmdLine)
+			{
+				*lpCmdLine = 0;
+				lpCmdLine++;
+			}
+
+		}
+	}
+
+	parms.argv = argv;
+
+	COM_InitArgv(parms.argc, parms.argv);
+
+	parms.argc = com_argc;
+	parms.argv = com_argv;
+
+	// Remember that this is a dedicated server
+	isDedicated = bIsDedicated;
+
+	parms.membase = pMem;
+	parms.memsize = iSize;
 
 	Sys_Init();
 
 // because sound is off until we become active
-//	S_BlockSound(); TODO: Implement
+	S_BlockSound();
 
 	Sys_Printf("Host_Init\n");
+	if (!Host_Init(&parms))
+		return FALSE;
 
-	// TODO: Implement
+	// Load in the game .dll
+	LoadEntityDLLs(host_parms.basedir);
+
+	// Start up networking
+	NET_Config(TRUE);
 
 	/* return success of application */
 	return TRUE;
 }
 
+
+// TODO: Implement
+
+//
+// Scan DLL directory, load all DLLs that conform to spec.
+//
+void LoadEntityDLLs( const char* szBaseDir )
+{
+	// TODO: Implement
+}
 
 // TODO: Implement
 

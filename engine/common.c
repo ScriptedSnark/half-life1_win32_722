@@ -1,15 +1,50 @@
 // common.c -- misc functions used in client and server
 
 #include "quakedef.h"
+#include "winquake.h"
 
+#define NUM_SAFE_ARGVS  7
 
+static char* largv[MAX_NUM_ARGVS + NUM_SAFE_ARGVS + 1];
+static char* argvdummy = " ";
 
+static char* safeargvs[NUM_SAFE_ARGVS] =
+	{"-stdvid", "-nolan", "-nosound", "-nocdaudio", "-nojoy", "-nomouse", "-dibonly"};
 
-
-
+cvar_t  registered = { "registered","0" };
+cvar_t  cmdline = { "cmdline","0", FALSE, TRUE };
 
 int		com_argc;
 char** com_argv;
+
+#define CMDLINE_LENGTH	256
+char	com_cmdline[CMDLINE_LENGTH];
+
+qboolean		standard_quake = TRUE, rogue, hipnotic;
+
+
+
+
+
+
+
+
+
+
+
+int Q_strlen( char* str )
+{
+	int             count;
+	
+	count = 0;
+	while (str[count])
+		count++;
+
+	return count;
+}
+
+
+
 
 
 
@@ -224,5 +259,69 @@ int COM_CheckParm( char* parm )
 
 
 
+/*
+================
+COM_InitArgv
+================
+*/
+void COM_InitArgv( int argc, char** argv )
+{
+	qboolean        safe;
+	int             i, j, n;
 
+// reconstitute the command line for the cmdline externally visible cvar
+	n = 0;
 
+	for (j = 0; (j < MAX_NUM_ARGVS) && (j < argc); j++)
+	{
+		i = 0;
+
+		while ((n < (CMDLINE_LENGTH - 1)) && argv[j][i])
+		{
+			com_cmdline[n++] = argv[j][i++];
+		}
+
+		if (n < (CMDLINE_LENGTH - 1))
+			com_cmdline[n++] = ' ';
+		else
+			break;
+	}
+
+	com_cmdline[n] = 0;
+
+	safe = FALSE;
+
+	for (com_argc = 0; (com_argc < MAX_NUM_ARGVS) && (com_argc < argc);
+		com_argc++)
+	{
+		largv[com_argc] = argv[com_argc];
+		if (!Q_strcmp("-safe", argv[com_argc]))
+			safe = TRUE;
+	}
+
+	if (safe)
+	{
+	// force all the safe-mode switches. Note that we reserved extra space in
+	// case we need to add these, so we don't need an overflow check
+		for (i = 0; i < NUM_SAFE_ARGVS; i++)
+		{
+			largv[com_argc] = safeargvs[i];
+			com_argc++;
+		}
+	}
+
+	largv[com_argc] = argvdummy;
+	com_argv = largv;
+
+	if (COM_CheckParm("-rogue"))
+	{
+		rogue = TRUE;
+		standard_quake = FALSE;
+	}
+
+	if (COM_CheckParm("-hipnotic"))
+	{
+		hipnotic = TRUE;
+		standard_quake = FALSE;
+	}
+}

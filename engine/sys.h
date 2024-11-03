@@ -46,6 +46,10 @@ void Sys_Sleep( void );
 void Sys_SendKeyEvents( void );
 // Perform Key_Event () callbacks until the input que is empty
 
+// Loads all entity DLLs
+// szBaseDir - Base directory to look for entity dlls in if no liblist could be loaded
+void LoadEntityDLLs( const char* szBaseDir );
+
 // Loads Server DLL
 // szDllFilename - File name of dll to load
 void LoadThisDll( char* szDllFilename );

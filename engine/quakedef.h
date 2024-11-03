@@ -13,8 +13,12 @@
 
 
 
+#define	MAX_QPATH		64			// max length of a quake game pathname
 
 
+
+
+#include "platform.h"
 #include "common.h"
 #include "dll_state.h"
 #include "sys.h"
@@ -25,6 +29,13 @@
 
 
 
+
+
+
+#include "cvar.h"
+
+
+#include "net.h"
 
 
 
@@ -64,12 +75,15 @@ typedef struct
 
 
 
+//
+// host
+//
+extern	quakeparms_t host_parms;
+
+extern	qboolean	host_initialized;		// true if into command execution
 
 
 
 
-
-
-
-
+int Host_Init( quakeparms_t* parms );
 void Host_Shutdown( void );
