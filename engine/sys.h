@@ -48,7 +48,7 @@ void Sys_SendKeyEvents( void );
 
 // Loads all entity DLLs
 // szBaseDir - Base directory to look for entity dlls in if no liblist could be loaded
-void LoadEntityDLLs( const char* szBaseDir );
+void LoadEntityDLLs( char* szBaseDir );
 
 // Loads Server DLL
 // szDllFilename - File name of dll to load

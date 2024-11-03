@@ -823,23 +823,109 @@ DLL_EXPORT int GetPauseState( void )
 
 DLL_EXPORT void Keyboard_ReturnToGame( void )
 {
-	// TODO: Implement
+	Con_DPrintf("KB Reset\n");
 }
 
+extensiondll_t		g_rgextdll[MAX_EXT_DLLS];
+int					g_iextdllMac;
 
+DLL_FUNCTIONS		gEntityInterface;
 
+DISPATCHFUNCTION GetDispatch( char* pname )
+{
+	int i;
+	DISPATCHFUNCTION pDispatch;
 
+	for (i = 0; i < g_iextdllMac; i++)
+	{
+		pDispatch = (DISPATCHFUNCTION)GetProcAddress((HMODULE)g_rgextdll[i].lDLLHandle, pname);
+		if (pDispatch)
+		{
+			return pDispatch;
+		}
+	}
 
+	return NULL;
+}
 
+const char* FindAddressInTable( extensiondll_t* pDll, uint32 function )
+{
+	int	i;
 
+	for (i = 0; i < pDll->functionCount; i++)
+	{
+		if (pDll->functionTable[i].pFunction == function)
+			return pDll->functionTable[i].pFunctionName;
+	}
 
+	return NULL;
+}
 
-// TODO: Implement
+uint32 FindNameInTable( extensiondll_t* pDll, const char* pName )
+{
+	int	i;
+
+	for (i = 0; i < pDll->functionCount; i++)
+	{
+		if (!strcmp(pName, pDll->functionTable[i].pFunctionName))
+			return pDll->functionTable[i].pFunction;
+	}
+
+	return 0;
+}
+
+// Gets the index of an exported function
+uint32 FunctionFromName( const char* pName )
+{
+	int	i;
+	uint32 function;
+
+	for (i = 0; i < g_iextdllMac; i++)
+	{
+		function = FindNameInTable(&g_rgextdll[i], pName);
+		if (function)
+		{
+			return function;
+		}
+	}
+
+	Con_Printf("Can't find proc: %s\n", pName);
+	return 0;
+}
+
+// Gets the name of an exported function
+const char* NameForFunction( uint32 function )
+{
+	int i;
+	const char* pName;
+
+	for (i = 0; i < g_iextdllMac; i++)
+	{
+		pName = FindAddressInTable(&g_rgextdll[i], function);
+		if (pName)
+		{
+			return pName;
+		}
+	}
+
+	Con_Printf("Can't find address: %08lx\n", function);
+	return NULL;
+}
+
+ENTITYINIT GetEntityInit( char* pClassName )
+{
+	return (ENTITYINIT)GetDispatch(pClassName);
+}
+
+FIELDIOFUNCTION GetIOFunction( char* pName )
+{
+	return (FIELDIOFUNCTION)GetDispatch(pName);
+}
 
 //
 // Scan DLL directory, load all DLLs that conform to spec.
 //
-void LoadEntityDLLs( const char* szBaseDir )
+void LoadEntityDLLs( char* szBaseDir )
 {
 	// TODO: Implement
 }

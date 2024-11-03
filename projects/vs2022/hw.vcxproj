@@ -20,6 +20,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\engine\common.c" />
+    <ClCompile Include="..\..\engine\CONSOLE.C" />
     <ClCompile Include="..\..\engine\host.c" />
     <ClCompile Include="..\..\engine\net_ws.c" />
     <ClCompile Include="..\..\engine\pr_cmds.c" />
@@ -27,7 +28,6 @@
     <ClCompile Include="..\..\engine\sys_win.c" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\common\cl_entity.h" />
     <ClInclude Include="..\..\common\const.h" />
     <ClInclude Include="..\..\common\crc.h" />
     <ClInclude Include="..\..\common\cvardef.h" />
@@ -37,8 +37,15 @@
     <ClInclude Include="..\..\engine\anorms.h" />
     <ClInclude Include="..\..\engine\anorm_dots.h" />
     <ClInclude Include="..\..\engine\common.h" />
+    <ClInclude Include="..\..\engine\CONSOLE.H" />
+    <ClInclude Include="..\..\engine\custom.h" />
     <ClInclude Include="..\..\engine\cvar.h" />
+    <ClInclude Include="..\..\engine\eiface.h" />
+    <ClInclude Include="..\..\engine\mathlib.h" />
     <ClInclude Include="..\..\engine\net.h" />
+    <ClInclude Include="..\..\engine\progdefs.h" />
+    <ClInclude Include="..\..\engine\Progs.h" />
+    <ClInclude Include="..\..\engine\pr_dlls.h" />
     <ClInclude Include="..\..\engine\quakedef.h" />
     <ClInclude Include="..\..\engine\server.h" />
     <ClInclude Include="..\..\engine\sys.h" />

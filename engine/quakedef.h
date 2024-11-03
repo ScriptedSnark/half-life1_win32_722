@@ -40,8 +40,13 @@
 
 
 #include "platform.h"
+#include "mathlib.h"
+#include "const.h"
+#include "progs.h"
 #include "common.h"
 #include "dll_state.h"
+#include "eiface.h"
+#include "pr_dlls.h"
 #include "sys.h"
 
 
@@ -63,6 +68,12 @@
 
 #include "server.h"
 
+
+
+
+
+
+#include "console.h"
 
 
 

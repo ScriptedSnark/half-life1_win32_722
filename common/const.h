@@ -1,17 +1,3 @@
-/***
-*
-*	Copyright (c) 1996-2002, Valve LLC. All rights reserved.
-*	
-*	This product contains software technology licensed from Id 
-*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
-*	All Rights Reserved.
-*
-*   Use, distribution, and modification of this source code and/or resulting
-*   object code is restricted to non-commercial enhancements to products from
-*   Valve LLC.  All other use, distribution, or modification is prohibited
-*   without written permission from Valve LLC.
-*
-****/
 #ifndef CONST_H
 #define CONST_H
 //
@@ -54,11 +40,10 @@
 #define FL_KILLME				(1<<30)	// This entity is marked for death -- This allows the engine to kill ents at the appropriate time
 #define FL_DORMANT				(1<<31)	// Entity is dormant, no updates to client
 
-// Engine's edict->spawnflags
-#define SF_NOTINDEATHMATCH		0x0800	// Do not spawn when deathmatch and loading entities from a file
 
 // Goes into globalvars_t.trace_flags
 #define FTRACE_SIMPLEBOX		(1<<0)	// Traceline with a simple box
+
 
 // walkmove modes
 #define	WALKMOVE_NORMAL		0 // normal walkmove
@@ -110,13 +95,6 @@
 #define EF_NOINTERP				32	// don't interpolate the next frame
 #define EF_LIGHT				64	// rocket flare glow sprite
 #define EF_NODRAW				128	// don't draw entity
-#define EF_NIGHTVISION			256 // player nightvision
-#define EF_SNIPERLASER			512 // sniper laser effect
-#define EF_FIBERCAMERA			1024// fiber camera
-
-
-// entity flags
-#define EFLAG_SLERP				1	// do studio interpolation of this entity
 		
 //
 // temp entity events
@@ -352,17 +330,7 @@
 // ushort 8.8 hold time
 // optional ushort 8.8 fxtime	(time the highlight lags behing the leading text in effect 2)
 // string text message		(512 chars max sz string)
-#define TE_LINE				30
-// coord, coord, coord		startpos
-// coord, coord, coord		endpos
-// short life in 0.1 s
-// 3 bytes r, g, b
 
-#define TE_BOX				31
-// coord, coord, coord		boxmins
-// coord, coord, coord		boxmaxs
-// short life in 0.1 s
-// 3 bytes r, g, b
 
 #define TE_KILLBEAM			99		// kill all beams attached to entity
 // short (entity)
@@ -525,7 +493,6 @@
 #define TEFIRE_FLAG_LOOP		4 // if set, sprite plays at 15 fps, otherwise plays at whatever rate stretches the animation over the sprite's duration.
 #define TEFIRE_FLAG_ALPHA		8 // if set, sprite is rendered alpha blended at 50% else, opaque
 #define TEFIRE_FLAG_PLANAR		16 // if set, all fire sprites have same initial Z instead of randomly filling a cube. 
-#define TEFIRE_FLAG_ADDITIVE	32 // if set, sprite is rendered non-opaque with additive
 
 #define TE_PLAYERATTACHMENT			124 // attaches a TENT to a player (this is a high-priority tent)
 // byte (entity index of player)
@@ -566,8 +533,6 @@
 // byte ( color ) this is an index into an array of color vectors in the engine. (0 - )
 // byte ( length * 10 )
 
-
-
 #define	MSG_BROADCAST		0		// unreliable to all
 #define	MSG_ONE				1		// reliable to one (msg_entity)
 #define	MSG_ALL				2		// reliable to all
@@ -576,8 +541,7 @@
 #define MSG_PAS				5		// Ents in PAS of org
 #define MSG_PVS_R			6		// Reliable to PVS
 #define MSG_PAS_R			7		// Reliable to PAS
-#define MSG_ONE_UNRELIABLE	8		// Send to one client, but don't put in reliable stream, put in unreliable datagram ( could be dropped )
-#define	MSG_SPEC			9		// Sends to all spectator proxies
+
 
 // contents of a spot in the world
 #define	CONTENTS_EMPTY		-1
@@ -619,9 +583,6 @@
 #define	CHAN_BODY			4
 #define CHAN_STREAM			5			// allocate stream channel from the static or dynamic area
 #define CHAN_STATIC			6			// allocate channel from the static area 
-#define CHAN_NETWORKVOICE_BASE	7		// voice data coming across the network
-#define CHAN_NETWORKVOICE_END	500		// network voice data reserves slots (CHAN_NETWORKVOICE_BASE through CHAN_NETWORKVOICE_END).
-#define CHAN_BOT			501			// channel used for bot chatter.
 
 // attenuation values
 #define ATTN_NONE		0
@@ -646,9 +607,22 @@
 #define SF_TRAIN_PASSABLE		8		// Train is not solid -- used to make water trains
 
 // buttons
-#ifndef IN_BUTTONS_H
-#include "in_buttons.h"
-#endif
+#define IN_ATTACK	(1 << 0)
+#define IN_JUMP		(1 << 1)
+#define IN_DUCK		(1 << 2)
+#define IN_FORWARD	(1 << 3)
+#define IN_BACK		(1 << 4)
+#define IN_USE		(1 << 5)
+#define IN_CANCEL	(1 << 6)
+#define IN_LEFT		(1 << 7)
+#define IN_RIGHT	(1 << 8)
+#define IN_MOVELEFT	(1 << 9)
+#define IN_MOVERIGHT (1 << 10)
+#define IN_ATTACK2	(1 << 11)
+#define IN_RUN      (1 << 12)
+#define IN_RELOAD	(1 << 13)
+#define IN_ALT1		(1 << 14)
+#define IN_ALT2		(1 << 15)
 
 // Break Model Defines
 
@@ -680,8 +654,8 @@
 #define TE_BOUNCE_SHOTSHELL	2
 
 // Rendering constants
-enum 
-{	
+enum
+{
 	kRenderNormal,			// src
 	kRenderTransColor,		// c*a+dest*(1-a)
 	kRenderTransTexture,	// src*a+dest*(1-a)
@@ -690,21 +664,21 @@ enum
 	kRenderTransAdd,		// src*a+dest
 };
 
-enum 
-{	
-	kRenderFxNone = 0, 
-	kRenderFxPulseSlow, 
-	kRenderFxPulseFast, 
-	kRenderFxPulseSlowWide, 
-	kRenderFxPulseFastWide, 
-	kRenderFxFadeSlow, 
-	kRenderFxFadeFast, 
-	kRenderFxSolidSlow, 
-	kRenderFxSolidFast, 	   
-	kRenderFxStrobeSlow, 
-	kRenderFxStrobeFast, 
-	kRenderFxStrobeFaster, 
-	kRenderFxFlickerSlow, 
+enum
+{
+	kRenderFxNone = 0,
+	kRenderFxPulseSlow,
+	kRenderFxPulseFast,
+	kRenderFxPulseSlowWide,
+	kRenderFxPulseFastWide,
+	kRenderFxFadeSlow,
+	kRenderFxFadeFast,
+	kRenderFxSolidSlow,
+	kRenderFxSolidFast,
+	kRenderFxStrobeSlow,
+	kRenderFxStrobeFast,
+	kRenderFxStrobeFaster,
+	kRenderFxFlickerSlow,
 	kRenderFxFlickerFast,
 	kRenderFxNoDissipation,
 	kRenderFxDistort,			// Distort/scale/translate flicker
@@ -713,7 +687,6 @@ enum
 	kRenderFxExplode,			// Scale up really big!
 	kRenderFxGlowShell,			// Glowing Shell
 	kRenderFxClampMinScale,		// Keep this sprite from getting very small (SPRITES only!)
-	kRenderFxLightMultiplier,   //CTM !!!CZERO added to tell the studiorender that the value in iuser2 is a lightmultiplier
 };
 
 typedef unsigned int func_t;
