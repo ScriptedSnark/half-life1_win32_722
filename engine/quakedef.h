@@ -11,6 +11,27 @@
 #include <stdlib.h>
 #include <setjmp.h>
 
+#ifdef __cplusplus
+#define C_EXTERN extern "C"
+#else
+#define C_EXTERN extern
+#endif
+
+#ifdef __cplusplus
+#define DECLTYPE(func) (decltype(func))
+#else
+#define DECLTYPE(func) (void*)
+#endif
+
+#if defined( _WIN32 )
+
+// Used for dll exporting and importing
+#define DLL_EXPORT				C_EXTERN __declspec( dllexport )
+#define DLL_IMPORT				C_EXTERN __declspec( dllimport )
+
+#endif
+
+
 
 
 #define	MAX_QPATH		64			// max length of a quake game pathname

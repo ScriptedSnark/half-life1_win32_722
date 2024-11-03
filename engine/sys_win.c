@@ -19,7 +19,11 @@ qboolean			Win32AtLeastV4;
 HWND*				pmainwindow;
 #endif
 
+qboolean			g_bInStartup = FALSE;
+qboolean			g_bInactive = FALSE;
+
 char				g_szProfileName[MAX_QPATH];
+qboolean			g_bForceReloadOnCA_Active = FALSE;
 
 // 0 = not active, 1 = active, 2 = pause
 int					giActive = DLL_INACTIVE;
@@ -30,6 +34,9 @@ static double		curtime = 0.0;
 static double		lastcurtime = 0.0;
 static int			lowshift;
 qboolean			isDedicated;
+
+int					g_bPaused = 0;
+int					gLauncherPause = 0;
 
 void	(*VID_LockBuffer)( void );
 void	(*VID_UnlockBuffer)( void );
@@ -393,7 +400,7 @@ void Sys_Quit( void )
 Sys_FloatTime
 ================
 */
-double Sys_FloatTime( void )
+DLL_EXPORT double Sys_FloatTime( void )
 {
 	static int			sametimecount;
 	static unsigned int	oldtime;
@@ -707,6 +714,67 @@ DLL_EXPORT int GameInit( char* lpCmdLine, unsigned char* pMem, int iSize, exefun
 	/* return success of application */
 	return TRUE;
 }
+
+
+DLL_EXPORT int GetGameInfo( struct GameInfo_s* pGI, char* pszChannel )
+{
+	// TODO: Implement
+	return 1;
+}
+
+void StoreProfile( char* pszPlayerName )
+{
+	// TODO: Implement
+}
+
+DLL_EXPORT void ForceReloadProfile( char* pszPlayerName )
+{
+	memset(g_szProfileName, 0, sizeof(g_szProfileName));
+	strcpy(g_szProfileName, pszPlayerName);
+
+	g_bForceReloadOnCA_Active = TRUE;
+	StoreProfile(pszPlayerName);
+}
+
+DLL_EXPORT void SetStartupMode( qboolean bMode )
+{
+	g_bInStartup = bMode;
+}
+
+DLL_EXPORT void SetMessagePumpDisableMode( qboolean bMode )
+{
+	g_bInactive = bMode;
+}
+
+DLL_EXPORT void SetPauseState( qboolean bPause )
+{
+	if (bPause)
+	{
+		// TODO: Implement
+	}
+	else
+	{
+		// TODO: Implement
+	}
+}
+
+DLL_EXPORT int GetPauseState( void )
+{
+	// TODO: Implement
+	return 0;
+}
+
+DLL_EXPORT void Keyboard_ReturnToGame( void )
+{
+	// TODO: Implement
+}
+
+
+
+
+
+
+
 
 
 // TODO: Implement

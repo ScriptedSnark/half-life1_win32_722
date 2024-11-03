@@ -37,7 +37,7 @@ void Sys_Printf( char* fmt, ... );
 
 void Sys_Quit( void );
 
-double Sys_FloatTime( void );
+DLL_EXPORT double Sys_FloatTime( void );
 
 void Sys_Sleep( void );
 // called to yield for a little bit so as
