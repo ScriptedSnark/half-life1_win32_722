@@ -144,5 +144,44 @@ void Cvar_SetValue( char* var_name, float value )
 }
 
 
+/*
+============
+Cvar_RegisterVariable
+
+Adds a freestanding variable to the variable list.
+============
+*/
+void Cvar_RegisterVariable( cvar_t* variable )
+{
+	char* oldstr;
+
+// first check to see if it has allready been defined
+	if (Cvar_FindVar(variable->name))
+	{
+		Con_Printf("Can't register variable %s, allready defined\n", variable->name);
+		return;
+	}
+
+// check for overlap with a command
+	if (Cmd_Exists(variable->name))
+	{
+		Con_Printf("Cvar_RegisterVariable: %s is a command\n", variable->name);
+		return;
+	}
+
+// copy the value off, because future sets will Z_Free it
+	oldstr = variable->string;
+	variable->string = Z_Malloc(Q_strlen(oldstr) + 1);
+	Q_strcpy(variable->string, oldstr);
+	variable->value = Q_atof(variable->string);
+
+// link the variable in
+	variable->next = cvar_vars;
+	cvar_vars = variable;
+}
+
+
+
+
 
 

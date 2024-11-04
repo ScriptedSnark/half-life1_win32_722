@@ -26,6 +26,7 @@
     <ClInclude Include="..\..\common\platform.h" />
     <ClInclude Include="..\..\engine\anorms.h" />
     <ClInclude Include="..\..\engine\anorm_dots.h" />
+    <ClInclude Include="..\..\engine\cmd.h" />
     <ClInclude Include="..\..\engine\common.h" />
     <ClInclude Include="..\..\engine\CONSOLE.H" />
     <ClInclude Include="..\..\engine\custom.h" />
@@ -46,6 +47,7 @@
     <ClInclude Include="..\..\engine\zone.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\engine\cmd.c" />
     <ClCompile Include="..\..\engine\common.c" />
     <ClCompile Include="..\..\engine\CONSOLE.C" />
     <ClCompile Include="..\..\engine\cvar.c" />

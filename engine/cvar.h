@@ -42,6 +42,9 @@ Cvars are restricted from having the same names as commands to keep this
 interface from being ambiguous.
 */
 
+void 	Cvar_RegisterVariable( cvar_t* variable );
+// registers a cvar that allready has the name, string, and optionally the
+// archive elements set.
 
 DLL_EXPORT void		Cvar_Set( char* var_name, char* value );
 // equivelant to "<name> <variable>" typed at the console

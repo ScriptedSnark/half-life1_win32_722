@@ -63,6 +63,8 @@
 #include "screen.h"
 #include "net.h"
 
+#include "cmd.h"
+
 
 
 
