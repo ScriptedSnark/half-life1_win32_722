@@ -840,18 +840,24 @@ DLL_EXPORT void SetPauseState( qboolean bPause )
 {
 	if (bPause)
 	{
-		// TODO: Implement
+		if (!gLauncherPause)
+			g_bPaused = sv.paused;
+
+		sv.paused = TRUE;
+		gLauncherPause = TRUE;
 	}
 	else
 	{
-		// TODO: Implement
+		if (gLauncherPause)
+			sv.paused = g_bPaused;
+
+		gLauncherPause = FALSE;
 	}
 }
 
 DLL_EXPORT int GetPauseState( void )
 {
-	// TODO: Implement
-	return 0;
+	return sv.paused;
 }
 
 DLL_EXPORT void Keyboard_ReturnToGame( void )
