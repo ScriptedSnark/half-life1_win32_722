@@ -551,7 +551,39 @@ void Sys_Sleep( void )
 
 void Sys_SendKeyEvents( void )
 {
-	// TODO: Implement
+	MSG        msg;
+
+	if (g_bInStartup)
+		return;
+
+	while (PeekMessage(&msg, NULL, 0, 0, PM_NOREMOVE))
+	{
+	// we always update if there are any event, even if we're paused
+		scr_skipupdate = 0;
+		if (g_bInactive)
+			break;
+
+		if (!GetMessage(&msg, NULL, 0, 0))
+			Sys_Quit();
+
+		TranslateMessage(&msg);
+		DispatchMessage(&msg);
+	}
+
+	if (!g_bInactive)
+		return;
+
+	while (PeekMessage(&msg, NULL, WM_ACTIVATEAPP, WM_ACTIVATEAPP, PM_NOREMOVE))
+	{
+	// we always update if there are any event, even if we're paused
+		scr_skipupdate = 0;
+
+		if (!GetMessage(&msg, NULL, 0, 0))
+			Sys_Quit();
+
+		TranslateMessage(&msg);
+		DispatchMessage(&msg);
+	}
 }
 
 /*

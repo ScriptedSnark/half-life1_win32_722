@@ -37,6 +37,7 @@
     <ClInclude Include="..\..\engine\progdefs.h" />
     <ClInclude Include="..\..\engine\pr_dlls.h" />
     <ClInclude Include="..\..\engine\quakedef.h" />
+    <ClInclude Include="..\..\engine\screen.h" />
     <ClInclude Include="..\..\engine\server.h" />
     <ClInclude Include="..\..\engine\sys.h" />
     <ClInclude Include="..\..\engine\vid.h" />
@@ -49,7 +50,9 @@
     <ClCompile Include="..\..\engine\CONSOLE.C" />
     <ClCompile Include="..\..\engine\host.c" />
     <ClCompile Include="..\..\engine\net_ws.c" />
+    <ClCompile Include="..\..\engine\pe_export.c" />
     <ClCompile Include="..\..\engine\pr_cmds.c" />
+    <ClCompile Include="..\..\engine\SCREEN.C" />
     <ClCompile Include="..\..\engine\SND_WIN.C" />
     <ClCompile Include="..\..\engine\sv_main.c" />
     <ClCompile Include="..\..\engine\sys_win.c" />

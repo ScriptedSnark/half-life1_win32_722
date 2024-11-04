@@ -60,8 +60,7 @@
 
 
 #include "cvar.h"
-
-
+#include "screen.h"
 #include "net.h"
 
 
