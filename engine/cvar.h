@@ -46,8 +46,8 @@ interface from being ambiguous.
 DLL_EXPORT void		Cvar_Set( char* var_name, char* value );
 // equivelant to "<name> <variable>" typed at the console
 
-
-
+DLL_EXPORT void		Cvar_SetValue( char* var_name, float value );
+// expands value to a string and calls Cvar_Set
 
 DLL_EXPORT float	Cvar_VariableValue( char* var_name );
 // returns 0 if not defined or non numeric

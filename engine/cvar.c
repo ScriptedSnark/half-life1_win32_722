@@ -130,10 +130,18 @@ void Cvar_Set( char* var_name, char* value )
 	}
 }
 
+/*
+============
+Cvar_SetValue
+============
+*/
+void Cvar_SetValue( char* var_name, float value )
+{
+	char	val[32];
 
-
-
-
+	sprintf(val, "%f", value);
+	Cvar_Set(var_name, val);
+}
 
 
 
