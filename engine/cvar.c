@@ -1,6 +1,7 @@
 // cvar.c -- dynamic variable tracking
 
 #include "quakedef.h"
+#include "winquake.h"
 
 cvar_t* cvar_vars;
 char* cvar_null_string = "";
@@ -180,8 +181,233 @@ void Cvar_RegisterVariable( cvar_t* variable )
 	cvar_vars = variable;
 }
 
+/*
+============
+Cvar_Command
+
+Handles variable inspection and changing from the console
+============
+*/
+qboolean	Cvar_Command( void )
+{
+	cvar_t* v;
+
+// check variables
+	v = Cvar_FindVar(Cmd_Argv(0));
+	if (!v)
+		return FALSE;
+
+// perform a variable print or set
+	if (Cmd_Argc() == 1)
+	{
+		Con_Printf("\"%s\" is \"%s\"\n", v->name, v->string);
+		return TRUE;
+	}
+
+	Cvar_Set(v->name, Cmd_Argv(1));
+	return TRUE;
+}
 
 
+/*
+============
+Cvar_WriteVariables
+
+Writes lines containing "set variable value" for all variables
+with the archive flag set to true.
+============
+*/
+void Cvar_WriteVariables( FILE* f )
+{
+	cvar_t* var;
+
+	for (var = cvar_vars; var; var = var->next)
+		if (var->archive)
+			fprintf(f, "%s \"%s\"\n", var->name, var->string);
+}
 
 
+/*
+============
+Cvar_WriteVariables
 
+Writes lines containing "set variable value" for all variables
+with the profile flag set to true.
+============
+*/
+void Cvar_WriteProfileVariables( FILE* f )
+{
+	cvar_t* var;
+
+	for (var = cvar_vars; var; var = var->next)
+		if (var->profile)
+			fprintf(f, "%s \"%s\"\n", var->name, var->string);
+}
+
+
+/*
+============
+Cmd_CvarListPrintCvar
+
+Print some info to the console
+============
+*/
+void Cmd_CvarListPrintCvar( cvar_t* var, FILE* f )
+{
+	char szOutstr[256];   // Ouput string
+	if (var->value == (int)var->value)   // Clean up integers
+		sprintf(szOutstr, "%-15s : %8i", var->name, (int)var->value);
+	else
+		sprintf(szOutstr, "%-15s : %8.3f", var->name, var->value);
+
+	// Tack on archive setting
+	if (var->archive)
+	{
+		strcat(szOutstr, ", a");
+	}
+
+	// And server setting
+	if (var->server)
+	{
+		strcat(szOutstr, ", sv");
+	}
+
+	// and profile setting
+	if (var->profile)
+	{
+		strcat(szOutstr, ", p");
+	}
+
+	// End the line
+	strcat(szOutstr, "\n");
+
+	Con_Printf("%s", szOutstr);
+
+	if (f)
+	{
+		fprintf(f, "%s", szOutstr);
+	}
+}
+
+/*
+============
+Cmd_CvarList_f
+
+List all cvars
+============
+*/
+void Cmd_CvarList_f( void )
+{
+	cvar_t* var;			// Temporary Pointer to cvars
+	int iCvars = 0;			// Number retrieved...
+	int iArgs;				// Argument count
+	char* partial = NULL;	// Partial cvar to search for...
+	// E.eg
+	int ipLen = 0;			// Length of the partial cvar
+
+	char szTemp[256];
+	FILE* f = NULL;         // FilePointer for logging
+	qboolean bLogging = FALSE;
+
+	iArgs = Cmd_Argc();		// Get count
+
+	if (iArgs >= 2)			// Check for "CvarList ?" or "CvarList xxx"
+	{
+		if (!_stricmp(Cmd_Argv(1), "?"))
+		{
+			Con_Printf(
+				"CvarList           : List all cvars\n"
+				"CvarList [Partial] : List cvars starting with 'Partial'\n"
+				"CvarList log logfile [Partial] : Logs cvars to file c:\\logfile.\n"
+				"NOTE:  No relative paths allowed!");
+			return;
+		}
+
+		if (!_stricmp(Cmd_Argv(1), "log"))
+		{
+			sprintf(szTemp, "c:\\%s", Cmd_Argv(2));
+			f = fopen(szTemp, "wt");
+			if (f)
+				bLogging = TRUE;
+			else
+			{
+				Con_Printf("Couldn't open [%s] for writing!\n", Cmd_Argv(2));
+				fclose(f);
+			}
+
+			if (iArgs == 4)
+			{
+				partial = Cmd_Argv(3);
+				ipLen = strlen(partial);
+			}
+		}
+		else
+		{
+			partial = Cmd_Argv(1);
+			ipLen = strlen(partial);
+		}
+	}
+
+	// Banner
+	Con_Printf("CVar List\n--------------\n");
+
+	// Loop through cvars...
+	for (var = cvar_vars; var; var = var->next)
+	{
+		if (partial)  // Partial string searching?
+		{
+			if (!_strnicmp(var->name, partial, ipLen))
+			{
+				iCvars++;
+				Cmd_CvarListPrintCvar(var, f);
+			}
+		}
+		else		  // List all cvars
+		{
+			iCvars++;
+			Cmd_CvarListPrintCvar(var, f);
+		}
+	}
+
+	// Show total and syntax help...
+	if ((iArgs == 2) && partial && partial[0])
+	{
+		Con_Printf("--------------\n%3i CVars for [%s]\nCvarList ? for syntax\n", iCvars, partial);
+	}
+	else
+	{
+		Con_Printf("--------------\n%3i Total CVars\nCvarList ? for syntax\n", iCvars);
+	}
+
+	if (bLogging)
+	{
+		fclose(f);
+	}
+}
+
+/*
+============
+Cvar_CountServerVariables
+
+============
+*/
+int Cvar_CountServerVariables( void )
+{
+	int i = 0;
+	cvar_t* var;
+
+	for (var = cvar_vars; var; var = var->next)
+	{
+		if (var->server)
+		{
+			i++;
+		}
+	}
+
+	return i;
+}
+
+void Cvar_CmdInit( void )
+{
+	Cmd_AddCommand("cvarlist", Cmd_CvarList_f);
+}

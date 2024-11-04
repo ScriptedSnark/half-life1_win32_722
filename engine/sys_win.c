@@ -610,6 +610,12 @@ void VID_Stub( void )
 {
 }
 
+DLL_EXPORT int GetEngineState( void )
+{
+	// TODO: Implement
+	return 0;
+}
+
 BOOL WINAPI DllMain(
 	HINSTANCE hinstDLL,
 	DWORD fdwReason,
