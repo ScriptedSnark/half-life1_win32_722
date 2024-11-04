@@ -28,12 +28,30 @@ qboolean		standard_quake = TRUE, rogue, hipnotic;
 
 
 
+// TODO: Implement
 
 
 
 
 
+void Q_strcpy( char* dest, char* src )
+{
+	while (*src)
+	{
+		*dest++ = *src++;
+	}
+	*dest++ = 0;
+}
 
+void Q_strncpy( char* dest, char* src, int count )
+{
+	while (*src && count--)
+	{
+		*dest++ = *src++;
+	}
+	if (count)
+		*dest++ = 0;
+}
 
 int Q_strlen( char* str )
 {
@@ -49,7 +67,7 @@ int Q_strlen( char* str )
 
 
 
-
+// TODO: Implement
 
 
 
@@ -69,9 +87,29 @@ int Q_strcmp( char* s1, char* s2 )
 	return -1;
 }
 
+int Q_strncmp( char* s1, char* s2, int count )
+{
+	while (1)
+	{
+		if (!count--)
+			return 0;
+		if (*s1 != *s2)
+			return -1;              // strings not equal    
+		if (!*s1)
+			return 0;               // strings are equal
+		s1++;
+		s2++;
+	}
+	
+	return -1;
+}
 
 
 
+
+
+
+// TODO: Implement
 
 
 
@@ -216,7 +254,7 @@ float Q_atof( char* str )
 
 
 
-
+// TODO: Implement
 
 
 
@@ -269,7 +307,7 @@ int COM_CheckParm( char* parm )
 }
 
 
-
+// TODO: Implement
 
 
 /*
@@ -338,3 +376,9 @@ void COM_InitArgv( int argc, char** argv )
 		standard_quake = FALSE;
 	}
 }
+
+
+
+
+
+// TODO: Implement

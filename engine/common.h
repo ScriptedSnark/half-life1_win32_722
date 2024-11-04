@@ -12,10 +12,14 @@ typedef int qboolean;
 
 
 
+
+void Q_strcpy( char* dest, char* src );
+void Q_strncpy( char* dest, char* src, int count );
 int Q_strlen( char* str );
 
 
 int Q_strcmp( char* s1, char* s2 );
+int Q_strncmp( char* s1, char* s2, int count );
 
 int	Q_atoi( char* str );
 float Q_atof( char* str );

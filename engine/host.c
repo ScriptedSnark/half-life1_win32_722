@@ -19,11 +19,31 @@ qboolean	host_initialized;		// true if into command execution
 
 jmp_buf 	host_abortserver;
 
+
 // TODO: Implement
+
 
 cvar_t	developer = { "developer", "0" };
 
+
 // TODO: Implement
+
+
+/*
+=================
+SV_BroadcastPrintf
+
+Sends text to all active clients
+=================
+*/
+void SV_BroadcastPrintf( char* fmt, ... )
+{
+	// TODO: Implement
+}
+
+
+// TODO: Implement
+
 
 /*
 ====================
@@ -49,5 +69,6 @@ void Host_Shutdown( void )
 {
 	// TODO: Implement
 }
+
 
 // TODO: Implement

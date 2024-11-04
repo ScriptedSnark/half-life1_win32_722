@@ -4,6 +4,34 @@
 
 
 
+// TODO: Implement
+
+
+/*
+========================
+Z_Free
+========================
+*/
+void Z_Free( void* ptr )
+{
+	// TODO: Implement
+}
+
+
+/*
+========================
+Z_Malloc
+========================
+*/
+void* Z_Malloc( int size )
+{
+	// TODO: Implement
+	return NULL;
+}
+
+
+// TODO: Implement
+
 
 /*
 =================
@@ -17,3 +45,6 @@ void* Hunk_TempAlloc( int size )
 	// TODO: Implement
 	return NULL;
 }
+
+
+// TODO: Implement

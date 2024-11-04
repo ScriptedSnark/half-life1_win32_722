@@ -65,8 +65,8 @@ Zone block
 */
 
 
-
-
+void Z_Free( void* ptr );
+void* Z_Malloc( int size );			// returns 0 filled memory
 
 
 

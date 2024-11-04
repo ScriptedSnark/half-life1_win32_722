@@ -21,7 +21,6 @@
   <ItemGroup>
     <ClInclude Include="..\..\common\const.h" />
     <ClInclude Include="..\..\common\crc.h" />
-    <ClInclude Include="..\..\common\cvardef.h" />
     <ClInclude Include="..\..\common\dll_state.h" />
     <ClInclude Include="..\..\common\exefuncs.h" />
     <ClInclude Include="..\..\common\platform.h" />
@@ -31,6 +30,7 @@
     <ClInclude Include="..\..\engine\CONSOLE.H" />
     <ClInclude Include="..\..\engine\custom.h" />
     <ClInclude Include="..\..\engine\cvar.h" />
+    <ClInclude Include="..\..\engine\cvardef.h" />
     <ClInclude Include="..\..\engine\eiface.h" />
     <ClInclude Include="..\..\engine\mathlib.h" />
     <ClInclude Include="..\..\engine\net.h" />
@@ -48,6 +48,7 @@
   <ItemGroup>
     <ClCompile Include="..\..\engine\common.c" />
     <ClCompile Include="..\..\engine\CONSOLE.C" />
+    <ClCompile Include="..\..\engine\cvar.c" />
     <ClCompile Include="..\..\engine\host.c" />
     <ClCompile Include="..\..\engine\net_ws.c" />
     <ClCompile Include="..\..\engine\pe_export.c" />

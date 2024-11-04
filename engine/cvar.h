@@ -43,13 +43,29 @@ interface from being ambiguous.
 */
 
 
+DLL_EXPORT void		Cvar_Set( char* var_name, char* value );
+// equivelant to "<name> <variable>" typed at the console
+
+
+
+
+DLL_EXPORT float	Cvar_VariableValue( char* var_name );
+// returns 0 if not defined or non numeric
+
+DLL_EXPORT int		Cvar_VariableInt( char* var_name );
+
+DLL_EXPORT char*	Cvar_VariableString( char* var_name );
+// returns an empty string if not defined
+
+DLL_EXPORT char*	Cvar_CompleteVariable( char* partial );
+// attempts to match a partial variable name for command line completion
+// returns NULL if nothing fits
 
 
 
 
 
-
-
+cvar_t* Cvar_FindVar( char* var_name );
 
 extern cvar_t* cvar_vars;
 
