@@ -1169,7 +1169,6 @@ void LoadEntityDLLs( char* szBaseDir )
 		// Load the game .dll
 		sprintf(szDllWildcard, "%s\\%s\\*.dll", szBaseDir, "valve\\dlls");
 
-		// TODO: Implement
 		struct _finddata_t findData;
 		intptr_t findfn = _findfirst(szDllWildcard, &findData);
 		if (findfn != -1)
