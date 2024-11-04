@@ -84,6 +84,9 @@
     <ClInclude Include="..\..\engine\CONSOLE.H">
       <Filter>Header Files\common</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\engine\zone.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\engine\sys_win.c">
@@ -105,6 +108,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\engine\CONSOLE.C">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\engine\zone.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\engine\sv_main.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

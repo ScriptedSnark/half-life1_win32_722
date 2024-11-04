@@ -22,7 +22,10 @@ float Q_atof( char* str );
 
 //============================================================================
 
+extern	char		com_token[1024];
+extern qboolean com_ignorecolons;
 
+char* COM_Parse( char* data );
 
 
 extern	int		com_argc;

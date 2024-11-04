@@ -21,6 +21,10 @@ jmp_buf 	host_abortserver;
 
 // TODO: Implement
 
+cvar_t	developer = { "developer", "0" };
+
+// TODO: Implement
+
 /*
 ====================
 Host_Init

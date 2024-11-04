@@ -11,9 +11,12 @@ static char* argvdummy = " ";
 static char* safeargvs[NUM_SAFE_ARGVS] =
 	{"-stdvid", "-nolan", "-nosound", "-nocdaudio", "-nojoy", "-nomouse", "-dibonly"};
 
+qboolean com_ignorecolons = FALSE;  // YWB:  Ignore colons as token separators in COM_Parse
+
 cvar_t  registered = { "registered","0" };
 cvar_t  cmdline = { "cmdline","0", FALSE, TRUE };
 
+char	com_token[1024];
 int		com_argc;
 char** com_argv;
 
@@ -228,8 +231,18 @@ float Q_atof( char* str )
 
 
 
+/*
+==============
+COM_Parse
 
-
+Parse a token out of a string
+==============
+*/
+char* COM_Parse( char* data )
+{
+	// TODO: Implement
+	return NULL;
+}
 
 
 /*

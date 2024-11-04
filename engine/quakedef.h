@@ -10,6 +10,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <setjmp.h>
+#include <time.h>
 
 #ifdef __cplusplus
 #define C_EXTERN extern "C"
@@ -48,7 +49,7 @@
 #include "eiface.h"
 #include "pr_dlls.h"
 #include "sys.h"
-
+#include "zone.h"
 
 
 
@@ -111,6 +112,8 @@ typedef struct
 // host
 //
 extern	quakeparms_t host_parms;
+
+extern	cvar_t		developer;
 
 extern	qboolean	host_initialized;		// true if into command execution
 
