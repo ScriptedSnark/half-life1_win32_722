@@ -4,6 +4,8 @@
 #include "winquake.h"
 #include "exefuncs.h"
 
+#include <io.h>
+
 DWORD				gProcessorSpeed;
 int					gHasMMXTechnology;
 
@@ -1168,17 +1170,17 @@ void LoadEntityDLLs( char* szBaseDir )
 		sprintf(szDllWildcard, "%s\\%s\\*.dll", szBaseDir, "valve\\dlls");
 
 		// TODO: Implement
-//		_finddata32_t findData;
-//		intptr_t findfn = _findfirst(szDllWildcard, &findData);
-//		if (findfn != -1)
-//		{
-//			do
-//			{
-//				sprintf(szDllFilename, "%s\\%s\\%s", szBaseDir, "valve\\dlls", findData.name);
-//				LoadThisDll(szDllFilename);
-//			} while (_findnext(findfn, &findData) == 0);
-//		}
-//		_findclose(findfn);
+		struct _finddata_t findData;
+		intptr_t findfn = _findfirst(szDllWildcard, &findData);
+		if (findfn != -1)
+		{
+			do
+			{
+				sprintf(szDllFilename, "%s\\%s\\%s", szBaseDir, "valve\\dlls", findData.name);
+				LoadThisDll(szDllFilename);
+			} while (_findnext(findfn, &findData) == 0);
+		}
+		_findclose(findfn);
 	}
 
 	// Check if it provides the original dll functions
