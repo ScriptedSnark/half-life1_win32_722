@@ -75,6 +75,7 @@
 
 
 
+#include "keys.h"
 #include "console.h"
 
 
