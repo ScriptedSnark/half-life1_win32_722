@@ -17,6 +17,7 @@
     <ClCompile Include="..\..\engine\cvar.c" />
     <ClCompile Include="..\..\engine\gl_screen.c" />
     <ClCompile Include="..\..\engine\host.c" />
+    <ClCompile Include="..\..\engine\KEYS.C" />
     <ClCompile Include="..\..\engine\net_ws.c" />
     <ClCompile Include="..\..\engine\pe_export.c" />
     <ClCompile Include="..\..\engine\pr_cmds.c" />
@@ -40,6 +41,7 @@
     <ClInclude Include="..\..\engine\cvar.h" />
     <ClInclude Include="..\..\engine\cvardef.h" />
     <ClInclude Include="..\..\engine\eiface.h" />
+    <ClInclude Include="..\..\engine\keys.h" />
     <ClInclude Include="..\..\engine\mathlib.h" />
     <ClInclude Include="..\..\engine\net.h" />
     <ClInclude Include="..\..\engine\progdefs.h" />
