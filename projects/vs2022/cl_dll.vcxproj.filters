@@ -39,5 +39,8 @@
     <ClInclude Include="..\..\cl_dll\hud.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\dlls\cdll_dll.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

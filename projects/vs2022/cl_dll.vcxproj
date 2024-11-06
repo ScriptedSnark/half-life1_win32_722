@@ -86,6 +86,7 @@
     <ClInclude Include="..\..\cl_dll\parsemsg.h" />
     <ClInclude Include="..\..\cl_dll\util.h" />
     <ClInclude Include="..\..\cl_dll\util_vector.h" />
+    <ClInclude Include="..\..\dlls\cdll_dll.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
