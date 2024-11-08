@@ -82,14 +82,14 @@ typedef struct
 typedef struct cl_enginefuncs_s
 {
 	// sprite handlers
-	HSPRITE_t (*pfnSPR_Load)			(char* szPicName);
+	HSPRITE_t (*pfnSPR_Load)			(const char* szPicName);
 	int		(*pfnSPR_Frames)		(HSPRITE_t hPic);
 	int		(*pfnSPR_Height)		(HSPRITE_t hPic, int frame);
 	int		(*pfnSPR_Width)			(HSPRITE_t hPic, int frame);
 	void	(*pfnSPR_Set)			(HSPRITE_t hPic, int r, int g, int b);
-	void	(*pfnSPR_Draw)			(int frame, int x, int y, wrect_t* prc);
-	void	(*pfnSPR_DrawHoles)		(int frame, int x, int y, wrect_t* prc);
-	void	(*pfnSPR_DrawAdditive)	(int frame, int x, int y, wrect_t* prc);
+	void	(*pfnSPR_Draw)			(int frame, int x, int y, const wrect_t* prc);
+	void	(*pfnSPR_DrawHoles)		(int frame, int x, int y, const wrect_t* prc);
+	void	(*pfnSPR_DrawAdditive)	(int frame, int x, int y, const wrect_t* prc);
 	void	(*pfnSPR_EnableScissor)	(int x, int y, int width, int height);
 	void	(*pfnSPR_DisableScissor)(void);
 	client_sprite_t* (*pfnSPR_GetList)		(char* psz, int* piCount);
@@ -117,14 +117,14 @@ typedef struct cl_enginefuncs_s
 	void	(*pfnPlaySoundByIndex)	(int iSound, float volume);
 
 	// vector helpers
-	void  (*pfnAngleVectors)		(float* vecAngles, float* forward, float* right, float* up);
+	void  (*pfnAngleVectors)		(const float* vecAngles, float* forward, float* right, float* up);
 
 	// text message system
-	client_textmessage_t* (*pfnTextMessageGet)	(char* pName);
-	int	  (*pfnDrawCharacter)		(int x, int y, int number, int r, int g, int b);
-	int   (*pfnDrawConsoleString)	(int x, int y, char* string);
-	void  (*pfnDrawConsoleStringLen) (char* string, int* length, int* height);
-	void  (*pfnConsolePrint) (char* string);
+	client_textmessage_t	*(*pfnTextMessageGet)	( const char *pName );
+	int	  (*pfnDrawCharacter)		( int x, int y, int number, int r, int g, int b );
+	int   (*pfnDrawConsoleString)	( int x, int y, char *string );
+	void  (*pfnDrawConsoleStringLen) (  const char *string, int *length, int *height );
+	void  (*pfnConsolePrint) ( const char *string );
 	
 } cl_enginefunc_t;
 
