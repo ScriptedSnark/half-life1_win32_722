@@ -84,26 +84,6 @@ int READ_LONG( void )
 	return c;
 }
 
-float READ_FLOAT( void )
-{
-	union
-	{
-		byte    b[4];
-		float   f;
-		int     l;
-	} dat;
-	
-	dat.b[0] = gpBuf[giRead];
-	dat.b[1] = gpBuf[giRead+1];
-	dat.b[2] = gpBuf[giRead+2];
-	dat.b[3] = gpBuf[giRead+3];
-	giRead += 4;
-	
-//	dat.l = LittleLong (dat.l);
-
-	return dat.f;   
-}
-
 char* READ_STRING( void )
 {
 	static char     string[2048];
