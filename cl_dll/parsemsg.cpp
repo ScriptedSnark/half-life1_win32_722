@@ -67,12 +67,6 @@ int READ_SHORT( void )
 	return c;
 }
 
-int READ_WORD( void )
-{
-	return READ_SHORT();
-}
-
-
 int READ_LONG( void )
 {
 	int     c;
@@ -139,14 +133,3 @@ float READ_COORD( void )
 {
 	return (float)(READ_SHORT() * (1.0/8));
 }
-
-float READ_ANGLE( void )
-{
-	return (float)(READ_CHAR() * (360.0/256));
-}
-
-float READ_HIRESANGLE( void )
-{
-	return (float)(READ_SHORT() * (360.0/65536));
-}
-
