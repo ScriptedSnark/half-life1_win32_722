@@ -105,6 +105,11 @@ extern	int		key_repeats[256];
 extern	int		key_count;			// incremented every key event
 extern	int		key_lastpress;
 
+DLL_EXPORT void Key_Event( int key, qboolean down );
+DLL_EXPORT void Key_ClearStates( void );
 
-
-
+void	Key_Init( void );
+void	Key_WriteBindings( FILE* f );
+void	Key_SetBinding( int keynum, char* binding );
+int		Key_StringToKeynum( char* str );
+char*	Key_KeynumToString( int keynum );

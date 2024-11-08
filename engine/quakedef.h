@@ -48,6 +48,7 @@
 #include "dll_state.h"
 #include "eiface.h"
 #include "pr_dlls.h"
+#include "vid.h"
 #include "sys.h"
 #include "zone.h"
 
@@ -66,8 +67,8 @@
 #include "cmd.h"
 
 
-
-
+#include "client.h"
+#include "progs.h"
 #include "server.h"
 
 

@@ -18,6 +18,7 @@
     <ClInclude Include="..\..\common\platform.h" />
     <ClInclude Include="..\..\engine\anorms.h" />
     <ClInclude Include="..\..\engine\anorm_dots.h" />
+    <ClInclude Include="..\..\engine\client.h" />
     <ClInclude Include="..\..\engine\cmd.h" />
     <ClInclude Include="..\..\engine\common.h" />
     <ClInclude Include="..\..\engine\CONSOLE.H" />
@@ -40,6 +41,7 @@
     <ClInclude Include="..\..\engine\zone.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\engine\CL_MAIN.C" />
     <ClCompile Include="..\..\engine\cmd.c" />
     <ClCompile Include="..\..\engine\common.c" />
     <ClCompile Include="..\..\engine\CONSOLE.C" />
@@ -53,6 +55,7 @@
     <ClCompile Include="..\..\engine\SND_WIN.C" />
     <ClCompile Include="..\..\engine\sv_main.c" />
     <ClCompile Include="..\..\engine\sys_win.c" />
+    <ClCompile Include="..\..\engine\vid_win.c" />
     <ClCompile Include="..\..\engine\zone.c" />
   </ItemGroup>
   <ItemGroup>

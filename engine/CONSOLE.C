@@ -6,6 +6,30 @@
 
 // TODO: Implement
 
+
+qboolean 	con_forcedup;		// because no entities to refresh
+
+int			con_totallines;		// total lines in console scrollback
+int			con_backscroll;		// lines up from bottom to display
+int			con_rows = 0;
+
+
+// TODO: Implement
+
+
+/*
+================
+Con_ToggleConsole_f
+================
+*/
+void Con_ToggleConsole_f( void )
+{
+	// TODO: Implement
+}
+
+
+// TODO: Implement
+
 /*
 ================
 Con_Printf

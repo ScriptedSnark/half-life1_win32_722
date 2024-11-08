@@ -60,6 +60,12 @@
     <ClCompile Include="..\..\engine\KEYS.C">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\engine\CL_MAIN.C">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\engine\GL_VIDNT.C">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\engine\anorm_dots.h">
@@ -144,6 +150,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\engine\keys.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\engine\client.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
