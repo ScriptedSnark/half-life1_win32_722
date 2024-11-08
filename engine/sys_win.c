@@ -612,8 +612,7 @@ void VID_Stub( void )
 
 DLL_EXPORT int GetEngineState( void )
 {
-	// TODO: Implement
-	return 0;
+	return cls.state;
 }
 
 BOOL WINAPI DllMain(

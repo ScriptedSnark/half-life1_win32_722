@@ -9,6 +9,36 @@
 
 /*
 ============
+Cbuf_AddText
+
+Adds command text at the end of the buffer
+============
+*/
+void Cbuf_AddText( char* text )
+{
+	// TODO: Implement
+}
+
+
+// TODO: Implement
+
+
+/*
+============
+Cbuf_Execute
+============
+*/
+void Cbuf_Execute( void )
+{
+	// TODO: Implement
+}
+
+
+// TODO: Implement
+
+
+/*
+============
 Cmd_Init
 ============
 */
@@ -63,6 +93,19 @@ qboolean	Cmd_Exists( char* cmd_name )
 {
 	// TODO: Implement
 	return FALSE;
+}
+
+
+
+/*
+============
+Cmd_CompleteCommand
+============
+*/
+char* Cmd_CompleteCommand( char* partial )
+{
+	// TODO: Implement
+	return NULL;
 }
 
 

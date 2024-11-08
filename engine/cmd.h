@@ -15,10 +15,19 @@ The game starts with a Cbuf_AddText ("exec quake.rc\n"); Cbuf_Execute ();
 */
 
 
+void Cbuf_AddText( char* text );
+// as new commands are generated from the console or keybindings,
+// the text is added to the end of the command buffer.
 
 
 
 
+
+void Cbuf_Execute( void );
+// Pulls off \n terminated lines of text from the command buffer and sends
+// them through Cmd_ExecuteString.  Stops when the buffer is empty.
+// Normally called once per frame, but may be explicitly invoked.
+// Do not call inside a command function!
 
 //===========================================================================
 
@@ -53,6 +62,10 @@ void	Cmd_AddCommand( char* cmd_name, xcommand_t function );
 
 qboolean Cmd_Exists( char* cmd_name );
 // used by the cvar code to check for cvar / command name overlap
+
+char* Cmd_CompleteCommand( char* partial );
+// attempts to match a partial command for automatic command line completion
+// returns NULL if nothing fits
 
 
 

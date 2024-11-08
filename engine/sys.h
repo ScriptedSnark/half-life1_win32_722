@@ -77,6 +77,10 @@ uint32 FunctionFromName( const char* pName );
 
 typedef long LONG;
 
+extern int giActive;
+extern int giStateInfo;
+extern int giSubState;
+
 void BuildExportTable( extensiondll_t* pextdll, const char* pszDllFilename );
 
 void Sys_LowFPPrecision( void );
