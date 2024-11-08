@@ -78,6 +78,15 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\cl_dll\ammo.h" />
+    <ClInclude Include="..\..\cl_dll\ammohistory.h" />
+    <ClInclude Include="..\..\cl_dll\cl_dll.h" />
+    <ClInclude Include="..\..\cl_dll\health.h" />
+    <ClInclude Include="..\..\cl_dll\hud.h" />
+    <ClInclude Include="..\..\cl_dll\parsemsg.h" />
+    <ClInclude Include="..\..\cl_dll\util.h" />
+    <ClInclude Include="..\..\cl_dll\util_vector.h" />
+    <ClInclude Include="..\..\dlls\cdll_dll.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

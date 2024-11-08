@@ -1,0 +1,115 @@
+//
+//  parsemsg.cpp
+//
+typedef unsigned char byte;
+#define true 1
+
+static byte *gpBuf;
+static int giSize;
+static int giRead;
+static int giBadRead;
+
+void BEGIN_READ( void *buf, int size )
+{
+	giRead = 0;
+	giBadRead = 0;
+	giSize = size;
+	gpBuf = (byte*)buf;
+}
+
+
+int READ_CHAR( void )
+{
+	int     c;
+	
+	if (giRead + 1 > giSize)
+	{
+		giBadRead = true;
+		return -1;
+	}
+		
+	c = (signed char)gpBuf[giRead];
+	giRead++;
+	
+	return c;
+}
+
+int READ_BYTE( void )
+{
+	int     c;
+	
+	if (giRead+1 > giSize)
+	{
+		giBadRead = true;
+		return -1;
+	}
+		
+	c = (unsigned char)gpBuf[giRead];
+	giRead++;
+	
+	return c;
+}
+
+int READ_SHORT( void )
+{
+	int     c;
+	
+	if (giRead+2 > giSize)
+	{
+		giBadRead = true;
+		return -1;
+	}
+		
+	c = (short)( gpBuf[giRead] + ( gpBuf[giRead+1] << 8 ) );
+	
+	giRead += 2;
+	
+	return c;
+}
+
+int READ_LONG( void )
+{
+	int     c;
+	
+	if (giRead+4 > giSize)
+	{
+		giBadRead = true;
+		return -1;
+	}
+		
+ 	c = gpBuf[giRead] + (gpBuf[giRead + 1] << 8) + (gpBuf[giRead + 2] << 16) + (gpBuf[giRead + 3] << 24);
+	
+	giRead += 4;
+	
+	return c;
+}
+
+char* READ_STRING( void )
+{
+	static char     string[2048];
+	int             l,c;
+
+	string[0] = 0;
+
+	l = 0;
+	do
+	{
+		if ( giRead+1 > giSize )
+			break; // no more characters
+
+		c = READ_CHAR();
+		if (c == -1 || c == 0)
+			break;
+		string[l] = c;
+		l++;
+	} while (l < sizeof(string)-1);
+	
+	string[l] = 0;
+	
+	return string;
+}
+
+float READ_COORD( void )
+{
+	return (float)(READ_SHORT() * (1.0/8));
+}
