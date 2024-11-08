@@ -324,7 +324,7 @@ private:
 //
 //-----------------------------------------------------
 //
-const int HUD_SPRITE_COUNT = 53;
+const int HUD_SPRITE_COUNT = 54;
 class CHud
 {
 private:
@@ -333,7 +333,6 @@ private:
 	int							m_iLogo;
 	client_sprite_t				*m_pSpriteList;
 	int							m_iSpriteCount;
-	int							m_iFOV;
 	float						m_flOldSensitivity;
 
 public:
@@ -345,6 +344,7 @@ public:
 	Vector	m_vecAngles;
 	int		m_iKeyBits;
 	int		m_iHideHUDDisplay;
+	int		m_iFOV;
 
 	int m_iFontHeight;
 	int DrawHudNumber(int x, int y, int iFlags, int iNumber, int r, int g, int b );
@@ -376,9 +376,6 @@ public:
 
 	CHud() : m_iSpriteCount(0), m_pHudList(NULL) {}  
 	~CHud();			// destructor, frees allocated memory
-
-	// user commands
-	void UserCmd_FOV();
 
 	// user messages
 	int _cdecl MsgFunc_Damage(char *pszName, int iSize, void *pbuf );
