@@ -76,13 +76,13 @@ public:
 	void Think(void);
 	void Reset(void);
 	int DrawWList(float flTime);
-	int MsgFunc_CurWeapon(char *pszName, int iSize, void *pbuf);
-	int MsgFunc_WeaponList(char *pszName, int iSize, void *pbuf);
-	int MsgFunc_AmmoX(char *pszName, int iSize, void *pbuf);
-	int MsgFunc_AmmoPickup( char *pszName, int iSize, void *pbuf );
-	int MsgFunc_WeapPickup( char *pszName, int iSize, void *pbuf );
-	int MsgFunc_ItemPickup( char *pszName, int iSize, void *pbuf );
-	int MsgFunc_HideWeapon( char *pszName, int iSize, void *pbuf );
+	int MsgFunc_CurWeapon(const char* pszName, int iSize, void *pbuf);
+	int MsgFunc_WeaponList(const char* pszName, int iSize, void *pbuf);
+	int MsgFunc_AmmoX(const char* pszName, int iSize, void *pbuf);
+	int MsgFunc_AmmoPickup( const char* pszName, int iSize, void *pbuf );
+	int MsgFunc_WeapPickup( const char* pszName, int iSize, void *pbuf );
+	int MsgFunc_ItemPickup( const char* pszName, int iSize, void *pbuf );
+	int MsgFunc_HideWeapon( const char* pszName, int iSize, void *pbuf );
 
 	void _cdecl UserCmd_Slot1( void );
 	void _cdecl UserCmd_Slot2( void );
@@ -115,7 +115,7 @@ public:
 	int Init( void );
 	int VidInit( void );
 	int Draw(float flTime);
-	int MsgFunc_Geiger(char *pszName, int iSize, void *pbuf);
+	int MsgFunc_Geiger(const char* pszName, int iSize, void *pbuf);
 	
 private:
 	int m_iGeigerRange;
@@ -131,7 +131,7 @@ public:
 	int Init( void );
 	int VidInit( void );
 	int Draw(float flTime);
-	int MsgFunc_Train(char *pszName, int iSize, void *pbuf);
+	int MsgFunc_Train(const char* pszName, int iSize, void *pbuf);
 
 private:
 	HSPRITE_t m_hSprite;
@@ -150,7 +150,7 @@ public:
 	int Draw( float flTime );
 	void Reset( void );
 
-	int MsgFunc_MOTD( char *pszName, int iSize, void *pbuf );
+	int MsgFunc_MOTD( const char *pszName, int iSize, void *pbuf );
 
 protected:
 	enum { MAX_MOTD_LENGTH = 241, };
@@ -172,7 +172,7 @@ public:
 	int Draw( float flTime );
 	void UserCmd_ShowScores( void );
 	void UserCmd_HideScores( void );
-	int MsgFunc_ScoreInfo( char *pszName, int iSize, void *pbuf );
+	int MsgFunc_ScoreInfo( const char *pszName, int iSize, void *pbuf );
 	void DeathMsg( int killer, int victim );
 
 	struct extra_player_info_t {
@@ -205,7 +205,7 @@ public:
 	void InitHUDData( void );
 	int VidInit( void );
 	int Draw( float flTime );
-	int MsgFunc_DeathMsg( char *pszName, int iSize, void *pbuf );
+	int MsgFunc_DeathMsg( const char *pszName, int iSize, void *pbuf );
 };
 
 //
@@ -218,7 +218,7 @@ public:
 	void InitHUDData( void );
 	int VidInit( void );
 	int Draw( float flTime );
-	int MsgFunc_SayText( char *pszName, int iSize, void *pbuf );
+	int MsgFunc_SayText( const char *pszName, int iSize, void *pbuf );
 	void EnsureTextFitsInOneLineAndWrapIfHaveTo( int line );
 };
 
@@ -231,7 +231,7 @@ public:
 	int Init( void );
 	int VidInit( void );
 	int Draw(float flTime);
-	int MsgFunc_Battery(char *pszName,  int iSize, void *pbuf );
+	int MsgFunc_Battery(const char *pszName,  int iSize, void *pbuf );
 	
 private:
 	HSPRITE_t m_hSprite1;
@@ -254,8 +254,8 @@ public:
 	int VidInit( void );
 	int Draw(float flTime);
 	void Reset( void );
-	int MsgFunc_Flashlight(char *pszName,  int iSize, void *pbuf );
-	int MsgFunc_FlashBat(char *pszName,  int iSize, void *pbuf );
+	int MsgFunc_Flashlight(const char *pszName,  int iSize, void *pbuf );
+	int MsgFunc_FlashBat(const char *pszName,  int iSize, void *pbuf );
 	
 private:
 	HSPRITE_t m_hSprite1;
@@ -300,8 +300,8 @@ public:
 	int Init( void );
 	int VidInit( void );
 	int Draw(float flTime);
-	int MsgFunc_HudText(char *pszName, int iSize, void *pbuf);
-	int MsgFunc_GameTitle(char *pszName, int iSize, void *pbuf);
+	int MsgFunc_HudText(const char *pszName, int iSize, void *pbuf);
+	int MsgFunc_GameTitle(const char *pszName, int iSize, void *pbuf);
 
 	float FadeBlend( float fadein, float fadeout, float hold, float localTime );
 	int	XPosition( float x, int width, int lineWidth );
@@ -378,11 +378,11 @@ public:
 	~CHud();			// destructor, frees allocated memory
 
 	// user messages
-	int _cdecl MsgFunc_Damage(char *pszName, int iSize, void *pbuf );
-	int _cdecl MsgFunc_Logo(char *pszName,  int iSize, void *pbuf);
-	int _cdecl MsgFunc_ResetHUD(char *pszName,  int iSize, void *pbuf);
-	void _cdecl MsgFunc_InitHUD( char *pszName, int iSize, void *pbuf );
-	int _cdecl MsgFunc_SetFOV(char *pszName,  int iSize, void *pbuf);
+	int _cdecl MsgFunc_Damage(const char* pszName, int iSize, void *pbuf );
+	int _cdecl MsgFunc_Logo(const char* pszName,  int iSize, void *pbuf);
+	int _cdecl MsgFunc_ResetHUD(const char* pszName,  int iSize, void *pbuf);
+	void _cdecl MsgFunc_InitHUD( const char* pszName, int iSize, void *pbuf );
+	int _cdecl MsgFunc_SetFOV(const char* pszName,  int iSize, void *pbuf);
 
 	// Screen information
 	SCREENINFO	m_scrinfo;
