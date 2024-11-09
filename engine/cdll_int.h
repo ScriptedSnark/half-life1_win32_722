@@ -100,7 +100,7 @@ typedef struct cl_enginefuncs_s
 	void	(*pfnSetCrosshair)		(HSPRITE_t hspr, wrect_t rc, int r, int g, int b);
 
 	// cvar handlers
-	int		(*pfnRegisterVariable)  (char* szName, char* szValue, int flags);
+	int		(*pfnRegisterVariable)  (char* szName, char* szValue);
 	float	(*pfnGetCvarFloat)		(char* szName);
 	char* (*pfnGetCvarString)		(char* szName);
 
