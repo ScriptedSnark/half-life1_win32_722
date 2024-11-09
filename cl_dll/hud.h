@@ -324,7 +324,65 @@ private:
 //
 //-----------------------------------------------------
 //
-const int HUD_SPRITE_COUNT = 54;
+enum
+{
+	HUD_selection = 0,
+	HUD_bucket0 = 1,
+	HUD_bucket1 = 2,
+	HUD_bucket2 = 3,
+	HUD_bucket3 = 4,
+	HUD_bucket4 = 5,
+	HUD_bucket5 = 6,
+	HUD_dmg_bio = 7,
+	HUD_dmg_chem = 8,
+	HUD_dmg_cold = 9,
+	HUD_dmg_drown = 10,
+	HUD_dmg_heat = 11,
+	HUD_dmg_gas = 12,
+	HUD_dmg_rad = 13,
+	HUD_dmg_shock = 14,
+	HUD_number_0 = 15,
+	HUD_number_1 = 16,
+	HUD_number_2 = 17,
+	HUD_number_3 = 18,
+	HUD_number_4 = 19,
+	HUD_number_5 = 20,
+	HUD_number_6 = 21,
+	HUD_number_7 = 22,
+	HUD_number_8 = 23,
+	HUD_number_9 = 24,
+	HUD_divider = 25,
+	HUD_cross = 26,
+	HUD_suit_full = 27,
+	HUD_suit_empty = 28,
+	HUD_flash_full = 29,
+	HUD_flash_empty = 30,
+	HUD_flash_beam = 31,
+	HUD_title_half = 32,
+	HUD_title_life = 33,
+	HUD_item_healthkit = 34,
+	HUD_item_battery = 35,
+	HUD_item_longjump = 36,
+	HUD_d_skull = 37,
+	HUD_d_crowbar = 38,
+	HUD_d_9mmhandgun = 39,
+	HUD_d_357 = 40,
+	HUD_d_9mmAR = 41,
+	HUD_d_shotgun = 42,
+	HUD_d_bolt = 43,
+	HUD_d_crossbow = 44,
+	HUD_d_rpg_rocket = 45,
+	HUD_d_taucannon = 46,
+	HUD_d_gluongun = 47,
+	HUD_d_hornet = 48,
+	HUD_d_satchel = 49,
+	HUD_d_tripmine = 50,
+	HUD_d_snark = 51,
+	HUD_d_grenade = 52,
+	HUD_d_tracktrain = 53,
+	HUD_SPRITE_COUNT = 54
+};
+
 class CHud
 {
 private:
