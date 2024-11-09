@@ -433,7 +433,6 @@ public:
 	int UpdateClientData( client_data_t *cdata, float time );
 
 	CHud() : m_iSpriteCount(0), m_pHudList(NULL) {}  
-	~CHud();			// destructor, frees allocated memory
 
 	// user messages
 	int _cdecl MsgFunc_Logo(const char* pszName,  int iSize, void *pbuf);
