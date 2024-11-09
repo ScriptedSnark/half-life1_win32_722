@@ -23,7 +23,7 @@
 
 inline float CVAR_GET_FLOAT( const char *x ) {	return gEngfuncs.pfnGetCvarFloat( (char*)x ); }
 inline char* CVAR_GET_STRING( const char *x ) {	return gEngfuncs.pfnGetCvarString( (char*)x ); }
-inline void CVAR_CREATE( const char *cv, const char *val, const int flags ) {	gEngfuncs.pfnRegisterVariable( (char*)cv, (char*)val, flags ); }
+inline void CVAR_CREATE( const char *cv, const char *val ) {	gEngfuncs.pfnRegisterVariable( (char*)cv, (char*)val ); }
 
 #define SPR_Load (*gEngfuncs.pfnSPR_Load)
 #define SPR_Set (*gEngfuncs.pfnSPR_Set)
@@ -89,11 +89,6 @@ inline void ConsolePrint( const char *string )
 	gEngfuncs.pfnConsolePrint( string );
 }
 
-inline void CenterPrint( const char *string )
-{
-	gEngfuncs.pfnCenterPrint( string );
-}
-
 // returns the players name of entity no.
 #define GetPlayerInfo (*gEngfuncs.pfnGetPlayerInfo)
 
@@ -116,6 +111,23 @@ void ScaleColors( int &r, int &g, int &b, int a );
 #pragma warning( disable: 4244 )
 // disable 'truncation from 'const double' to 'float' warning message
 #pragma warning( disable: 4305 )
+
+extern const char** g_rgszSpriteNames;
+
+// GetSpriteIndex()
+// searches through the sprite list loaded from hud.txt for a name matching SpriteName
+// returns an index into the gHUD.m_rghSprites[] array
+// returns -1 if sprite not found
+inline int GetSpriteIndex(const char* SpriteName)
+{
+	// look through the loaded sprite name list for SpriteName
+	for (int i = 0; g_rgszSpriteNames[i]; i++)
+	{
+		if (!strcmp(SpriteName, g_rgszSpriteNames[i]))
+			return i;
+	}
+	return -1; // invalid sprite
+}
 
 inline void UnpackRGB(int &r, int &g, int &b, unsigned long ulRGB)\
 {\

@@ -409,7 +409,6 @@ public:
 	int DrawHudString(int x, int y, int iMaxX, char *szString, int r, int g, int b );
 	int DrawHudStringReverse( int xpos, int ypos, int iMinX, char *szString, int r, int g, int b );
 	int DrawHudNumberString( int xpos, int ypos, int iMinX, int iNumber, int r, int g, int b );
-	int GetNumWidth(int iNumber, int iFlags);
 
 	HSPRITE_t m_rghSprites[HUD_SPRITE_COUNT]; // the sprites loaded from hud.txt
 	wrect_t m_rgrcRects[HUD_SPRITE_COUNT];
