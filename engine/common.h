@@ -46,3 +46,7 @@ void COM_InitArgv( int argc, char** argv );
 
 
 
+
+
+
+int build_number( void );

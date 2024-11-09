@@ -42,6 +42,7 @@
     <ClInclude Include="..\..\engine\zone.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\engine\buildnum.c" />
     <ClCompile Include="..\..\engine\CL_MAIN.C" />
     <ClCompile Include="..\..\engine\cmd.c" />
     <ClCompile Include="..\..\engine\common.c" />
