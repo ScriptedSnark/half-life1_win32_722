@@ -38,6 +38,9 @@
 #define	MAX_QPATH		64			// max length of a quake game pathname
 
 
+#define	MAX_SFX				512
+
+
 
 
 #include "platform.h"

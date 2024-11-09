@@ -10,6 +10,9 @@ typedef int qboolean;
 
 //============================================================================
 
+void Q_memset( void* dest, int fill, int count );
+void Q_memcpy( void* dest, void* src, int count );
+
 
 
 
@@ -43,3 +46,7 @@ void COM_InitArgv( int argc, char** argv );
 
 
 
+
+
+
+int build_number( void );

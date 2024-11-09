@@ -11,6 +11,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\engine\buildnum.c" />
     <ClCompile Include="..\..\engine\CL_MAIN.C" />
     <ClCompile Include="..\..\engine\cmd.c" />
     <ClCompile Include="..\..\engine\common.c" />
@@ -53,6 +54,7 @@
     <ClInclude Include="..\..\engine\quakedef.h" />
     <ClInclude Include="..\..\engine\screen.h" />
     <ClInclude Include="..\..\engine\server.h" />
+    <ClInclude Include="..\..\engine\studio.h" />
     <ClInclude Include="..\..\engine\sys.h" />
     <ClInclude Include="..\..\engine\vid.h" />
     <ClInclude Include="..\..\engine\vmodes.h" />
