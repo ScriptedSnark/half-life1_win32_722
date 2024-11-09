@@ -32,7 +32,55 @@ qboolean		standard_quake = TRUE, rogue, hipnotic;
 
 
 
+/*
+============================================================================
 
+					LIBRARY REPLACEMENT FUNCTIONS
+
+============================================================================
+*/
+
+void Q_memset( void* dest, int fill, int count )
+{
+	int             i;
+
+	if ((((long)dest | count) & 3) == 0)
+	{
+		count >>= 2;
+		fill = fill | (fill << 8) | (fill << 16) | (fill << 24);
+		for (i = 0; i < count; i++)
+			((int*)dest)[i] = fill;
+	}
+	else
+		for (i = 0; i < count; i++)
+			((byte*)dest)[i] = fill;
+}
+
+void Q_memcpy( void* dest, void* src, int count )
+{
+	int             i;
+
+	if ((((long)dest | (long)src | count) & 3) == 0)
+	{
+		count >>= 2;
+		for (i = 0; i < count; i++)
+			((int*)dest)[i] = ((int*)src)[i];
+	}
+	else
+		for (i = 0; i < count; i++)
+			((byte*)dest)[i] = ((byte*)src)[i];
+}
+
+int Q_memcmp( void* m1, void* m2, int count )
+{
+	while (count)
+	{
+		count--;
+		if (((byte*)m1)[count] != ((byte*)m2)[count])
+			return -1;
+	}
+	return 0;
+}
 
 void Q_strcpy( char* dest, char* src )
 {

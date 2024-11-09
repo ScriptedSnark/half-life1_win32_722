@@ -34,6 +34,7 @@
     <ClInclude Include="..\..\engine\quakedef.h" />
     <ClInclude Include="..\..\engine\screen.h" />
     <ClInclude Include="..\..\engine\server.h" />
+    <ClInclude Include="..\..\engine\studio.h" />
     <ClInclude Include="..\..\engine\sys.h" />
     <ClInclude Include="..\..\engine\vid.h" />
     <ClInclude Include="..\..\engine\vmodes.h" />
