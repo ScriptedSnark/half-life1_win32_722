@@ -959,14 +959,62 @@ void SZ_Print( sizebuf_t* buf, char* data )
 COM_SkipPath
 ============
 */
+char* COM_SkipPath( char* pathname )
+{
+	char* last;
 
-// TODO: Implement
+	last = pathname;
+	while (*pathname)
+	{
+		if (*pathname == '/')
+			last = pathname + 1;
+		pathname++;
+	}
+	return last;
+}
 
+/*
+============
+COM_StripExtension
+============
+*/
+void COM_StripExtension( char* in, char* out )
+{
+	while (*in && *in != '.')
+		*out++ = *in++;
+	*out = 0;
+}
 
+/*
+============
+COM_FileExtension
+============
+*/
+char* COM_FileExtension( char* in )
+{
+	static char exten[8];
+	int		i;
 
+	while (*in && *in != '.')
+		in++;
+	if (!*in)
+		return "";
+	in++;
+	for (i = 0; i < 7 && *in; i++, in++)
+		exten[i] = *in;
+	exten[i] = 0;
+	return exten;
+}
 
-
-
+/*
+============
+COM_FileBase
+============
+*/
+void COM_FileBase( char* in, char* out )
+{
+	// TODO: Implement
+}
 
 
 

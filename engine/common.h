@@ -126,6 +126,12 @@ extern	char** com_argv;
 int COM_CheckParm( char* parm );
 void COM_InitArgv( int argc, char** argv );
 
+char* COM_SkipPath( char* pathname );
+void COM_StripExtension( char* in, char* out );
+char* COM_FileExtension( char* in );
+void COM_FileBase( char* in, char* out );
+
+
 
 
 
