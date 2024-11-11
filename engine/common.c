@@ -25,12 +25,77 @@ char	com_cmdline[CMDLINE_LENGTH];
 
 qboolean		standard_quake = TRUE, rogue, hipnotic;
 
+// this graphic needs to be in the pak file to use registered features
+unsigned short pop[] =
+{
+ 0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000
+,0x0000,0x0000,0x6600,0x0000,0x0000,0x0000,0x6600,0x0000
+,0x0000,0x0066,0x0000,0x0000,0x0000,0x0000,0x0067,0x0000
+,0x0000,0x6665,0x0000,0x0000,0x0000,0x0000,0x0065,0x6600
+,0x0063,0x6561,0x0000,0x0000,0x0000,0x0000,0x0061,0x6563
+,0x0064,0x6561,0x0000,0x0000,0x0000,0x0000,0x0061,0x6564
+,0x0064,0x6564,0x0000,0x6469,0x6969,0x6400,0x0064,0x6564
+,0x0063,0x6568,0x6200,0x0064,0x6864,0x0000,0x6268,0x6563
+,0x0000,0x6567,0x6963,0x0064,0x6764,0x0063,0x6967,0x6500
+,0x0000,0x6266,0x6769,0x6a68,0x6768,0x6a69,0x6766,0x6200
+,0x0000,0x0062,0x6566,0x6666,0x6666,0x6666,0x6562,0x0000
+,0x0000,0x0000,0x0062,0x6364,0x6664,0x6362,0x0000,0x0000
+,0x0000,0x0000,0x0000,0x0062,0x6662,0x0000,0x0000,0x0000
+,0x0000,0x0000,0x0000,0x0061,0x6661,0x0000,0x0000,0x0000
+,0x0000,0x0000,0x0000,0x0000,0x6500,0x0000,0x0000,0x0000
+,0x0000,0x0000,0x0000,0x0000,0x6400,0x0000,0x0000,0x0000
+};
+
+/*
+
+
+All of Quake's data access is through a hierchal file system, but the contents of the file system can be transparently merged from several sources.
+
+The "base directory" is the path to the directory holding the quake.exe and all game directories.  The sys_* files pass this to host_init in quakeparms_t->basedir.  This can be overridden with the "-basedir" command line parm to allow code debugging in a different directory.  The base directory is
+only used during filesystem initialization.
+
+The "game directory" is the first tree on the search path and directory that all generated files (savegames, screenshots, demos, config files) will be saved to.  This can be overridden with the "-game" command line parameter.  The game directory can never be changed while quake is executing.  This is a precacution against having a malicious server instruct clients to write files over areas they shouldn't.
+
+The "cache directory" is only used during development to save network bandwidth, especially over ISDN / T1 lines.  If there is a cache directory
+specified, when a file is found by the normal search path, it will be mirrored
+into the cache directory, then opened there.
 
 
 
-// TODO: Implement
+FIXME:
+The file "parms.txt" will be read out of the game directory and appended to the current command line arguments to allow different games to initialize startup parms differently.  This could be used to add a "-sspeed 22050" for the high quality sound edition.  Because they are added at the end, they will not override an explicit setting on the original command line.
+
+*/
+
+//============================================================================
 
 
+// ClearLink is used for new headnodes
+void ClearLink( link_t* l )
+{
+	l->prev = l->next = l;
+}
+
+void RemoveLink( link_t* l )
+{
+	l->next->prev = l->prev;
+	l->prev->next = l->next;
+}
+
+void InsertLinkBefore( link_t* l, link_t* before )
+{
+	l->next = before;
+	l->prev = before->prev;
+	l->prev->next = l;
+	l->next->prev = l;
+}
+void InsertLinkAfter( link_t* l, link_t* after )
+{
+	l->next = after->next;
+	l->prev = after;
+	l->prev->next = l;
+	l->next->prev = l;
+}
 
 /*
 ============================================================================
@@ -112,13 +177,20 @@ int Q_strlen( char* str )
 	return count;
 }
 
+char* Q_strrchr( char* s, char c )
+{
+	int len = Q_strlen(s);
+	s += len;
+	while (len--)
+		if (*--s == c) return s;
+	return 0;
+}
 
-
-
-// TODO: Implement
-
-
-
+void Q_strcat( char* dest, char* src )
+{
+	dest += Q_strlen(dest);
+	Q_strcpy(dest, src);
+}
 
 int Q_strcmp( char* s1, char* s2 )
 {
@@ -152,16 +224,6 @@ int Q_strncmp( char* s1, char* s2, int count )
 	return -1;
 }
 
-
-
-
-
-
-// TODO: Implement
-
-
-
-
 int Q_strncasecmp( char* s1, char* s2, int n )
 {
 	int             c1, c2;
@@ -185,8 +247,8 @@ int Q_strncasecmp( char* s1, char* s2, int n )
 		}
 		if (!c1)
 			return 0;               // strings are equal
-		//              s1++;
-		//              s2++;
+//              s1++;
+//              s2++;
 	}
 
 	return -1;
@@ -331,12 +393,574 @@ float Q_atof( char* str )
 	return val * sign;
 }
 
+/*
+==============================
+Q_FileNameCmp
+
+this is a specific string compare to use for filenames.
+ it treats all slashes as the same character. so you can compare
+paths.  (Quake uses / internally, while NT uses \ for it's path-seperator thing)
+NOTE: this function uses the same return value conventions as strcmp.
+so 0 signals a match.
+==============================
+*/
+int Q_FileNameCmp( char* file1, char* file2 )
+{
+	do
+	{
+		if (*file1 == '/' && *file2 == '\\')
+			continue;
+		if (tolower(*file1) != tolower(*file2))
+			return -1;
+		if (!*file1)
+			return 0;
+	} while (*file1++ && *file2++);
+	return 0; // fixed bogus warning
+}
+
+/*
+============================================================================
+
+					BYTE ORDER FUNCTIONS
+
+============================================================================
+*/
+
+qboolean bigendien;
+
+short	(*BigShort) (short l);
+short	(*LittleShort) (short l);
+int		(*BigLong) (int l);
+int		(*LittleLong) (int l);
+float	(*BigFloat) (float l);
+float	(*LittleFloat) (float l);
+
+short ShortSwap( short l )
+{
+	byte    b1, b2;
+
+	b1 = l & 255;
+	b2 = (l >> 8) & 255;
+
+	return (b1 << 8) + b2;
+}
+
+short ShortNoSwap( short l )
+{
+	return l;
+}
+
+int LongSwap( int l )
+{
+	byte    b1, b2, b3, b4;
+
+	b1 = l & 255;
+	b2 = (l >> 8) & 255;
+	b3 = (l >> 16) & 255;
+	b4 = (l >> 24) & 255;
+
+	return ((int)b1 << 24) + ((int)b2 << 16) + ((int)b3 << 8) + b4;
+}
+
+int LongNoSwap( int l )
+{
+	return l;
+}
+
+float FloatSwap( float f )
+{
+	union
+	{
+		float	f;
+		byte	b[4];
+	} dat1, dat2;
 
 
+	dat1.f = f;
+	dat2.b[0] = dat1.b[3];
+	dat2.b[1] = dat1.b[2];
+	dat2.b[2] = dat1.b[1];
+	dat2.b[3] = dat1.b[0];
+	return dat2.f;
+}
+
+float FloatNoSwap( float f )
+{
+	return f;
+}
+
+/*
+==============================================================================
+
+			MESSAGE IO FUNCTIONS
+
+Handles byte ordering and avoids alignment errors
+==============================================================================
+*/
+
+//
+// writing functions
+//
+
+void MSG_WriteChar( sizebuf_t* sb, int c )
+{
+	byte* buf;
+
+#ifdef PARANOID
+	if (c < -128 || c > 127)
+		Sys_Error("MSG_WriteChar: range error");
+#endif
+
+	buf = SZ_GetSpace(sb, 1);
+	buf[0] = c;
+}
+
+void MSG_WriteByte( sizebuf_t* sb, int c )
+{
+	byte* buf;
+
+#ifdef PARANOID
+	if (c < 0 || c > 255)
+		Sys_Error("MSG_WriteByte: range error");
+#endif
+
+	buf = SZ_GetSpace(sb, 1);
+	buf[0] = c;
+}
+
+void MSG_WriteShort( sizebuf_t* sb, int c )
+{
+	byte* buf;
+
+#ifdef PARANOID
+	if (c < ((short)0x8000) || c >(short)0x7fff)
+		Sys_Error("MSG_WriteShort: range error");
+#endif
+
+	buf = SZ_GetSpace(sb, 2);
+	buf[0] = c & 0xff;
+	buf[1] = c >> 8;
+}
+
+void MSG_WriteWord( sizebuf_t* sb, int c )
+{
+	byte* buf;
+
+	buf = SZ_GetSpace(sb, 2);
+	buf[0] = c & 0xff;
+	buf[1] = (c >> 8) & 0xff;
+}
+
+void MSG_WriteLong( sizebuf_t* sb, int c )
+{
+	byte* buf;
+
+	buf = (byte*)SZ_GetSpace(sb, 4);
+	buf[0] = c & 0xff;
+	buf[1] = (c >> 8) & 0xff;
+	buf[2] = (c >> 16) & 0xff;
+	buf[3] = c >> 24;
+}
+
+void MSG_WriteFloat( sizebuf_t* sb, float f )
+{
+	union
+	{
+		float   f;
+		int     l;
+	} dat;
+
+
+	dat.f = f;
+	dat.l = LittleLong(dat.l);
+
+	SZ_Write(sb, &dat.l, 4);
+}
+
+void MSG_WriteString( sizebuf_t* sb, char* s )
+{
+	if (!s)
+		SZ_Write(sb, "", 1);
+	else
+		SZ_Write(sb, s, Q_strlen(s) + 1);
+}
+
+void MSG_WriteBuf( sizebuf_t* sb, int iSize, void* buf )
+{
+	if (!buf)
+		return;
+
+	SZ_Write(sb, buf, iSize);
+}
+
+void MSG_WriteCoord( sizebuf_t* sb, float f )
+{
+	MSG_WriteShort(sb, (int)(f * 8.0));
+}
+
+void MSG_WriteAngle( sizebuf_t* sb, float f )
+{
+	MSG_WriteByte(sb, ((int)f * 256 / 360) & 255);
+}
+
+void MSG_WriteHiresAngle( sizebuf_t* sb, float f )
+{
+	MSG_WriteShort(sb, ((int)f * 65536 / 360) & 65535);
+}
+
+void MSG_WriteUsercmd( sizebuf_t* buf, usercmd_t* from, usercmd_t* cmd )
+{
+	int		bits;
+
+//
+// send the movement message
+//
+	bits = 0;
+	if (cmd->angles[0] != from->angles[0])
+		bits |= CM_ANGLE1;
+	if (cmd->angles[1] != from->angles[1])
+		bits |= CM_ANGLE2;
+	if (cmd->angles[2] != from->angles[2])
+		bits |= CM_ANGLE3;
+	if (cmd->forwardmove != from->forwardmove)
+		bits |= CM_FORWARD;
+	if (cmd->sidemove != from->sidemove)
+		bits |= CM_SIDE;
+	if (cmd->upmove != from->upmove)
+		bits |= CM_UP;
+	if (cmd->buttons != from->buttons)
+		bits |= CM_BUTTONS;
+	if (cmd->impulse != from->impulse)
+		bits |= CM_IMPULSE;
+
+	MSG_WriteByte(buf, bits);
+
+	if (bits & CM_ANGLE1)
+		MSG_WriteHiresAngle(buf, from->angles[0]);
+	if (bits & CM_ANGLE2)
+		MSG_WriteHiresAngle(buf, from->angles[1]);
+	if (bits & CM_ANGLE3)
+		MSG_WriteAngle(buf, from->angles[2]);
+
+	if (bits & CM_FORWARD)
+		MSG_WriteFloat(buf, from->forwardmove);
+	if (bits & CM_SIDE)
+		MSG_WriteFloat(buf, from->sidemove);
+	if (bits & CM_UP)
+		MSG_WriteFloat(buf, from->upmove);
+
+	if (bits & CM_BUTTONS)
+		MSG_WriteShort(buf, from->buttons);
+	if (bits & CM_IMPULSE)
+		MSG_WriteByte(buf, from->impulse);
+	MSG_WriteByte(buf, from->lightlevel);
+	MSG_WriteByte(buf, from->msec);
+}
+
+//
+// reading functions
+//
+int				msg_readcount;
+qboolean		msg_badread;
+
+void MSG_BeginReading( void )
+{
+	msg_readcount = 0;
+	msg_badread = FALSE;
+}
+
+// returns -1 and sets msg_badread if no more characters are available
+int MSG_ReadChar( void )
+{
+	int     c;
+
+	if (msg_readcount + 1 > net_message.cursize)
+	{
+		msg_badread = TRUE;
+		return -1;
+	}
+
+	c = (signed char)net_message.data[msg_readcount];
+	msg_readcount++;
+
+	return c;
+}
+
+int MSG_ReadByte( void )
+{
+	int     c;
+
+	if (msg_readcount + 1 > net_message.cursize)
+	{
+		msg_badread = TRUE;
+		return -1;
+	}
+
+	c = (unsigned char)net_message.data[msg_readcount];
+	msg_readcount++;
+
+	return c;
+}
+
+int MSG_ReadShort( void )
+{
+	int     c;
+
+	if (msg_readcount + 2 > net_message.cursize)
+	{
+		msg_badread = TRUE;
+		return -1;
+	}
+
+	c = (short)(net_message.data[msg_readcount]
+	+ (net_message.data[msg_readcount + 1] << 8));
+
+	msg_readcount += 2;
+
+	return c;
+}
+
+int MSG_ReadWord( void )
+{
+	int     c;
+
+	if (msg_readcount + 2 > net_message.cursize)
+	{
+		msg_badread = TRUE;
+		return -1;
+	}
+
+	c = net_message.data[msg_readcount]
+	+ (net_message.data[msg_readcount + 1] << 8);
+
+	msg_readcount += 2;
+
+	return c;
+}
+
+int MSG_ReadLong( void )
+{
+	int     c;
+
+	if (msg_readcount + 4 > net_message.cursize)
+	{
+		msg_badread = TRUE;
+		return -1;
+	}
+
+	c = net_message.data[msg_readcount]
+	+ (net_message.data[msg_readcount + 1] << 8)
+	+ (net_message.data[msg_readcount + 2] << 16)
+	+ (net_message.data[msg_readcount + 3] << 24);
+
+	msg_readcount += 4;
+
+	return c;
+}
+
+float MSG_ReadFloat( void )
+{
+	union
+	{
+		byte	b[4];
+		float	f;
+		int	l;
+	} dat;
+
+	dat.b[0] = net_message.data[msg_readcount];
+	dat.b[1] = net_message.data[msg_readcount + 1];
+	dat.b[2] = net_message.data[msg_readcount + 2];
+	dat.b[3] = net_message.data[msg_readcount + 3];
+	msg_readcount += 4;
+
+	dat.l = LittleLong(dat.l);
+
+	return dat.f;
+}
+
+int MSG_ReadBuf( int iSize, void* pbuf )
+{
+	if (msg_readcount + iSize > net_message.cursize)
+	{
+		msg_badread = TRUE;
+		return -1;
+	}
+
+	memcpy(pbuf, &net_message.data[msg_readcount], iSize);
+	msg_readcount += iSize;
+
+	return 1;
+}
+
+char* MSG_ReadString( void )
+{
+	static char     string[2048];
+	int             l, c;
+
+	l = 0;
+	do
+	{
+		c = MSG_ReadChar();
+		if (c == -1 || c == 0)
+			break;
+		string[l] = c;
+		l++;
+	} while (l < sizeof(string) - 1);
+
+	string[l] = 0;
+
+	return string;
+}
+
+char* MSG_ReadStringLine( void )
+{
+	static char     string[2048];
+	int             l, c;
+
+	l = 0;
+	do
+	{
+		c = MSG_ReadChar();
+		if (c == -1 || c == 0 || c == '\n')
+			break;
+		string[l] = c;
+		l++;
+	} while (l < sizeof(string) - 1);
+
+	string[l] = 0;
+
+	return string;
+}
+
+float MSG_ReadCoord( void )
+{
+	return MSG_ReadShort() * (1.0 / 8);
+}
+
+float MSG_ReadAngle( void )
+{
+	return MSG_ReadChar() * (360.0 / 256);
+}
+
+float MSG_ReadHiresAngle( void )
+{
+	return MSG_ReadShort() * (360.0 / 65536);
+}
+
+void MSG_ReadUsercmd( usercmd_t* from, usercmd_t* move )
+{
+	int bits;
+
+	memcpy(from, move, sizeof(usercmd_t));
+
+	bits = MSG_ReadByte();
+
+// read current angles
+	if (bits & CM_ANGLE1)
+		from->angles[0] = MSG_ReadHiresAngle();
+	if (bits & CM_ANGLE2)
+		from->angles[1] = MSG_ReadHiresAngle();
+	if (bits & CM_ANGLE3)
+		from->angles[2] = MSG_ReadAngle();
+
+// read movement
+	if (bits & CM_FORWARD)
+		from->forwardmove = MSG_ReadFloat();
+	if (bits & CM_SIDE)
+		from->sidemove = MSG_ReadFloat();
+	if (bits & CM_UP)
+		from->upmove = MSG_ReadFloat();
+
+// read buttons
+	if (bits & CM_BUTTONS)
+		from->buttons = MSG_ReadShort();
+
+	if (bits & CM_IMPULSE)
+		from->impulse = MSG_ReadByte();
+
+// read lightlevel
+	from->lightlevel = MSG_ReadByte();
+
+// read time to run command
+	from->msec = MSG_ReadByte();
+}
+
+
+//===========================================================================
+
+void SZ_Alloc( sizebuf_t* buf, int startsize )
+{
+	if (startsize < 256)
+		startsize = 256;
+	buf->data = Hunk_AllocName(startsize, "sizebuf");
+	buf->maxsize = startsize;
+	buf->cursize = 0;
+}
+
+void SZ_Clear( sizebuf_t* buf )
+{
+	buf->overflowed = FALSE;
+	buf->cursize = 0;
+}
+
+void* SZ_GetSpace( sizebuf_t* buf, int length )
+{
+	void* data;
+
+	if (buf->cursize + length > buf->maxsize)
+	{
+		if (!buf->allowoverflow)
+		{
+			if (!buf->maxsize)
+				Sys_Error("SZ_GetSpace:  Tried to write to an uninitialized sizebuf_t");
+
+			Sys_Error("SZ_GetSpace: overflow without allowoverflow set");
+		}
+
+		if (length > buf->maxsize)
+			Sys_Error("SZ_GetSpace: %i is > full buffer size", length);
+
+		Con_Printf("SZ_GetSpace: overflow\n");
+
+		SZ_Clear(buf);
+		buf->overflowed = TRUE;
+	}
+
+	data = buf->data + buf->cursize;
+	buf->cursize += length;
+
+	return data;
+}
+
+void SZ_Write( sizebuf_t* buf, void* data, int length )
+{
+	Q_memcpy(SZ_GetSpace(buf, length), data, length);
+}
+
+void SZ_Print( sizebuf_t* buf, char* data )
+{
+	int             len;
+
+	len = Q_strlen(data) + 1;
+
+// byte * cast to keep VC++ happy
+	if (buf->data[buf->cursize - 1])
+		Q_memcpy((byte*)SZ_GetSpace(buf, len), data, len); // no trailing 0
+	else
+		Q_memcpy((byte*)SZ_GetSpace(buf, len - 1) - 1, data, len); // write over trailing 0
+}
+
+
+//============================================================================
+
+
+/*
+============
+COM_SkipPath
+============
+*/
 
 // TODO: Implement
-
-
 
 
 

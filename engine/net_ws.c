@@ -1,5 +1,7 @@
 #include "quakedef.h"
 
+sizebuf_t	net_message;
+
 /*
 ====================
 NET_Config

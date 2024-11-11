@@ -50,6 +50,7 @@
     <ClInclude Include="..\..\engine\net.h" />
     <ClInclude Include="..\..\engine\progdefs.h" />
     <ClInclude Include="..\..\engine\Progs.h" />
+    <ClInclude Include="..\..\engine\protocol.h" />
     <ClInclude Include="..\..\engine\pr_dlls.h" />
     <ClInclude Include="..\..\engine\quakedef.h" />
     <ClInclude Include="..\..\engine\screen.h" />

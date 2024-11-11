@@ -6,6 +6,11 @@
 #pragma once
 #endif
 
+
+extern	sizebuf_t	net_message;
+
+
+
 // Start up/shut down sockets layer
 void		NET_Config( qboolean multiplayer );
 

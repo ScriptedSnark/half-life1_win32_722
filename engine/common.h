@@ -2,31 +2,115 @@
 
 typedef int qboolean;
 
+//============================================================================
+
+typedef struct sizebuf_s
+{
+	qboolean	allowoverflow;	// if false, do a Sys_Error
+	qboolean	overflowed;		// set to true if the buffer size failed
+	byte* data;
+	int		maxsize;
+	int		cursize;
+} sizebuf_t;
+
+void SZ_Alloc( sizebuf_t* buf, int startsize );
+void SZ_Clear( sizebuf_t* buf );
+void* SZ_GetSpace( sizebuf_t* buf, int length );
+void SZ_Write( sizebuf_t* buf, void* data, int length );
+void SZ_Print( sizebuf_t* buf, char* data );
+
+//============================================================================
 
 
+void ClearLink( link_t* l );
+void RemoveLink( link_t* l );
+void InsertLinkBefore( link_t* l, link_t* before );
+void InsertLinkAfter( link_t* l, link_t* after );
 
+// (type*)STRUCT_FROM_LINK(link_t* link, type, member)
+// ent = STRUCT_FROM_LINK(link, cl_entity_t, order)
+// FIXME: remove this mess!
+#define	STRUCT_FROM_LINK(l, t, m) ((t*)((byte*)l - (int)&(((t*)0)->m)))
 
+//============================================================================
 
+#ifndef NULL
+#define NULL ((void*)0)
+#endif
+
+#define Q_MAXCHAR ((char)0x7f)
+#define Q_MAXSHORT ((short)0x7fff)
+#define Q_MAXINT	((int)0x7fffffff)
+#define Q_MAXLONG ((int)0x7fffffff)
+#define Q_MAXFLOAT ((int)0x7fffffff)
+
+#define Q_MINCHAR ((char)0x80)
+#define Q_MINSHORT ((short)0x8000)
+#define Q_MININT 	((int)0x80000000)
+#define Q_MINLONG ((int)0x80000000)
+#define Q_MINFLOAT ((int)0x7fffffff)
+
+//============================================================================
+
+extern	qboolean		bigendien;
+
+extern	short	(*BigShort) (short l);
+extern	short	(*LittleShort) (short l);
+extern	int		(*BigLong) (int l);
+extern	int		(*LittleLong) (int l);
+extern	float	(*BigFloat) (float l);
+extern	float	(*LittleFloat) (float l);
+
+//============================================================================
+
+void MSG_WriteChar( sizebuf_t* sb, int c );
+void MSG_WriteByte( sizebuf_t* sb, int c );
+void MSG_WriteShort( sizebuf_t* sb, int c );
+void MSG_WriteWord( sizebuf_t* sb, int c );
+void MSG_WriteLong( sizebuf_t* sb, int c );
+void MSG_WriteFloat( sizebuf_t* sb, float f );
+void MSG_WriteString( sizebuf_t* sb, char* s );
+void MSG_WriteBuf( sizebuf_t* sb, int iSize, void* buf );
+void MSG_WriteCoord( sizebuf_t* sb, float f );
+void MSG_WriteAngle( sizebuf_t* sb, float f );
+void MSG_WriteHiresAngle( sizebuf_t* sb, float f );
+void MSG_WriteUsercmd( sizebuf_t* buf, struct usercmd_s* from, struct usercmd_s* cmd );
+
+extern	int			msg_readcount;
+extern	qboolean	msg_badread;		// set if a read goes beyond end of message
+
+void MSG_BeginReading( void );
+int MSG_ReadChar( void );
+int MSG_ReadByte( void );
+int MSG_ReadShort( void );
+int MSG_ReadWord( void );
+int MSG_ReadLong( void );
+float MSG_ReadFloat( void );
+int MSG_ReadBuf( int iSize, void* pbuf );
+char* MSG_ReadString( void );
+char* MSG_ReadStringLine( void );
+float MSG_ReadCoord( void );
+float MSG_ReadAngle( void );
+float MSG_ReadHiresAngle( void );
+void MSG_ReadUsercmd( struct usercmd_s* from, struct usercmd_s* move );
 
 //============================================================================
 
 void Q_memset( void* dest, int fill, int count );
 void Q_memcpy( void* dest, void* src, int count );
-
-
-
-
+int Q_memcmp( void* m1, void* m2, int count );
 void Q_strcpy( char* dest, char* src );
 void Q_strncpy( char* dest, char* src, int count );
 int Q_strlen( char* str );
-
-
+char* Q_strrchr( char* s, char c );
+void Q_strcat( char* dest, char* src );
 int Q_strcmp( char* s1, char* s2 );
 int Q_strncmp( char* s1, char* s2, int count );
 int Q_strcasecmp( char* s1, char* s2 );
 int Q_strncasecmp( char* s1, char* s2, int n );
 int	Q_atoi( char* str );
 float Q_atof( char* str );
+int Q_FileNameCmp( char* file1, char* file2 );
 
 //============================================================================
 
