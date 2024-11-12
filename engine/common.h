@@ -124,6 +124,7 @@ extern	int		com_argc;
 extern	char** com_argv;
 
 int COM_CheckParm( char* parm );
+void COM_Init( char* basedir );
 void COM_InitArgv( int argc, char** argv );
 
 char* COM_SkipPath( char* pathname );
@@ -132,8 +133,10 @@ char* COM_FileExtension( char* in );
 void COM_FileBase( char* in, char* out );
 void COM_DefaultExtension( char* path, char* extension );
 
-
-
+// does a varargs printf into a temp buffer
+char* va( char* format, ... );
+// prints a vector into a temp buffer.
+char* vstr( float* v );
 
 
 

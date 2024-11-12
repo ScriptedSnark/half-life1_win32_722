@@ -1318,6 +1318,108 @@ void COM_InitArgv( int argc, char** argv )
 	}
 }
 
+byte	swaptest[2] = { 1, 0 };
+
+/*
+================
+COM_Init
+================
+*/
+void COM_Init( char* basedir )
+{
+// set the byte swapping variables in a portable manner 
+	if (*(short*)swaptest == 1)
+	{
+		bigendien = FALSE;
+		BigShort = ShortSwap;
+		LittleShort = ShortNoSwap;
+		BigLong = LongSwap;
+		LittleLong = LongNoSwap;
+		BigFloat = FloatSwap;
+		LittleFloat = FloatNoSwap;
+	}
+	else
+	{
+		bigendien = TRUE;
+		BigShort = ShortNoSwap;
+		LittleShort = ShortSwap;
+		BigLong = LongNoSwap;
+		LittleLong = LongSwap;
+		BigFloat = FloatNoSwap;
+		LittleFloat = FloatSwap;
+	}
+
+	Cvar_RegisterVariable(&registered);
+	Cvar_RegisterVariable(&cmdline);
+//	Cmd_AddCommand("path", COM_Path_f); TODO: Implement
+
+//	COM_InitFilesystem(); TODO: Implement
+	COM_CheckRegistered();
+}
+
+
+/*
+============
+va
+
+does a varargs printf into a temp buffer, so I don't need to have
+varargs versions of all text functions.
+FIXME: make this buffer size safe someday
+============
+*/
+char* va( char* format, ... )
+{
+	va_list         argptr;
+	static char            string[1024];
+
+	va_start(argptr, format);
+	vsprintf(string, format, argptr);
+	va_end(argptr);
+
+	return string;
+}
+
+/*
+============
+vstr
+
+prints a vector into a temporary string
+bufffer.
+============
+*/
+char* vstr( float* v )
+{
+	static char string[1024];
+
+	sprintf(string, "%.2f %.2f %.2f", v[0], v[1], v[2]);
+	return string;
+}
+
+
+/// just for debugging
+int     memsearch( byte* start, int count, int search )
+{
+	int             i;
+
+	for (i = 0; i < count; i++)
+		if (start[i] == search)
+			return i;
+	return -1;
+}
+
+/*
+=============================================================================
+
+QUAKE FILESYSTEM
+
+=============================================================================
+*/
+
+
+
+
+
+
 
 
 
