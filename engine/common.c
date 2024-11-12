@@ -16,6 +16,10 @@ qboolean com_ignorecolons = FALSE;  // YWB:  Ignore colons as token separators i
 cvar_t  registered = { "registered","0" };
 cvar_t  cmdline = { "cmdline","0", FALSE, TRUE };
 
+qboolean        com_modified;   // set true if using non-id files
+
+int             static_registered = 1;  // only for startup check, then set
+
 char	com_token[1024];
 int		com_argc;
 char** com_argv;
@@ -1011,14 +1015,66 @@ char* COM_FileExtension( char* in )
 COM_FileBase
 ============
 */
+// Extracts the base name of a file (no path, no extension, assumes '/' as path separator)
 void COM_FileBase( char* in, char* out )
 {
-	// TODO: Implement
+	int len, start, end;
+
+	len = strlen(in);
+
+	// scan backward for '.'
+	end = len - 1;
+	while (end && in[end] != '.')
+		end--;
+
+	if (in[end] != '.')		// no '.', copy to end
+		end = len - 1;
+	else
+		end--;					// Found ',', copy to left of '.'
+
+
+	// Scan backward for '/'
+	start = len - 1;
+	while (start >= 0 && in[start] != '/')
+		start--;
+
+	if (start < 0 || (in[start] != '/'))
+		start = 0;
+	else
+		start++;
+
+	// Length of new sting
+	len = end - start + 1;
+
+	// Copy partial string
+	strncpy(out, &in[start], len);
+	out[len] = '\0';
 }
 
 
+/*
+==================
+COM_DefaultExtension
+==================
+*/
+void COM_DefaultExtension( char* path, char* extension )
+{
+	char* src;
+//
+// if path doesn't have a .EXT, append extension
+// (extension should include the .)
+//
+	src = path + strlen(path) - 1;
 
+	while (*src != '/' && src != path)
+	{
+		if (*src == '.')
+			return;                 // it has an extension
+		src--;
+	}
 
+	strcat(path, extension);
+}
 
 
 /*
@@ -1030,8 +1086,72 @@ Parse a token out of a string
 */
 char* COM_Parse( char* data )
 {
-	// TODO: Implement
-	return NULL;
+	int             c;
+	int             len;
+
+	len = 0;
+	com_token[0] = 0;
+
+	if (!data)
+		return NULL;
+
+	// skip whitespace
+skipwhite:
+	while ((c = *data) <= ' ')
+	{
+		if (c == 0)
+			return NULL;                    // end of file;
+		data++;
+	}
+
+	// skip // comments
+	if (c == '/' && data[1] == '/')
+	{
+		while (*data && *data != '\n')
+			data++;
+		goto skipwhite;
+	}
+
+
+	// handle quoted strings specially
+	if (c == '\"')
+	{
+		data++;
+		while (1)
+		{
+			c = *data++;
+			if (c == '\"' || !c)
+			{
+				com_token[len] = 0;
+				return data;
+			}
+			com_token[len] = c;
+			len++;
+		}
+	}
+
+	// parse single characters
+	if (c == '{' || c == '}' || c == ')' || c == '(' || c == '\'' || c == ':')
+	{
+		com_token[len] = c;
+		len++;
+		com_token[len] = 0;
+		return data + 1;
+	}
+
+	// parse a regular word
+	do
+	{
+		com_token[len] = c;
+		data++;
+		len++;
+		c = *data;
+		if (c == '{' || c == '}' || c == ')' || c == '(' || c == '\'' || c == ':')
+			break;
+	} while (c > 32);
+
+	com_token[len] = 0;
+	return data;
 }
 
 
@@ -1058,8 +1178,77 @@ int COM_CheckParm( char* parm )
 	return 0;
 }
 
+DLL_EXPORT int COM_CheckParmEx( char* parm, char** argv )
+{
+	int             i;
 
-// TODO: Implement
+	for (i = 1; i < com_argc; i++)
+	{
+		if (!com_argv[i])
+			continue;               // NEXTSTEP sometimes clears appkit vars.
+		if (!Q_strcmp(parm, com_argv[i]))
+		{
+			if (argv)
+			{
+				if (i < com_argc - 1)
+				{
+					*argv = com_argv[i + 1];
+					return i;
+				}
+				*argv = 0;
+			}
+
+			return i;
+		}
+	}
+
+	return 0;
+}
+
+/*
+================
+COM_CheckRegistered
+
+Looks for the pop.txt file and verifies it.
+Sets the "registered" cvar.
+Immediately exits out if an alternate game was attempted to be started without
+being registered.
+================
+*/
+void COM_CheckRegistered( void )
+{
+/*
+	int             h;
+	unsigned short  check[128];
+	int                     i;
+
+	COM_OpenFile("gfx/pop.lmp", &h);
+	static_registered = 0;
+
+	if (h == -1)
+	{
+#if WINDED
+		Sys_Error("This dedicated server requires a full registered copy of Quake");
+#endif
+		Con_Printf("Playing shareware version.\n");
+		if (com_modified)
+			Sys_Error("You must have the registered version to use modified games");
+		return;
+	}
+
+	Sys_FileRead(h, check, sizeof(check));
+	COM_CloseFile(h);
+
+	for (i = 0; i < 128; i++)
+		if (pop[i] != (unsigned short)BigShort(check[i]))
+			Sys_Error("Corrupted data file.");
+
+	Cvar_Set("cmdline", com_cmdline);
+	Cvar_Set("registered", "1");
+	static_registered = 1;
+	Con_Printf("Playing registered version.\n");
+*/
+}
 
 
 /*
