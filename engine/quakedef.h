@@ -85,6 +85,7 @@
 #include "keys.h"
 #include "console.h"
 
+#include "crc.h"
 
 
 

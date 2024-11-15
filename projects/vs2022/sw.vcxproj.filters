@@ -105,6 +105,9 @@
     <ClInclude Include="..\..\engine\protocol.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\engine\crc.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\engine\sys_win.c">
@@ -156,6 +159,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\engine\buildnum.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\engine\crc.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

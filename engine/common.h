@@ -158,7 +158,8 @@ byte* COM_LoadTempFile( char* path, int* pLength );
 byte* COM_LoadHunkFile( char* path );
 byte* COM_LoadCacheFile( char* path, struct cache_user_s* cu );
 
-
+void COM_FileSeek( int filepos, int filelen, int handle, int pos );
+int COM_FileTell( int filepos, int filelen, int handle );
 
 
 int build_number( void );

@@ -1838,7 +1838,7 @@ byte* COM_LoadFileLimit( char* path, int pos, int cbmax, int* pcbread, int* phFi
 	if (pos > len)
 		Sys_Error("COM_LoadFileLimit: invalid seek position for %s", path);
 
-	COM_FileSeek(h[2], pos);
+	COM_FileSeek(h[0], h[1], h[2], pos);
 
 	if (len > cbmax)
 		len = cbmax;
@@ -1909,7 +1909,7 @@ pack_t* COM_LoadPackFile( char* packfile )
 	pack_t* pack;
 	int                             packhandle;
 	dpackfile_t             info[MAX_FILES_IN_PACK];
-	unsigned short          crc;
+	CRC32_t					crc;
 
 	if (Sys_FileOpenRead(packfile, &packhandle) == -1)
 	{
@@ -2108,11 +2108,66 @@ void COM_InitFilesystem( void )
 		proghack = TRUE;
 }
 
+void COM_FileSeek( int filepos, int filelen, int handle, int pos )
+{
+	Sys_FileSeek(handle, pos + filepos);
+}
+
+int COM_FileTell( int filepos, int filelen, int handle )
+{
+	return Sys_FileTell(handle) - filepos;
+}
+
+/*
+================
+COM_ListMaps
+
+Lists all maps matching the substring
+If the substring is empty, or "*", then lists all maps
+================
+*/
+int COM_ListMaps( char* pszSubString )
+{
+	/*
+	searchpath_t* search;
+	static char		mapname[MAX_PATH];
+	static HANDLE	file = INVALID_HANDLE_VALUE;
+	static int		findfile = 0;
+	pack_t* pak;
+	int                     findtime;
+	int						nSubStringLen;
+
+	nSubStringLen = 0;
+	if (pszSubString && pszSubString[0])
+		nSubStringLen = strlen(pszSubString);
+
+//
+// search through the path, one element at a time
+//
+	search = com_searchpaths;
+	for (; search; search = search->next)
+	{
+	// is the element a pak file?
+		if (search->pack)
+		{
 
 
 
 
 
+
+		}
+	}
+
+	if (file != INVALID_HANDLE_VALUE)
+		FindClose(file);
+
+	mapname[0] = 0;
+	findfile = 0;
+	file = INVALID_HANDLE_VALUE;
+	*/
+	return FALSE;
+}
 
 
 
