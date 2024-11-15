@@ -139,6 +139,25 @@ char* va( char* format, ... );
 char* vstr( float* v );
 
 
+//============================================================================
+
+extern int com_filesize;
+
+extern	char	com_gamedir[MAX_OSPATH];
+
+void COM_WriteFile( char* filename, void* data, int len );
+int COM_OpenFile( char* filename, int* hndl );
+int COM_FOpenFile( char* filename, FILE** file );
+void COM_CloseFile( int h );
+
+void COM_FreeFile( void* buffer );
+byte* COM_LoadFile( char* path, int usehunk, int* pLength );
+byte* COM_LoadFileLimit( char* path, int pos, int cbmax, int* pcbread, int* phFile );
+byte* COM_LoadStackFile( char* path, void* buffer, int bufsize );
+byte* COM_LoadTempFile( char* path, int* pLength );
+byte* COM_LoadHunkFile( char* path );
+byte* COM_LoadCacheFile( char* path, struct cache_user_s* cu );
+
 
 
 
