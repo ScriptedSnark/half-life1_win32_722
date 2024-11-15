@@ -82,3 +82,44 @@ float fran1( void )
 	else
 		return temp;
 }
+
+// Generate a random float number in the range [ flLow, flHigh ]
+float RandomFloat( float flLow, float flHigh )
+{
+	float fl;
+
+	fl = fran1(); // float in [0..1)
+	return (fl * (flHigh - flLow)) + flLow; // float in [low..high)
+}
+
+#define MAX_RANDOM_RANGE 0x7FFFFFFFUL
+
+// Generate a random long number in the range [ lLow, lHigh ]
+int32 RandomLong( int32 lLow, int32 lHigh )
+{
+	uint32 maxAcceptable;
+	uint32 x;
+	uint32 n;
+
+	x = lHigh - lLow + 1;
+	if (x <= 0)
+	{
+		return lLow;
+	}
+
+	// The following maps a uniform distribution on the interval [0..MAX_RANDOM_RANGE]
+	// to a smaller, client-specified range of [0..x-1] in a way that doesn't bias
+	// the uniform distribution unfavorably. Even for a worst case x, the loop is
+	// guaranteed to be taken no more than half the time, so for that worst case x,
+	// the average number of times through the loop is 2. For cases where x is
+	// much smaller than MAX_RANDOM_RANGE, the average number of times through the
+	// loop is very close to 1.
+	maxAcceptable = MAX_RANDOM_RANGE - ((MAX_RANDOM_RANGE + 1) % x);
+
+	do
+	{
+		n = ran1();
+	} while (n > maxAcceptable);
+
+	return lLow + (n % x);
+}

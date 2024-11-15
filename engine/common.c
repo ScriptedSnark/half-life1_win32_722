@@ -2,6 +2,7 @@
 
 #include "quakedef.h"
 #include "winquake.h"
+#include "pr_cmds.h"
 
 #define NUM_SAFE_ARGVS  7
 
@@ -2126,15 +2127,14 @@ Lists all maps matching the substring
 If the substring is empty, or "*", then lists all maps
 ================
 */
-int COM_ListMaps( char* pszSubString )
+int COM_ListMaps( char* pszFileName, char* pszSubString )
 {
-	/*
 	searchpath_t* search;
-	static char		mapname[MAX_PATH];
+	static char		filename[MAX_PATH];
 	static HANDLE	file = INVALID_HANDLE_VALUE;
-	static int		findfile = 0;
+	static qboolean	bFound = FALSE;
 	pack_t* pak;
-	int                     findtime;
+	int                     i;
 	int						nSubStringLen;
 
 	nSubStringLen = 0;
@@ -2147,27 +2147,493 @@ int COM_ListMaps( char* pszSubString )
 	search = com_searchpaths;
 	for (; search; search = search->next)
 	{
+		// TODO: Implement ???
+
 	// is the element a pak file?
 		if (search->pack)
 		{
+		// look through all the pak file elements
+			pak = search->pack;
+			for (i = 0; i < pak->numfiles; i++)
+			{
+				// TODO: Implement
+			}
 
-
-
-
-
-
+			// TODO: Implement
+		}
+		else
+		{
+			// TODO: Implement
 		}
 	}
 
 	if (file != INVALID_HANDLE_VALUE)
 		FindClose(file);
 
-	mapname[0] = 0;
-	findfile = 0;
+	filename[0] = 0;
+
+	bFound = FALSE;
+
 	file = INVALID_HANDLE_VALUE;
-	*/
+
 	return FALSE;
 }
+
+#define DIB_HEADER_MARKER   ((WORD) ('M' << 8) | 'B')
+
+void LoadBMP8( int* phFile, byte** pPalette, int* nPalette, byte** pImage )
+{
+	int i, rc = 0;
+	BITMAPFILEHEADER bmfh;
+	BITMAPINFOHEADER bmih;
+	RGBQUAD rgrgbPalette[256];
+	ULONG cbBmpBits;
+	BYTE* pbBmpBits;
+	byte* pb;
+	ULONG cbPalBytes;
+	ULONG biTrueWidth;
+
+	*pImage = NULL;
+	*pPalette = NULL;
+
+	// Read file header
+	if (Sys_FileRead(phFile[2], &bmfh, sizeof(bmfh)) != sizeof(bmfh))
+	{
+		rc = -2; goto GetOut;
+	}
+
+	// Bogus file header check
+	if (!(bmfh.bfReserved1 == 0 && bmfh.bfReserved2 == 0))
+	{
+		rc = -2000; goto GetOut;
+	}
+
+	// Read info header
+	if (Sys_FileRead(phFile[2], &bmih, sizeof(bmih)) != sizeof(bmih))
+	{
+		rc = -4; goto GetOut;
+	}
+
+	// Bogus info header check
+	if (!(bmih.biSize == sizeof(bmih) && bmih.biPlanes == 1))
+	{
+		rc = -4000; goto GetOut;
+	}
+
+	// Bogus bit depth? Only 8-bit supported
+	if (bmih.biBitCount != 8)
+	{
+		rc = -5; goto GetOut;
+	}
+
+	// Bogus compression? Only non-compressed supported
+	if (bmih.biCompression != BI_RGB)
+	{
+		rc = -6; goto GetOut;
+	}
+
+	// Figure out how many entires are actually in the table
+	if (bmih.biClrUsed == 0)
+	{
+		bmih.biClrUsed = 256;
+	}
+	else if (bmih.biClrUsed > 256)
+	{	
+		goto GetOut;
+	}
+
+	// Read palette (256 entries)
+	cbPalBytes = sizeof(RGBQUAD) * bmih.biClrUsed;
+	if (Sys_FileRead(phFile[2], rgrgbPalette, cbPalBytes) != cbPalBytes)
+	{
+		rc = -8; goto GetOut;
+	}
+
+	// convert to a packed 768 byte palette
+	*pPalette = malloc(256 * 3);
+	if (*pPalette == NULL)
+	{
+		rc = -10; goto GetOut;
+	}
+
+	pb = *pPalette;
+	memset(*pPalette, 0, 256 * 3);
+
+	// Copy over used entries
+	for (i = 0; i < (int)bmih.biClrUsed; i++)
+	{
+		*pb++ = rgrgbPalette[i].rgbRed;
+		*pb++ = rgrgbPalette[i].rgbGreen;
+		*pb++ = rgrgbPalette[i].rgbBlue;
+	}
+
+	cbBmpBits = bmfh.bfSize - COM_FileTell(phFile[0], phFile[1], phFile[2]);
+
+	// Read bitmap bits (remainder of file)
+	pb = malloc(cbBmpBits);
+	if (Sys_FileRead(phFile[2], pb, cbBmpBits) != cbBmpBits)
+	{
+		rc = -11; goto GetOut;
+	}
+
+	pbBmpBits = malloc(cbBmpBits);
+	*pImage = pbBmpBits;
+
+	// data is actually stored with the width being rounded up to a multiple of 4
+	biTrueWidth = (bmih.biWidth + 3) & ~3;
+
+	// reverse the order of the data
+	pb += (bmih.biHeight - 1) * biTrueWidth;
+	for (i = 0; i < bmih.biHeight; i++)
+	{
+		memcpy(&pbBmpBits[biTrueWidth * i], pb, biTrueWidth);
+		pb -= biTrueWidth;
+	}
+
+	pb += biTrueWidth;
+	free(pb);
+
+GetOut:
+	if (phFile[2] != -1)
+		COM_CloseFile(phFile[2]);
+
+	//return rc;
+}
+
+byte* LoadBMP16( FILE* fin, qboolean is15bit )
+{
+	BITMAPFILEHEADER bmfh;
+	BITMAPINFOHEADER bmih;
+	byte *pImage16;
+
+	pImage16 = NULL;
+	// Read file header
+	if (fread(&bmfh, sizeof(bmfh), 1, fin) != 1)
+	{
+		fclose(fin);
+		return pImage16;
+	}
+
+	if (bmfh.bfType != DIB_HEADER_MARKER)
+	{
+		fclose(fin);
+		return pImage16;
+	}
+
+	// Bogus file header check
+	if (!(bmfh.bfReserved1 == 0 && bmfh.bfReserved2 == 0))
+	{
+		fclose(fin);
+		return pImage16;
+	}
+
+	// Read info header
+	if (fread(&bmih, sizeof(bmih), 1, fin) != 1)
+	{
+		fclose(fin);
+		return pImage16;
+	}
+
+	// Bogus info header check
+	if (!(bmih.biSize >= sizeof(bmih) && bmih.biPlanes == 1))
+	{
+		fclose(fin);
+		return pImage16;
+	}
+
+	// Bogus compression? Only non-compressed supported
+	if (bmih.biCompression != BI_RGB)
+	{
+		fclose(fin);
+		return pImage16;
+	}
+
+	if (bmih.biBitCount == 16)
+	{
+		fseek(fin, 0, bmfh.bfOffBits);
+		pImage16 = Hunk_AllocName(bmih.biSizeImage, "SKYBOX");
+		if (pImage16)
+		{
+			if (fread(pImage16, bmih.biSizeImage, 1, fin) != 1)
+			{
+				free(pImage16);
+				pImage16 = NULL;
+			}
+		}
+	}
+	else if (bmih.biBitCount == 8)
+	{	
+		int nPalette;
+		byte* pPalette;
+
+		// Figure out how many entires are actually in the table
+		if (bmih.biClrUsed)
+			nPalette = bmih.biClrUsed;
+		else
+			nPalette = 256;
+
+		// Allocate memory for the palette
+		pPalette = malloc(nPalette * 4);
+		if (!pPalette || fread(pPalette, nPalette * 4, 1, fin) != 1)
+		{
+			fclose(fin);
+			return pImage16;
+		}
+
+		int nImage8;
+		byte* pImage8;
+
+		// Calculate the size of each row in the image data for 8-bit and 16-bit images
+		int SizeOfRow8 = (((bmih.biWidth * 8) + 7) / 8 + 3) & ~3;
+		int SizeOfRow16 = (((bmih.biWidth * 16) + 7) / 8 + 3) & ~3;
+		int TrueHeight = abs(bmih.biHeight);
+		int nImage16 = SizeOfRow16 * TrueHeight;
+
+		// Calculate the size of the image data in bytes for 8-bit and 16-bit images
+		nImage8 = bmih.biSizeImage;
+
+		// Allocate memory for the 8-bit image data
+		pImage8 = malloc(nImage8);
+
+		fseek(fin, 0, bmfh.bfOffBits);
+
+		if (!pImage8)
+		{
+			fclose(fin);
+			return pImage16;
+		}
+		
+		// Read the 8-bit image data from the file
+		if (fread(pImage8, nImage8, 1, fin) != 1)
+		{
+			free(pImage8);
+			free(pPalette);
+			fclose(fin);
+			return pImage16;
+		}
+
+		// Allocate memory for the 16-bit image data
+		pImage16 = Hunk_AllocName(nImage16, "SKYBOX");
+		if (!pImage16)
+		{
+			fclose(fin);
+			return pImage16;
+		}
+
+		// Check if image is using 15-bit color
+		if (is15bit)
+		{
+			// Check if BMP image is top-down orientation
+			if (bmih.biHeight <= 0)
+			{
+				//
+				// The pixel image will be flipped vertically
+
+				byte* row16 = pImage16; // pointer to current 16-bit pixel
+				byte* row8 = pImage8; // pointer to current 8-bit pixel
+				int nRows = TrueHeight;
+
+				// Convert each pixel of the 8-bit palette image to a 16-bit color image
+				while (nRows > 0)
+				{
+					unsigned short* p16 = (unsigned short*)row16;
+					byte* p8 = row8;
+					int nPixels = bmih.biWidth;
+
+					// Convert 8-bit palette image to 16-bit image
+					while (nPixels > 0)
+					{
+						// Extract BGR values from palette
+						byte r = pPalette[*p8 * 4 + 2] + RandomLong(0, 3);
+						byte g = pPalette[*p8 * 4 + 1] + RandomLong(0, 3);
+						byte b = pPalette[*p8 * 4 + 0] + RandomLong(0, 3);
+
+						// Clamp to byte
+						if (r > 255)
+							r = 255;
+						if (g > 255)
+							g = 255;
+						if (b > 255)
+							b = 255;
+
+						// Pack the RGB values into a 16-bit pixel 565 color and store in 16-bit image
+						*p16 = PACKEDRGB565(r, g, b);
+
+						// next pixel in the row
+						p16++;
+						p8++;
+
+						nPixels--;
+					}
+
+					// next row
+					row16 += SizeOfRow16;
+					row8 += SizeOfRow8;
+					nRows--;
+				}
+			}
+			// image is bottom-up orientation
+			else
+			{
+				byte* row16 = pImage16;
+				byte* row8 = &pImage8[nImage8 - SizeOfRow8];
+				int nRows = TrueHeight;
+
+				// Convert each pixel of the 8-bit palette image to a 16-bit color image
+				while (nRows > 0)
+				{
+					unsigned short* p16 = (unsigned short*)row16;
+					byte* p8 = row8;
+					int nPixels = bmih.biWidth;
+
+					// Convert 8-bit palette image to 16-bit image
+					while (nPixels > 0)
+					{
+						// Extract BGR values from palette
+						byte r = pPalette[*p8 * 4 + 2] + RandomLong(0, 3);
+						byte g = pPalette[*p8 * 4 + 1] + RandomLong(0, 3);
+						byte b = pPalette[*p8 * 4 + 0] + RandomLong(0, 3);
+
+						// Clamp to byte
+						if (r > 255)
+							r = 255;
+						if (g > 255)
+							g = 255;
+						if (b > 255)
+							b = 255;
+
+						// Pack the RGB values into a 16-bit pixel 565 color and store in 16-bit image
+						*p16 = PACKEDRGB565(r, g, b);
+
+						// next pixel in the row
+						p16++;
+						p8++;
+
+						nPixels--;
+					}
+
+					// next row
+					row16 += SizeOfRow16;
+					row8 -= SizeOfRow8;
+					nRows--;
+				}
+			}
+		}
+		else
+		{
+			// Check if BMP image is top-down orientation
+			if (bmih.biHeight <= 0)
+			{
+				//
+				// The pixel image will be flipped vertically
+
+				byte* row16 = pImage16;
+				byte* row8 = pImage8;
+				int nRows = TrueHeight;
+
+				// Convert each pixel of the 8-bit palette image to a 16-bit color image
+				while (nRows > 0)
+				{
+					unsigned short* p16 = (unsigned short*)row16;
+					byte* p8 = row8;
+					int nPixels = bmih.biWidth;
+
+					// Convert 8-bit palette image to 16-bit image
+					while (nPixels > 0)
+					{
+						// Extract BGR values from palette
+						byte r = pPalette[*p8 * 4 + 2] + RandomLong(0, 3);
+						byte g = pPalette[*p8 * 4 + 1] + RandomLong(0, 3);
+						byte b = pPalette[*p8 * 4 + 0] + RandomLong(0, 3);
+
+						// Clamp to byte
+						if (r > 255)
+							r = 255;
+						if (g > 255)
+							g = 255;
+						if (b > 255)
+							b = 255;
+
+						// Pack the RGB values into a 16-bit pixel 555 color and store in 16-bit image
+						*p16 = PACKEDRGB555(r, g, b);
+
+						// next pixel in the row
+						p16++;
+						p8++;
+
+						nPixels--;
+					}
+
+					// next row
+					row16 += SizeOfRow16;
+					row8 += SizeOfRow8;
+					nRows--;
+				}
+			}
+			// image is bottom-up orientation
+			else
+			{
+				byte* row16 = pImage16;
+				byte* row8 = &pImage8[nImage8 - SizeOfRow8];
+				int nRows = TrueHeight;
+
+				// Convert each pixel of the 8-bit palette image to a 16-bit color image
+				while (nRows > 0)
+				{
+					unsigned short* p16 = (unsigned short*)row16;
+					byte* p8 = row8;
+					int nPixels = bmih.biWidth;
+
+					// Convert 8-bit palette image to 16-bit image
+					while (nPixels > 0)
+					{
+						// Extract BGR values from palette
+						byte r = pPalette[*p8 * 4 + 2] + RandomLong(0, 3);
+						byte g = pPalette[*p8 * 4 + 1] + RandomLong(0, 3);
+						byte b = pPalette[*p8 * 4 + 0] + RandomLong(0, 3);
+
+						// Clamp to byte
+						if (r > 255)
+							r = 255;
+						if (g > 255)
+							g = 255;
+						if (b > 255)
+							b = 255;
+
+						// Pack the RGB values into a 16-bit pixel 555 color and store in 16-bit image
+						*p16 = PACKEDRGB555(r, g, b);
+
+						// next pixel in the row
+						p16++;
+						p8++;
+
+						nPixels--;
+					}
+
+					// next row
+					row16 += SizeOfRow16;
+					row8 -= SizeOfRow8;
+					nRows--;
+				}
+			}
+
+			return pImage16;
+		}
+	}
+
+	fclose(fin);
+	return pImage16;
+}
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -161,5 +161,9 @@ byte* COM_LoadCacheFile( char* path, struct cache_user_s* cu );
 void COM_FileSeek( int filepos, int filelen, int handle, int pos );
 int COM_FileTell( int filepos, int filelen, int handle );
 
+int COM_ListMaps( char* pszFileName, char* pszSubString );
+
+void LoadBMP8( int* h, byte** pPalette, int* nPalette, byte** pImage );
+byte* LoadBMP16( FILE* fin, qboolean is15bit );
 
 int build_number( void );

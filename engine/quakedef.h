@@ -54,6 +54,7 @@
 #include "dll_state.h"
 #include "eiface.h"
 #include "pr_dlls.h"
+#include "color.h"
 #include "vid.h"
 #include "sys.h"
 #include "zone.h"

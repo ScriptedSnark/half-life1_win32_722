@@ -20,6 +20,7 @@
     <ClInclude Include="..\..\engine\anorm_dots.h" />
     <ClInclude Include="..\..\engine\client.h" />
     <ClInclude Include="..\..\engine\cmd.h" />
+    <ClInclude Include="..\..\engine\color.h" />
     <ClInclude Include="..\..\engine\common.h" />
     <ClInclude Include="..\..\engine\CONSOLE.H" />
     <ClInclude Include="..\..\engine\crc.h" />
@@ -32,6 +33,7 @@
     <ClInclude Include="..\..\engine\net.h" />
     <ClInclude Include="..\..\engine\progdefs.h" />
     <ClInclude Include="..\..\engine\protocol.h" />
+    <ClInclude Include="..\..\engine\pr_cmds.h" />
     <ClInclude Include="..\..\engine\pr_dlls.h" />
     <ClInclude Include="..\..\engine\quakedef.h" />
     <ClInclude Include="..\..\engine\screen.h" />
