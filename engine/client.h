@@ -26,13 +26,19 @@ typedef struct
 	// TODO: Implement
 
 
+	qboolean	demorecording;
 	qboolean	demoplayback;
-
+	qboolean	timedemo;
+	float		demostarttime;
+	int			demostartframe;
+	int			forcetrack; //FF: totally unsure about this field!
+	void*		demofile;
+	void*		demoheader;
 
 	// TODO: Implement
 
 
-} client_static_t;
+} client_static_t; //FF: add comments for the fields
 
 extern client_static_t	cls;
 

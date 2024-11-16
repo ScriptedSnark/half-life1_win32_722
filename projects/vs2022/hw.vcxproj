@@ -12,6 +12,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\engine\buildnum.c" />
+    <ClCompile Include="..\..\engine\CL_DEMO.C" />
     <ClCompile Include="..\..\engine\CL_MAIN.C" />
     <ClCompile Include="..\..\engine\cmd.c" />
     <ClCompile Include="..\..\engine\common.c" />
@@ -40,6 +41,7 @@
     <ClInclude Include="..\..\engine\anorms.h" />
     <ClInclude Include="..\..\engine\anorm_dots.h" />
     <ClInclude Include="..\..\engine\client.h" />
+    <ClInclude Include="..\..\engine\demo.h" />
     <ClInclude Include="..\..\engine\cmd.h" />
     <ClInclude Include="..\..\engine\color.h" />
     <ClInclude Include="..\..\engine\common.h" />
