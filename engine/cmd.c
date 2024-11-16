@@ -4,22 +4,24 @@
 #include "winquake.h"
 #include "demo.h"
 
-void Cmd_ForwardToServer(void);
+// Forward declarations
+void Cmd_CmdList_f( void );
+
+void Cmd_ForwardToServer( void );
 
 #define	MAX_ALIAS_NAME	32
 
 typedef struct cmdalias_s
 {
-	struct cmdalias_s	*next;
+	struct cmdalias_s* next;
 	char	name[MAX_ALIAS_NAME];
-	char	*value;
+	char* value;
 } cmdalias_t;
-//static_assert(sizeof(cmdalias_t) == 40);
 
-cmdalias_t	*cmd_alias;
+cmdalias_t* cmd_alias;
 
 int trashtest;
-int *trashspot;
+int* trashspot;
 
 qboolean	cmd_wait;
 
@@ -34,7 +36,7 @@ next frame.  This allows commands like:
 bind g "impulse 5 ; +attack ; wait ; -attack ; impulse 2"
 ============
 */
-void Cmd_Wait_f(void)
+void Cmd_Wait_f( void )
 {
 	cmd_wait = TRUE;
 }
@@ -54,7 +56,7 @@ sizebuf_t	cmd_text;
 Cbuf_Init
 ============
 */
-void Cbuf_Init(void)
+void Cbuf_Init( void )
 {
 	SZ_Alloc(&cmd_text, 8192);		// space for commands and script files
 }
@@ -67,7 +69,7 @@ Cbuf_AddText
 Adds command text at the end of the buffer
 ============
 */
-DLL_EXPORT void Cbuf_AddText(char *text)
+void Cbuf_AddText( char* text )
 {
 	int		l;
 
@@ -92,12 +94,12 @@ Adds a \n to the text
 FIXME: actually change the command buffer to do less copying
 ============
 */
-DLL_EXPORT void Cbuf_InsertText(char *text)
+void Cbuf_InsertText( char* text )
 {
-	char	*temp;
+	char* temp;
 	int		templen;
 
-	// copy off any commands still remaining in the exec buffer
+// copy off any commands still remaining in the exec buffer
 	templen = cmd_text.cursize;
 	if (templen)
 	{
@@ -111,7 +113,7 @@ DLL_EXPORT void Cbuf_InsertText(char *text)
 // add the entire text of the file
 	Cbuf_AddText(text);
 
-	// add the copied off data
+// add the copied off data
 	if (templen)
 	{
 		SZ_Write(&cmd_text, temp, templen);
@@ -124,16 +126,16 @@ DLL_EXPORT void Cbuf_InsertText(char *text)
 Cbuf_Execute
 ============
 */
-void Cbuf_Execute(void)
+void Cbuf_Execute( void )
 {
 	int		i;
-	char	*text;
+	char* text;
 	char	line[1024];
 	int		quotes;
 
 	while (cmd_text.cursize)
 	{
-		// find a \n or ; line break
+// find a \n or ; line break
 		text = (char *)cmd_text.data;
 
 		quotes = 0;
@@ -151,9 +153,9 @@ void Cbuf_Execute(void)
 		memcpy(line, text, i);
 		line[i] = 0;
 
-		// delete the text from the command buffer and move remaining commands down
-		// this is necessary because commands (exec, alias) can insert data at the
-		// beginning of the text buffer
+// delete the text from the command buffer and move remaining commands down
+// this is necessary because commands (exec, alias) can insert data at the
+// beginning of the text buffer
 
 		if (i == cmd_text.cursize)
 			cmd_text.cursize = 0;
@@ -164,7 +166,7 @@ void Cbuf_Execute(void)
 			Q_memcpy(text, text + i, cmd_text.cursize);
 		}
 
-		// execute the command line
+// execute the command line
 		Cmd_ExecuteString(line, src_command);
 
 		if (cmd_wait)
@@ -194,11 +196,11 @@ quake +prog jctest.qp +cmd amlev1
 quake -nosound +cmd amlev1
 ===============
 */
-void Cmd_StuffCmds_f(void)
+void Cmd_StuffCmds_f( void )
 {
 	int		i, j;
 	int		s;
-	char	*text, *build, c;
+	char* text, * build, c;
 
 	if (Cmd_Argc() != 1)
 	{
@@ -206,7 +208,7 @@ void Cmd_StuffCmds_f(void)
 		return;
 	}
 
-	// build the combined string to parse from
+// build the combined string to parse from
 	s = 0;
 	for (i = 1; i < com_argc; i++)
 	{
@@ -228,7 +230,7 @@ void Cmd_StuffCmds_f(void)
 			Q_strcat(text, " ");
 	}
 
-	// pull out the commands
+// pull out the commands
 	build = Z_Malloc(s + 1);
 	build[0] = 0;
 
@@ -264,11 +266,11 @@ void Cmd_StuffCmds_f(void)
 Cmd_Exec_f
 ===============
 */
-void Cmd_Exec_f(void)
+void Cmd_Exec_f( void )
 {
-	char	*f;
+	char* f;
 	int		mark;
-	char*	name;
+	char* name;
 
 	if (Cmd_Argc() != 2)
 	{
@@ -278,7 +280,7 @@ void Cmd_Exec_f(void)
 
 	mark = Hunk_LowMark();
 	name = Cmd_Argv(1);
-	f = (char *)COM_LoadHunkFile(name);
+	f = (char*)COM_LoadHunkFile(name);
 	if (f)
 	{
 		Con_Printf("execing %s\n", name);
@@ -300,7 +302,7 @@ Cmd_Echo_f
 Just prints the rest of the line to the console
 ===============
 */
-void Cmd_Echo_f(void)
+void Cmd_Echo_f( void )
 {
 	int		i;
 
@@ -317,21 +319,21 @@ Creates a new command that executes a command string (possibly ; seperated)
 ===============
 */
 
-char *CopyString(char *in)
+char* CopyString( char* in )
 {
-	char	*out;
+	char* out;
 
 	out = Z_Malloc(strlen(in) + 1);
 	strcpy(out, in);
 	return out;
 }
 
-void Cmd_Alias_f(void)
+void Cmd_Alias_f( void )
 {
-	cmdalias_t	*a;
+	cmdalias_t* a;
 	char		cmd[1024];
 	int			i, c;
-	char		*s;
+	char* s;
 
 	if (Cmd_Argc() == 1)
 	{
@@ -366,8 +368,8 @@ void Cmd_Alias_f(void)
 	}
 	strcpy(a->name, s);
 
-	// copy the rest of the command line
-	cmd[0] = '\0';		// start out with a null string
+// copy the rest of the command line
+	cmd[0] = 0;		// start out with a null string
 	c = Cmd_Argc();
 	for (i = 2; i < c; i++)
 	{
@@ -381,102 +383,6 @@ void Cmd_Alias_f(void)
 }
 
 /*
-===============
-Cmd_Alias_f
-
-Prints out the list of commands, can log them to a file if specified to do so, as well as can find commands by partial name specified.
-===============
-*/
-
-void Cmd_CmdList_f(void)
-{
-	int					nNumCmds;
-	int					c;
-	cmd_function_t*		cmd;
-	qboolean			bWasFileOpened;
-	FILE*				f;
-	char*				logfile;
-	char				buffer[256];
-	char*				partial;
-
-	c = Cmd_Argc();
-	bWasFileOpened = FALSE;
-
-	if (c >= 2)
-	{
-		partial = Cmd_Argv(1);
-
-		if (!_strcmpi(partial, "?"))
-		{
-			Con_Printf(
-				"CmdList           : List all commands\n"
-				"CmdList [Partial] : List commands starting with 'Partial'\n"
-				"CmdList log logfile [Partial] : Logs commands to file c:\\logfile.\n"
-				"NOTE:  No relative paths allowed!");
-			return;
-		}
-
-		if (!_strcmpi(partial, "log"))
-		{
-			logfile = Cmd_Argv(2);
-			sprintf(buffer, "c:\\%s", logfile);
-			f = fopen(buffer, "wt");
-
-			if (f)
-			{
-				bWasFileOpened = TRUE;
-			}
-			else
-			{
-				Con_Printf("Couldn't open [%s] for writing!\n", logfile);
-			}
-
-			if (c == 4)
-			{
-				partial = Cmd_Argv(3);
-			}
-			else
-			{
-				partial = NULL;
-			}
-		}
-	}
-
-	Con_Printf("Command List\n--------------\n");
-
-	cmd = cmd_functions;
-
-	while (cmd)
-	{
-		if (partial != NULL && _strnicmp(cmd->name, partial, strlen(partial)))
-		{
-			continue;
-		}
-
-		Con_Printf("%-16.16s\n", cmd->name);
-
-		if (bWasFileOpened)
-			fprintf(f, "%-16.16s\n", cmd->name);
-
-		++nNumCmds;
-
-		cmd = cmd->next;
-	}
-
-	if (c == 2 && partial && partial[0])
-	{
-		Con_Printf("--------------\n%3i Commands for [%s]\nCmdList ? for syntax\n", nNumCmds, partial);
-	}
-	else
-	{
-		Con_Printf("--------------\n%3i Total Commands\nCmdList ? for syntax\n", nNumCmds);
-	}
-
-	if (bWasFileOpened)
-		fclose(f);
-}
-
-/*
 =============================================================================
 
 					COMMAND EXECUTION
@@ -484,39 +390,29 @@ void Cmd_CmdList_f(void)
 =============================================================================
 */
 
-typedef struct cmd_function_s
-{
-	struct cmd_function_s	*next; //pointer to the next cmd_function_t (if any, if no it is NULL)
-	char					*name; //the command name
-	xcommand_t				function; //pointer to function which handles the command
-	qboolean				bShouldBeRecorded; //whether the command should be recorded in a demo
-							//FF: make sure that the last field in cmd_function_s is actually "bShouldBeRecorded"
-} cmd_function_t;
-//static_assert(sizeof(cmd_function_t) == 16);
-
 
 #define	MAX_ARGS		80
 
 static	int			cmd_argc;
-static	char		*cmd_argv[MAX_ARGS];
-static	char		*cmd_null_string = "";
-static	char		*cmd_args = NULL;
+static	char* cmd_argv[MAX_ARGS];
+static	char* cmd_null_string = "";
+static	char* cmd_args = NULL;
 
 cmd_source_t	cmd_source;
 
 
-static	cmd_function_t	*cmd_functions;		// possible commands to execute
+static	cmd_function_t* cmd_functions;		// possible commands to execute
 
 /*
 ============
 Cmd_Init
 ============
 */
-void Cmd_Init(void)
+void Cmd_Init( void )
 {
-	//
-	// register our commands
-	//
+//
+// register our commands
+//
 	Cmd_AddCommand("stuffcmds", Cmd_StuffCmds_f);
 	Cmd_AddCommand("exec", Cmd_Exec_f);
 	Cmd_AddCommand("echo", Cmd_Echo_f);
@@ -531,7 +427,7 @@ void Cmd_Init(void)
 Cmd_Argc
 ============
 */
-DLL_EXPORT int Cmd_Argc(void)
+int Cmd_Argc( void )
 {
 	return cmd_argc;
 }
@@ -541,7 +437,7 @@ DLL_EXPORT int Cmd_Argc(void)
 Cmd_Argv
 ============
 */
-DLL_EXPORT char	*Cmd_Argv(int arg)
+char* Cmd_Argv( int arg )
 {
 	if ((unsigned)arg >= cmd_argc)
 		return cmd_null_string;
@@ -553,7 +449,7 @@ DLL_EXPORT char	*Cmd_Argv(int arg)
 Cmd_Args
 ============
 */
-DLL_EXPORT char *Cmd_Args(void)
+char* Cmd_Args( void )
 {
 	return cmd_args;
 }
@@ -566,11 +462,11 @@ Cmd_TokenizeString
 Parses the given string into command line tokens.
 ============
 */
-void Cmd_TokenizeString(char *text)
+void Cmd_TokenizeString( char* text )
 {
 	int		i;
 
-	// clear the args from the last string
+// clear the args from the last string
 	for (i = 0; i < cmd_argc; i++)
 		Z_Free(cmd_argv[i]);
 
@@ -579,7 +475,7 @@ void Cmd_TokenizeString(char *text)
 
 	while (1)
 	{
-		// skip whitespace up to a /n
+// skip whitespace up to a /n
 		while (*text && *text <= ' ' && *text != '\n')
 		{
 			text++;
@@ -617,21 +513,21 @@ void Cmd_TokenizeString(char *text)
 Cmd_AddCommand
 ============
 */
-DLL_EXPORT void	Cmd_AddCommand(char *cmd_name, xcommand_t function)
+void	Cmd_AddCommand( char* cmd_name, xcommand_t function )
 {
-	cmd_function_t	*cmd;
+	cmd_function_t* cmd;
 
 	if (host_initialized)	// because hunk allocation would get stomped
 		Sys_Error("Cmd_AddCommand after host_initialized");
 
-	// fail if the command is a variable name
+// fail if the command is a variable name
 	if (Cvar_VariableString(cmd_name)[0])
 	{
 		Con_Printf("Cmd_AddCommand: %s already defined as a var\n", cmd_name);
 		return;
 	}
 
-	// fail if the command already exists
+// fail if the command already exists
 	for (cmd = cmd_functions; cmd; cmd = cmd->next)
 	{
 		if (!Q_strcmp(cmd_name, cmd->name))
@@ -645,7 +541,7 @@ DLL_EXPORT void	Cmd_AddCommand(char *cmd_name, xcommand_t function)
 	cmd->name = cmd_name;
 	cmd->function = function;
 	cmd->next = cmd_functions;
-	cmd->bShouldBeRecorded = FALSE;
+	cmd->huddll = FALSE;
 	cmd_functions = cmd;
 }
 
@@ -654,9 +550,9 @@ DLL_EXPORT void	Cmd_AddCommand(char *cmd_name, xcommand_t function)
 Cmd_Exists
 ============
 */
-qboolean	Cmd_Exists(char *cmd_name)
+qboolean	Cmd_Exists( char* cmd_name )
 {
-	cmd_function_t	*cmd;
+	cmd_function_t* cmd;
 
 	for (cmd = cmd_functions; cmd; cmd = cmd->next)
 	{
@@ -674,9 +570,9 @@ qboolean	Cmd_Exists(char *cmd_name)
 Cmd_CompleteCommand
 ============
 */
-char *Cmd_CompleteCommand(char *partial)
+char* Cmd_CompleteCommand( char* partial )
 {
-	cmd_function_t	*cmd;
+	cmd_function_t* cmd;
 	int				len;
 
 	len = Q_strlen(partial);
@@ -684,7 +580,7 @@ char *Cmd_CompleteCommand(char *partial)
 	if (!len)
 		return NULL;
 
-	// check functions
+// check functions
 	for (cmd = cmd_functions; cmd; cmd = cmd->next)
 		if (!Q_strncmp(partial, cmd->name, len))
 			return cmd->name;
@@ -700,15 +596,15 @@ A complete command line has been parsed, so try to execute it
 FIXME: lookupnoadd the token to speed search?
 ============
 */
-void	Cmd_ExecuteString(char *text, cmd_source_t src)
+void	Cmd_ExecuteString( char* text, cmd_source_t src )
 {
-	cmd_function_t	*cmd;
-	cmdalias_t		*a;
+	cmd_function_t* cmd;
+	cmdalias_t* a;
 
 	cmd_source = src;
 	Cmd_TokenizeString(text);
 
-	// execute the command line
+// execute the command line
 	if (!Cmd_Argc())
 		return;		// no tokens
 
@@ -719,14 +615,14 @@ void	Cmd_ExecuteString(char *text, cmd_source_t src)
 		{
 			cmd->function();
 
-			if (cls.demorecording && cmd->bShouldBeRecorded)
+			if (cls.demorecording && cmd->huddll)
 				CL_RecordHUDCommand(cmd->name);
 
 			return;
 		}
 	}
 
-	// check alias
+// check alias
 	for (a = cmd_alias; a; a = a->next)
 	{
 		if (!Q_strcasecmp(cmd_argv[0], a->name))
@@ -736,9 +632,20 @@ void	Cmd_ExecuteString(char *text, cmd_source_t src)
 		}
 	}
 
-	// check cvars
-	if (!Cvar_Command() && (cls.state == ca_connected || cls.state == ca_uninitialized || cls.state == ca_active))
+// check cvars
+	if (Cvar_Command())
+	{
+		return;
+	}
+
+	// forward the command line to the server, so the entity DLL can parse it
+	if (cls.state == ca_active ||
+		cls.state == ca_connected ||
+		cls.state == ca_uninitialized)
+	{
 		Cmd_ForwardToServer();
+		return;
+	}
 }
 
 
@@ -749,9 +656,11 @@ Cmd_ForwardToServer
 Sends the entire command line over to the server
 ===================
 */
-void Cmd_ForwardToServer(void)
+void Cmd_ForwardToServer( void )
 {
-	if (cls.state != ca_connected)
+	if (cls.state != ca_connected &&
+		cls.state != ca_uninitialized &&
+		cls.state != ca_active)
 	{
 		Con_Printf("Can't \"%s\", not connected\n", Cmd_Argv(0));
 		return;
@@ -786,7 +695,7 @@ where the given parameter apears, or 0 if not present
 ================
 */
 
-int Cmd_CheckParm(char *parm) //FF: unused in the OG binary
+int Cmd_CheckParm( char* parm )
 {
 	int i;
 
@@ -798,4 +707,112 @@ int Cmd_CheckParm(char *parm) //FF: unused in the OG binary
 			return i;
 
 	return 0;
+}
+
+/*
+===============
+Cmd_CmdList_f
+
+Prints out the list of commands, can log them to a file if specified to do so, as well as can find commands by partial name specified.
+===============
+*/
+
+void Cmd_CmdList_f( void )
+{
+	cmd_function_t* cmd;
+	int		iCmds = 0;
+	int		iArgs;
+	const char* partial = NULL, * arg1;
+	int		ipLen;
+	char	szTemp[256];
+	FILE* f = NULL;
+	qboolean bLogging = FALSE;
+
+	iArgs = Cmd_Argc();
+	if (iArgs >= 2)
+	{
+		arg1 = Cmd_Argv(1);
+
+		if (!_stricmp(arg1, "?"))
+		{
+			Con_Printf(
+				"CmdList           : List all commands\n"
+				"CmdList [Partial] : List commands starting with 'Partial'\n"
+				"CmdList log logfile [Partial] : Logs commands to file c:\\logfile.\n"
+				"NOTE:  No relative paths allowed!");
+			return;
+		}
+
+		if (!_stricmp(arg1, "log"))
+		{
+			sprintf(szTemp, "c:\\%s", Cmd_Argv(2));
+
+			f = fopen(szTemp, "wt");
+			if (!f)
+			{
+				Con_Printf("Couldn't open [%s] for writing!\n", Cmd_Argv(2));
+			}
+			else
+			{
+				bLogging = TRUE;
+			}
+
+			// Get next argument into partial, if present
+			if (iArgs == 4)
+			{
+				partial = Cmd_Argv(3);
+				ipLen = strlen(partial);
+			}
+		}
+		else
+		{
+			partial = arg1;
+			ipLen = strlen(partial);
+		}
+	}
+
+	// Banner
+	Con_Printf("Command List\n--------------\n");
+
+	// Loop through cmds...
+	for (cmd = cmd_functions; cmd; cmd = cmd->next)
+	{
+		if (partial)  // Partial string searching?
+		{
+			if (!_strnicmp(cmd->name, partial, ipLen))
+			{
+				Con_Printf("%-16.16s\n", cmd->name);
+				if (bLogging)
+				{
+					fprintf(f, "%-16.16s\n", cmd->name);
+				}
+				iCmds++;
+			}
+		}
+		else		  // List all cmds
+		{
+			Con_Printf("%-16.16s\n", cmd->name);
+			if (bLogging)
+			{
+				fprintf(f, "%-16.16s\n", cmd->name);
+			}
+			iCmds++;
+		}
+	}
+
+	// Show total and syntax help...
+	if (iArgs == 2 && partial && partial[0])
+	{
+		Con_Printf("--------------\n%3i Commands for [%s]\nCmdList ? for syntax\n", iCmds, partial);
+	}
+	else
+	{
+		Con_Printf("--------------\n%3i Total Commands\nCmdList ? for syntax\n", iCmds);
+	}
+
+	// Close log
+	if (bLogging)
+	{
+		fclose(f);
+	}
 }
