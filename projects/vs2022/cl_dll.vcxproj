@@ -52,9 +52,9 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
-      <SDLCheck>true</SDLCheck>
+      <SDLCheck>false</SDLCheck>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <ConformanceMode>true</ConformanceMode>
+      <ConformanceMode>false</ConformanceMode>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -66,9 +66,9 @@
       <WarningLevel>Level3</WarningLevel>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <SDLCheck>true</SDLCheck>
+      <SDLCheck>false</SDLCheck>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <ConformanceMode>true</ConformanceMode>
+      <ConformanceMode>false</ConformanceMode>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -87,6 +87,27 @@
     <ClInclude Include="..\..\cl_dll\util.h" />
     <ClInclude Include="..\..\cl_dll\util_vector.h" />
     <ClInclude Include="..\..\dlls\cdll_dll.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\cl_dll\ammo.cpp" />
+    <ClCompile Include="..\..\cl_dll\ammohistory.cpp" />
+    <ClCompile Include="..\..\cl_dll\battery.cpp" />
+    <ClCompile Include="..\..\cl_dll\cdll_int.cpp" />
+    <ClCompile Include="..\..\cl_dll\death.cpp" />
+    <ClCompile Include="..\..\cl_dll\flashlight.cpp" />
+    <ClCompile Include="..\..\cl_dll\geiger.cpp" />
+    <ClCompile Include="..\..\cl_dll\health.cpp" />
+    <ClCompile Include="..\..\cl_dll\hud.cpp" />
+    <ClCompile Include="..\..\cl_dll\hud_msg.cpp" />
+    <ClCompile Include="..\..\cl_dll\hud_redraw.cpp" />
+    <ClCompile Include="..\..\cl_dll\hud_update.cpp" />
+    <ClCompile Include="..\..\cl_dll\message.cpp" />
+    <ClCompile Include="..\..\cl_dll\MOTD.cpp" />
+    <ClCompile Include="..\..\cl_dll\parsemsg.cpp" />
+    <ClCompile Include="..\..\cl_dll\saytext.cpp" />
+    <ClCompile Include="..\..\cl_dll\scoreboard.cpp" />
+    <ClCompile Include="..\..\cl_dll\train.cpp" />
+    <ClCompile Include="..\..\cl_dll\util.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

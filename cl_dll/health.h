@@ -59,8 +59,8 @@ public:
 	virtual int VidInit( void );
 	virtual int Draw(float fTime);
 	virtual void Reset( void );
-	int MsgFunc_Health(char *pszName,  int iSize, void *pbuf);
-	int MsgFunc_Damage(char *pszName,  int iSize, void *pbuf);
+	int MsgFunc_Health(const char *pszName,  int iSize, void *pbuf);
+	int MsgFunc_Damage(const char *pszName,  int iSize, void *pbuf);
 	int m_iHealth;
 
 private:

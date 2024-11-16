@@ -167,7 +167,7 @@ void CHud :: VidInit( void )
 
 		if (m_pSpriteList)
 		{
-			for (int i = 0; g_rgszSpriteNames[i]; i++)
+			for (int i = 0; i < HUD_SPRITE_COUNT; i++)
 			{
 				client_sprite_s* p = GetSpriteList(m_pSpriteList, g_rgszSpriteNames[i], iRes, m_iSpriteCount);
 

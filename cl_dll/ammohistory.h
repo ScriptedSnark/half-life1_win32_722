@@ -112,7 +112,7 @@ public:
 	void Reset( void )
 	{
 		memset( rgAmmoHistory, 0, sizeof rgAmmoHistory );
-	}
+	}	
 
 	int iHistoryGap;
 	int iCurrentHistorySlot;

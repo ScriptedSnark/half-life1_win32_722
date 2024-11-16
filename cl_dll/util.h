@@ -112,7 +112,7 @@ void ScaleColors( int &r, int &g, int &b, int a );
 // disable 'truncation from 'const double' to 'float' warning message
 #pragma warning( disable: 4305 )
 
-extern const char** g_rgszSpriteNames;
+extern const char* g_rgszSpriteNames[HUD_SPRITE_COUNT];
 
 // GetSpriteIndex()
 // searches through the sprite list loaded from hud.txt for a name matching SpriteName
@@ -121,7 +121,7 @@ extern const char** g_rgszSpriteNames;
 inline int GetSpriteIndex(const char* SpriteName)
 {
 	// look through the loaded sprite name list for SpriteName
-	for (int i = 0; g_rgszSpriteNames[i]; i++)
+	for (int i = 0; i < HUD_SPRITE_COUNT; i++)
 	{
 		if (!strcmp(SpriteName, g_rgszSpriteNames[i]))
 			return i;
