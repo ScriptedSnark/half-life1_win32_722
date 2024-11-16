@@ -157,11 +157,16 @@ byte* COM_LoadStackFile( char* path, void* buffer, int bufsize );
 byte* COM_LoadTempFile( char* path, int* pLength );
 byte* COM_LoadHunkFile( char* path );
 byte* COM_LoadCacheFile( char* path, struct cache_user_s* cu );
+byte* COM_LoadFileForMe( char* path, int* pLength );
 
 void COM_FileSeek( int filepos, int filelen, int handle, int pos );
 int COM_FileTell( int filepos, int filelen, int handle );
 
+int COM_CompareFileTime( char* filename1, char* filename2, int* iCompare );
+
 int COM_ListMaps( char* pszFileName, char* pszSubString );
+
+void COM_GetGameDir( char* szGameDir );
 
 void LoadBMP8( int* h, byte** pPalette, int* nPalette, byte** pImage );
 byte* LoadBMP16( FILE* fin, qboolean is15bit );

@@ -27,6 +27,8 @@
     <ClInclude Include="..\..\engine\custom.h" />
     <ClInclude Include="..\..\engine\cvar.h" />
     <ClInclude Include="..\..\engine\cvardef.h" />
+    <ClInclude Include="..\..\engine\decal.h" />
+    <ClInclude Include="..\..\engine\draw.h" />
     <ClInclude Include="..\..\engine\eiface.h" />
     <ClInclude Include="..\..\engine\keys.h" />
     <ClInclude Include="..\..\engine\mathlib.h" />
@@ -36,12 +38,15 @@
     <ClInclude Include="..\..\engine\pr_cmds.h" />
     <ClInclude Include="..\..\engine\pr_dlls.h" />
     <ClInclude Include="..\..\engine\quakedef.h" />
+    <ClInclude Include="..\..\engine\r_local.h" />
+    <ClInclude Include="..\..\engine\r_shared.h" />
     <ClInclude Include="..\..\engine\screen.h" />
     <ClInclude Include="..\..\engine\server.h" />
     <ClInclude Include="..\..\engine\studio.h" />
     <ClInclude Include="..\..\engine\sys.h" />
     <ClInclude Include="..\..\engine\vid.h" />
     <ClInclude Include="..\..\engine\vmodes.h" />
+    <ClInclude Include="..\..\engine\wad.h" />
     <ClInclude Include="..\..\engine\winquake.h" />
     <ClInclude Include="..\..\engine\zone.h" />
   </ItemGroup>
@@ -58,6 +63,7 @@
     <ClCompile Include="..\..\engine\net_ws.c" />
     <ClCompile Include="..\..\engine\pe_export.c" />
     <ClCompile Include="..\..\engine\pr_cmds.c" />
+    <ClCompile Include="..\..\engine\R_SURF.C" />
     <ClCompile Include="..\..\engine\SCREEN.C" />
     <ClCompile Include="..\..\engine\SND_WIN.C" />
     <ClCompile Include="..\..\engine\sv_main.c" />

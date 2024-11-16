@@ -3,6 +3,8 @@
 #include "quakedef.h"
 #include "winquake.h"
 #include "pr_cmds.h"
+#include "decal.h"
+#include "r_local.h"
 
 #define NUM_SAFE_ARGVS  7
 
@@ -2625,16 +2627,109 @@ byte* LoadBMP16( FILE* fin, qboolean is15bit )
 	return pImage16;
 }
 
+/*
+===============
+COM_ClearCustomizationList
 
+===============
+*/
+void COM_ClearCustomizationList( customization_t* pHead, qboolean bCleanDecals )
+{
+	customization_t* pNext, * pCurrent;
+	int i;
 
+	pCurrent = pHead->pNext;
+	while (pCurrent)
+	{
+		pNext = pCurrent->pNext;
 
+		if (pCurrent->bInUse)
+		{
+			if (pCurrent->pBuffer)
+				free(pCurrent->pBuffer);
 
+			if (pCurrent->bInUse && pCurrent->pInfo)
+			{
+				if (pCurrent->resource.type == t_decal)
+				{
+					if (bCleanDecals && cls.state == ca_active)
+					{
+						R_DecalRemoveAll(-1 - pCurrent->resource.playernum);
+					}
 
+					cachewad_t* pWad = (cachewad_t*)pCurrent->pInfo;
 
+#if defined ( GLQUAKE )
+					cacheentry_t* pic;
+#else
+					cachepic_t* pic;
+#endif
 
+					free(pWad->lumps);
 
+					for (i = 0; i < pWad->cacheCount; i++)
+					{
+						pic = &pWad->cache[i];
 
+						if (Cache_Check(&pic->cache))
+							Cache_Free(&pic->cache);
+					}
 
+					free(pWad->cache);
+				}
 
+				free(pCurrent->pInfo);
+			}
+		}
 
-// TODO: Implement
+		free(pCurrent);
+		pCurrent = pNext;
+	}
+
+	pHead->pNext = NULL;
+}
+
+byte* COM_LoadFileForMe( char* path, int* pLength )
+{
+	return COM_LoadFile(path, 5, pLength);
+}
+
+int COM_CompareFileTime( char* filename1, char* filename2, int* iCompare )
+{
+	int bRet = 0;
+	*iCompare = 0;
+
+	if (filename1 && filename2)
+	{
+		FILE* pFile;
+		FILETIME ft1;
+		FILETIME ft2;
+
+		COM_FOpenFile(filename1, &pFile);
+		if (pFile)
+		{
+			fclose(pFile);
+			ft1 = gFileTime;
+
+			COM_FOpenFile(filename2, &pFile);
+			if (pFile)
+			{
+				fclose(pFile);
+				ft2 = gFileTime;
+				
+				*iCompare = CompareFileTime(&ft1, &ft2);
+				bRet = 1;
+			}
+		}
+	}
+
+	return bRet;
+}
+
+void COM_GetGameDir( char* szGameDir )
+{
+	if (!szGameDir)
+		return;
+
+	strcpy(szGameDir, com_gamedir);
+}
