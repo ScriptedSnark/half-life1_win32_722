@@ -200,10 +200,16 @@
     <ClInclude Include="..\..\engine\demo.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\engine\bspfile.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <MASM Include="..\..\engine\sys_wina.asm">
       <Filter>Source Files</Filter>
     </MASM>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\.editorconfig" />
   </ItemGroup>
 </Project>

@@ -1,5 +1,9 @@
 // comndef.h  -- general definitions
 
+#ifndef COMMON_H
+#define COMMON_H
+#pragma once
+
 typedef int qboolean;
 
 //============================================================================
@@ -132,6 +136,7 @@ void COM_StripExtension( char* in, char* out );
 char* COM_FileExtension( char* in );
 void COM_FileBase( char* in, char* out );
 void COM_DefaultExtension( char* path, char* extension );
+int COM_FindFile( char *filename, int *handle, FILE **file );
 
 // does a varargs printf into a temp buffer
 char* va( char* format, ... );
@@ -172,3 +177,5 @@ void LoadBMP8( int* h, byte** pPalette, int* nPalette, byte** pImage );
 byte* LoadBMP16( FILE* fin, qboolean is15bit );
 
 int build_number( void );
+
+#endif // COMMON_H

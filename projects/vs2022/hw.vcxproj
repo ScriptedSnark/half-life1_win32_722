@@ -40,6 +40,7 @@
     <ClInclude Include="..\..\common\platform.h" />
     <ClInclude Include="..\..\engine\anorms.h" />
     <ClInclude Include="..\..\engine\anorm_dots.h" />
+    <ClInclude Include="..\..\engine\bspfile.h" />
     <ClInclude Include="..\..\engine\client.h" />
     <ClInclude Include="..\..\engine\demo.h" />
     <ClInclude Include="..\..\engine\cmd.h" />
@@ -78,6 +79,9 @@
     <MASM Include="..\..\engine\sys_wina.asm">
       <FileType>Document</FileType>
     </MASM>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\.editorconfig" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
