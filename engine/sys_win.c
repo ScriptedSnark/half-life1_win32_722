@@ -604,7 +604,6 @@ WinMain
 */
 HINSTANCE	global_hInstance;
 char* argv[MAX_NUM_ARGVS];
-static char* empty_string = "";
 
 void VID_Stub( void )
 {
@@ -754,7 +753,7 @@ DLL_EXPORT int GameInit( char* lpCmdLine, unsigned char* pMem, int iSize, exefun
 	parms.cachedir = NULL;
 
 	parms.argc = 1;
-	argv[0] = empty_string;
+	argv[0] = "";
 
 	while (*lpCmdLine && (parms.argc < MAX_NUM_ARGVS))
 	{
