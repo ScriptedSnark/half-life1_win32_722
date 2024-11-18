@@ -22,6 +22,9 @@ typedef struct
 	qboolean	active;				// false if only a net client
 	qboolean	paused;				// are we paused?
 
+	edict_t		*edicts;			// can NOT be array indexed, because
+									// edict_t is variable sized, but can
+									// be used to reference the world ent
 
 	// TODO: Implement
 } server_t;

@@ -17,6 +17,8 @@ quakeparms_t host_parms;
 
 qboolean	host_initialized;		// true if into command execution
 
+double host_frametime;
+
 jmp_buf 	host_abortserver;
 
 

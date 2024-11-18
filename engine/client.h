@@ -32,7 +32,7 @@ typedef struct
 	float		demostarttime;
 	int			demostartframe;
 	int			forcetrack; //FF: totally unsure about this field!
-	void*		demofile;
+	FILE*		demofile;
 	void*		demoheader;
 
 	// TODO: Implement
@@ -41,5 +41,51 @@ typedef struct
 } client_static_t; //FF: add comments for the fields
 
 extern client_static_t	cls;
+
+//
+// the client_state_t structure is wiped completely at every
+// server signon
+//
+typedef struct
+{
+	vec3_t viewangles;
+} client_state_t;
+
+
+// TODO: Implement
+
+
+
+extern	cvar_t	lookspring;
+// TODO: Implement
+extern	cvar_t	sensitivity;
+
+
+// TODO: Implement
+
+extern	client_state_t	cl;
+
+//
+// cl_input
+//
+typedef struct
+{
+	int		down[2];		// key nums holding it down
+	int		state;			// low bit is down state
+} kbutton_t;
+
+extern	kbutton_t	in_mlook, in_klook;
+extern 	kbutton_t 	in_strafe;
+extern 	kbutton_t 	in_speed;
+
+void CL_InitInput( void );
+
+// TODO: Implement
+
+//
+// view
+//
+void V_StartPitchDrift(void);
+void V_StopPitchDrift(void);
 
 // TODO: Implement

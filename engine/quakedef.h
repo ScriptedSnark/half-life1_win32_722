@@ -75,6 +75,7 @@
 #include "cmd.h"
 
 
+#include "render.h"
 #include "client.h"
 #include "progs.h"
 #include "server.h"
@@ -128,6 +129,7 @@ extern	quakeparms_t host_parms;
 extern	cvar_t		developer;
 
 extern	qboolean	host_initialized;		// true if into command execution
+extern	double		host_frametime;
 
 
 
