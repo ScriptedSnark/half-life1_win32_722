@@ -20,7 +20,6 @@ qboolean	host_initialized;		// true if into command execution
 double		host_frametime;
 double		realtime;			// without any filtering or bounding
 double		oldrealtime;		// last frame run
-
 jmp_buf 	host_abortserver;
 
 

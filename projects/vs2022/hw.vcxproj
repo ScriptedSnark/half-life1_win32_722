@@ -13,6 +13,7 @@
   <ItemGroup>
     <ClCompile Include="..\..\engine\buildnum.c" />
     <ClCompile Include="..\..\engine\CL_DEMO.C" />
+    <ClCompile Include="..\..\engine\cl_input.c" />
     <ClCompile Include="..\..\engine\CL_MAIN.C" />
     <ClCompile Include="..\..\engine\cmd.c" />
     <ClCompile Include="..\..\engine\common.c" />
@@ -20,11 +21,12 @@
     <ClCompile Include="..\..\engine\crc.c" />
     <ClCompile Include="..\..\engine\cvar.c" />
     <ClCompile Include="..\..\engine\GL_DRAW.C" />
-    <ClCompile Include="..\..\engine\GL_RSURF.C" />
+    <ClCompile Include="..\..\engine\GL_RMAIN.C" />    <ClCompile Include="..\..\engine\GL_RSURF.C" />
     <ClCompile Include="..\..\engine\gl_screen.c" />
     <ClCompile Include="..\..\engine\GL_VIDNT.C" />
     <ClCompile Include="..\..\engine\host.c" />
     <ClCompile Include="..\..\engine\KEYS.C" />
+    <ClCompile Include="..\..\engine\mathlib.c" />
     <ClCompile Include="..\..\engine\net_ws.c" />
     <ClCompile Include="..\..\engine\pe_export.c" />
     <ClCompile Include="..\..\engine\pr_cmds.c" />
@@ -33,6 +35,8 @@
     <ClCompile Include="..\..\engine\sv_main.c" />
     <ClCompile Include="..\..\engine\sv_send.c" />
     <ClCompile Include="..\..\engine\sys_win.c" />
+    <ClCompile Include="..\..\engine\view.c" />
+    <ClCompile Include="..\..\engine\world.c" />
     <ClCompile Include="..\..\engine\zone.c" />
   </ItemGroup>
   <ItemGroup>
@@ -44,6 +48,7 @@
     <ClInclude Include="..\..\common\qfont.h" />
     <ClInclude Include="..\..\engine\anorms.h" />
     <ClInclude Include="..\..\engine\anorm_dots.h" />
+    <ClInclude Include="..\..\engine\bspfile.h" />
     <ClInclude Include="..\..\engine\client.h" />
     <ClInclude Include="..\..\engine\demo.h" />
     <ClInclude Include="..\..\engine\cmd.h" />
@@ -54,6 +59,7 @@
     <ClInclude Include="..\..\engine\custom.h" />
     <ClInclude Include="..\..\engine\cvar.h" />
     <ClInclude Include="..\..\engine\cvardef.h" />
+    <ClInclude Include="..\..\engine\dummyfile.h" />
     <ClInclude Include="..\..\engine\decal.h" />
     <ClInclude Include="..\..\engine\draw.h" />
     <ClInclude Include="..\..\engine\eiface.h" />
@@ -66,6 +72,7 @@
     <ClInclude Include="..\..\engine\pr_cmds.h" />
     <ClInclude Include="..\..\engine\pr_dlls.h" />
     <ClInclude Include="..\..\engine\quakedef.h" />
+    <ClInclude Include="..\..\engine\render.h" />
     <ClInclude Include="..\..\engine\r_local.h" />
     <ClInclude Include="..\..\engine\r_shared.h" />
     <ClInclude Include="..\..\engine\screen.h" />
@@ -83,6 +90,9 @@
     <MASM Include="..\..\engine\sys_wina.asm">
       <FileType>Document</FileType>
     </MASM>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\.editorconfig" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
