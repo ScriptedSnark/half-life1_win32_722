@@ -52,3 +52,16 @@ extern	jmp_buf 	host_abortserver;
 
 
 void SV_BroadcastPrintf( char* fmt, ... );
+
+
+//
+// sv_send.c
+//
+typedef enum
+{
+	RD_NONE = 0,
+	RD_CLIENT,
+	RD_PACKET
+} redirect_t;
+extern redirect_t	sv_redirected;
+void SV_FlushRedirect( void );

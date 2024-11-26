@@ -49,7 +49,36 @@ console is:
 
 */
 
-qboolean	scr_skipupdate;
+
+int			glx, gly, glwidth, glheight;
+
+// only the refresh window will be updated unless these variables are flagged 
+int			scr_copytop;
+int			scr_copyeverything;
+
+float		scr_con_current;
+
+
+
+
+int			clearconsole;
+int			clearnotify;
+
+
+
+
+qboolean	scr_disabled_for_loading;
+
+/*
+===============
+SCR_EndLoadingPlaque
+
+================
+*/
+void SCR_EndLoadingPlaque( void )
+{
+	// TODO: Implement
+}
 
 /*
 ==================

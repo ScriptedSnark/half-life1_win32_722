@@ -74,6 +74,7 @@
 #include "protocol.h"
 #include "cmd.h"
 
+#include "sound.h"
 
 #include "client.h"
 #include "progs.h"
@@ -128,6 +129,13 @@ extern	quakeparms_t host_parms;
 extern	cvar_t		developer;
 
 extern	qboolean	host_initialized;		// true if into command execution
+
+
+
+extern	int			host_framecount;	// incremented every frame, never reset
+extern	double		realtime;			// not bounded in any way, changed at
+// start of every frame, never reset
+
 
 
 

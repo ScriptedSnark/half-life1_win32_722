@@ -105,6 +105,8 @@ extern	int		key_repeats[256];
 extern	int		key_count;			// incremented every key event
 extern	int		key_lastpress;
 
+extern	char	message_type[32];
+
 DLL_EXPORT void Key_Event( int key, qboolean down );
 DLL_EXPORT void Key_ClearStates( void );
 

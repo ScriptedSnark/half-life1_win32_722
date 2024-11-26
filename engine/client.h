@@ -4,6 +4,14 @@
 // TODO: Implement
 
 
+//
+// client_state_t should hold all pieces of the client state
+//
+
+#define	SIGNONS		3			// signon messages to receive before connected
+
+
+
 typedef enum
 {
 	ca_dedicated = 0,	// This is a dedicated server, client code is inactive
@@ -34,6 +42,14 @@ typedef struct
 	int			forcetrack; //FF: totally unsure about this field!
 	void*		demofile;
 	void*		demoheader;
+
+
+	// TODO: Implement
+
+
+// connection information
+	int			signon;			// 0 to SIGNONS
+
 
 	// TODO: Implement
 

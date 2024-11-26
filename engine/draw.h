@@ -46,12 +46,21 @@ typedef struct cachewad_s
 #endif
 } cachewad_t;
 
+#include "qfont.h"
 
+extern qfont_t* draw_chars;
+extern qfont_t* draw_creditsfont;
 
 void	Draw_Init( void );
 void	Draw_Shutdown( void );
+int		Draw_Character( int x, int y, int num );
 
 
+void	Draw_ConsoleBackground( int lines );
+
+
+
+int		Draw_String( int x, int y, char* str );
 
 
 #endif // DRAW_H

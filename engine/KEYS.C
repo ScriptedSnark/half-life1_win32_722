@@ -348,11 +348,11 @@ void Key_Console( int key )
 //============================================================================
 
 char chat_buffer[120 + 1];
+char message_type[32] = "say";
+int chat_bufferlen = 0;
 
 void Key_Message( int key )
 {
-	static int chat_bufferlen = 0;
-
 	if (key == K_ENTER)
 	{
 		Cbuf_AddText("say");
@@ -363,6 +363,7 @@ void Key_Message( int key )
 		key_dest = key_game;
 		chat_bufferlen = 0;
 		chat_buffer[0] = 0;
+		strcpy(message_type, "say");
 		return;
 	}
 

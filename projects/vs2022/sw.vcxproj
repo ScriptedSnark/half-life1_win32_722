@@ -16,6 +16,7 @@
     <ClInclude Include="..\..\common\dll_state.h" />
     <ClInclude Include="..\..\common\exefuncs.h" />
     <ClInclude Include="..\..\common\platform.h" />
+    <ClInclude Include="..\..\common\qfont.h" />
     <ClInclude Include="..\..\engine\anorms.h" />
     <ClInclude Include="..\..\engine\anorm_dots.h" />
     <ClInclude Include="..\..\engine\client.h" />
@@ -43,6 +44,7 @@
     <ClInclude Include="..\..\engine\r_shared.h" />
     <ClInclude Include="..\..\engine\screen.h" />
     <ClInclude Include="..\..\engine\server.h" />
+    <ClInclude Include="..\..\engine\sound.h" />
     <ClInclude Include="..\..\engine\studio.h" />
     <ClInclude Include="..\..\engine\sys.h" />
     <ClInclude Include="..\..\engine\vid.h" />
@@ -67,8 +69,10 @@
     <ClCompile Include="..\..\engine\pr_cmds.c" />
     <ClCompile Include="..\..\engine\R_SURF.C" />
     <ClCompile Include="..\..\engine\SCREEN.C" />
+    <ClCompile Include="..\..\engine\SND_DMA.C" />
     <ClCompile Include="..\..\engine\SND_WIN.C" />
     <ClCompile Include="..\..\engine\sv_main.c" />
+    <ClCompile Include="..\..\engine\sv_send.c" />
     <ClCompile Include="..\..\engine\sys_win.c" />
     <ClCompile Include="..\..\engine\vid_win.c" />
     <ClCompile Include="..\..\engine\zone.c" />
