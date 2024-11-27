@@ -101,7 +101,8 @@
     </ClCompile>
     <ClCompile Include="..\..\engine\GL_DRAW.C">
       <Filter>Source Files</Filter>
-    </ClCompile>  </ItemGroup>
+    </ClCompile>
+  </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\engine\anorm_dots.h">
       <Filter>Header Files</Filter>
@@ -231,12 +232,17 @@
     </ClInclude>
     <ClInclude Include="..\..\engine\dummyfile.h">
       <Filter>Header Files</Filter>
-    </ClInclude>    <ClInclude Include="..\..\common\qfont.h">
+    </ClInclude>
+    <ClInclude Include="..\..\common\qfont.h">
       <Filter>Header Files\common</Filter>
     </ClInclude>
     <ClInclude Include="..\..\engine\sound.h">
       <Filter>Header Files</Filter>
-    </ClInclude>  </ItemGroup>
+    </ClInclude>
+    <ClInclude Include="..\..\engine\bothdefs.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
   <ItemGroup>
     <MASM Include="..\..\engine\sys_wina.asm">
       <Filter>Source Files</Filter>

@@ -21,7 +21,8 @@
     <ClCompile Include="..\..\engine\crc.c" />
     <ClCompile Include="..\..\engine\cvar.c" />
     <ClCompile Include="..\..\engine\GL_DRAW.C" />
-    <ClCompile Include="..\..\engine\GL_RMAIN.C" />    <ClCompile Include="..\..\engine\GL_RSURF.C" />
+    <ClCompile Include="..\..\engine\GL_RMAIN.C" />
+    <ClCompile Include="..\..\engine\GL_RSURF.C" />
     <ClCompile Include="..\..\engine\gl_screen.c" />
     <ClCompile Include="..\..\engine\GL_VIDNT.C" />
     <ClCompile Include="..\..\engine\host.c" />
@@ -48,6 +49,7 @@
     <ClInclude Include="..\..\common\qfont.h" />
     <ClInclude Include="..\..\engine\anorms.h" />
     <ClInclude Include="..\..\engine\anorm_dots.h" />
+    <ClInclude Include="..\..\engine\bothdefs.h" />
     <ClInclude Include="..\..\engine\bspfile.h" />
     <ClInclude Include="..\..\engine\client.h" />
     <ClInclude Include="..\..\engine\demo.h" />

@@ -47,6 +47,7 @@
 
 
 #include "platform.h"
+#include "bothdefs.h"
 #include "mathlib.h"
 #include "const.h"
 #include "progs.h"

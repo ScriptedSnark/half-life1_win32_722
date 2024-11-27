@@ -1,19 +1,10 @@
 // cl.input.c  -- builds an intended movement command to send to the server
 
+// Quake is a trademark of Id Software, Inc., (c) 1996 Id Software, Inc. All
+// rights reserved.
+
 #include "quakedef.h"
 #include "winquake.h"
-
-#define STILL_HAVENT_MOVED_SHIT_OUT_OF_HERE
-
-#ifdef STILL_HAVENT_MOVED_SHIT_OUT_OF_HERE
-
-//FF: move me to bothdefs.h
-#define PITCH 0
-#define YAW 1
-#define ROLL 2
-
-#pragma message("cl_input.c: Move PITCH, YAW, ROLL out of here! I'm uncomfortable with them being here.")
-#endif //STILL_HAVENT_MOVED_SHIT_OUT_OF_HERE
 
 /*
 ===============================================================================
@@ -124,7 +115,7 @@ KeyDown
 void KeyDown( kbutton_t *b )
 {
 	int		k;
-	char	*c;
+	char* c;
 
 	c = Cmd_Argv(1);
 	if (c[0])
@@ -158,7 +149,7 @@ KeyUp
 void KeyUp( kbutton_t *b )
 {
 	int		k;
-	char	*c;
+	char* c;
 
 	c = Cmd_Argv(1);
 	if (c[0])
@@ -178,7 +169,7 @@ void KeyUp( kbutton_t *b )
 		return;		// key up without corresponding down (menu pass through)
 	if (b->down[0] || b->down[1])
 	{
-		//Con_Printf ("Keys down for button: '%c' '%c' '%c' (%d,%d,%d)!\n", b->down[0], b->down[1], c, b->down[0], b->down[1], c);
+		//Con_Printf("Keys down for button: '%c' '%c' '%c' (%d,%d,%d)!\n", b->down[0], b->down[1], c, b->down[0], b->down[1], c);
 		return;		// some other key is still holding it down
 	}
 
@@ -263,7 +254,7 @@ Returns 0.25 if a key was pressed and released during the frame,
 1.0 if held for the entire time
 ===============
 */
-float CL_KeyState( kbutton_t *key )
+float CL_KeyState( kbutton_t* key )
 {
 	float		val = 0.0;
 	int			impulsedown, impulseup, down;
@@ -332,35 +323,157 @@ void CL_AdjustAngles( void )
 
 	if (!(in_strafe.state & 1))
 	{
-		cl.viewangles[ YAW ] += speed * cl_yawspeed.value*CL_KeyState(&in_left);
-		cl.viewangles[ YAW ] -= speed * cl_yawspeed.value*CL_KeyState(&in_right);
-		cl.viewangles[ YAW ] = anglemod(cl.viewangles[ YAW ]);
+		cl.viewangles[YAW] += speed * cl_yawspeed.value * CL_KeyState(&in_left);
+		cl.viewangles[YAW] -= speed * cl_yawspeed.value * CL_KeyState(&in_right);
+		cl.viewangles[YAW] = anglemod(cl.viewangles[YAW]);
 	}
 	if (in_klook.state & 1)
 	{
 		V_StopPitchDrift();
-		cl.viewangles[ PITCH ] -= speed * cl_pitchspeed.value * CL_KeyState(&in_forward);
-		cl.viewangles[ PITCH ] += speed * cl_pitchspeed.value * CL_KeyState(&in_back);
+		cl.viewangles[PITCH] -= speed * cl_pitchspeed.value * CL_KeyState(&in_forward);
+		cl.viewangles[PITCH] += speed * cl_pitchspeed.value * CL_KeyState(&in_back);
 	}
 
 	up = CL_KeyState(&in_lookup);
 	down = CL_KeyState(&in_lookdown);
 
-	cl.viewangles[ PITCH ] -= speed * cl_pitchspeed.value * up;
-	cl.viewangles[ PITCH ] += speed * cl_pitchspeed.value * down;
+	cl.viewangles[PITCH] -= speed * cl_pitchspeed.value * up;
+	cl.viewangles[PITCH] += speed * cl_pitchspeed.value * down;
 
 	if (up || down)
 		V_StopPitchDrift();
 
-	if (cl.viewangles[ PITCH ] > cl_pitchdown.value)
-		cl.viewangles[ PITCH ] = cl_pitchdown.value;
-	if (cl.viewangles[ PITCH ] < -cl_pitchup.value)
-		cl.viewangles[ PITCH ] = -cl_pitchup.value;
+	if (cl.viewangles[PITCH] > cl_pitchdown.value)
+		cl.viewangles[PITCH] = cl_pitchdown.value;
+	if (cl.viewangles[PITCH] < -cl_pitchup.value)
+		cl.viewangles[PITCH] = -cl_pitchup.value;
 
-	if (cl.viewangles[ ROLL ] > 50)
-		cl.viewangles[ ROLL ] = 50;
-	if (cl.viewangles[ ROLL ] < -50)
-		cl.viewangles[ ROLL ] = -50;
+	if (cl.viewangles[ROLL] > 50)
+		cl.viewangles[ROLL] = 50;
+	if (cl.viewangles[ROLL] < -50)
+		cl.viewangles[ROLL] = -50;
+}
+
+/*
+============
+CL_ButtonBits
+
+Returns appropriate button info for keyboard and mouse state
+Set bResetState to 1 to clear old state info
+============
+*/
+int CL_ButtonBits( int bResetState )
+{
+	int bits = 0;
+
+	if (in_attack.state & 3)
+	{
+		bits |= IN_ATTACK;
+	}
+
+	if (in_duck.state & 3)
+	{
+		bits |= IN_DUCK;
+	}
+
+	if (in_jump.state & 3)
+	{
+		bits |= IN_JUMP;
+	}
+
+	if (in_forward.state & 3)
+	{
+		bits |= IN_FORWARD;
+	}
+
+	if (in_back.state & 3)
+	{
+		bits |= IN_BACK;
+	}
+
+	if (in_use.state & 3)
+	{
+		bits |= IN_USE;
+	}
+
+	if (in_cancel)
+	{
+		bits |= IN_CANCEL;
+	}
+
+	if (in_left.state & 3)
+	{
+		bits |= IN_LEFT;
+	}
+
+	if (in_right.state & 3)
+	{
+		bits |= IN_RIGHT;
+	}
+
+	if (in_moveleft.state & 3)
+	{
+		bits |= IN_MOVELEFT;
+	}
+
+	if (in_moveright.state & 3)
+	{
+		bits |= IN_MOVERIGHT;
+	}
+
+	if (in_attack2.state & 3)
+	{
+		bits |= IN_ATTACK2;
+	}
+
+	if (in_reload.state & 3)
+	{
+		bits |= IN_RELOAD;
+	}
+
+	if (bResetState)
+	{
+		in_attack.state &= ~2;
+		in_duck.state &= ~2;
+		in_jump.state &= ~2;
+		in_forward.state &= ~2;
+		in_back.state &= ~2;
+		in_use.state &= ~2;
+		in_left.state &= ~2;
+		in_right.state &= ~2;
+		in_moveleft.state &= ~2;
+		in_moveright.state &= ~2;
+		in_attack2.state &= ~2;
+		in_reload.state &= ~2;
+	}
+
+	return bits;
+}
+
+/*
+============
+CL_ResetButtonBits
+
+============
+*/
+void CL_ResetButtonBits( int bits )
+{
+	int bitsNew = CL_ButtonBits(0) ^ bits;
+
+	// Has the attack button been changed
+	if (bitsNew & IN_ATTACK)
+	{
+		// Was it pressed? or let go?
+		if (bits & IN_ATTACK)
+		{
+			KeyDown(&in_attack);
+		}
+		else
+		{
+			// totally clear state
+			in_attack.state &= ~7;
+		}
+	}
 }
 
 /*
