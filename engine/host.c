@@ -55,6 +55,8 @@ Host_Init
 */
 int Host_Init( quakeparms_t* parms )
 {
+	Sys_Error("Host_Init: Not implemented yet");
+
 	// TODO: Implement
 	return 0;
 }
@@ -75,3 +77,31 @@ void Host_Shutdown( void )
 
 
 // TODO: Implement
+
+
+
+/*
+==================
+Host_GetHostInfo
+==================
+*/
+DLL_EXPORT void Host_GetHostInfo( float* fps, int* nActive, int* nBots, int* nMaxPlayers, char* pszMap )
+{
+	// TODO: Implement
+}
+
+
+
+/*
+==============================
+Host_Frame
+
+==============================
+*/
+DLL_EXPORT int Host_Frame( float time, int iState, int* stateInfo )
+{
+	// TODO: Implement
+	Sys_Error("_Host_Frame: Not implemented yet");
+
+	return 0;
+}

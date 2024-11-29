@@ -48,3 +48,31 @@ void S_UnblockSound( void )
 {
 	// TODO: Implement
 }
+
+
+
+void Snd_ReleaseBuffer( void )
+{
+	// TODO: Implement
+}
+
+void Snd_AcquireBuffer( void )
+{
+	// TODO: Implement
+}
+
+
+
+
+
+/*
+==============
+SNDDMA_Shutdown
+
+Reset the sound device for exiting
+===============
+*/
+void SNDDMA_Shutdown( void )
+{
+	// TODO: Implement
+}

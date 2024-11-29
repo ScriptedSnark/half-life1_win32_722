@@ -85,7 +85,7 @@
 
 
 
-
+#include "input.h"
 
 #include "keys.h"
 #include "console.h"
@@ -144,4 +144,4 @@ extern	double		realtime;			// not bounded in any way, changed at
 
 
 int Host_Init( quakeparms_t* parms );
-void Host_Shutdown( void );
+DLL_EXPORT void Host_Shutdown( void );

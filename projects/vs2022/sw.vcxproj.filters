@@ -141,6 +141,12 @@
     <ClInclude Include="..\..\engine\bothdefs.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\engine\input.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\engine\conproc.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\engine\sys_win.c">
@@ -207,6 +213,18 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\engine\SND_DMA.C">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\engine\cdll_int.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\engine\in_win.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\engine\conproc.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\engine\host_cmd.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

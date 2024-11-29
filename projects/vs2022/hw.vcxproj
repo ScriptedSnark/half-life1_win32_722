@@ -12,11 +12,13 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\engine\buildnum.c" />
+    <ClCompile Include="..\..\engine\cdll_int.c" />
     <ClCompile Include="..\..\engine\CL_DEMO.C" />
     <ClCompile Include="..\..\engine\cl_input.c" />
     <ClCompile Include="..\..\engine\CL_MAIN.C" />
     <ClCompile Include="..\..\engine\cmd.c" />
     <ClCompile Include="..\..\engine\common.c" />
+    <ClCompile Include="..\..\engine\conproc.c" />
     <ClCompile Include="..\..\engine\CONSOLE.C" />
     <ClCompile Include="..\..\engine\crc.c" />
     <ClCompile Include="..\..\engine\cvar.c" />
@@ -26,9 +28,12 @@
     <ClCompile Include="..\..\engine\gl_screen.c" />
     <ClCompile Include="..\..\engine\GL_VIDNT.C" />
     <ClCompile Include="..\..\engine\host.c" />
+    <ClCompile Include="..\..\engine\host_cmd.c" />
+    <ClCompile Include="..\..\engine\in_win.c" />
     <ClCompile Include="..\..\engine\KEYS.C" />
     <ClCompile Include="..\..\engine\mathlib.c" />
     <ClCompile Include="..\..\engine\net_ws.c" />
+    <ClCompile Include="..\..\engine\opengl2d3d.c" />
     <ClCompile Include="..\..\engine\pe_export.c" />
     <ClCompile Include="..\..\engine\pr_cmds.c" />
     <ClCompile Include="..\..\engine\SND_DMA.C" />
@@ -52,6 +57,7 @@
     <ClInclude Include="..\..\engine\bothdefs.h" />
     <ClInclude Include="..\..\engine\bspfile.h" />
     <ClInclude Include="..\..\engine\client.h" />
+    <ClInclude Include="..\..\engine\conproc.h" />
     <ClInclude Include="..\..\engine\demo.h" />
     <ClInclude Include="..\..\engine\cmd.h" />
     <ClInclude Include="..\..\engine\color.h" />
@@ -65,9 +71,11 @@
     <ClInclude Include="..\..\engine\decal.h" />
     <ClInclude Include="..\..\engine\draw.h" />
     <ClInclude Include="..\..\engine\eiface.h" />
+    <ClInclude Include="..\..\engine\input.h" />
     <ClInclude Include="..\..\engine\keys.h" />
     <ClInclude Include="..\..\engine\mathlib.h" />
     <ClInclude Include="..\..\engine\net.h" />
+    <ClInclude Include="..\..\engine\opengl2d3d.h" />
     <ClInclude Include="..\..\engine\progdefs.h" />
     <ClInclude Include="..\..\engine\Progs.h" />
     <ClInclude Include="..\..\engine\protocol.h" />
