@@ -290,8 +290,6 @@ qboolean CRC_File( CRC32_t* crcvalue, char* pszFileName )
 	if (!fp || nSize == -1)
 		return 0;
 
-	nSize = ftell( fp );
-
 	// Now read in 1K chunks
 	while (nSize > 0)
 	{
@@ -309,7 +307,11 @@ qboolean CRC_File( CRC32_t* crcvalue, char* pszFileName )
 
 		// We we are end of file, break loop and return
 		if (feof( fp ))
+		{
+			fclose( fp );
+			fp = NULL;
 			break;
+		}
 
 		// If there was a disk error, indicate failure.
 		if (ferror( fp ) != 0)
@@ -319,7 +321,8 @@ qboolean CRC_File( CRC32_t* crcvalue, char* pszFileName )
 		}
 	}
 
-	fclose( fp );
+	if (fp)
+		fclose( fp );
 	return 1;
 }
 
@@ -341,7 +344,7 @@ int CRC_MapFile( CRC32_t* crcvalue, char* pszFileName )
 {
 	FILE* fp;
 	byte chunk[1024];
-	int l;
+	int i, l;
 	int nBytesRead;
 	dheader_t	header;
 	int nSize;
@@ -354,6 +357,22 @@ int CRC_MapFile( CRC32_t* crcvalue, char* pszFileName )
 		return 0;
 
 	startOfs = ftell( fp );
+
+	if (fread( &header, sizeof( dheader_t ), 1, fp ) == 1)
+	{
+		fclose( fp );
+		Con_Printf( "Could not read BSP header for map [%s].\n", pszFileName );
+		return 1;
+	}
+
+	i = LittleLong( header.version );
+
+	if (i != Q1BSP_VERSION && i != BSPVERSION)
+	{
+		Con_Printf( "Map [%s] has incorrect BSP version (%i should be %i).\n", pszFileName, i, BSPVERSION );
+		fclose( fp );
+		return 0;
+	}
 
 	// CRC across all lumps except for the Entities lump
 	for (l = 0; l < HEADER_LUMPS; l++)
