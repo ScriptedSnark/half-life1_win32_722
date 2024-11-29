@@ -36,6 +36,20 @@
 
 
 
+#define	MINIMUM_MEMORY			0x550000
+#define	MINIMUM_MEMORY_LEVELPAK	(MINIMUM_MEMORY + 0x100000)
+
+#define MAX_NUM_ARGVS	50
+
+// up / down
+#define	PITCH	0
+
+// left / right
+#define	YAW		1
+
+// fall over
+#define	ROLL	2
+
 
 #define	MAX_QPATH		64			// max length of a quake game pathname
 #define	MAX_OSPATH		128			// max length of a filesystem pathname
@@ -118,8 +132,6 @@ typedef struct
 
 //=============================================================================
 
-#define MAX_NUM_ARGVS	50
-
 
 
 
@@ -145,3 +157,11 @@ extern	double		realtime;			// not bounded in any way, changed at
 
 int Host_Init( quakeparms_t* parms );
 DLL_EXPORT void Host_Shutdown( void );
+
+
+void Master_Init( void );
+
+
+extern qboolean		isDedicated;
+
+extern int			minimum_memory;

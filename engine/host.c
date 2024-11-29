@@ -20,6 +20,13 @@ qboolean	host_initialized;		// true if into command execution
 double		host_frametime;
 double		realtime;			// without any filtering or bounding
 double		oldrealtime;		// last frame run
+
+
+
+int			minimum_memory;
+
+
+
 jmp_buf 	host_abortserver;
 
 
@@ -55,10 +62,46 @@ Host_Init
 */
 int Host_Init( quakeparms_t* parms )
 {
-	Sys_Error("Host_Init: Not implemented yet");
+	if (standard_quake)
+		minimum_memory = MINIMUM_MEMORY;
+	else
+		minimum_memory = MINIMUM_MEMORY_LEVELPAK;
+
+	if (COM_CheckParm("-minmemory"))
+		parms->memsize = minimum_memory;
+
+	host_parms = *parms;
+
+	if (parms->memsize < minimum_memory)
+		Sys_Error("Only %4.1f megs of memory available, can't execute game", parms->memsize / (float)0x100000);
+
+	com_argc = parms->argc;
+	com_argv = parms->argv;
+
+	Master_Init();
+
+	realtime = 0.0;
+
+	Memory_Init(parms->membase, parms->memsize);
+	Cbuf_Init();
+	Cmd_Init();
+	Cvar_CmdInit();
+//	V_Init(); TODO: Implement
+//	Chase_Init(); TODO: Implement
+	COM_Init(parms->basedir);
+//	Host_InitLocal(); TODO: Implement
+//	W_LoadWadFile("gfx.wad"); TODO: Implement
+	Key_Init();
+	Con_Init();
 
 	// TODO: Implement
-	return 0;
+
+
+
+//	Sys_Error("Host_Init: Not implemented yet");
+
+	// TODO: Implement
+	return 1;
 }
 
 
@@ -78,6 +121,11 @@ void Host_Shutdown( void )
 
 // TODO: Implement
 
+
+void Master_Init( void )
+{
+	// TODO: Implement
+}
 
 
 /*

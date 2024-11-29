@@ -178,4 +178,6 @@ byte* LoadBMP16( FILE* fin, qboolean is15bit );
 
 int build_number( void );
 
+extern qboolean		standard_quake, rogue, hipnotic;
+
 #endif // COMMON_H
