@@ -402,3 +402,6 @@ FodyWeavers.xsd
 /engine/GL_Release/hw.dll
 /engine/GL_Release/hw.exp
 /engine/GL_Release/hw.lib
+/engine/GL_Debug/hw.dll
+/engine/GL_Debug/hw.exp
+/engine/GL_Debug/hw.lib

@@ -136,7 +136,7 @@ void Cbuf_Execute( void )
 	while (cmd_text.cursize)
 	{
 // find a \n or ; line break
-		text = (char *)cmd_text.data;
+		text = (char*)cmd_text.data;
 
 		quotes = 0;
 		for (i = 0; i < cmd_text.cursize; i++)
@@ -270,7 +270,7 @@ void Cmd_Exec_f( void )
 {
 	char* f;
 	int		mark;
-	char* name;
+	char* pszFileName;
 
 	if (Cmd_Argc() != 2)
 	{
@@ -278,20 +278,24 @@ void Cmd_Exec_f( void )
 		return;
 	}
 
-	mark = Hunk_LowMark();
-	name = Cmd_Argv(1);
-	f = (char*)COM_LoadHunkFile(name);
-	if (f)
-	{
-		Con_Printf("execing %s\n", name);
+	pszFileName = Cmd_Argv(1);
+	if (!pszFileName)
+		return;
 
-		Cbuf_InsertText(f);
-		Hunk_FreeToLowMark(mark);
-	}
-	else if (!strstr(name, "autoexec.cfg"))
+	mark = Hunk_LowMark();
+	f = (char*)COM_LoadHunkFile(pszFileName);
+	if (!f)
 	{
-		Con_Printf("couldn't exec %s\n", name);
+		if (!strstr(pszFileName, "autoexec.cfg"))
+		{
+			Con_Printf("couldn't exec %s\n", pszFileName);
+		}
+		return;
 	}
+	Con_DPrintf("execing %s\n", pszFileName);
+
+	Cbuf_InsertText(f);
+	Hunk_FreeToLowMark(mark);
 }
 
 

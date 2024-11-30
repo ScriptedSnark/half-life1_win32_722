@@ -9,6 +9,22 @@ qfont_t* draw_chars;
 qfont_t* draw_creditsfont;
 
 
+// This is called to reset all loaded decals
+// called from cl_parse.c and host.c
+void Decal_Init( void )
+{
+	// TODO: Implement
+}
+
+/*
+===============
+Draw_Init
+===============
+*/
+void Draw_Init( void )
+{
+	// TODO: Implement
+}
 
 
 

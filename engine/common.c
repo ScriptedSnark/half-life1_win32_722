@@ -1911,7 +1911,6 @@ pack_t* COM_LoadPackFile( char* packfile )
 	int                             numpackfiles;
 	pack_t* pack;
 	int                             packhandle;
-	dpackfile_t             info[MAX_FILES_IN_PACK];
 	CRC32_t					crc;
 
 	if (Sys_FileOpenRead(packfile, &packhandle) == -1)
@@ -1934,7 +1933,7 @@ pack_t* COM_LoadPackFile( char* packfile )
 	if (numpackfiles != PAK0_COUNT)
 		com_modified = TRUE;    // not the original file
 
-	newfiles = Hunk_AllocName(numpackfiles * sizeof(dpackfile_t), "packfile");
+	newfiles = (dpackfile_t*)Hunk_AllocName(numpackfiles * sizeof(dpackfile_t), "packfile");
 
 	Sys_FileSeek(packhandle, header.dirofs);
 	Sys_FileRead(packhandle, newfiles, header.dirlen);
@@ -1948,11 +1947,11 @@ pack_t* COM_LoadPackFile( char* packfile )
 // parse the directory
 	for (i = 0; i < numpackfiles; i++)
 	{
-		newfiles[i].filepos = LittleLong(info[i].filepos);
-		newfiles[i].filelen = LittleLong(info[i].filelen);
+		newfiles[i].filepos = LittleLong(newfiles[i].filepos);
+		newfiles[i].filelen = LittleLong(newfiles[i].filelen);
 	}
 
-	pack = Hunk_Alloc(sizeof(pack_t));
+	pack = (pack_t*)Hunk_Alloc(sizeof(pack_t));
 	strcpy(pack->filename, packfile);
 	pack->numfiles = numpackfiles;
 	pack->handle = packhandle;

@@ -1,28 +1,27 @@
+// r_misc.c
+
 #include "quakedef.h"
 
-sizebuf_t	net_message;
+
 
 /*
 ====================
-NET_Config
-
-A single player game will only use the loopback code
+R_InitTextures
 ====================
 */
-void NET_Config( qboolean multiplayer )
+void R_InitTextures( void )
 {
 	// TODO: Implement
 }
 
-
-
 /*
 ====================
-NET_Init
+R_Init
 
+Initialize the renderer
 ====================
 */
-void NET_Init( void )
+void R_Init( void )
 {
 	// TODO: Implement
 }

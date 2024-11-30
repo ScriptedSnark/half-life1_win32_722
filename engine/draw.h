@@ -51,6 +51,8 @@ typedef struct cachewad_s
 extern qfont_t* draw_chars;
 extern qfont_t* draw_creditsfont;
 
+void	Decal_Init( void );
+
 void	Draw_Init( void );
 void	Draw_Shutdown( void );
 int		Draw_Character( int x, int y, int num );

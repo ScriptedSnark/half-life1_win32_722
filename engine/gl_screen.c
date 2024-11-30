@@ -69,6 +69,23 @@ int			clearnotify;
 
 qboolean	scr_disabled_for_loading;
 
+
+//============================================================================
+
+/*
+==================
+SCR_Init
+==================
+*/
+void SCR_Init( void )
+{
+	// TODO: Implement
+}
+
+
+
+
+
 /*
 ===============
 SCR_EndLoadingPlaque

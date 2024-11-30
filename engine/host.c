@@ -2,6 +2,7 @@
 
 #include "quakedef.h"
 #include "winquake.h"
+#include "cmodel.h"
 #include "profile.h"
 
 /*
@@ -23,7 +24,8 @@ double		host_frametime;
 double		realtime;			// without any filtering or bounding
 double		oldrealtime;		// last frame run
 
-
+int			host_framecount;
+int			host_hunklevel;
 
 int			minimum_memory;
 
@@ -31,6 +33,9 @@ int			minimum_memory;
 
 jmp_buf 	host_abortserver;
 jmp_buf		host_enddemo;
+
+unsigned short* host_basepal;
+unsigned char* host_colormap;
 
 
 
@@ -50,7 +55,54 @@ cvar_t	serverprofile = { "serverprofile", "0" };
 cvar_t	developer = { "developer", "0" };
 
 
+
+
+void Profile_Init( void );
+
+extern void	(*Launcher_InitCmds)( void );
+
+
 // TODO: Implement
+
+
+/*
+================
+Host_FindMaxClients
+================
+*/
+void Host_FindMaxClients( void )
+{
+	int		i;
+
+	svs.maxclients = 1;
+
+	// Check for command line override
+	i = COM_CheckParm("-maxplayers");
+	if (i)
+	{
+		svs.maxclients = Q_atoi(com_argv[i + 1]);
+	}
+	else if (isDedicated)
+	{
+		svs.maxclients = MAX_CLIENTS;
+	}
+
+	if (isDedicated)
+		cls.state = ca_dedicated;
+	else
+		cls.state = ca_disconnected;
+
+	if (svs.maxclients < 1)
+	{
+		svs.maxclients = DEFAULT_SERVER_CLIENTS;
+	}
+	else if (svs.maxclients > MAX_CLIENTS)
+	{
+		svs.maxclients = MAX_CLIENTS;
+	}
+
+	// TODO: Implement
+}
 
 
 /*
@@ -73,6 +125,10 @@ void Host_InitLocal( void )
 	// TODO: Implement
 
 	Cvar_RegisterVariable(&developer);
+
+	// TODO: Implement
+
+	Host_FindMaxClients();
 
 	// TODO: Implement
 }
@@ -174,24 +230,106 @@ int Host_Init( quakeparms_t* parms )
 	realtime = 0.0;
 
 	Memory_Init(parms->membase, parms->memsize);
+
+	// Initialize command system
 	Cbuf_Init();
 	Cmd_Init();
 	Cvar_CmdInit();
-//	V_Init(); TODO: Implement
-//	Chase_Init(); TODO: Implement
+
+	V_Init();
+	Chase_Init();
+
 	COM_Init(parms->basedir);
+
 	Host_InitLocal();
-//	W_LoadWadFile("gfx.wad"); TODO: Implement
+
+	W_LoadWadFile("gfx.wad");
+
 	Key_Init();
+
 	Con_Init();
 
-	// TODO: Implement
+	Decal_Init();
+	Mod_Init();
 
+	NET_Init();
+	// Sequenced message stream layer.
+	Netchan_Init();
 
+	SV_Init();
 
-//	Sys_Error("Host_Init: Not implemented yet");
+	Con_DPrintf("Exe: "__TIME__" "__DATE__"\n");
+	Con_DPrintf("%4.1f megabyte heap\n", parms->memsize / (1024 * 1024.0));
 
-	// TODO: Implement
+	R_InitTextures();		// needed even for dedicated servers
+
+	if (cls.state != ca_dedicated)
+	{
+		int i;
+		char* disk_basepal;
+
+		disk_basepal = COM_LoadHunkFile("gfx/palette.lmp");
+		if (!disk_basepal)
+			Sys_Error("Couldn't load gfx/palette.lmp");
+
+		host_basepal = Hunk_AllocName(sizeof(PackedColorVec) * 256, "palette.lmp");
+
+		// Convert from BGR to RGBA
+		for (i = 0; i < 256; i++)
+		{
+			host_basepal[i * 4 + 0] = disk_basepal[i * 3 + 2];
+			host_basepal[i * 4 + 1] = disk_basepal[i * 3 + 1];
+			host_basepal[i * 4 + 2] = disk_basepal[i * 3 + 0];
+			host_basepal[i * 4 + 3] = 0; // alpha
+		}
+
+		ClientDLL_Init();
+
+		if (!VID_Init(host_basepal))
+			return 0;
+
+		ClientDLL_HudVidInit();
+
+		Draw_Init();
+
+		SCR_Init();
+
+		R_Init();
+
+		S_Init();
+
+		CL_Init();
+
+		IN_Init();
+
+		Launcher_InitCmds();
+	}
+
+	// Execute valve.rc
+	Cbuf_InsertText("exec valve.rc\n");
+
+#if defined ( GLQUAKE )
+	GL_Config();
+#endif
+
+	// Mark hunklevel at end of startup
+	Hunk_AllocName(0, "-HOST_HUNKLEVEL-");
+	host_hunklevel = Hunk_LowMark();
+
+	Profile_Init();
+
+	// Mark DLL as active
+	giActive = DLL_ACTIVE;
+	// Enable rendering
+	scr_skipupdate = FALSE;
+
+	// Check for special -dev flag
+	if (COM_CheckParm("-dev"))
+	{
+		Cvar_SetValue("sv_cheats", 1.0);
+		Cvar_SetValue("developer", 1.0);
+	}
+
 	return 1;
 }
 
@@ -227,6 +365,7 @@ Host_GetHostInfo
 DLL_EXPORT void Host_GetHostInfo( float* fps, int* nActive, int* nBots, int* nMaxPlayers, char* pszMap )
 {
 	// TODO: Implement
+	Con_DPrintf("123\n");
 }
 
 

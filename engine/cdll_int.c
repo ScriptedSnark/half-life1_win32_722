@@ -13,10 +13,17 @@
 
 
 
+/*
+==============
+ClientDLL_Init
 
-
-
-
+Loads the client .dll
+==============
+*/
+void ClientDLL_Init( void )
+{
+	// TODO: Implement
+}
 
 /*
 ==============

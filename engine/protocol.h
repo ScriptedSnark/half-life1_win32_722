@@ -1,4 +1,10 @@
 // protocol.h -- communications protocols
+#ifndef PROTOCOL_H
+#define PROTOCOL_H
+
+#ifdef _WIN32
+#pragma once
+#endif
 
 
 
@@ -19,6 +25,18 @@
 
 
 
+/*
+==========================================================
+
+ELEMENTS COMMUNICATED ACROSS THE NET
+
+==========================================================
+*/
+
+#define	MAX_CLIENTS		32
+
+// Server default maxplayers value
+#define DEFAULT_SERVER_CLIENTS	8
 
 
 typedef struct usercmd_s
@@ -35,3 +53,5 @@ typedef struct usercmd_s
 	unsigned short  buttons;  // Attack buttons
 	byte    impulse;          // Impulse command issued.
 } usercmd_t;
+
+#endif // PROTOCOL_H

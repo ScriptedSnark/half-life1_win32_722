@@ -13,3 +13,15 @@ globalvars_t gGlobalVariables;
 
 
 // TODO: Implement
+
+/*
+==================
+SV_Init
+
+General initialization of the server
+==================
+*/
+void SV_Init( void )
+{
+	// TODO: Implement
+}

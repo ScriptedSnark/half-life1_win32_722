@@ -1,4 +1,9 @@
 // quakedef.h -- primary header for client
+#if !defined( QUAKEDEF_H )
+#define QUAKEDEF_H
+#ifdef _WIN32
+#pragma once
+#endif
 
 #ifdef _WIN32
 #pragma warning( disable : 4244 4127 4201 4214 4514 4305 4115 4018)
@@ -107,10 +112,15 @@ typedef int (*pfnUserMsgHook)( const char* pszName, int iSize, void* pbuf );
 
 #include "keys.h"
 #include "console.h"
-
+#include "view.h"
 #include "crc.h"
 
 
+
+#ifdef GLQUAKE
+#include "qgl.h"
+//#include "glquake.h"
+#endif
 
 
 
@@ -169,3 +179,13 @@ void Master_Init( void );
 extern qboolean		isDedicated;
 
 extern int			minimum_memory;
+
+//
+// chase
+//
+extern	cvar_t	chase_active;
+
+void Chase_Init( void );
+void Chase_Reset( void );
+
+#endif // QUAKEDEF_H

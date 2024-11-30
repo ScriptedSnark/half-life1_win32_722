@@ -1,5 +1,6 @@
 // sound.h -- client sound i/o functions
 
+void S_Init( void );
 
 DLL_EXPORT void S_ClearBuffer( void );
 

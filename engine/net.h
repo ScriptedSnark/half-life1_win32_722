@@ -10,8 +10,22 @@
 extern	sizebuf_t	net_message;
 
 
+// Start up networking
+void		NET_Init( void );
+
+
 
 // Start up/shut down sockets layer
 void		NET_Config( qboolean multiplayer );
+
+
+
+
+
+
+// Initialize subsystem
+void	Netchan_Init( void );
+
+
 
 #endif // NET_H

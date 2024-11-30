@@ -5,7 +5,7 @@
 #include "vmodes.h"
 
 // TODO: This struct is 76 bytes sized instead of 80
-typedef struct
+typedef struct viddef_s
 {
 	pixel_t* buffer;			// invisible buffer
 	pixel_t* colormap;		// 256 * VID_GRADES size
@@ -34,5 +34,10 @@ extern	viddef_t	vid;				// global video state
 
 extern	byte* vid_surfcache;
 extern	int		vid_surfcachesize;
+
+int		VID_Init( word* palette );
+// Called at startup to set up translation tables, takes 256 8 bit RGB values
+// the palette data will go away after the call, so it must be copied off if
+// the video driver will need it again
 
 #endif //VIDH

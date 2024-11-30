@@ -1,4 +1,11 @@
 // screen.h
+#if !defined( SCREEN_H )
+#define SCREEN_H
+#ifdef _WIN32
+#pragma once
+#endif
+
+void SCR_Init( void );
 
 void SCR_UpdateScreen( void );
 
@@ -24,3 +31,5 @@ extern	qboolean	scr_skipupdate;
 
 extern	int			clearconsole;
 extern	int			clearnotify;
+
+#endif // SCREEN_H

@@ -83,6 +83,14 @@ extern	cvar_t	sensitivity;
 
 extern	client_state_t	cl;
 
+//=============================================================================
+
+// CL_MAIN.C
+//
+void	CL_DecayLights( void );
+
+void CL_Init( void );
+
 //
 // cl_input
 //
@@ -103,7 +111,7 @@ void CL_InitInput( void );
 //
 // view
 //
-void V_StartPitchDrift(void);
-void V_StopPitchDrift(void);
+void V_StartPitchDrift( void );
+void V_StopPitchDrift( void );
 
 // TODO: Implement

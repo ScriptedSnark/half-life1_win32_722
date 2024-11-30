@@ -69,6 +69,15 @@ void IN_DeactivateMouse( void )
 }
 
 
+/*
+===========
+IN_Init
+===========
+*/
+void IN_Init( void )
+{
+	// TODO: Implement
+}
 
 
 

@@ -1,4 +1,9 @@
 // server.h
+#if !defined( SERVER_H )
+#define SERVER_H
+#ifdef _WIN32
+#pragma once
+#endif
 
 typedef struct server_static_s
 {
@@ -63,8 +68,13 @@ extern	jmp_buf 	host_abortserver;
 
 
 
+
+
+
 //===========================================================
 
+// sv_main.c
+void SV_Init( void );
 
 
 
@@ -82,3 +92,5 @@ typedef enum
 } redirect_t;
 extern redirect_t	sv_redirected;
 void SV_FlushRedirect( void );
+
+#endif // SERVER_H

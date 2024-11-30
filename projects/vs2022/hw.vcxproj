@@ -13,10 +13,12 @@
   <ItemGroup>
     <ClCompile Include="..\..\engine\buildnum.c" />
     <ClCompile Include="..\..\engine\cdll_int.c" />
+    <ClCompile Include="..\..\engine\chase.c" />
     <ClCompile Include="..\..\engine\CL_DEMO.C" />
     <ClCompile Include="..\..\engine\cl_input.c" />
     <ClCompile Include="..\..\engine\CL_MAIN.C" />
     <ClCompile Include="..\..\engine\cmd.c" />
+    <ClCompile Include="..\..\engine\cmodel.c" />
     <ClCompile Include="..\..\engine\common.c" />
     <ClCompile Include="..\..\engine\conproc.c" />
     <ClCompile Include="..\..\engine\CONSOLE.C" />
@@ -24,6 +26,7 @@
     <ClCompile Include="..\..\engine\cvar.c" />
     <ClCompile Include="..\..\engine\GL_DRAW.C" />
     <ClCompile Include="..\..\engine\GL_RMAIN.C" />
+    <ClCompile Include="..\..\engine\GL_RMISC.C" />
     <ClCompile Include="..\..\engine\GL_RSURF.C" />
     <ClCompile Include="..\..\engine\gl_screen.c" />
     <ClCompile Include="..\..\engine\GL_VIDNT.C" />
@@ -32,6 +35,7 @@
     <ClCompile Include="..\..\engine\in_win.c" />
     <ClCompile Include="..\..\engine\KEYS.C" />
     <ClCompile Include="..\..\engine\mathlib.c" />
+    <ClCompile Include="..\..\engine\net_chan.c" />
     <ClCompile Include="..\..\engine\net_ws.c" />
     <ClCompile Include="..\..\engine\opengl2d3d.c" />
     <ClCompile Include="..\..\engine\pe_export.c" />
@@ -42,6 +46,7 @@
     <ClCompile Include="..\..\engine\sv_send.c" />
     <ClCompile Include="..\..\engine\sys_win.c" />
     <ClCompile Include="..\..\engine\view.c" />
+    <ClCompile Include="..\..\engine\wad.c" />
     <ClCompile Include="..\..\engine\world.c" />
     <ClCompile Include="..\..\engine\zone.c" />
   </ItemGroup>
@@ -58,6 +63,7 @@
     <ClInclude Include="..\..\engine\bspfile.h" />
     <ClInclude Include="..\..\engine\cdll_int.h" />
     <ClInclude Include="..\..\engine\client.h" />
+    <ClInclude Include="..\..\engine\cmodel.h" />
     <ClInclude Include="..\..\engine\conproc.h" />
     <ClInclude Include="..\..\engine\demo.h" />
     <ClInclude Include="..\..\engine\cmd.h" />
@@ -72,6 +78,7 @@
     <ClInclude Include="..\..\engine\decal.h" />
     <ClInclude Include="..\..\engine\draw.h" />
     <ClInclude Include="..\..\engine\eiface.h" />
+    <ClInclude Include="..\..\engine\gl_hw.h" />
     <ClInclude Include="..\..\engine\input.h" />
     <ClInclude Include="..\..\engine\keys.h" />
     <ClInclude Include="..\..\engine\mathlib.h" />
@@ -83,6 +90,7 @@
     <ClInclude Include="..\..\engine\protocol.h" />
     <ClInclude Include="..\..\engine\pr_cmds.h" />
     <ClInclude Include="..\..\engine\pr_dlls.h" />
+    <ClInclude Include="..\..\engine\qgl.h" />
     <ClInclude Include="..\..\engine\quakedef.h" />
     <ClInclude Include="..\..\engine\render.h" />
     <ClInclude Include="..\..\engine\r_local.h" />
@@ -93,6 +101,7 @@
     <ClInclude Include="..\..\engine\studio.h" />
     <ClInclude Include="..\..\engine\sys.h" />
     <ClInclude Include="..\..\engine\vid.h" />
+    <ClInclude Include="..\..\engine\view.h" />
     <ClInclude Include="..\..\engine\vmodes.h" />
     <ClInclude Include="..\..\engine\wad.h" />
     <ClInclude Include="..\..\engine\winquake.h" />

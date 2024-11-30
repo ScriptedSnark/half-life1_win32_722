@@ -12,3 +12,10 @@ DLL_EXPORT int LoadGame( char* pName )
 	// TODO: Implement
 	return 0;
 }
+
+
+
+void Profile_Init( void )
+{
+	// TODO: Implement
+}
