@@ -54,6 +54,12 @@ typedef struct wadlist_s
 typedef struct wadlist_s wadlist_t;
 typedef struct lumpinfo_s lumpinfo_t;
 
-int		W_LoadWadFile( char* filename );
+void	W_LoadWadFile( char* filename );
+void	W_CleanupName( char* in, char* out );
+lumpinfo_t* W_GetLumpinfo( char* name, qboolean doerror );
+void*	W_GetLumpName( char* name );
+void*	W_GetLumpNum( int num );
+
+void SwapPic( qpic_t* pic );
 
 #endif // WAD_H
