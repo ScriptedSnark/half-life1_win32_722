@@ -4,6 +4,10 @@ typedef struct server_static_s
 {
 	// TODO: Implement
 
+	struct client_s* clients;			// array of up to [maxclients] client slots
+
+	int			maxclients;				// Current max #
+
 	int stub_var;
 } server_static_t;
 
@@ -29,7 +33,17 @@ typedef struct
 	// TODO: Implement
 } server_t;
 
+// client_t
+typedef struct client_s
+{
+	qboolean active;					// false = client is free
+	qboolean spawned;					// false = don't send datagrams
 
+
+
+
+	// TODO: Implement
+} client_t;
 
 
 //============================================================================

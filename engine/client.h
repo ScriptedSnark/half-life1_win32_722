@@ -1,5 +1,7 @@
 // client.h
 
+#include "wrect.h"
+#include "cdll_int.h"
 
 // TODO: Implement
 

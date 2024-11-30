@@ -5,4 +5,9 @@
     <LocalDebuggerCommandArguments>-dev -game valve</LocalDebuggerCommandArguments>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <LocalDebuggerCommand>E:\Half-Life NetTest1\hl.exe</LocalDebuggerCommand>
+    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+    <LocalDebuggerCommandArguments>-dev -game valve</LocalDebuggerCommandArguments>
+  </PropertyGroup>
 </Project>

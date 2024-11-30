@@ -77,6 +77,9 @@ uint32 FunctionFromName( const char* pName );
 
 typedef long LONG;
 
+extern qboolean	g_bInStartup;
+extern qboolean	g_bInactive;
+
 extern int giActive;
 extern int giStateInfo;
 extern int giSubState;

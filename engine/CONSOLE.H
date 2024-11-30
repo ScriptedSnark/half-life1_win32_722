@@ -1,6 +1,7 @@
 //
 // console
 //
+extern qboolean con_loading;
 extern int con_totallines;
 extern int con_backscroll;
 extern int con_rows;

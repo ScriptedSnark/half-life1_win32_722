@@ -38,6 +38,7 @@
     <ClInclude Include="..\..\engine\keys.h" />
     <ClInclude Include="..\..\engine\mathlib.h" />
     <ClInclude Include="..\..\engine\net.h" />
+    <ClInclude Include="..\..\engine\profile.h" />
     <ClInclude Include="..\..\engine\progdefs.h" />
     <ClInclude Include="..\..\engine\protocol.h" />
     <ClInclude Include="..\..\engine\pr_cmds.h" />
@@ -54,6 +55,7 @@
     <ClInclude Include="..\..\engine\vmodes.h" />
     <ClInclude Include="..\..\engine\wad.h" />
     <ClInclude Include="..\..\engine\winquake.h" />
+    <ClInclude Include="..\..\engine\wrect.h" />
     <ClInclude Include="..\..\engine\zone.h" />
   </ItemGroup>
   <ItemGroup>
@@ -125,9 +127,11 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <TargetName>sw</TargetName>
+    <OutDir>$(SolutionDir)..\..\engine\SoftDebug\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <TargetName>sw</TargetName>
+    <OutDir>$(SolutionDir)..\..\engine\SoftRelease\</OutDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -140,6 +144,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -157,6 +162,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
     </Link>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

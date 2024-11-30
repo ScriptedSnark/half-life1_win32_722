@@ -57,6 +57,10 @@
 
 #define	MAX_SFX				512
 
+// Client dispatch function for usermessages
+typedef int (*pfnUserMsgHook)( const char* pszName, int iSize, void* pbuf );
+
+
 
 
 

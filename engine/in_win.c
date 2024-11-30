@@ -96,3 +96,19 @@ void IN_ClearStates( void )
 {
 	// TODO: Implement
 }
+
+
+
+
+
+
+
+/*
+===========
+IN_Commands
+===========
+*/
+void IN_Commands( void )
+{
+	// TODO: Implement
+}

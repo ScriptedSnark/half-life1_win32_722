@@ -399,3 +399,6 @@ FodyWeavers.xsd
 
 # Additional GoldSrc-specific things
 /projects/vs2022/.vs/
+/engine/GL_Release/hw.dll
+/engine/GL_Release/hw.exp
+/engine/GL_Release/hw.lib

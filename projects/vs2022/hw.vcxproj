@@ -56,6 +56,7 @@
     <ClInclude Include="..\..\engine\anorm_dots.h" />
     <ClInclude Include="..\..\engine\bothdefs.h" />
     <ClInclude Include="..\..\engine\bspfile.h" />
+    <ClInclude Include="..\..\engine\cdll_int.h" />
     <ClInclude Include="..\..\engine\client.h" />
     <ClInclude Include="..\..\engine\conproc.h" />
     <ClInclude Include="..\..\engine\demo.h" />
@@ -76,6 +77,7 @@
     <ClInclude Include="..\..\engine\mathlib.h" />
     <ClInclude Include="..\..\engine\net.h" />
     <ClInclude Include="..\..\engine\opengl2d3d.h" />
+    <ClInclude Include="..\..\engine\profile.h" />
     <ClInclude Include="..\..\engine\progdefs.h" />
     <ClInclude Include="..\..\engine\Progs.h" />
     <ClInclude Include="..\..\engine\protocol.h" />
@@ -94,6 +96,7 @@
     <ClInclude Include="..\..\engine\vmodes.h" />
     <ClInclude Include="..\..\engine\wad.h" />
     <ClInclude Include="..\..\engine\winquake.h" />
+    <ClInclude Include="..\..\engine\wrect.h" />
     <ClInclude Include="..\..\engine\zone.h" />
   </ItemGroup>
   <ItemGroup>
@@ -140,9 +143,13 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <TargetName>hw</TargetName>
+    <OutDir>$(SolutionDir)..\..\engine\GL_Debug\</OutDir>
+    <IntDir>$(Configuration)\$(ProjectName)\int\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <TargetName>hw</TargetName>
+    <OutDir>$(SolutionDir)..\..\engine\GL_Release\</OutDir>
+    <IntDir>$(Configuration)\$(ProjectName)\int\</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -155,6 +162,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -172,6 +180,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
     </Link>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

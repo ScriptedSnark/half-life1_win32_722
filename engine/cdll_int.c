@@ -26,7 +26,27 @@ Called when the game initializes and whenever the vid_mode is changed
  so the HUD can reinitialize itself.
 ==============
 */
-DLL_EXPORT void ClientDLL_HudVidInit( void )
+void ClientDLL_HudVidInit( void )
+{
+	// TODO: Implement
+}
+
+
+
+
+
+
+
+
+
+/*
+==============
+ClientDLL_UpdateClientData
+
+Called every frame while running a map
+==============
+*/
+void ClientDLL_UpdateClientData( void )
 {
 	// TODO: Implement
 }

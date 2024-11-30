@@ -151,12 +151,12 @@ typedef struct cl_enginefuncs_s
 
 #define CLDLL_INTERFACE_VERSION		3
 
-extern void ClientDLL_Init(void); // from cdll_int.c
-extern void ClientDLL_Shutdown(void);
-extern void ClientDLL_HudInit(void);
-extern void ClientDLL_HudVidInit(void);
-extern void	ClientDLL_UpdateClientData(void);
-extern void ClientDLL_HudRedraw(int intermission);
+extern void ClientDLL_Init( void ); // from cdll_int.c
+extern void ClientDLL_Shutdown( void );
+extern void ClientDLL_HudInit( void );
+void __declspec( dllexport ) ClientDLL_HudVidInit( void );
+extern void	ClientDLL_UpdateClientData( void );
+extern void ClientDLL_HudRedraw( int intermission );
 
 
 #endif // CDLL_INT_H
