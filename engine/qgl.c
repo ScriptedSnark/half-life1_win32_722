@@ -82,6 +82,33 @@ void ( APIENTRY * qglColor4usv )( const GLushort* v );
 void ( APIENTRY * qglColorMask )( GLboolean red, GLboolean green, GLboolean blue, GLboolean alpha );
 void ( APIENTRY * qglColorMaterial )( GLenum face, GLenum mode );
 void ( APIENTRY * qglColorPointer )( GLint size, GLenum type, GLsizei stride, const GLvoid* pointer );
+void ( APIENTRY * qglCopyPixels )( GLint x, GLint y, GLsizei width, GLsizei height, GLenum type );
+void ( APIENTRY * qglCopyTexImage1D )( GLenum target, GLint level, GLenum internalFormat, GLint x, GLint y, GLsizei width, GLint border );
+void ( APIENTRY * qglCopyTexImage2D )( GLenum target, GLint level, GLenum internalFormat, GLint x, GLint y, GLsizei width, GLsizei height, GLint border );
+void ( APIENTRY * qglCopyTexSubImage1D )( GLenum target, GLint level, GLint xoffset, GLint x, GLint y, GLsizei width );
+void ( APIENTRY * qglCopyTexSubImage2D )( GLenum target, GLint level, GLint xoffset, GLint yoffset, GLint x, GLint y, GLsizei width, GLsizei height );
+void ( APIENTRY * qglCullFace )( GLenum mode );
+void ( APIENTRY * qglDeleteLists )( GLuint list, GLsizei range );
+void ( APIENTRY * qglDeleteTextures )( GLsizei n, const GLuint* textures );
+void ( APIENTRY * qglDepthFunc )( GLenum func );
+void ( APIENTRY * qglDepthMask )( GLboolean flag );
+void ( APIENTRY * qglDepthRange )( GLclampd zNear, GLclampd zFar );
+void ( APIENTRY * qglDisable )( GLenum cap );
+void ( APIENTRY * qglDisableClientState )( GLenum array );
+void ( APIENTRY * qglDrawArrays )( GLenum mode, GLint first, GLsizei count );
+void ( APIENTRY * qglDrawBuffer )( GLenum mode );
+void ( APIENTRY * qglDrawElements )( GLenum mode, GLsizei count, GLenum type, const GLvoid* indices );
+void ( APIENTRY * qglDrawPixels )( GLsizei width, GLsizei height, GLenum format, GLenum type, const GLvoid* pixels );
+void ( APIENTRY * qglEdgeFlag )( GLboolean flag );
+void ( APIENTRY * qglEdgeFlagPointer )( GLsizei stride, const GLvoid* pointer );
+void ( APIENTRY * qglEdgeFlagv )( const GLboolean* flag );
+void ( APIENTRY * qglEnable )( GLenum cap );
+void ( APIENTRY * qglEnableClientState )( GLenum array );
+void ( APIENTRY * qglEnd )( void );
+void ( APIENTRY * qglEndList )( void );
+
+
+
 
 
 
@@ -151,6 +178,33 @@ static void ( APIENTRY * dllColor4usv )( const GLushort* v );
 static void ( APIENTRY * dllColorMask )( GLboolean red, GLboolean green, GLboolean blue, GLboolean alpha );
 static void ( APIENTRY * dllColorMaterial )( GLenum face, GLenum mode );
 static void ( APIENTRY * dllColorPointer )( GLint size, GLenum type, GLsizei stride, const GLvoid* pointer );
+static void ( APIENTRY * dllCopyPixels )( GLint x, GLint y, GLsizei width, GLsizei height, GLenum type );
+static void ( APIENTRY * dllCopyTexImage1D )( GLenum target, GLint level, GLenum internalFormat, GLint x, GLint y, GLsizei width, GLint border );
+static void ( APIENTRY * dllCopyTexImage2D )( GLenum target, GLint level, GLenum internalFormat, GLint x, GLint y, GLsizei width, GLsizei height, GLint border );
+static void ( APIENTRY * dllCopyTexSubImage1D )( GLenum target, GLint level, GLint xoffset, GLint x, GLint y, GLsizei width );
+static void ( APIENTRY * dllCopyTexSubImage2D )( GLenum target, GLint level, GLint xoffset, GLint yoffset, GLint x, GLint y, GLsizei width, GLsizei height );
+static void ( APIENTRY * dllCullFace )( GLenum mode );
+static void ( APIENTRY * dllDeleteLists )( GLuint list, GLsizei range );
+static void ( APIENTRY * dllDeleteTextures )( GLsizei n, const GLuint* textures );
+static void ( APIENTRY * dllDepthFunc )( GLenum func );
+static void ( APIENTRY * dllDepthMask )( GLboolean flag );
+static void ( APIENTRY * dllDepthRange )( GLclampd zNear, GLclampd zFar );
+static void ( APIENTRY * dllDisable )( GLenum cap );
+static void ( APIENTRY * dllDisableClientState )( GLenum array );
+static void ( APIENTRY * dllDrawArrays )( GLenum mode, GLint first, GLsizei count );
+static void ( APIENTRY * dllDrawBuffer )( GLenum mode );
+static void ( APIENTRY * dllDrawElements )( GLenum mode, GLsizei count, GLenum type, const GLvoid* indices );
+static void ( APIENTRY * dllDrawPixels )( GLsizei width, GLsizei height, GLenum format, GLenum type, const GLvoid* pixels );
+static void ( APIENTRY * dllEdgeFlag )( GLboolean flag );
+static void ( APIENTRY * dllEdgeFlagPointer )( GLsizei stride, const GLvoid* pointer );
+static void ( APIENTRY * dllEdgeFlagv )( const GLboolean* flag );
+static void ( APIENTRY * dllEnable )( GLenum cap );
+static void ( APIENTRY * dllEnableClientState )( GLenum array );
+static void ( APIENTRY * dllEnd )( void );
+static void ( APIENTRY * dllEndList )( void );
+
+
+
 
 
 
@@ -450,11 +504,158 @@ static void APIENTRY logColorMaterial( GLenum face, GLenum mode )
 	dllColorMaterial(face, mode);
 }
 
-static void APIENTRY logColorPointer( GLint size, GLenum type, GLsizei stride, const void *pointer )
+static void APIENTRY logColorPointer( GLint size, GLenum type, GLsizei stride, const void* pointer )
 {
 	SIG("glColorPointer");
 	dllColorPointer(size, type, stride, pointer);
 }
+
+static void APIENTRY logCopyPixels( GLint x, GLint y, GLsizei width, GLsizei height, GLenum type )
+{
+	SIG("glCopyPixels");
+	dllCopyPixels(x, y, width, height, type);
+}
+
+static void APIENTRY logCopyTexImage1D( GLenum target, GLint level, GLenum internalFormat, GLint x, GLint y, GLsizei width, GLint border )
+{
+	SIG("glCopyTexImage1D");
+	dllCopyTexImage1D(target, level, internalFormat, x, y, width, border);
+}
+
+static void APIENTRY logCopyTexImage2D( GLenum target, GLint level, GLenum internalFormat, GLint x, GLint y, GLsizei width, GLsizei height, GLint border )
+{
+	SIG("glCopyTexImage2D");
+	dllCopyTexImage2D(target, level, internalFormat, x, y, width, height, border);
+}
+
+static void APIENTRY logCopyTexSubImage1D( GLenum target, GLint level, GLint xoffset, GLint x, GLint y, GLsizei width )
+{
+	SIG("glCopyTexSubImage1D");
+	dllCopyTexSubImage1D(target, level, xoffset, x, y, width);
+}
+
+static void APIENTRY logCopyTexSubImage2D( GLenum target, GLint level, GLint xoffset, GLint yoffset, GLint x, GLint y, GLsizei width, GLsizei height )
+{
+	SIG("glCopyTexSubImage2D");
+	dllCopyTexSubImage2D(target, level, xoffset, yoffset, x, y, width, height);
+}
+
+static void APIENTRY logCullFace( GLenum mode )
+{
+	SIG("glCullFace");
+	dllCullFace(mode);
+}
+
+static void APIENTRY logDeleteLists( GLuint list, GLsizei range )
+{
+	SIG("glDeleteLists");
+	dllDeleteLists(list, range);
+}
+
+static void APIENTRY logDeleteTextures( GLsizei n, const GLuint* textures )
+{
+	SIG("glDeleteTextures");
+	dllDeleteTextures(n, textures);
+}
+
+static void APIENTRY logDepthFunc( GLenum func )
+{
+	SIG("glDepthFunc");
+	dllDepthFunc(func);
+}
+
+static void APIENTRY logDepthMask( GLboolean flag )
+{
+	SIG("glDepthMask");
+	dllDepthMask(flag);
+}
+
+static void APIENTRY logDepthRange( GLclampd zNear, GLclampd zFar )
+{
+	SIG("glDepthRange");
+	dllDepthRange(zNear, zFar);
+}
+
+static void APIENTRY logDisable( GLenum cap )
+{
+	fprintf(glw_state.log_fp, "glDisable( 0x%x )\n", cap);
+	dllDisable(cap);
+}
+
+static void APIENTRY logDisableClientState( GLenum array )
+{
+	SIG("glDisableClientState");
+	dllDisableClientState(array);
+}
+
+static void APIENTRY logDrawArrays( GLenum mode, GLint first, GLsizei count )
+{
+	SIG("glDrawArrays");
+	dllDrawArrays(mode, first, count);
+}
+
+static void APIENTRY logDrawBuffer( GLenum mode )
+{
+	SIG("glDrawBuffer");
+	dllDrawBuffer(mode);
+}
+
+static void APIENTRY logDrawElements( GLenum mode, GLsizei count, GLenum type, const void* indices )
+{
+	SIG("glDrawElements");
+	dllDrawElements(mode, count, type, indices);
+}
+
+static void APIENTRY logDrawPixels( GLsizei width, GLsizei height, GLenum format, GLenum type, const void* pixels )
+{
+	SIG("glDrawPixels");
+	dllDrawPixels(width, height, format, type, pixels);
+}
+
+static void APIENTRY logEdgeFlag( GLboolean flag )
+{
+	SIG("glEdgeFlag");
+	dllEdgeFlag(flag);
+}
+
+static void APIENTRY logEdgeFlagPointer( GLsizei stride, const void* pointer )
+{
+	SIG("glEdgeFlagPointer");
+	dllEdgeFlagPointer(stride, pointer);
+}
+
+static void APIENTRY logEdgeFlagv( const GLboolean* flag )
+{
+	SIG("glEdgeFlagv");
+	dllEdgeFlagv(flag);
+}
+
+static void APIENTRY logEnable( GLenum cap )
+{
+	fprintf(glw_state.log_fp, "glEnable( 0x%x )\n", cap);
+	dllEnable(cap);
+}
+
+static void APIENTRY logEnableClientState( GLenum array )
+{
+	SIG("glEnableClientState");
+	dllEnableClientState(array);
+}
+
+static void APIENTRY logEnd( void )
+{
+	SIG("glEnd");
+	dllEnd();
+}
+
+static void APIENTRY logEndList( void )
+{
+	SIG("glEndList");
+	dllEndList();
+}
+
+
+
 
 
 
@@ -529,6 +730,35 @@ void QGL_Shutdown( void )
 	qglColorMask				= NULL;
 	qglColorMaterial			= NULL;
 	qglColorPointer				= NULL;
+	qglCopyPixels				= NULL;
+	qglCopyTexImage1D			= NULL;
+	qglCopyTexImage2D			= NULL;
+	qglCopyTexSubImage1D		= NULL;
+	qglCopyTexSubImage2D		= NULL;
+	qglCullFace					= NULL;
+	qglDeleteLists				= NULL;
+	qglDeleteTextures			= NULL;
+	qglDepthFunc				= NULL;
+	qglDepthMask				= NULL;
+	qglDepthRange				= NULL;
+	qglDisable					= NULL;
+	qglDisableClientState		= NULL;
+	qglDrawArrays				= NULL;
+	qglDrawBuffer				= NULL;
+	qglDrawElements				= NULL;
+	qglDrawPixels				= NULL;
+	qglEdgeFlag					= NULL;
+	qglEdgeFlagPointer			= NULL;
+	qglEdgeFlagv				= NULL;
+	qglEnable					= NULL;
+	qglEnableClientState		= NULL;
+	qglEnd						= NULL;
+	qglEndList					= NULL;
+
+
+
+
+
 
 
 
@@ -631,7 +861,30 @@ HINSTANCE QGL_Init( char* pdllname )
 	qglColorMask				= dllColorMask = GPA("glColorMask");
 	qglColorMaterial			= dllColorMaterial = GPA("glColorMaterial");
 	qglColorPointer				= dllColorPointer = GPA("glColorPointer");
-
+	qglCopyPixels				= dllCopyPixels = GPA("glCopyPixels");
+	qglCopyTexImage1D			= dllCopyTexImage1D = GPA("glCopyTexImage1D");
+	qglCopyTexImage2D			= dllCopyTexImage2D = GPA("glCopyTexImage2D");
+	qglCopyTexSubImage1D		= dllCopyTexSubImage1D = GPA("glCopyTexSubImage1D");
+	qglCopyTexSubImage2D		= dllCopyTexSubImage2D = GPA("glCopyTexSubImage2D");
+	qglCullFace					= dllCullFace = GPA("glCullFace");
+	qglDeleteLists				= dllDeleteLists = GPA("glDeleteLists");
+	qglDeleteTextures			= dllDeleteTextures = GPA("glDeleteTextures");
+	qglDepthFunc				= dllDepthFunc = GPA("glDepthFunc");
+	qglDepthMask				= dllDepthMask = GPA("glDepthMask");
+	qglDepthRange				= dllDepthRange = GPA("glDepthRange");
+	qglDisable					= dllDisable = GPA("glDisable");
+	qglDisableClientState		= dllDisableClientState = GPA("glDisableClientState");
+	qglDrawArrays				= dllDrawArrays = GPA("glDrawArrays");
+	qglDrawBuffer				= dllDrawBuffer = GPA("glDrawBuffer");
+	qglDrawElements				= dllDrawElements = GPA("glDrawElements");
+	qglDrawPixels				= dllDrawPixels = GPA("glDrawPixels");
+	qglEdgeFlag					= dllEdgeFlag = GPA("glEdgeFlag");
+	qglEdgeFlagPointer			= dllEdgeFlagPointer = GPA("glEdgeFlagPointer");
+	qglEdgeFlagv				= dllEdgeFlagv = GPA("glEdgeFlagv");
+	qglEnable					= dllEnable = GPA("glEnable");
+	qglEnableClientState		= dllEnableClientState = GPA("glEnableClientState");
+	qglEnd						= dllEnd = GPA("glEnd");
+	qglEndList					= dllEndList = GPA("glEndList");
 
 
 

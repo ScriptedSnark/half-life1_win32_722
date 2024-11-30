@@ -87,14 +87,14 @@ GL_Init
 */
 void GL_Init( void )
 {
-	gl_vendor = qglGetString(GL_VENDOR);
+	gl_vendor = (const char*)qglGetString(GL_VENDOR);
 	Con_DPrintf( "GL_VENDOR: %s\n", gl_vendor);
-	gl_renderer = qglGetString(GL_RENDERER);
+	gl_renderer = (const char*)qglGetString(GL_RENDERER);
 	Con_DPrintf("GL_RENDERER: %s\n", gl_renderer);
 
-	gl_version = qglGetString(GL_VERSION);
+	gl_version = (const char*)qglGetString(GL_VERSION);
 	Con_DPrintf("GL_VERSION: %s\n", gl_version);
-	gl_extensions = qglGetString(GL_EXTENSIONS);
+	gl_extensions = (const char*)qglGetString(GL_EXTENSIONS);
 	Con_DPrintf("GL_EXTENSIONS: %s\n", gl_extensions);
 
 	// TODO: Implement

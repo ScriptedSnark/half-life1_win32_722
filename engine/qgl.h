@@ -86,6 +86,33 @@ extern	void ( APIENTRY * qglColor4usv )( const GLushort* v );
 extern	void ( APIENTRY * qglColorMask )( GLboolean red, GLboolean green, GLboolean blue, GLboolean alpha );
 extern	void ( APIENTRY * qglColorMaterial )( GLenum face, GLenum mode );
 extern	void ( APIENTRY * qglColorPointer )( GLint size, GLenum type, GLsizei stride, const GLvoid* pointer );
+extern	void ( APIENTRY * qglCopyPixels )( GLint x, GLint y, GLsizei width, GLsizei height, GLenum type );
+extern	void ( APIENTRY * qglCopyTexImage1D )( GLenum target, GLint level, GLenum internalFormat, GLint x, GLint y, GLsizei width, GLint border );
+extern	void ( APIENTRY * qglCopyTexImage2D )( GLenum target, GLint level, GLenum internalFormat, GLint x, GLint y, GLsizei width, GLsizei height, GLint border );
+extern	void ( APIENTRY * qglCopyTexSubImage1D )( GLenum target, GLint level, GLint xoffset, GLint x, GLint y, GLsizei width );
+extern	void ( APIENTRY * qglCopyTexSubImage2D )( GLenum target, GLint level, GLint xoffset, GLint yoffset, GLint x, GLint y, GLsizei width, GLsizei height );
+extern	void ( APIENTRY * qglCullFace )( GLenum mode );
+extern	void ( APIENTRY * qglDeleteLists )( GLuint list, GLsizei range );
+extern	void ( APIENTRY * qglDeleteTextures )( GLsizei n, const GLuint* textures );
+extern	void ( APIENTRY * qglDepthFunc )( GLenum func );
+extern	void ( APIENTRY * qglDepthMask )( GLboolean flag );
+extern	void ( APIENTRY * qglDepthRange )( GLclampd zNear, GLclampd zFar );
+extern	void ( APIENTRY * qglDisable )( GLenum cap );
+extern	void ( APIENTRY * qglDisableClientState )( GLenum array );
+extern	void ( APIENTRY * qglDrawArrays )( GLenum mode, GLint first, GLsizei count );
+extern	void ( APIENTRY * qglDrawBuffer )( GLenum mode );
+extern	void ( APIENTRY * qglDrawElements )( GLenum mode, GLsizei count, GLenum type, const GLvoid* indices );
+extern	void ( APIENTRY * qglDrawPixels )( GLsizei width, GLsizei height, GLenum format, GLenum type, const GLvoid* pixels );
+extern	void ( APIENTRY * qglEdgeFlag )( GLboolean flag );
+extern	void ( APIENTRY * qglEdgeFlagPointer )( GLsizei stride, const GLvoid* pointer );
+extern	void ( APIENTRY * qglEdgeFlagv )( const GLboolean* flag );
+extern	void ( APIENTRY * qglEnable )( GLenum cap );
+extern	void ( APIENTRY * qglEnableClientState )( GLenum array );
+extern	void ( APIENTRY * qglEnd )( void );
+extern	void ( APIENTRY * qglEndList )( void );
+
+
+
 
 
 
