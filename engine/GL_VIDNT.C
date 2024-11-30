@@ -3,6 +3,7 @@
 #include "quakedef.h"
 #include "winquake.h"
 #include "gl_hw.h"
+#include "opengl2d3d.h"
 
 BOOL gfMiniDriver = FALSE;
 
@@ -34,50 +35,48 @@ extern void	(*VID_GetVID)( struct viddef_s* pvid );
 
 void GL_Config( void )
 {
-//	TODO: Uncomment me when GL_Init() will be implemented
-//
-//	if (strstr(gl_vendor, "3Dfx"))
-//	{
-//		gGLHardwareType = GL_HW_3Dfx;
-//		Cbuf_InsertText("exec hw/3Dfx.cfg\n");
-//	}
-//	else if (strstr(gl_vendor, "NVIDIA"))
-//	{
-//		if (strstr(gl_renderer, "RIVA 128"))
-//		{
-//			gGLHardwareType = GL_HW_RIVA128;
-//			Cbuf_InsertText("exec hw/riva128.cfg\n");
-//		}
-//		else if (strstr(gl_renderer, "TNT"))
-//		{
-//			gGLHardwareType = GL_HW_RIVATNT;
-//			Cbuf_InsertText("exec hw/rivaTNT.cfg\n");
-//		}
-//	}
-//	else if (strstr(gl_vendor, "PCX2"))
-//	{
-//		Cbuf_InsertText("exec hw/PowerVRPCX2.cfg\n");
-//		gGLHardwareType = GL_HW_PCX2;
-//	}
-//	else if (strstr(gl_vendor, "PowerVR"))
-//	{
-//		Cbuf_InsertText("exec hw/PowerVRSG.cfg\n");
-//		gGLHardwareType = GL_HW_PVRSG;
-//	}
-//	else if (strstr(gl_vendor, "V2200"))
-//	{
-//		Cbuf_InsertText("exec hw/V2200.cfg\n");
-//		gGLHardwareType = GL_HW_RENDITIONV2200;
-//	}
-//	else if (strstr(gl_vendor, "3Dlabs"))
-//	{
-//		Cbuf_InsertText("exec hw/3Dlabs.cfg\n");
-//		gGLHardwareType = GL_HW_3DLABS;
-//	}
-//	else
-//	{
-//		gGLHardwareType = GL_HW_UNKNOWN;
-//	}
+	if (strstr(gl_vendor, "3Dfx"))
+	{
+		gGLHardwareType = GL_HW_3Dfx;
+		Cbuf_InsertText("exec hw/3Dfx.cfg\n");
+	}
+	else if (strstr(gl_vendor, "NVIDIA"))
+	{
+		if (strstr(gl_renderer, "RIVA 128"))
+		{
+			gGLHardwareType = GL_HW_RIVA128;
+			Cbuf_InsertText("exec hw/riva128.cfg\n");
+		}
+		else if (strstr(gl_renderer, "TNT"))
+		{
+			gGLHardwareType = GL_HW_RIVATNT;
+			Cbuf_InsertText("exec hw/rivaTNT.cfg\n");
+		}
+	}
+	else if (strstr(gl_vendor, "PCX2"))
+	{
+		Cbuf_InsertText("exec hw/PowerVRPCX2.cfg\n");
+		gGLHardwareType = GL_HW_PCX2;
+	}
+	else if (strstr(gl_vendor, "PowerVR"))
+	{
+		Cbuf_InsertText("exec hw/PowerVRSG.cfg\n");
+		gGLHardwareType = GL_HW_PVRSG;
+	}
+	else if (strstr(gl_vendor, "V2200"))
+	{
+		Cbuf_InsertText("exec hw/V2200.cfg\n");
+		gGLHardwareType = GL_HW_RENDITIONV2200;
+	}
+	else if (strstr(gl_vendor, "3Dlabs"))
+	{
+		Cbuf_InsertText("exec hw/3Dlabs.cfg\n");
+		gGLHardwareType = GL_HW_3DLABS;
+	}
+	else
+	{
+		gGLHardwareType = GL_HW_UNKNOWN;
+	}
 }
 
 /*
@@ -88,6 +87,16 @@ GL_Init
 */
 void GL_Init( void )
 {
+	gl_vendor = qglGetString(GL_VENDOR);
+	Con_DPrintf( "GL_VENDOR: %s\n", gl_vendor);
+	gl_renderer = qglGetString(GL_RENDERER);
+	Con_DPrintf("GL_RENDERER: %s\n", gl_renderer);
+
+	gl_version = qglGetString(GL_VERSION);
+	Con_DPrintf("GL_VERSION: %s\n", gl_version);
+	gl_extensions = qglGetString(GL_EXTENSIONS);
+	Con_DPrintf("GL_EXTENSIONS: %s\n", gl_extensions);
+
 	// TODO: Implement
 
 	GL_Config();
@@ -96,7 +105,7 @@ void GL_Init( void )
 
 DLL_EXPORT int GL_SetMode( HWND mainwindow, HDC* pmaindc, HGLRC* pbaseRC, int fD3D, char* pszDriver )
 {
-//	HMODULE hDll;
+	HMODULE hDll;
 
 	gfMiniDriver = FALSE;
 
@@ -105,28 +114,28 @@ DLL_EXPORT int GL_SetMode( HWND mainwindow, HDC* pmaindc, HGLRC* pbaseRC, int fD
 	*pmaindc = NULL;
 	*pbaseRC = NULL;
 
-//	if (!vid_d3d.value) TODO: Implement
-//	{
-//		if (pszDriver)
-//		{
-//			gfMiniDriver = strstr(pszDriver, "opengl32") == NULL;
-//		}
-//		hDll = QGL_Init(pszDriver);
-//	}
-//	else
-//	{
-//		hDll = QGL_D3DInit();
-//	}
-//
-//	if (!hDll)
-//	{
-//		if (pszDriver)
-//			Sys_Error("Error initializing gl driver, check that the file '%s' exists", pszDriver);
-//		else
-//			Sys_Error("Error initializing gl driver, check that the GL driver file opengl32.dll exists");
-//	}
-//	else
-//	{
+	if (!vid_d3d.value)
+	{
+		if (pszDriver)
+		{
+			gfMiniDriver = strstr(pszDriver, "opengl32") == NULL;
+		}
+		hDll = QGL_Init(pszDriver);
+	}
+	else
+	{
+		hDll = QGL_D3DInit();
+	}
+
+	if (!hDll)
+	{
+		if (pszDriver)
+			Sys_Error("Error initializing gl driver, check that the file '%s' exists", pszDriver);
+		else
+			Sys_Error("Error initializing gl driver, check that the GL driver file opengl32.dll exists");
+	}
+	else
+	{
 //		HDC hDC = GetDC(mainwindow);
 //		*pmaindc = hDC;
 //		if (bSetupPixelFormat(hDC))
@@ -139,20 +148,18 @@ DLL_EXPORT int GL_SetMode( HWND mainwindow, HDC* pmaindc, HGLRC* pbaseRC, int fD
 //					return 1;
 //			}
 //		}
-//	}
-//
-//	if (hDll)
-//	{
+	}
+
+	if (hDll)
+	{
 //		qwglMakeCurrent(0, 0);
 //		if (*pbaseRC)
 //			qwglDeleteContext(*pbaseRC);
-//		if (*pmaindc)
-//			ReleaseDC(mainwindow, *pmaindc);
-//		FreeLibrary(hDll);
-//	}
-//	return 0;
-
-	return 1; // TODO: Remove this line when the code above will be finished (uncommented)
+		if (*pmaindc)
+			ReleaseDC(mainwindow, *pmaindc);
+		FreeLibrary(hDll);
+	}
+	return 0;
 }
 
 DLL_EXPORT void GL_Shutdown( HWND hwnd, HDC hdc, HGLRC hglrc )

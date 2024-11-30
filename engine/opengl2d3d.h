@@ -14,6 +14,6 @@
 DLL_EXPORT void Download4444( void );
 
 DLL_EXPORT void QGL_D3DShared( void* d3dGShared );
-DLL_EXPORT int QGL_D3DInit( void );
+DLL_EXPORT HINSTANCE QGL_D3DInit( void );
 
 #endif // _OPENGL2D3D_H_

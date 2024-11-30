@@ -17,8 +17,8 @@ void QGL_D3DShared( void* d3dGShared )
 	// TODO: Implement
 }
 
-int QGL_D3DInit( void )
+HINSTANCE QGL_D3DInit( void )
 {
 	// TODO: Implement
-	return 1;
+	return NULL;
 }
