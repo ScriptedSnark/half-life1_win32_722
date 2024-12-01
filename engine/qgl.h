@@ -158,6 +158,57 @@ extern	void ( APIENTRY * qglGetTexGendv )( GLenum coord, GLenum pname, GLdouble*
 extern	void ( APIENTRY * qglGetTexGenfv )( GLenum coord, GLenum pname, GLfloat* params );
 extern	void ( APIENTRY * qglGetTexGeniv )( GLenum coord, GLenum pname, GLint* params );
 extern	void ( APIENTRY * qglGetTexImage )( GLenum target, GLint level, GLenum format, GLenum type, GLvoid* pixels );
+extern	void ( APIENTRY * qglGetTexLevelParameterfv )( GLenum target, GLint level, GLenum pname, GLfloat* params );
+extern	void ( APIENTRY * qglGetTexLevelParameteriv )( GLenum target, GLint level, GLenum pname, GLint* params );
+extern	void ( APIENTRY * qglGetTexParameterfv )( GLenum target, GLenum pname, GLfloat* params );
+extern	void ( APIENTRY * qglGetTexParameteriv )( GLenum target, GLenum pname, GLint* params );
+extern	void ( APIENTRY * qglHint )( GLenum target, GLenum mode );
+extern	void ( APIENTRY * qglIndexMask )( GLuint mask );
+extern	void ( APIENTRY * qglIndexPointer )( GLenum type, GLsizei stride, const GLvoid* pointer );
+extern	void ( APIENTRY * qglIndexd )( GLdouble c );
+extern	void ( APIENTRY * qglIndexdv )( const GLdouble* c );
+extern	void ( APIENTRY * qglIndexf )( GLfloat c );
+extern	void ( APIENTRY * qglIndexfv )( const GLfloat* c );
+extern	void ( APIENTRY * qglIndexi )( GLint c );
+extern	void ( APIENTRY * qglIndexiv )( const GLint* c );
+extern	void ( APIENTRY * qglIndexs )( GLshort c );
+extern	void ( APIENTRY * qglIndexsv )( const GLshort* c );
+extern	void ( APIENTRY * qglIndexub )( GLubyte c );
+extern	void ( APIENTRY * qglIndexubv )( const GLubyte* c );
+extern	void ( APIENTRY * qglInitNames )( void );
+extern	void ( APIENTRY * qglInterleavedArrays )( GLenum format, GLsizei stride, const GLvoid* pointer );
+extern	GLboolean ( APIENTRY * qglIsEnabled )( GLenum cap );
+extern	GLboolean ( APIENTRY * qglIsList )( GLuint list );
+extern	GLboolean ( APIENTRY * qglIsTexture )( GLuint texture );
+extern	void ( APIENTRY * qglLightModelf )( GLenum pname, GLfloat param );
+extern	void ( APIENTRY * qglLightModelfv )( GLenum pname, const GLfloat* params );
+extern	void ( APIENTRY * qglLightModeli )( GLenum pname, GLint param );
+extern	void ( APIENTRY * qglLightModeliv )( GLenum pname, const GLint* params );
+extern	void ( APIENTRY * qglLightf )( GLenum light, GLenum pname, GLfloat param );
+extern	void ( APIENTRY * qglLightfv )( GLenum light, GLenum pname, const GLfloat* params );
+extern	void ( APIENTRY * qglLighti )( GLenum light, GLenum pname, GLint param );
+extern	void ( APIENTRY * qglLightiv )( GLenum light, GLenum pname, const GLint* params );
+extern	void ( APIENTRY * qglLineStipple )( GLint factor, GLushort pattern );
+extern	void ( APIENTRY * qglLineWidth )( GLfloat width );
+extern	void ( APIENTRY * qglListBase )( GLuint base );
+extern	void ( APIENTRY * qglLoadIdentity )( void );
+extern	void ( APIENTRY * qglLoadMatrixd )( const GLdouble* m );
+extern	void ( APIENTRY * qglLoadMatrixf )( const GLfloat* m );
+extern	void ( APIENTRY * qglLoadName )( GLuint name );
+extern	void ( APIENTRY * qglLogicOp )( GLenum opcode );
+extern	void ( APIENTRY * qglMap1d )( GLenum target, GLdouble u1, GLdouble u2, GLint stride, GLint order, const GLdouble* points );
+extern	void ( APIENTRY * qglMap1f )( GLenum target, GLfloat u1, GLfloat u2, GLint stride, GLint order, const GLfloat* points );
+extern	void ( APIENTRY * qglMap2d )( GLenum target, GLdouble u1, GLdouble u2, GLint ustride, GLint uorder, GLdouble v1, GLdouble v2, GLint vstride, GLint vorder, const GLdouble* points );
+extern	void ( APIENTRY * qglMap2f )( GLenum target, GLfloat u1, GLfloat u2, GLint ustride, GLint uorder, GLfloat v1, GLfloat v2, GLint vstride, GLint vorder, const GLfloat* points );
+extern	void ( APIENTRY * qglMapGrid1d )( GLint un, GLdouble u1, GLdouble u2 );
+extern	void ( APIENTRY * qglMapGrid1f )( GLint un, GLfloat u1, GLfloat u2 );
+extern	void ( APIENTRY * qglMapGrid2d )( GLint un, GLdouble u1, GLdouble u2, GLint vn, GLdouble v1, GLdouble v2 );
+extern	void ( APIENTRY * qglMapGrid2f )( GLint un, GLfloat u1, GLfloat u2, GLint vn, GLfloat v1, GLfloat v2 );
+
+
+
+
+
 
 
 
