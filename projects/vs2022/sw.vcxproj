@@ -65,7 +65,10 @@
     <ClCompile Include="..\..\engine\cdll_int.c" />
     <ClCompile Include="..\..\engine\chase.c" />
     <ClCompile Include="..\..\engine\CL_DEMO.C" />
+    <ClCompile Include="..\..\engine\cl_ents.c" />
     <ClCompile Include="..\..\engine\CL_MAIN.C" />
+    <ClCompile Include="..\..\engine\CL_PARSE.C" />
+    <ClCompile Include="..\..\engine\cl_pred.c" />
     <ClCompile Include="..\..\engine\cmd.c" />
     <ClCompile Include="..\..\engine\cmodel.c" />
     <ClCompile Include="..\..\engine\common.c" />

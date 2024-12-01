@@ -2,6 +2,9 @@
 
 #include "quakedef.h"
 
+vec3_t		r_soundOrigin;
+vec3_t		r_playerViewportAngles;
+
 void V_StartPitchDrift( void )
 {
 }

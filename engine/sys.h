@@ -23,10 +23,6 @@ int Sys_FileTell( int i );
 //
 void Sys_MakeCodeWriteable( unsigned long startaddr, unsigned long length );
 
-
-
-
-
 void Sys_Error( char* error, ... );
 // an error will cause the entire program to exit
 
@@ -77,15 +73,22 @@ uint32 FunctionFromName( const char* pName );
 
 typedef long LONG;
 
-extern qboolean	g_bInStartup;
-extern qboolean	g_bInactive;
-
-extern int giActive;
-extern int giStateInfo;
-extern int giSubState;
-
 void BuildExportTable( extensiondll_t* pextdll, const char* pszDllFilename );
 
 void Sys_LowFPPrecision( void );
 void Sys_HighFPPrecision( void );
 void Sys_SetFPCW( void );
+
+extern qboolean	g_bInStartup;
+extern qboolean	g_bInactive;
+
+extern qboolean gfBackground;
+
+extern int giActive;
+extern int giStateInfo;
+extern int giSubState;
+
+void	(*CDAudio_Play)( int track, int looping );
+void	(*CDAudio_Pause)( void );
+void	(*CDAudio_Resume)( void );
+void	(*CDAudio_Update)( void );

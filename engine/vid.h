@@ -40,4 +40,7 @@ int		VID_Init( word* palette );
 // the palette data will go away after the call, so it must be copied off if
 // the video driver will need it again
 
+void	VID_WriteBuffer( const char* pFilename );
+// Writes vid.buffer contents to a bmp file
+
 #endif //VIDH

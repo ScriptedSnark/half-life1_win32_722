@@ -21,6 +21,7 @@ quakeparms_t host_parms;
 qboolean	host_initialized;		// true if into command execution
 
 double		host_frametime;
+double		host_time;
 double		realtime;			// without any filtering or bounding
 double		oldrealtime;		// last frame run
 
@@ -40,6 +41,8 @@ unsigned char* host_colormap;
 
 
 cvar_t	maxfps = { "maxfps", "72.0" };
+
+float g_fFrameTime = 0.0f;
 
 cvar_t	host_framerate = { "host_framerate", "0" };
 cvar_t	host_speeds = { "host_speeds", "0" };			// set for running times
@@ -130,7 +133,7 @@ void Host_InitLocal( void )
 
 	Host_FindMaxClients();
 
-	// TODO: Implement
+	host_time = 1.0;		// so a think at time 0 won't get called
 }
 
 
@@ -196,6 +199,18 @@ qboolean Host_FilterTime( float time )
 	}	
 		
 	return TRUE;
+}
+
+
+/*
+==================
+Host_ServerFrame
+
+==================
+*/
+void Host_ServerFrame( void )
+{
+	// TODO: Implement
 }
 
 
@@ -357,6 +372,11 @@ void Master_Init( void )
 }
 
 
+void Host_PostFrameRate( float frameTime )
+{
+	g_fFrameTime = frameTime;
+}
+
 /*
 ==================
 Host_GetHostInfo
@@ -364,8 +384,9 @@ Host_GetHostInfo
 */
 DLL_EXPORT void Host_GetHostInfo( float* fps, int* nActive, int* nBots, int* nMaxPlayers, char* pszMap )
 {
+	*fps = g_fFrameTime;
+
 	// TODO: Implement
-	Con_DPrintf("123\n");
 }
 
 
@@ -378,6 +399,13 @@ Runs all active servers
 */
 void _Host_Frame( float time )
 {
+	static double		time1 = 0;
+	static double		time2 = 0;
+	static double		time3 = 0;
+	float pass1, pass2, pass3;
+	float frameTime;
+	float fps;
+
 	if (setjmp(host_enddemo))
 		return;			// demo finished.
 
@@ -407,7 +435,133 @@ void _Host_Frame( float time )
 	if (cls.state == ca_active)
 		ClientDLL_UpdateClientData();
 
-	// TODO: Implement
+// if running the server locally, make intentions now
+	if (sv.active)
+		CL_SendCmd();
+
+//-------------------
+//
+// server operations
+//
+//-------------------
+
+	if (sv.active)
+		Host_ServerFrame();
+
+//-------------------
+//
+// client operations
+//
+//-------------------
+
+// if running the server remotely, send intentions now after
+// the incoming messages have been read
+	if (!sv.active)
+		CL_SendCmd();
+
+	// fetch results from server
+	CL_ReadPackets();
+
+	if (cls.state == ca_active)
+	{
+		CL_SetUpPlayerPrediction(FALSE);
+		CL_PredictMove();
+		CL_SetUpPlayerPrediction(TRUE);
+	}
+
+	CL_EmitEntities();
+
+	// Resend connection request if needed.
+	CL_CheckForResend();
+
+	while (CL_RequestMissingResources());
+
+// check timeouts
+	SV_CheckTimeouts();
+
+	host_time += host_frametime;
+
+	CAM_Think();
+
+// update video
+	time1 = Sys_FloatTime();
+	if (!gfBackground)
+	{
+		// Refresh the screen
+		SCR_UpdateScreen();
+
+		// If recording movie and the console is totally up, then write out this frame to movie file.
+		if (cl_inmovie && !scr_con_current)
+		{
+			VID_WriteBuffer(NULL);
+		}
+	}
+	time2 = Sys_FloatTime();
+
+	CL_UpdateSoundFade();
+
+// update audio
+	if (!gfBackground)
+	{
+		if (cls.signon == SIGNONS)
+		{
+			vec3_t vSoundForward, vSoundRight, vSoundUp;
+			AngleVectors(r_playerViewportAngles, vSoundForward, vSoundRight, vSoundUp);
+
+			S_Update(r_soundOrigin, vSoundForward, vSoundRight, vSoundUp);
+			CL_DecayLights();
+		}
+		else
+		{
+			S_Update(vec3_origin, vec3_origin, vec3_origin, vec3_origin);
+		}
+	}
+
+	CDAudio_Update();
+
+	pass1 = (float)((time1 - time3) * 1000.0);
+	time3 = Sys_FloatTime();
+	pass2 = (float)((time2 - time1) * 1000.0);
+	pass3 = (float)((time3 - time2) * 1000.0);
+
+	frameTime = pass3 + pass2 + pass1;
+	if (frameTime == 0.0)
+	{
+		fps = 100.0;
+		Host_PostFrameRate(fps);
+	}
+	else
+	{
+		fps = 1000.0 / frameTime;
+		Host_PostFrameRate(fps);
+	}
+
+	if (host_speeds.value)
+	{
+		int ent_count = 0;
+		int i;
+
+		// count used entities
+		for (i = 0; i < sv.num_edicts; i++)
+		{
+			if (!sv.edicts[i].free)
+				ent_count++;
+		}
+
+		Con_DPrintf("%3i fps tot %3.0f server %3.0f gfx %3.0f snd %d ents\n",
+		  (int)fps,
+		  pass1,
+		  pass2,
+		  pass3,
+		  ent_count);
+	}
+
+	if ((giSubState & 4) && cls.state == ca_disconnected)
+	{
+		giActive = DLL_PAUSED;
+	}
+
+	host_framecount++;
 }
 
 

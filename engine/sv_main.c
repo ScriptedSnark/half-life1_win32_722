@@ -14,6 +14,26 @@ globalvars_t gGlobalVariables;
 
 // TODO: Implement
 
+
+/*
+==================
+SV_CheckTimeouts
+
+If a packet has not been received from a client in sv_timeout.value
+seconds, drop the conneciton.
+
+When a client is normally dropped, the client_t goes into a zombie state
+for a few seconds to make sure any final reliable message gets resent
+if necessary
+==================
+*/
+void SV_CheckTimeouts( void )
+{
+	// TODO: Implement
+}
+
+// TODO: Implement
+
 /*
 ==================
 SV_Init

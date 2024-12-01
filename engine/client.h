@@ -81,6 +81,10 @@ extern	cvar_t	sensitivity;
 
 // TODO: Implement
 
+extern qboolean cl_inmovie;
+
+// TODO: Implement
+
 extern	client_state_t	cl;
 
 //=============================================================================
@@ -90,6 +94,14 @@ extern	client_state_t	cl;
 void	CL_DecayLights( void );
 
 void CL_Init( void );
+
+
+void CL_UpdateSoundFade( void );
+
+
+// Resource
+qboolean CL_RequestMissingResources( void );
+
 
 //
 // cl_input
@@ -105,8 +117,34 @@ extern 	kbutton_t 	in_strafe;
 extern 	kbutton_t 	in_speed;
 
 void CL_InitInput( void );
+void CL_SendCmd( void );
+
+void CAM_Think( void );
 
 // TODO: Implement
+
+
+void CL_ReadPackets( void );        // Read packets from server and other sources (ping requests, etc.)
+void CL_SendConnectPacket( void );  // Send the actual connection packet, after server supplies us a challenge value.
+void CL_CheckForResend( void );     // If we are in ca_connecting state and it has been cl_resend.value seconds, 
+									// request a challenge value again if we aren't yet connected. 
+
+//
+// cl_ents.c
+//
+void CL_SetSolidPlayers( int playernum );
+void CL_SetUpPlayerPrediction( qboolean dopred );
+void CL_EmitEntities( void );
+
+
+//
+// cl_pred.c
+//
+void CL_PredictMove( void );
+
+
+
+
 
 //
 // view

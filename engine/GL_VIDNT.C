@@ -289,7 +289,10 @@ int VID_Init( word* palette )
 }
 
 
-
+void VID_WriteBuffer( const char* pFilename )
+{
+	// TODO: Implement
+}
 
 DLL_EXPORT void VID_UpdateWindowVars( void* prc, int x, int y )
 {

@@ -31,7 +31,11 @@ typedef struct
 	qboolean	active;				// false if only a net client
 	qboolean	paused;				// are we paused?
 
-	edict_t		*edicts;			// can NOT be array indexed, because
+	// TODO: Implement
+
+	int			num_edicts;
+	int			max_edicts;
+	edict_t*	edicts;			// can NOT be array indexed, because
 									// edict_t is variable sized, but can
 									// be used to reference the world ent
 
@@ -75,7 +79,7 @@ extern	jmp_buf 	host_abortserver;
 
 // sv_main.c
 void SV_Init( void );
-
+void SV_CheckTimeouts( void );
 
 
 void SV_BroadcastPrintf( char* fmt, ... );
