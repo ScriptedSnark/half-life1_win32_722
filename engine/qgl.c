@@ -1738,19 +1738,896 @@ static void APIENTRY logMapGrid2f( GLint un, GLfloat u1, GLfloat u2, GLint vn, G
 	SIG("glMapGrid2f");
 	dllMapGrid2f(un, u1, u2, vn, v1, v2);
 }
+static void APIENTRY logMaterialf( GLenum face, GLenum pname, GLfloat param )
+{
+	SIG("glMaterialf");
+	dllMaterialf(face, pname, param);
+}
+static void APIENTRY logMaterialfv( GLenum face, GLenum pname, const GLfloat* params )
+{
+	SIG("glMaterialfv");
+	dllMaterialfv(face, pname, params);
+}
 
+static void APIENTRY logMateriali( GLenum face, GLenum pname, GLint param )
+{
+	SIG("glMateriali");
+	dllMateriali(face, pname, param);
+}
 
+static void APIENTRY logMaterialiv( GLenum face, GLenum pname, const GLint* params )
+{
+	SIG("glMaterialiv");
+	dllMaterialiv(face, pname, params);
+}
 
+static void APIENTRY logMatrixMode( GLenum mode )
+{
+	SIG("glMatrixMode");
+	dllMatrixMode(mode);
+}
 
+static void APIENTRY logMultMatrixd( const GLdouble* m )
+{
+	SIG("glMultMatrixd");
+	dllMultMatrixd(m);
+}
 
+static void APIENTRY logMultMatrixf( const GLfloat* m )
+{
+	SIG("glMultMatrixf");
+	dllMultMatrixf(m);
+}
 
+static void APIENTRY logNewList( GLuint list, GLenum mode )
+{
+	SIG("glNewList");
+	dllNewList(list, mode);
+}
 
+static void APIENTRY logNormal3b( GLbyte nx, GLbyte ny, GLbyte nz )
+{
+	SIG("glNormal3b");
+	dllNormal3b(nx, ny, nz);
+}
 
+static void APIENTRY logNormal3bv( const GLbyte* v )
+{
+	SIG("glNormal3bv");
+	dllNormal3bv(v);
+}
 
+static void APIENTRY logNormal3d( GLdouble nx, GLdouble ny, GLdouble nz )
+{
+	SIG("glNormal3d");
+	dllNormal3d(nx, ny, nz);
+}
 
+static void APIENTRY logNormal3dv( const GLdouble* v )
+{
+	SIG("glNormal3dv");
+	dllNormal3dv(v);
+}
 
+static void APIENTRY logNormal3f( GLfloat nx, GLfloat ny, GLfloat nz )
+{
+	SIG("glNormal3f");
+	dllNormal3f(nx, ny, nz);
+}
 
+static void APIENTRY logNormal3fv( const GLfloat* v )
+{
+	SIG("glNormal3fv");
+	dllNormal3fv(v);
+}
+static void APIENTRY logNormal3i( GLint nx, GLint ny, GLint nz )
+{
+	SIG("glNormal3i");
+	dllNormal3i(nx, ny, nz);
+}
+static void APIENTRY logNormal3iv( const GLint* v )
+{
+	SIG("glNormal3iv");
+	dllNormal3iv(v);
+}
+static void APIENTRY logNormal3s( GLshort nx, GLshort ny, GLshort nz )
+{
+	SIG("glNormal3s");
+	dllNormal3s(nx, ny, nz);
+}
+static void APIENTRY logNormal3sv( const GLshort* v )
+{
+	SIG("glNormal3sv");
+	dllNormal3sv(v);
+}
+static void APIENTRY logNormalPointer( GLenum type, GLsizei stride, const void* pointer )
+{
+	SIG("glNormalPointer");
+	dllNormalPointer(type, stride, pointer);
+}
+static void APIENTRY logOrtho( GLdouble left, GLdouble right, GLdouble bottom, GLdouble top, GLdouble zNear, GLdouble zFar )
+{
+	SIG("glOrtho");
+	dllOrtho(left, right, bottom, top, zNear, zFar);
+}
 
+static void APIENTRY logPassThrough( GLfloat token )
+{
+	SIG("glPassThrough");
+	dllPassThrough(token);
+}
+
+static void APIENTRY logPixelMapfv( GLenum map, GLsizei mapsize, const GLfloat* values )
+{
+	SIG("glPixelMapfv");
+	dllPixelMapfv(map, mapsize, values);
+}
+
+static void APIENTRY logPixelMapuiv( GLenum map, GLsizei mapsize, const GLuint* values )
+{
+	SIG("glPixelMapuiv");
+	dllPixelMapuiv(map, mapsize, values);
+}
+
+static void APIENTRY logPixelMapusv( GLenum map, GLsizei mapsize, const GLushort* values )
+{
+	SIG("glPixelMapusv");
+	dllPixelMapusv(map, mapsize, values);
+}
+static void APIENTRY logPixelStoref( GLenum pname, GLfloat param )
+{
+	SIG("glPixelStoref");
+	dllPixelStoref(pname, param);
+}
+static void APIENTRY logPixelStorei( GLenum pname, GLint param )
+{
+	SIG("glPixelStorei");
+	dllPixelStorei(pname, param);
+}
+static void APIENTRY logPixelTransferf( GLenum pname, GLfloat param )
+{
+	SIG("glPixelTransferf");
+	dllPixelTransferf(pname, param);
+}
+
+static void APIENTRY logPixelTransferi( GLenum pname, GLint param )
+{
+	SIG("glPixelTransferi");
+	dllPixelTransferi(pname, param);
+}
+
+static void APIENTRY logPixelZoom( GLfloat xfactor, GLfloat yfactor )
+{
+	SIG("glPixelZoom");
+	dllPixelZoom(xfactor, yfactor);
+}
+
+static void APIENTRY logPointSize( GLfloat size )
+{
+	SIG("glPointSize");
+	dllPointSize(size);
+}
+
+static void APIENTRY logPolygonMode( GLenum face, GLenum mode )
+{
+	fprintf(glw_state.log_fp, "glPolygonMode( 0x%x, 0x%x )\n", face, mode);
+	dllPolygonMode(face, mode);
+}
+
+static void APIENTRY logPolygonOffset( GLfloat factor, GLfloat units )
+{
+	SIG("glPolygonOffset");
+	dllPolygonOffset(factor, units);
+}
+static void APIENTRY logPolygonStipple( const GLubyte* mask )
+{
+	SIG("glPolygonStipple");
+	dllPolygonStipple(mask);
+}
+static void APIENTRY logPopAttrib( void )
+{
+	SIG("glPopAttrib");
+	dllPopAttrib();
+}
+
+static void APIENTRY logPopClientAttrib( void )
+{
+	SIG("glPopClientAttrib");
+	dllPopClientAttrib();
+}
+
+static void APIENTRY logPopMatrix( void )
+{
+	SIG("glPopMatrix");
+	dllPopMatrix();
+}
+
+static void APIENTRY logPopName( void )
+{
+	SIG("glPopName");
+	dllPopName();
+}
+
+static void APIENTRY logPrioritizeTextures( GLsizei n, const GLuint* textures, const GLclampf* priorities )
+{
+	SIG("glPrioritizeTextures");
+	dllPrioritizeTextures(n, textures, priorities);
+}
+
+static void APIENTRY logPushAttrib( GLbitfield mask )
+{
+	SIG("glPushAttrib");
+	dllPushAttrib(mask);
+}
+
+static void APIENTRY logPushClientAttrib( GLbitfield mask )
+{
+	SIG("glPushClientAttrib");
+	dllPushClientAttrib(mask);
+}
+
+static void APIENTRY logPushMatrix( void )
+{
+	SIG("glPushMatrix");
+	dllPushMatrix();
+}
+
+static void APIENTRY logPushName( GLuint name )
+{
+	SIG("glPushName");
+	dllPushName(name);
+}
+
+static void APIENTRY logRasterPos2d( GLdouble x, GLdouble y )
+{
+	SIG("glRasterPot2d");
+	dllRasterPos2d(x, y);
+}
+
+static void APIENTRY logRasterPos2dv( const GLdouble* v )
+{
+	SIG("glRasterPos2dv");
+	dllRasterPos2dv(v);
+}
+
+static void APIENTRY logRasterPos2f( GLfloat x, GLfloat y )
+{
+	SIG("glRasterPos2f");
+	dllRasterPos2f(x, y);
+}
+static void APIENTRY logRasterPos2fv( const GLfloat* v )
+{
+	SIG("glRasterPos2dv");
+	dllRasterPos2fv(v);
+}
+static void APIENTRY logRasterPos2i( GLint x, GLint y )
+{
+	SIG("glRasterPos2if");
+	dllRasterPos2i(x, y);
+}
+static void APIENTRY logRasterPos2iv( const GLint* v )
+{
+	SIG("glRasterPos2iv");
+	dllRasterPos2iv(v);
+}
+static void APIENTRY logRasterPos2s( GLshort x, GLshort y )
+{
+	SIG("glRasterPos2s");
+	dllRasterPos2s(x, y);
+}
+static void APIENTRY logRasterPos2sv( const GLshort* v )
+{
+	SIG("glRasterPos2sv");
+	dllRasterPos2sv(v);
+}
+static void APIENTRY logRasterPos3d( GLdouble x, GLdouble y, GLdouble z )
+{
+	SIG("glRasterPos3d");
+	dllRasterPos3d(x, y, z);
+}
+static void APIENTRY logRasterPos3dv( const GLdouble* v )
+{
+	SIG("glRasterPos3dv");
+	dllRasterPos3dv(v);
+}
+static void APIENTRY logRasterPos3f( GLfloat x, GLfloat y, GLfloat z )
+{
+	SIG("glRasterPos3f");
+	dllRasterPos3f(x, y, z);
+}
+static void APIENTRY logRasterPos3fv( const GLfloat* v )
+{
+	SIG("glRasterPos3fv");
+	dllRasterPos3fv(v);
+}
+static void APIENTRY logRasterPos3i( GLint x, GLint y, GLint z )
+{
+	SIG("glRasterPos3i");
+	dllRasterPos3i(x, y, z);
+}
+static void APIENTRY logRasterPos3iv( const GLint* v )
+{
+	SIG("glRasterPos3iv");
+	dllRasterPos3iv(v);
+}
+static void APIENTRY logRasterPos3s( GLshort x, GLshort y, GLshort z )
+{
+	SIG("glRasterPos3s");
+	dllRasterPos3s(x, y, z);
+}
+static void APIENTRY logRasterPos3sv( const GLshort* v )
+{
+	SIG("glRasterPos3sv");
+	dllRasterPos3sv(v);
+}
+static void APIENTRY logRasterPos4d( GLdouble x, GLdouble y, GLdouble z, GLdouble w )
+{
+	SIG("glRasterPos4d");
+	dllRasterPos4d(x, y, z, w);
+}
+static void APIENTRY logRasterPos4dv( const GLdouble* v )
+{
+	SIG("glRasterPos4dv");
+	dllRasterPos4dv(v);
+}
+static void APIENTRY logRasterPos4f( GLfloat x, GLfloat y, GLfloat z, GLfloat w )
+{
+	SIG("glRasterPos4f");
+	dllRasterPos4f(x, y, z, w);
+}
+static void APIENTRY logRasterPos4fv( const GLfloat* v )
+{
+	SIG("glRasterPos4fv");
+	dllRasterPos4fv(v);
+}
+static void APIENTRY logRasterPos4i( GLint x, GLint y, GLint z, GLint w )
+{
+	SIG("glRasterPos4i");
+	dllRasterPos4i(x, y, z, w);
+}
+static void APIENTRY logRasterPos4iv( const GLint* v )
+{
+	SIG("glRasterPos4iv");
+	dllRasterPos4iv(v);
+}
+static void APIENTRY logRasterPos4s( GLshort x, GLshort y, GLshort z, GLshort w )
+{
+	SIG("glRasterPos4s");
+	dllRasterPos4s(x, y, z, w);
+}
+static void APIENTRY logRasterPos4sv( const GLshort* v )
+{
+	SIG("glRasterPos4sv");
+	dllRasterPos4sv(v);
+}
+static void APIENTRY logReadBuffer( GLenum mode )
+{
+	SIG("glReadBuffer");
+	dllReadBuffer(mode);
+}
+static void APIENTRY logReadPixels( GLint x, GLint y, GLsizei width, GLsizei height, GLenum format, GLenum type, void* pixels )
+{
+	SIG("glReadPixels");
+	dllReadPixels(x, y, width, height, format, type, pixels);
+}
+
+static void APIENTRY logRectd( GLdouble x1, GLdouble y1, GLdouble x2, GLdouble y2 )
+{
+	SIG("glRectd");
+	dllRectd(x1, y1, x2, y2);
+}
+
+static void APIENTRY logRectdv( const GLdouble* v1, const GLdouble* v2 )
+{
+	SIG("glRectdv");
+	dllRectdv(v1, v2);
+}
+
+static void APIENTRY logRectf( GLfloat x1, GLfloat y1, GLfloat x2, GLfloat y2 )
+{
+	SIG("glRectf");
+	dllRectf(x1, y1, x2, y2);
+}
+
+static void APIENTRY logRectfv( const GLfloat* v1, const GLfloat* v2 )
+{
+	SIG("glRectfv");
+	dllRectfv(v1, v2);
+}
+static void APIENTRY logRecti( GLint x1, GLint y1, GLint x2, GLint y2 )
+{
+	SIG("glRecti");
+	dllRecti(x1, y1, x2, y2);
+}
+static void APIENTRY logRectiv( const GLint* v1, const GLint* v2 )
+{
+	SIG("glRectiv");
+	dllRectiv(v1, v2);
+}
+static void APIENTRY logRects( GLshort x1, GLshort y1, GLshort x2, GLshort y2 )
+{
+	SIG("glRects");
+	dllRects(x1, y1, x2, y2);
+}
+static void APIENTRY logRectsv( const GLshort* v1, const GLshort* v2 )
+{
+	SIG("glRectsv");
+	dllRectsv(v1, v2);
+}
+static GLint APIENTRY logRenderMode( GLenum mode )
+{
+	SIG("glRenderMode");
+	return dllRenderMode(mode);
+}
+static void APIENTRY logRotated( GLdouble angle, GLdouble x, GLdouble y, GLdouble z )
+{
+	SIG("glRotated");
+	dllRotated(angle, x, y, z);
+}
+
+static void APIENTRY logRotatef( GLfloat angle, GLfloat x, GLfloat y, GLfloat z )
+{
+	SIG("glRotatef");
+	dllRotatef(angle, x, y, z);
+}
+
+static void APIENTRY logScaled( GLdouble x, GLdouble y, GLdouble z )
+{
+	SIG("glScaled");
+	dllScaled(x, y, z);
+}
+
+static void APIENTRY logScalef( GLfloat x, GLfloat y, GLfloat z )
+{
+	SIG("glScalef");
+	dllScalef(x, y, z);
+}
+
+static void APIENTRY logScissor( GLint x, GLint y, GLsizei width, GLsizei height )
+{
+	SIG("glScissor");
+	dllScissor(x, y, width, height);
+}
+
+static void APIENTRY logSelectBuffer( GLsizei size, GLuint* buffer )
+{
+	SIG("glSelectBuffer");
+	dllSelectBuffer(size, buffer);
+}
+
+static void APIENTRY logShadeModel( GLenum mode )
+{
+	SIG("glShadeModel");
+	dllShadeModel(mode);
+}
+
+static void APIENTRY logStencilFunc( GLenum func, GLint ref, GLuint mask )
+{
+	SIG("glStencilFunc");
+	dllStencilFunc(func, ref, mask);
+}
+
+static void APIENTRY logStencilMask( GLuint mask )
+{
+	SIG("glStencilMask");
+	dllStencilMask(mask);
+}
+
+static void APIENTRY logStencilOp( GLenum fail, GLenum zfail, GLenum zpass )
+{
+	SIG("glStencilOp");
+	dllStencilOp(fail, zfail, zpass);
+}
+
+static void APIENTRY logTexCoord1d( GLdouble s )
+{
+	SIG("glTexCoord1d");
+	dllTexCoord1d(s);
+}
+
+static void APIENTRY logTexCoord1dv( const GLdouble* v )
+{
+	SIG("glTexCoord1dv");
+	dllTexCoord1dv(v);
+}
+
+static void APIENTRY logTexCoord1f( GLfloat s )
+{
+	SIG("glTexCoord1f");
+	dllTexCoord1f(s);
+}
+static void APIENTRY logTexCoord1fv( const GLfloat* v )
+{
+	SIG("glTexCoord1fv");
+	dllTexCoord1fv(v);
+}
+static void APIENTRY logTexCoord1i( GLint s )
+{
+	SIG("glTexCoord1i");
+	dllTexCoord1i(s);
+}
+static void APIENTRY logTexCoord1iv( const GLint* v )
+{
+	SIG("glTexCoord1iv");
+	dllTexCoord1iv(v);
+}
+static void APIENTRY logTexCoord1s( GLshort s )
+{
+	SIG("glTexCoord1s");
+	dllTexCoord1s(s);
+}
+static void APIENTRY logTexCoord1sv( const GLshort* v )
+{
+	SIG("glTexCoord1sv");
+	dllTexCoord1sv(v);
+}
+static void APIENTRY logTexCoord2d( GLdouble s, GLdouble t )
+{
+	SIG("glTexCoord2d");
+	dllTexCoord2d(s, t);
+}
+
+static void APIENTRY logTexCoord2dv( const GLdouble* v )
+{
+	SIG("glTexCoord2dv");
+	dllTexCoord2dv(v);
+}
+static void APIENTRY logTexCoord2f( GLfloat s, GLfloat t )
+{
+	SIG("glTexCoord2f");
+	dllTexCoord2f(s, t);
+}
+static void APIENTRY logTexCoord2fv( const GLfloat* v )
+{
+	SIG("glTexCoord2fv");
+	dllTexCoord2fv(v);
+}
+static void APIENTRY logTexCoord2i( GLint s, GLint t )
+{
+	SIG("glTexCoord2i");
+	dllTexCoord2i(s, t);
+}
+static void APIENTRY logTexCoord2iv( const GLint* v )
+{
+	SIG("glTexCoord2iv");
+	dllTexCoord2iv(v);
+}
+static void APIENTRY logTexCoord2s( GLshort s, GLshort t )
+{
+	SIG("glTexCoord2s");
+	dllTexCoord2s(s, t);
+}
+static void APIENTRY logTexCoord2sv( const GLshort* v )
+{
+	SIG("glTexCoord2sv");
+	dllTexCoord2sv(v);
+}
+static void APIENTRY logTexCoord3d( GLdouble s, GLdouble t, GLdouble r )
+{
+	SIG("glTexCoord3d");
+	dllTexCoord3d(s, t, r);
+}
+static void APIENTRY logTexCoord3dv( const GLdouble* v )
+{
+	SIG("glTexCoord3dv");
+	dllTexCoord3dv(v);
+}
+static void APIENTRY logTexCoord3f( GLfloat s, GLfloat t, GLfloat r )
+{
+	SIG("glTexCoord3f");
+	dllTexCoord3f(s, t, r);
+}
+static void APIENTRY logTexCoord3fv( const GLfloat* v )
+{
+	SIG("glTexCoord3fv");
+	dllTexCoord3fv(v);
+}
+static void APIENTRY logTexCoord3i( GLint s, GLint t, GLint r )
+{
+	SIG("glTexCoord3i");
+	dllTexCoord3i(s, t, r);
+}
+static void APIENTRY logTexCoord3iv( const GLint* v )
+{
+	SIG("glTexCoord3iv");
+	dllTexCoord3iv(v);
+}
+static void APIENTRY logTexCoord3s( GLshort s, GLshort t, GLshort r )
+{
+	SIG("glTexCoord3s");
+	dllTexCoord3s(s, t, r);
+}
+static void APIENTRY logTexCoord3sv( const GLshort* v )
+{
+	SIG("glTexCoord3sv");
+	dllTexCoord3sv(v);
+}
+static void APIENTRY logTexCoord4d( GLdouble s, GLdouble t, GLdouble r, GLdouble q )
+{
+	SIG("glTexCoord4d");
+	dllTexCoord4d(s, t, r, q);
+}
+static void APIENTRY logTexCoord4dv( const GLdouble* v )
+{
+	SIG("glTexCoord4dv");
+	dllTexCoord4dv(v);
+}
+static void APIENTRY logTexCoord4f( GLfloat s, GLfloat t, GLfloat r, GLfloat q )
+{
+	SIG("glTexCoord4f");
+	dllTexCoord4f(s, t, r, q);
+}
+static void APIENTRY logTexCoord4fv( const GLfloat* v )
+{
+	SIG("glTexCoord4fv");
+	dllTexCoord4fv(v);
+}
+static void APIENTRY logTexCoord4i( GLint s, GLint t, GLint r, GLint q )
+{
+	SIG("glTexCoord4i");
+	dllTexCoord4i(s, t, r, q);
+}
+static void APIENTRY logTexCoord4iv( const GLint* v )
+{
+	SIG("glTexCoord4iv");
+	dllTexCoord4iv(v);
+}
+static void APIENTRY logTexCoord4s( GLshort s, GLshort t, GLshort r, GLshort q )
+{
+	SIG("glTexCoord4s");
+	dllTexCoord4s(s, t, r, q);
+}
+static void APIENTRY logTexCoord4sv( const GLshort* v )
+{
+	SIG("glTexCoord4sv");
+	dllTexCoord4sv(v);
+}
+static void APIENTRY logTexCoordPointer( GLint size, GLenum type, GLsizei stride, const void* pointer )
+{
+	SIG("glTexCoordPointer");
+	dllTexCoordPointer(size, type, stride, pointer);
+}
+
+static void APIENTRY logTexEnvf( GLenum target, GLenum pname, GLfloat param )
+{
+	fprintf(glw_state.log_fp, "glTexEnvf( 0x%x, 0x%x, %f )\n", target, pname, param);
+	dllTexEnvf(target, pname, param);
+}
+
+static void APIENTRY logTexEnvfv( GLenum target, GLenum pname, const GLfloat* params )
+{
+	SIG("glTexEnvfv");
+	dllTexEnvfv(target, pname, params);
+}
+
+static void APIENTRY logTexEnvi( GLenum target, GLenum pname, GLint param )
+{
+	fprintf(glw_state.log_fp, "glTexEnvi( 0x%x, 0x%x, 0x%x )\n", target, pname, param);
+	dllTexEnvi(target, pname, param);
+}
+static void APIENTRY logTexEnviv( GLenum target, GLenum pname, const GLint* params )
+{
+	SIG("glTexEnviv");
+	dllTexEnviv(target, pname, params);
+}
+
+static void APIENTRY logTexGend( GLenum coord, GLenum pname, GLdouble param )
+{
+	SIG("glTexGend");
+	dllTexGend(coord, pname, param);
+}
+
+static void APIENTRY logTexGendv( GLenum coord, GLenum pname, const GLdouble* params )
+{
+	SIG("glTexGendv");
+	dllTexGendv(coord, pname, params);
+}
+
+static void APIENTRY logTexGenf( GLenum coord, GLenum pname, GLfloat param )
+{
+	SIG("glTexGenf");
+	dllTexGenf(coord, pname, param);
+}
+static void APIENTRY logTexGenfv( GLenum coord, GLenum pname, const GLfloat* params )
+{
+	SIG("glTexGenfv");
+	dllTexGenfv(coord, pname, params);
+}
+static void APIENTRY logTexGeni( GLenum coord, GLenum pname, GLint param )
+{
+	SIG("glTexGeni");
+	dllTexGeni(coord, pname, param);
+}
+static void APIENTRY logTexGeniv( GLenum coord, GLenum pname, const GLint* params )
+{
+	SIG("glTexGeniv");
+	dllTexGeniv(coord, pname, params);
+}
+static void APIENTRY logTexImage1D( GLenum target, GLint level, GLint internalformat, GLsizei width, GLint border, GLenum format, GLenum type, const void* pixels )
+{
+	SIG("glTexImage1D");
+	dllTexImage1D(target, level, internalformat, width, border, format, type, pixels);
+}
+static void APIENTRY logTexImage2D( GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const void* pixels )
+{
+	SIG("glTexImage2D");
+	dllTexImage2D(target, level, internalformat, width, height, border, format, type, pixels);
+}
+
+static void APIENTRY logTexParameterf( GLenum target, GLenum pname, GLfloat param )
+{
+	fprintf(glw_state.log_fp, "glTexParameterf( 0x%x, 0x%x, %f )\n", target, pname, param);
+	dllTexParameterf(target, pname, param);
+}
+
+static void APIENTRY logTexParameterfv( GLenum target, GLenum pname, const GLfloat* params )
+{
+	SIG("glTexParameterfv");
+	dllTexParameterfv(target, pname, params);
+}
+static void APIENTRY logTexParameteri( GLenum target, GLenum pname, GLint param )
+{
+	fprintf(glw_state.log_fp, "glTexParameteri( 0x%x, 0x%x, 0x%x )\n", target, pname, param);
+	dllTexParameteri(target, pname, param);
+}
+static void APIENTRY logTexParameteriv( GLenum target, GLenum pname, const GLint* params )
+{
+	SIG("glTexParameteriv");
+	dllTexParameteriv(target, pname, params);
+}
+static void APIENTRY logTexSubImage1D( GLenum target, GLint level, GLint xoffset, GLsizei width, GLenum format, GLenum type, const void* pixels )
+{
+	SIG("glTexSubImage1D");
+	dllTexSubImage1D(target, level, xoffset, width, format, type, pixels);
+}
+static void APIENTRY logTexSubImage2D( GLenum target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum format, GLenum type, const void* pixels )
+{
+	SIG("glTexSubImage2D");
+	dllTexSubImage2D(target, level, xoffset, yoffset, width, height, format, type, pixels);
+}
+static void APIENTRY logTranslated( GLdouble x, GLdouble y, GLdouble z )
+{
+	SIG("glTranslated");
+	dllTranslated(x, y, z);
+}
+
+static void APIENTRY logTranslatef( GLfloat x, GLfloat y, GLfloat z )
+{
+	SIG("glTranslatef");
+	dllTranslatef(x, y, z);
+}
+
+static void APIENTRY logVertex2d( GLdouble x, GLdouble y )
+{
+	SIG("glVertex2d");
+	dllVertex2d(x, y);
+}
+
+static void APIENTRY logVertex2dv( const GLdouble* v )
+{
+	SIG("glVertex2dv");
+	dllVertex2dv(v);
+}
+static void APIENTRY logVertex2f( GLfloat x, GLfloat y )
+{
+	SIG("glVertex2f");
+	dllVertex2f(x, y);
+}
+static void APIENTRY logVertex2fv( const GLfloat* v )
+{
+	SIG("glVertex2fv");
+	dllVertex2fv(v);
+}
+static void APIENTRY logVertex2i( GLint x, GLint y )
+{
+	SIG("glVertex2i");
+	dllVertex2i(x, y);
+}
+static void APIENTRY logVertex2iv( const GLint* v )
+{
+	SIG("glVertex2iv");
+	dllVertex2iv(v);
+}
+static void APIENTRY logVertex2s( GLshort x, GLshort y )
+{
+	SIG("glVertex2s");
+	dllVertex2s(x, y);
+}
+static void APIENTRY logVertex2sv( const GLshort* v )
+{
+	SIG("glVertex2sv");
+	dllVertex2sv(v);
+}
+static void APIENTRY logVertex3d( GLdouble x, GLdouble y, GLdouble z )
+{
+	SIG("glVertex3d");
+	dllVertex3d(x, y, z);
+}
+static void APIENTRY logVertex3dv( const GLdouble* v )
+{
+	SIG("glVertex3dv");
+	dllVertex3dv(v);
+}
+static void APIENTRY logVertex3f( GLfloat x, GLfloat y, GLfloat z )
+{
+	SIG("glVertex3f");
+	dllVertex3f(x, y, z);
+}
+static void APIENTRY logVertex3fv( const GLfloat* v )
+{
+	SIG("glVertex3fv");
+	dllVertex3fv(v);
+}
+static void APIENTRY logVertex3i( GLint x, GLint y, GLint z )
+{
+	SIG("glVertex3i");
+	dllVertex3i(x, y, z);
+}
+static void APIENTRY logVertex3iv( const GLint* v )
+{
+	SIG("glVertex3iv");
+	dllVertex3iv(v);
+}
+static void APIENTRY logVertex3s( GLshort x, GLshort y, GLshort z )
+{
+	SIG("glVertex3s");
+	dllVertex3s(x, y, z);
+}
+static void APIENTRY logVertex3sv( const GLshort* v )
+{
+	SIG("glVertex3sv");
+	dllVertex3sv(v);
+}
+static void APIENTRY logVertex4d( GLdouble x, GLdouble y, GLdouble z, GLdouble w )
+{
+	SIG("glVertex4d");
+	dllVertex4d(x, y, z, w);
+}
+static void APIENTRY logVertex4dv( const GLdouble* v )
+{
+	SIG("glVertex4dv");
+	dllVertex4dv(v);
+}
+static void APIENTRY logVertex4f( GLfloat x, GLfloat y, GLfloat z, GLfloat w )
+{
+	SIG("glVertex4f");
+	dllVertex4f(x, y, z, w);
+}
+static void APIENTRY logVertex4fv( const GLfloat* v )
+{
+	SIG("glVertex4fv");
+	dllVertex4fv(v);
+}
+static void APIENTRY logVertex4i( GLint x, GLint y, GLint z, GLint w )
+{
+	SIG("glVertex4i");
+	dllVertex4i(x, y, z, w);
+}
+static void APIENTRY logVertex4iv( const GLint* v )
+{
+	SIG("glVertex4iv");
+	dllVertex4iv(v);
+}
+static void APIENTRY logVertex4s( GLshort x, GLshort y, GLshort z, GLshort w )
+{
+	SIG("glVertex4s");
+	dllVertex4s(x, y, z, w);
+}
+static void APIENTRY logVertex4sv( const GLshort* v )
+{
+	SIG("glVertex4sv");
+	dllVertex4sv(v);
+}
+static void APIENTRY logVertexPointer( GLint size, GLenum type, GLsizei stride, const void* pointer )
+{
+	SIG("glVertexPointer");
+	dllVertexPointer(size, type, stride, pointer);
+}
+static void APIENTRY logViewport( GLint x, GLint y, GLsizei width, GLsizei height )
+{
+	SIG("glViewport");
+	dllViewport(x, y, width, height);
+}
 
 /*
 ** QGL_Shutdown
@@ -2546,7 +3423,371 @@ HINSTANCE QGL_Init( char* pdllname )
 
 void GLimp_EnableLogging( void )
 {
-	// TODO: Implement
+	if (!glw_state.log_fp)
+	{
+		struct tm* newtime;
+		time_t aclock;
+		char buffer[1024];
+
+		time(&aclock);
+
+		newtime = localtime(&aclock);
+		asctime(newtime);
+
+		sprintf(buffer, "\\gl.log");
+		glw_state.log_fp = fopen(buffer, "wt");
+
+		fprintf(glw_state.log_fp, "%s\n", asctime(newtime));
+
+		qglAccum					= logAccum;
+		qglAlphaFunc				= logAlphaFunc;
+		qglAreTexturesResident		= logAreTexturesResident;
+		qglArrayElement				= logArrayElement;
+		qglBegin					= logBegin;
+		qglBindTexture				= logBindTexture;
+		qglBitmap					= logBitmap;
+		qglBlendFunc				= logBlendFunc;
+		qglCallList					= logCallList;
+		qglCallLists				= logCallLists;
+		qglClear					= logClear;
+		qglClearAccum				= logClearAccum;
+		qglClearColor				= logClearColor;
+		qglClearDepth				= logClearDepth;
+		qglClearIndex				= logClearIndex;
+		qglClearStencil				= logClearStencil;
+		qglClipPlane				= logClipPlane;
+		qglColor3b					= logColor3b;
+		qglColor3bv					= logColor3bv;
+		qglColor3d					= logColor3d;
+		qglColor3dv					= logColor3dv;
+		qglColor3f					= logColor3f;
+		qglColor3fv					= logColor3fv;
+		qglColor3i					= logColor3i;
+		qglColor3iv					= logColor3iv;
+		qglColor3s					= logColor3s;
+		qglColor3sv					= logColor3sv;
+		qglColor3ub					= logColor3ub;
+		qglColor3ubv				= logColor3ubv;
+		qglColor3ui					= logColor3ui;
+		qglColor3uiv				= logColor3uiv;
+		qglColor3us					= logColor3us;
+		qglColor3usv				= logColor3usv;
+		qglColor4b					= logColor4b;
+		qglColor4bv					= logColor4bv;
+		qglColor4d					= logColor4d;
+		qglColor4dv					= logColor4dv;
+		qglColor4f					= logColor4f;
+		qglColor4fv					= logColor4fv;
+		qglColor4i					= logColor4i;
+		qglColor4iv					= logColor4iv;
+		qglColor4s					= logColor4s;
+		qglColor4sv					= logColor4sv;
+		qglColor4ub					= logColor4ub;
+		qglColor4ubv				= logColor4ubv;
+		qglColor4ui					= logColor4ui;
+		qglColor4uiv				= logColor4uiv;
+		qglColor4us					= logColor4us;
+		qglColor4usv				= logColor4usv;
+		qglColorMask				= logColorMask;
+		qglColorMaterial			= logColorMaterial;
+		qglColorPointer				= logColorPointer;
+		qglCopyPixels				= logCopyPixels;
+		qglCopyTexImage1D			= logCopyTexImage1D;
+		qglCopyTexImage2D			= logCopyTexImage2D;
+		qglCopyTexSubImage1D		= logCopyTexSubImage1D;
+		qglCopyTexSubImage2D		= logCopyTexSubImage2D;
+		qglCullFace					= logCullFace;
+		qglDeleteLists				= logDeleteLists;
+		qglDeleteTextures			= logDeleteTextures;
+		qglDepthFunc				= logDepthFunc;
+		qglDepthMask				= logDepthMask;
+		qglDepthRange				= logDepthRange;
+		qglDisable					= logDisable;
+		qglDisableClientState		= logDisableClientState;
+		qglDrawArrays				= logDrawArrays;
+		qglDrawBuffer				= logDrawBuffer;
+		qglDrawElements				= logDrawElements;
+		qglDrawPixels				= logDrawPixels;
+		qglEdgeFlag					= logEdgeFlag;
+		qglEdgeFlagPointer			= logEdgeFlagPointer;
+		qglEdgeFlagv				= logEdgeFlagv;
+		qglEnable					= logEnable;
+		qglEnableClientState		= logEnableClientState;
+		qglEnd						= logEnd;
+		qglEndList					= logEndList;
+		qglEvalCoord1d				= logEvalCoord1d;
+		qglEvalCoord1dv				= logEvalCoord1dv;
+		qglEvalCoord1f				= logEvalCoord1f;
+		qglEvalCoord1fv				= logEvalCoord1fv;
+		qglEvalCoord2d				= logEvalCoord2d;
+		qglEvalCoord2dv				= logEvalCoord2dv;
+		qglEvalCoord2f				= logEvalCoord2f;
+		qglEvalCoord2fv				= logEvalCoord2fv;
+		qglEvalMesh1				= logEvalMesh1;
+		qglEvalMesh2				= logEvalMesh2;
+		qglEvalPoint1				= logEvalPoint1;
+		qglEvalPoint2				= logEvalPoint2;
+		qglFeedbackBuffer			= logFeedbackBuffer;
+		qglFinish					= logFinish;
+		qglFlush					= logFlush;
+		qglFogf						= logFogf;
+		qglFogfv					= logFogfv;
+		qglFogi						= logFogi;
+		qglFogiv					= logFogiv;
+		qglFrontFace				= logFrontFace;
+		qglFrustum					= logFrustum;
+		qglGenLists					= logGenLists;
+		qglGenTextures				= logGenTextures;
+		qglGetBooleanv				= logGetBooleanv;
+		qglGetClipPlane				= logGetClipPlane;
+		qglGetDoublev				= logGetDoublev;
+		qglGetError					= logGetError;
+		qglGetFloatv				= logGetFloatv;
+		qglGetIntegerv				= logGetIntegerv;
+		qglGetLightfv				= logGetLightfv;
+		qglGetLightiv				= logGetLightiv;
+		qglGetMapdv					= logGetMapdv;
+		qglGetMapfv					= logGetMapfv;
+		qglGetMapiv					= logGetMapiv;
+		qglGetMaterialfv			= logGetMaterialfv;
+		qglGetMaterialiv			= logGetMaterialiv;
+		qglGetPixelMapfv			= logGetPixelMapfv;
+		qglGetPixelMapuiv			= logGetPixelMapuiv;
+		qglGetPixelMapusv			= logGetPixelMapusv;
+		qglGetPointerv				= logGetPointerv;
+		qglGetPolygonStipple		= logGetPolygonStipple;
+		qglGetString				= logGetString;
+		qglGetTexEnvfv				= logGetTexEnvfv;
+		qglGetTexEnviv				= logGetTexEnviv;
+		qglGetTexGendv				= logGetTexGendv;
+		qglGetTexGenfv				= logGetTexGenfv;
+		qglGetTexGeniv				= logGetTexGeniv;
+		qglGetTexImage				= logGetTexImage;
+		qglGetTexLevelParameterfv	= logGetTexLevelParameterfv;
+		qglGetTexLevelParameteriv	= logGetTexLevelParameteriv;
+		qglGetTexParameterfv		= logGetTexParameterfv;
+		qglGetTexParameteriv		= logGetTexParameteriv;
+		qglHint						= logHint;
+		qglIndexMask				= logIndexMask;
+		qglIndexPointer				= logIndexPointer;
+		qglIndexd					= logIndexd;
+		qglIndexdv					= logIndexdv;
+		qglIndexf					= logIndexf;
+		qglIndexfv					= logIndexfv;
+		qglIndexi					= logIndexi;
+		qglIndexiv					= logIndexiv;
+		qglIndexs					= logIndexs;
+		qglIndexsv					= logIndexsv;
+		qglIndexub					= logIndexub;
+		qglIndexubv					= logIndexubv;
+		qglInitNames				= logInitNames;
+		qglInterleavedArrays		= logInterleavedArrays;
+		qglIsEnabled				= logIsEnabled;
+		qglIsList					= logIsList;
+		qglIsTexture				= logIsTexture;
+		qglLightModelf				= logLightModelf;
+		qglLightModelfv				= logLightModelfv;
+		qglLightModeli				= logLightModeli;
+		qglLightModeliv				= logLightModeliv;
+		qglLightf					= logLightf;
+		qglLightfv					= logLightfv;
+		qglLighti					= logLighti;
+		qglLightiv					= logLightiv;
+		qglLineStipple				= logLineStipple;
+		qglLineWidth				= logLineWidth;
+		qglListBase					= logListBase;
+		qglLoadIdentity				= logLoadIdentity;
+		qglLoadMatrixd				= logLoadMatrixd;
+		qglLoadMatrixf				= logLoadMatrixf;
+		qglLoadName					= logLoadName;
+		qglLogicOp					= logLogicOp;
+		qglMap1d					= logMap1d;
+		qglMap1f					= logMap1f;
+		qglMap2d					= logMap2d;
+		qglMap2f					= logMap2f;
+		qglMapGrid1d				= logMapGrid1d;
+		qglMapGrid1f				= logMapGrid1f;
+		qglMapGrid2d				= logMapGrid2d;
+		qglMapGrid2f				= logMapGrid2f;
+		qglMaterialf				= logMaterialf;
+		qglMaterialfv				= logMaterialfv;
+		qglMateriali				= logMateriali;
+		qglMaterialiv				= logMaterialiv;
+		qglMatrixMode				= logMatrixMode;
+		qglMultMatrixd				= logMultMatrixd;
+		qglMultMatrixf				= logMultMatrixf;
+		qglNewList					= logNewList;
+		qglNormal3b					= logNormal3b;
+		qglNormal3bv				= logNormal3bv;
+		qglNormal3d					= logNormal3d;
+		qglNormal3dv				= logNormal3dv;
+		qglNormal3f					= logNormal3f;
+		qglNormal3fv				= logNormal3fv;
+		qglNormal3i					= logNormal3i;
+		qglNormal3iv				= logNormal3iv;
+		qglNormal3s					= logNormal3s;
+		qglNormal3sv				= logNormal3sv;
+		qglNormalPointer			= logNormalPointer;
+		qglOrtho					= logOrtho;
+		qglPassThrough				= logPassThrough;
+		qglPixelMapfv				= logPixelMapfv;
+		qglPixelMapuiv				= logPixelMapuiv;
+		qglPixelMapusv				= logPixelMapusv;
+		qglPixelStoref				= logPixelStoref;
+		qglPixelStorei				= logPixelStorei;
+		qglPixelTransferf			= logPixelTransferf;
+		qglPixelTransferi			= logPixelTransferi;
+		qglPixelZoom				= logPixelZoom;
+		qglPointSize				= logPointSize;
+		qglPolygonMode				= logPolygonMode;
+		qglPolygonOffset			= logPolygonOffset;
+		qglPolygonStipple			= logPolygonStipple;
+		qglPopAttrib				= logPopAttrib;
+		qglPopClientAttrib			= logPopClientAttrib;
+		qglPopMatrix				= logPopMatrix;
+		qglPopName					= logPopName;
+		qglPrioritizeTextures		= logPrioritizeTextures;
+		qglPushAttrib				= logPushAttrib;
+		qglPushClientAttrib			= logPushClientAttrib;
+		qglPushMatrix				= logPushMatrix;
+		qglPushName					= logPushName;
+		qglRasterPos2d				= logRasterPos2d;
+		qglRasterPos2dv				= logRasterPos2dv;
+		qglRasterPos2f				= logRasterPos2f;
+		qglRasterPos2fv				= logRasterPos2fv;
+		qglRasterPos2i				= logRasterPos2i;
+		qglRasterPos2iv				= logRasterPos2iv;
+		qglRasterPos2s				= logRasterPos2s;
+		qglRasterPos2sv				= logRasterPos2sv;
+		qglRasterPos3d				= logRasterPos3d;
+		qglRasterPos3dv				= logRasterPos3dv;
+		qglRasterPos3f				= logRasterPos3f;
+		qglRasterPos3fv				= logRasterPos3fv;
+		qglRasterPos3i				= logRasterPos3i;
+		qglRasterPos3iv				= logRasterPos3iv;
+		qglRasterPos3s				= logRasterPos3s;
+		qglRasterPos3sv				= logRasterPos3sv;
+		qglRasterPos4d				= logRasterPos4d;
+		qglRasterPos4dv				= logRasterPos4dv;
+		qglRasterPos4f				= logRasterPos4f;
+		qglRasterPos4fv				= logRasterPos4fv;
+		qglRasterPos4i				= logRasterPos4i;
+		qglRasterPos4iv				= logRasterPos4iv;
+		qglRasterPos4s				= logRasterPos4s;
+		qglRasterPos4sv				= logRasterPos4sv;
+		qglReadBuffer				= logReadBuffer;
+		qglReadPixels				= logReadPixels;
+		qglRectd					= logRectd;
+		qglRectdv					= logRectdv;
+		qglRectf					= logRectf;
+		qglRectfv					= logRectfv;
+		qglRecti					= logRecti;
+		qglRectiv					= logRectiv;
+		qglRects					= logRects;
+		qglRectsv					= logRectsv;
+		qglRenderMode				= logRenderMode;
+		qglRotated					= logRotated;
+		qglRotatef					= logRotatef;
+		qglScaled					= logScaled;
+		qglScalef					= logScalef;
+		qglScissor					= logScissor;
+		qglSelectBuffer				= logSelectBuffer;
+		qglShadeModel				= logShadeModel;
+		qglStencilFunc				= logStencilFunc;
+		qglStencilMask				= logStencilMask;
+		qglStencilOp				= logStencilOp;
+		qglTexCoord1d				= logTexCoord1d;
+		qglTexCoord1dv				= logTexCoord1dv;
+		qglTexCoord1f				= logTexCoord1f;
+		qglTexCoord1fv				= logTexCoord1fv;
+		qglTexCoord1i				= logTexCoord1i;
+		qglTexCoord1iv				= logTexCoord1iv;
+		qglTexCoord1s				= logTexCoord1s;
+		qglTexCoord1sv				= logTexCoord1sv;
+		qglTexCoord2d				= logTexCoord2d;
+		qglTexCoord2dv				= logTexCoord2dv;
+		qglTexCoord2f				= logTexCoord2f;
+		qglTexCoord2fv				= logTexCoord2fv;
+		qglTexCoord2i				= logTexCoord2i;
+		qglTexCoord2iv				= logTexCoord2iv;
+		qglTexCoord2s				= logTexCoord2s;
+		qglTexCoord2sv				= logTexCoord2sv;
+		qglTexCoord3d				= logTexCoord3d;
+		qglTexCoord3dv				= logTexCoord3dv;
+		qglTexCoord3f				= logTexCoord3f;
+		qglTexCoord3fv				= logTexCoord3fv;
+		qglTexCoord3i				= logTexCoord3i;
+		qglTexCoord3iv				= logTexCoord3iv;
+		qglTexCoord3s				= logTexCoord3s;
+		qglTexCoord3sv				= logTexCoord3sv;
+		qglTexCoord4d				= logTexCoord4d;
+		qglTexCoord4dv				= logTexCoord4dv;
+		qglTexCoord4f				= logTexCoord4f;
+		qglTexCoord4fv				= logTexCoord4fv;
+		qglTexCoord4i				= logTexCoord4i;
+		qglTexCoord4iv				= logTexCoord4iv;
+		qglTexCoord4s				= logTexCoord4s;
+		qglTexCoord4sv				= logTexCoord4sv;
+		qglTexCoordPointer			= logTexCoordPointer;
+		qglTexEnvf					= logTexEnvf;
+		qglTexEnvfv					= logTexEnvfv;
+		qglTexEnvi					= logTexEnvi;
+		qglTexEnviv					= logTexEnviv;
+		qglTexGend					= logTexGend;
+		qglTexGendv					= logTexGendv;
+		qglTexGenf					= logTexGenf;
+		qglTexGenfv					= logTexGenfv;
+		qglTexGeni					= logTexGeni;
+		qglTexGeniv					= logTexGeniv;
+		qglTexImage1D				= logTexImage1D;
+		qglTexImage2D				= logTexImage2D;
+		qglTexParameterf			= logTexParameterf;
+		qglTexParameterfv			= logTexParameterfv;
+		qglTexParameteri			= logTexParameteri;
+		qglTexParameteriv			= logTexParameteriv;
+		qglTexSubImage1D			= logTexSubImage1D;
+		qglTexSubImage2D			= logTexSubImage2D;
+		qglTranslated				= logTranslated;
+		qglTranslatef				= logTranslatef;
+		qglVertex2d					= logVertex2d;
+		qglVertex2dv				= logVertex2dv;
+		qglVertex2f					= logVertex2f;
+		qglVertex2fv				= logVertex2fv;
+		qglVertex2i					= logVertex2i;
+		qglVertex2iv				= logVertex2iv;
+		qglVertex2s					= logVertex2s;
+		qglVertex2sv				= logVertex2sv;
+		qglVertex3d					= logVertex3d;
+		qglVertex3dv				= logVertex3dv;
+		qglVertex3f					= logVertex3f;
+		qglVertex3fv				= logVertex3fv;
+		qglVertex3i					= logVertex3i;
+		qglVertex3iv				= logVertex3iv;
+		qglVertex3s					= logVertex3s;
+		qglVertex3sv				= logVertex3sv;
+		qglVertex4d					= logVertex4d;
+		qglVertex4dv				= logVertex4dv;
+		qglVertex4f					= logVertex4f;
+		qglVertex4fv				= logVertex4fv;
+		qglVertex4i					= logVertex4i;
+		qglVertex4iv				= logVertex4iv;
+		qglVertex4s					= logVertex4s;
+		qglVertex4sv				= logVertex4sv;
+		qglVertexPointer			= logVertexPointer;
+		qglViewport					= logViewport;
+	}
+	else
+	{
+		fclose(glw_state.log_fp);
+		glw_state.log_fp = NULL;
+
+		// TODO: Implement
+
+
+
+
+
+	}
 }
 
 
