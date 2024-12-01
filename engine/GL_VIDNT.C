@@ -32,6 +32,20 @@ RECT		window_rect;
 
 extern void	(*VID_GetVID)( struct viddef_s* pvid );
 
+void CheckTextureExtensions( void )
+{
+	// TODO: Implement
+}
+
+void CheckArrayExtensions( void )
+{
+	// TODO: Implement
+}
+
+void CheckMultiTextureExtensions( void )
+{
+	// TODO: Implement
+}
 
 void GL_Config( void )
 {
@@ -96,7 +110,28 @@ void GL_Init( void )
 	gl_extensions = (const char*)qglGetString(GL_EXTENSIONS);
 	Con_DPrintf("GL_EXTENSIONS: %s\n", gl_extensions);
 
-	// TODO: Implement
+	CheckTextureExtensions();
+	CheckMultiTextureExtensions();
+
+	qglClearColor(1, 0, 0, 0);
+	qglCullFace(GL_FRONT);
+	qglEnable(GL_TEXTURE_2D);
+
+	qglEnable(GL_ALPHA_TEST);
+
+	qglAlphaFunc(GL_NOTEQUAL, 0.0);
+
+	qglPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+	qglShadeModel(GL_FLAT);
+
+	qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+	qglBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+	qglTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
 
 	GL_Config();
 }
