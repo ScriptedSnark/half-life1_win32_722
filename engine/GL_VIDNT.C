@@ -107,8 +107,62 @@ void GL_Init( void )
 
 BOOL bSetupPixelFormat( HDC hDC )
 {
-	// TODO: Implement
-	return 0;
+	static PIXELFORMATDESCRIPTOR pfd = {
+		sizeof(PIXELFORMATDESCRIPTOR),		// size of this pfd
+		1,									// version number
+		PFD_DRAW_TO_WINDOW 					// support window
+		| PFD_SUPPORT_OPENGL 				// support OpenGL
+		| PFD_DOUBLEBUFFER,					// double buffered
+		PFD_TYPE_RGBA,						// RGBA type
+		24,									// 24-bit color depth
+		0, 0, 0, 0, 0, 0,					// color bits ignored
+		0,									// no alpha buffer
+		0,									// shift bit ignored
+		0,									// no accumulation buffer
+		0, 0, 0, 0, 						// accum bits ignored
+		32,									// 32-bit z-buffer	
+		0,									// no stencil buffer
+		0,									// no auxiliary buffer
+		PFD_MAIN_PLANE,						// main layer
+		0,									// reserved
+		0, 0, 0								// layer masks ignored
+	};
+
+	int pixelformat;
+
+	if (gfMiniDriver || vid_d3d.value)
+	{
+		if ((pixelformat = qwglChoosePixelFormat(hDC, &pfd)) == 0)
+		{
+			MessageBox(NULL, "ChoosePixelFormat failed", "Error", MB_OK);
+			return FALSE;
+		}
+
+		if (!qwglSetPixelFormat(hDC, pixelformat, &pfd))
+		{
+			MessageBox(NULL, "SetPixelFormat failed", "Error", MB_OK);
+			return FALSE;
+		}
+
+		qwglDescribePixelFormat(hDC, pixelformat, sizeof(pfd), &pfd);
+		return TRUE;
+	}
+
+	if ((pixelformat = ChoosePixelFormat(hDC, &pfd)) == 0)
+	{
+		MessageBox(NULL, "ChoosePixelFormat failed", "Error", MB_OK);
+		return FALSE;
+	}
+
+	if (SetPixelFormat(hDC, pixelformat, &pfd) == FALSE)
+	{
+		MessageBox(NULL, "SetPixelFormat failed", "Error", MB_OK);
+		return FALSE;
+	}
+
+	DescribePixelFormat(hDC, pixelformat, sizeof(pfd), &pfd);
+
+	return TRUE;
 }
 #endif
 

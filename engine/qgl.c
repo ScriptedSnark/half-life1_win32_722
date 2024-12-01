@@ -149,6 +149,45 @@ void ( APIENTRY * qglEvalMesh1 )( GLenum mode, GLint i1, GLint i2 );
 void ( APIENTRY * qglEvalMesh2 )( GLenum mode, GLint i1, GLint i2, GLint j1, GLint j2 );
 void ( APIENTRY * qglEvalPoint1 )( GLint i );
 void ( APIENTRY * qglEvalPoint2 )( GLint i, GLint j );
+void ( APIENTRY * qglFeedbackBuffer )( GLsizei size, GLenum type, GLfloat* buffer );
+void ( APIENTRY * qglFinish )( void );
+void ( APIENTRY * qglFlush )( void );
+void ( APIENTRY * qglFogf )( GLenum pname, GLfloat param );
+void ( APIENTRY * qglFogfv )( GLenum pname, const GLfloat* params );
+void ( APIENTRY * qglFogi )( GLenum pname, GLint param );
+void ( APIENTRY * qglFogiv )( GLenum pname, const GLint* params );
+void ( APIENTRY * qglFrontFace )( GLenum mode );
+void ( APIENTRY * qglFrustum )( GLdouble left, GLdouble right, GLdouble bottom, GLdouble top, GLdouble zNear, GLdouble zFar );
+GLuint ( APIENTRY * qglGenLists )( GLsizei range );
+void ( APIENTRY * qglGenTextures )( GLsizei n, GLuint* textures );
+void ( APIENTRY * qglGetBooleanv )( GLenum pname, GLboolean* params );
+void ( APIENTRY * qglGetClipPlane )( GLenum plane, GLdouble* equation );
+void ( APIENTRY * qglGetDoublev )( GLenum pname, GLdouble* params );
+GLenum ( APIENTRY * qglGetError )( void );
+void ( APIENTRY * qglGetFloatv )( GLenum pname, GLfloat* params );
+void ( APIENTRY * qglGetIntegerv )( GLenum pname, GLint* params );
+void ( APIENTRY * qglGetLightfv )( GLenum light, GLenum pname, GLfloat* params );
+void ( APIENTRY * qglGetLightiv )( GLenum light, GLenum pname, GLint* params );
+void ( APIENTRY * qglGetMapdv )( GLenum target, GLenum query, GLdouble* v );
+void ( APIENTRY * qglGetMapfv )( GLenum target, GLenum query, GLfloat* v );
+void ( APIENTRY * qglGetMapiv )( GLenum target, GLenum query, GLint* v );
+void ( APIENTRY * qglGetMaterialfv )( GLenum face, GLenum pname, GLfloat* params);
+void ( APIENTRY * qglGetMaterialiv )( GLenum face, GLenum pname, GLint* params);
+void ( APIENTRY * qglGetPixelMapfv )( GLenum map, GLfloat* values );
+void ( APIENTRY * qglGetPixelMapuiv )( GLenum map, GLuint* values );
+void ( APIENTRY * qglGetPixelMapusv )( GLenum map, GLushort* values );
+void ( APIENTRY * qglGetPointerv )( GLenum pname, GLvoid** params );
+void ( APIENTRY * qglGetPolygonStipple )( GLubyte* mask );
+const GLubyte * ( APIENTRY * qglGetString )( GLenum name );
+void ( APIENTRY * qglGetTexEnvfv )( GLenum target, GLenum pname, GLfloat* params );
+void ( APIENTRY * qglGetTexEnviv )( GLenum target, GLenum pname, GLint* params );
+void ( APIENTRY * qglGetTexGendv )( GLenum coord, GLenum pname, GLdouble* params );
+void ( APIENTRY * qglGetTexGenfv )( GLenum coord, GLenum pname, GLfloat* params );
+void ( APIENTRY * qglGetTexGeniv )( GLenum coord, GLenum pname, GLint* params );
+void ( APIENTRY * qglGetTexImage )( GLenum target, GLint level, GLenum format, GLenum type, GLvoid* pixels );
+
+
+
 
 
 
@@ -269,7 +308,42 @@ static void ( APIENTRY * dllEvalMesh1 )( GLenum mode, GLint i1, GLint i2 );
 static void ( APIENTRY * dllEvalMesh2 )( GLenum mode, GLint i1, GLint i2, GLint j1, GLint j2 );
 static void ( APIENTRY * dllEvalPoint1 )( GLint i );
 static void ( APIENTRY * dllEvalPoint2 )( GLint i, GLint j );
-
+static void ( APIENTRY * dllFeedbackBuffer )( GLsizei size, GLenum type, GLfloat* buffer );
+static void ( APIENTRY * dllFinish )( void );
+static void ( APIENTRY * dllFlush )( void );
+static void ( APIENTRY * dllFogf )( GLenum pname, GLfloat param );
+static void ( APIENTRY * dllFogfv )( GLenum pname, const GLfloat* params );
+static void ( APIENTRY * dllFogi )( GLenum pname, GLint param );
+static void ( APIENTRY * dllFogiv )( GLenum pname, const GLint* params );
+static void ( APIENTRY * dllFrontFace )( GLenum mode );
+static void ( APIENTRY * dllFrustum )( GLdouble left, GLdouble right, GLdouble bottom, GLdouble top, GLdouble zNear, GLdouble zFar );
+GLuint ( APIENTRY * dllGenLists )( GLsizei range );
+static void ( APIENTRY * dllGenTextures )( GLsizei n, GLuint* textures );
+static void ( APIENTRY * dllGetBooleanv )( GLenum pname, GLboolean* params );
+static void ( APIENTRY * dllGetClipPlane )( GLenum plane, GLdouble* equation );
+static void ( APIENTRY * dllGetDoublev )( GLenum pname, GLdouble* params );
+GLenum ( APIENTRY * dllGetError )( void );
+static void ( APIENTRY * dllGetFloatv )( GLenum pname, GLfloat* params );
+static void ( APIENTRY * dllGetIntegerv )( GLenum pname, GLint* params );
+static void ( APIENTRY * dllGetLightfv )( GLenum light, GLenum pname, GLfloat* params );
+static void ( APIENTRY * dllGetLightiv )( GLenum light, GLenum pname, GLint* params );
+static void ( APIENTRY * dllGetMapdv )( GLenum target, GLenum query, GLdouble* v );
+static void ( APIENTRY * dllGetMapfv )( GLenum target, GLenum query, GLfloat* v );
+static void ( APIENTRY * dllGetMapiv )( GLenum target, GLenum query, GLint* v );
+static void ( APIENTRY * dllGetMaterialfv )( GLenum face, GLenum pname, GLfloat* params );
+static void ( APIENTRY * dllGetMaterialiv )( GLenum face, GLenum pname, GLint* params );
+static void ( APIENTRY * dllGetPixelMapfv )( GLenum map, GLfloat* values );
+static void ( APIENTRY * dllGetPixelMapuiv )( GLenum map, GLuint* values );
+static void ( APIENTRY * dllGetPixelMapusv )( GLenum map, GLushort* values );
+static void ( APIENTRY * dllGetPointerv )( GLenum pname, GLvoid** params );
+static void ( APIENTRY * dllGetPolygonStipple )( GLubyte* mask );
+const GLubyte * ( APIENTRY * dllGetString )( GLenum name );
+static void ( APIENTRY * dllGetTexEnvfv )( GLenum target, GLenum pname, GLfloat* params );
+static void ( APIENTRY * dllGetTexEnviv )( GLenum target, GLenum pname, GLint* params );
+static void ( APIENTRY * dllGetTexGendv )( GLenum coord, GLenum pname, GLdouble* params );
+static void ( APIENTRY * dllGetTexGenfv )( GLenum coord, GLenum pname, GLfloat* params );
+static void ( APIENTRY * dllGetTexGeniv )( GLenum coord, GLenum pname, GLint* params );
+static void ( APIENTRY * dllGetTexImage )( GLenum target, GLint level, GLenum format, GLenum type, GLvoid* pixels );
 
 
 
@@ -785,6 +859,222 @@ static void APIENTRY logEvalPoint2( GLint i, GLint j )
 	dllEvalPoint2(i, j);
 }
 
+static void APIENTRY logFeedbackBuffer( GLsizei size, GLenum type, GLfloat* buffer )
+{
+	SIG("glFeedbackBuffer");
+	dllFeedbackBuffer(size, type, buffer);
+}
+
+static void APIENTRY logFinish( void )
+{
+	SIG("glFinish");
+	dllFinish();
+}
+
+static void APIENTRY logFlush( void )
+{
+	SIG("glFlush");
+	dllFlush();
+}
+
+static void APIENTRY logFogf( GLenum pname, GLfloat param )
+{
+	SIG("glFogf");
+	dllFogf(pname, param);
+}
+
+static void APIENTRY logFogfv( GLenum pname, const GLfloat* params )
+{
+	SIG("glFogfv");
+	dllFogfv(pname, params);
+}
+
+static void APIENTRY logFogi( GLenum pname, GLint param )
+{
+	SIG("glFogi");
+	dllFogi(pname, param);
+}
+
+static void APIENTRY logFogiv( GLenum pname, const GLint* params )
+{
+	SIG("glFogiv");
+	dllFogiv(pname, params);
+}
+
+static void APIENTRY logFrontFace( GLenum mode )
+{
+	SIG("glFrontFace");
+	dllFrontFace(mode);
+}
+
+static void APIENTRY logFrustum( GLdouble left, GLdouble right, GLdouble bottom, GLdouble top, GLdouble zNear, GLdouble zFar )
+{
+	SIG("glFrustum");
+	dllFrustum(left, right, bottom, top, zNear, zFar);
+}
+
+static GLuint APIENTRY logGenLists( GLsizei range )
+{
+	SIG("glGenLists");
+	return dllGenLists(range);
+}
+
+static void APIENTRY logGenTextures( GLsizei n, GLuint* textures )
+{
+	SIG("glGenTextures");
+	dllGenTextures(n, textures);
+}
+
+static void APIENTRY logGetBooleanv( GLenum pname, GLboolean* params )
+{
+	SIG("glGetBooleanv");
+	dllGetBooleanv(pname, params);
+}
+
+static void APIENTRY logGetClipPlane( GLenum plane, GLdouble* equation )
+{
+	SIG("glGetClipPlane");
+	dllGetClipPlane(plane, equation);
+}
+
+static void APIENTRY logGetDoublev( GLenum pname, GLdouble* params )
+{
+	SIG("glGetDoublev");
+	dllGetDoublev(pname, params);
+}
+
+static GLenum APIENTRY logGetError( void )
+{
+	SIG("glGetError");
+	return dllGetError();
+}
+
+static void APIENTRY logGetFloatv( GLenum pname, GLfloat* params )
+{
+	SIG("glGetFloatv");
+	dllGetFloatv(pname, params);
+}
+
+static void APIENTRY logGetIntegerv( GLenum pname, GLint* params )
+{
+	SIG("glGetIntegerv");
+	dllGetIntegerv(pname, params);
+}
+
+static void APIENTRY logGetLightfv( GLenum light, GLenum pname, GLfloat* params )
+{
+	SIG("glGetLightfv");
+	dllGetLightfv(light, pname, params);
+}
+
+static void APIENTRY logGetLightiv( GLenum light, GLenum pname, GLint* params )
+{
+	SIG("glGetLightiv");
+	dllGetLightiv(light, pname, params);
+}
+
+static void APIENTRY logGetMapdv( GLenum target, GLenum query, GLdouble* v )
+{
+	SIG("glGetMapdv");
+	dllGetMapdv(target, query, v);
+}
+
+static void APIENTRY logGetMapfv( GLenum target, GLenum query, GLfloat* v )
+{
+	SIG("glGetMapfv");
+	dllGetMapfv(target, query, v);
+}
+
+static void APIENTRY logGetMapiv( GLenum target, GLenum query, GLint* v )
+{
+	SIG("glGetMapiv");
+	dllGetMapiv(target, query, v);
+}
+
+static void APIENTRY logGetMaterialfv( GLenum face, GLenum pname, GLfloat* params )
+{
+	SIG("glGetMaterialfv");
+	dllGetMaterialfv(face, pname, params);
+}
+
+static void APIENTRY logGetMaterialiv( GLenum face, GLenum pname, GLint* params )
+{
+	SIG("glGetMaterialiv");
+	dllGetMaterialiv(face, pname, params);
+}
+
+static void APIENTRY logGetPixelMapfv( GLenum map, GLfloat* values )
+{
+	SIG("glGetPixelMapfv");
+	dllGetPixelMapfv(map, values);
+}
+
+static void APIENTRY logGetPixelMapuiv( GLenum map, GLuint* values )
+{
+	SIG("glGetPixelMapuiv");
+	dllGetPixelMapuiv(map, values);
+}
+
+static void APIENTRY logGetPixelMapusv( GLenum map, GLushort* values )
+{
+	SIG("glGetPixelMapusv");
+	dllGetPixelMapusv(map, values);
+}
+
+static void APIENTRY logGetPointerv( GLenum pname, GLvoid** params )
+{
+	SIG("glGetPointerv");
+	dllGetPointerv(pname, params);
+}
+
+static void APIENTRY logGetPolygonStipple( GLubyte* mask )
+{
+	SIG("glGetPolygonStipple");
+	dllGetPolygonStipple(mask);
+}
+
+static const GLubyte * APIENTRY logGetString( GLenum name )
+{
+	SIG("glGetString");
+	return dllGetString(name);
+}
+
+static void APIENTRY logGetTexEnvfv( GLenum target, GLenum pname, GLfloat* params )
+{
+	SIG("glGetTexEnvfv");
+	dllGetTexEnvfv(target, pname, params);
+}
+
+static void APIENTRY logGetTexEnviv( GLenum target, GLenum pname, GLint* params )
+{
+	SIG("glGetTexEnviv");
+	dllGetTexEnviv(target, pname, params);
+}
+
+static void APIENTRY logGetTexGendv( GLenum coord, GLenum pname, GLdouble* params )
+{
+	SIG("glGetTexGendv");
+	dllGetTexGendv(coord, pname, params);
+}
+
+static void APIENTRY logGetTexGenfv( GLenum coord, GLenum pname, GLfloat* params )
+{
+	SIG("glGetTexGenfv");
+	dllGetTexGenfv(coord, pname, params);
+}
+
+static void APIENTRY logGetTexGeniv( GLenum coord, GLenum pname, GLint* params )
+{
+	SIG("glGetTexGeniv");
+	dllGetTexGeniv(coord, pname, params);
+}
+
+static void APIENTRY logGetTexImage( GLenum target, GLint level, GLenum format, GLenum type, void* pixels )
+{
+	SIG("glGetTexImage");
+	dllGetTexImage(target, level, format, type, pixels);
+}
+
 
 
 
@@ -895,6 +1185,44 @@ void QGL_Shutdown( void )
 	qglEvalMesh2				= NULL;
 	qglEvalPoint1				= NULL;
 	qglEvalPoint2				= NULL;
+	qglFeedbackBuffer			= NULL;
+	qglFinish					= NULL;
+	qglFlush					= NULL;
+	qglFogf						= NULL;
+	qglFogfv					= NULL;
+	qglFogi						= NULL;
+	qglFogiv					= NULL;
+	qglFrontFace				= NULL;
+	qglFrustum					= NULL;
+	qglGenLists					= NULL;
+	qglGenTextures				= NULL;
+	qglGetBooleanv				= NULL;
+	qglGetClipPlane				= NULL;
+	qglGetDoublev				= NULL;
+	qglGetError					= NULL;
+	qglGetFloatv				= NULL;
+	qglGetIntegerv				= NULL;
+	qglGetLightfv				= NULL;
+	qglGetLightiv				= NULL;
+	qglGetMapdv					= NULL;
+	qglGetMapfv					= NULL;
+	qglGetMapiv					= NULL;
+	qglGetMaterialfv			= NULL;
+	qglGetMaterialiv			= NULL;
+	qglGetPixelMapfv			= NULL;
+	qglGetPixelMapuiv			= NULL;
+	qglGetPixelMapusv			= NULL;
+	qglGetPointerv				= NULL;
+	qglGetPolygonStipple		= NULL;
+	qglGetString				= NULL;
+	qglGetTexEnvfv				= NULL;
+	qglGetTexEnviv				= NULL;
+	qglGetTexGendv				= NULL;
+	qglGetTexGenfv				= NULL;
+	qglGetTexGeniv				= NULL;
+	qglGetTexImage				= NULL;
+
+
 
 
 
@@ -1076,7 +1404,42 @@ HINSTANCE QGL_Init( char* pdllname )
 	qglEvalMesh2				= dllEvalMesh2 = GPA("glEvalMesh2");
 	qglEvalPoint1				= dllEvalPoint1 = GPA("glEvalPoint1");
 	qglEvalPoint2				= dllEvalPoint2 = GPA("glEvalPoint2");
-
+	qglFeedbackBuffer			= dllFeedbackBuffer = GPA("glFeedbackBuffer");
+	qglFinish					= dllFinish = GPA("glFinish");
+	qglFlush					= dllFlush = GPA("glFlush");
+	qglFogf						= dllFogf = GPA("glFogf");
+	qglFogfv					= dllFogfv = GPA("glFogfv");
+	qglFogi						= dllFogi = GPA("glFogi");
+	qglFogiv					= dllFogiv = GPA("glFogiv");
+	qglFrontFace				= dllFrontFace = GPA("glFrontFace");
+	qglFrustum					= dllFrustum = GPA("glFrustum");
+	qglGenLists					= dllGenLists = GPA("glGenLists");
+	qglGenTextures				= dllGenTextures = GPA("glGenTextures");
+	qglGetBooleanv				= dllGetBooleanv = GPA("glGetBooleanv");
+	qglGetClipPlane				= dllGetClipPlane = GPA("glGetClipPlane");
+	qglGetDoublev				= dllGetDoublev = GPA("glGetDoublev");
+	qglGetError					= dllGetError = GPA("glGetError");
+	qglGetFloatv				= dllGetFloatv = GPA("glGetFloatv");
+	qglGetIntegerv				= dllGetIntegerv = GPA("glGetIntegerv");
+	qglGetLightfv				= dllGetLightfv = GPA("glGetLightfv");
+	qglGetLightiv				= dllGetLightiv = GPA("glGetLightiv");
+	qglGetMapdv					= dllGetMapdv = GPA("glGetMapdv");
+	qglGetMapfv					= dllGetMapfv = GPA("glGetMapfv");
+	qglGetMapiv					= dllGetMapiv = GPA("glGetMapiv");
+	qglGetMaterialfv			= dllGetMaterialfv = GPA("glGetMaterialfv");
+	qglGetMaterialiv			= dllGetMaterialiv = GPA("glGetMaterialiv");
+	qglGetPixelMapfv			= dllGetPixelMapfv = GPA("glGetPixelMapfv");
+	qglGetPixelMapuiv			= dllGetPixelMapuiv = GPA("glGetPixelMapuiv");
+	qglGetPixelMapusv			= dllGetPixelMapusv = GPA("glGetPixelMapusv");
+	qglGetPointerv				= dllGetPointerv = GPA("glGetPointerv");
+	qglGetPolygonStipple		= dllGetPolygonStipple = GPA("glGetPolygonStipple");
+	qglGetString				= dllGetString = GPA("glGetString");
+	qglGetTexEnvfv				= dllGetTexEnvfv = GPA("glGetTexEnvfv");
+	qglGetTexEnviv				= dllGetTexEnviv = GPA("glGetTexEnviv");
+	qglGetTexGendv				= dllGetTexGendv = GPA("glGetTexGendv");
+	qglGetTexGenfv				= dllGetTexGenfv = GPA("glGetTexGenfv");
+	qglGetTexGeniv				= dllGetTexGeniv = GPA("glGetTexGeniv");
+	qglGetTexImage				= dllGetTexImage = GPA("glGetTexImage");
 
 
 
