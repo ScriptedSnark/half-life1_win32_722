@@ -137,6 +137,21 @@ void ( APIENTRY * qglEnable )( GLenum cap );
 void ( APIENTRY * qglEnableClientState )( GLenum array );
 void ( APIENTRY * qglEnd )( void );
 void ( APIENTRY * qglEndList )( void );
+void ( APIENTRY * qglEvalCoord1d )( GLdouble u );
+void ( APIENTRY * qglEvalCoord1dv )( const GLdouble* u );
+void ( APIENTRY * qglEvalCoord1f )( GLfloat u );
+void ( APIENTRY * qglEvalCoord1fv )( const GLfloat* u );
+void ( APIENTRY * qglEvalCoord2d )( GLdouble u, GLdouble v );
+void ( APIENTRY * qglEvalCoord2dv )( const GLdouble* u );
+void ( APIENTRY * qglEvalCoord2f )( GLfloat u, GLfloat v );
+void ( APIENTRY * qglEvalCoord2fv )( const GLfloat* u );
+void ( APIENTRY * qglEvalMesh1 )( GLenum mode, GLint i1, GLint i2 );
+void ( APIENTRY * qglEvalMesh2 )( GLenum mode, GLint i1, GLint i2, GLint j1, GLint j2 );
+void ( APIENTRY * qglEvalPoint1 )( GLint i );
+void ( APIENTRY * qglEvalPoint2 )( GLint i, GLint j );
+
+
+
 
 
 
@@ -242,7 +257,18 @@ static void ( APIENTRY * dllEnable )( GLenum cap );
 static void ( APIENTRY * dllEnableClientState )( GLenum array );
 static void ( APIENTRY * dllEnd )( void );
 static void ( APIENTRY * dllEndList )( void );
-
+static void ( APIENTRY * dllEvalCoord1d )( GLdouble u );
+static void ( APIENTRY * dllEvalCoord1dv )( const GLdouble* u );
+static void ( APIENTRY * dllEvalCoord1f )( GLfloat u );
+static void ( APIENTRY * dllEvalCoord1fv )( const GLfloat* u );
+static void ( APIENTRY * dllEvalCoord2d )( GLdouble u, GLdouble v );
+static void ( APIENTRY * dllEvalCoord2dv )( const GLdouble* u );
+static void ( APIENTRY * dllEvalCoord2f )( GLfloat u, GLfloat v );
+static void ( APIENTRY * dllEvalCoord2fv )( const GLfloat* u );
+static void ( APIENTRY * dllEvalMesh1 )( GLenum mode, GLint i1, GLint i2 );
+static void ( APIENTRY * dllEvalMesh2 )( GLenum mode, GLint i1, GLint i2, GLint j1, GLint j2 );
+static void ( APIENTRY * dllEvalPoint1 )( GLint i );
+static void ( APIENTRY * dllEvalPoint2 )( GLint i, GLint j );
 
 
 
@@ -694,7 +720,70 @@ static void APIENTRY logEndList( void )
 	dllEndList();
 }
 
+static void APIENTRY logEvalCoord1d( GLdouble u )
+{
+	SIG("glEvalCoord1d");
+	dllEvalCoord1d(u);
+}
 
+static void APIENTRY logEvalCoord1dv( const GLdouble* u )
+{
+	SIG("glEvalCoord1dv");
+	dllEvalCoord1dv(u);
+}
+
+static void APIENTRY logEvalCoord1f( GLfloat u )
+{
+	SIG("glEvalCoord1f");
+	dllEvalCoord1f(u);
+}
+
+static void APIENTRY logEvalCoord1fv( const GLfloat* u )
+{
+	SIG("glEvalCoord1fv");
+	dllEvalCoord1fv(u);
+}
+static void APIENTRY logEvalCoord2d( GLdouble u, GLdouble v )
+{
+	SIG("glEvalCoord2d");
+	dllEvalCoord2d(u, v);
+}
+static void APIENTRY logEvalCoord2dv( const GLdouble* u )
+{
+	SIG("glEvalCoord2dv");
+	dllEvalCoord2dv(u);
+}
+static void APIENTRY logEvalCoord2f( GLfloat u, GLfloat v )
+{
+	SIG("glEvalCoord2f");
+	dllEvalCoord2f(u, v);
+}
+static void APIENTRY logEvalCoord2fv( const GLfloat* u )
+{
+	SIG("glEvalCoord2fv");
+	dllEvalCoord2fv(u);
+}
+
+static void APIENTRY logEvalMesh1( GLenum mode, GLint i1, GLint i2 )
+{
+	SIG("glEvalMesh1");
+	dllEvalMesh1(mode, i1, i2);
+}
+static void APIENTRY logEvalMesh2( GLenum mode, GLint i1, GLint i2, GLint j1, GLint j2 )
+{
+	SIG("glEvalMesh2");
+	dllEvalMesh2(mode, i1, i2, j1, j2);
+}
+static void APIENTRY logEvalPoint1( GLint i )
+{
+	SIG("glEvalPoint1");
+	dllEvalPoint1(i);
+}
+static void APIENTRY logEvalPoint2( GLint i, GLint j )
+{
+	SIG("glEvalPoint2");
+	dllEvalPoint2(i, j);
+}
 
 
 
@@ -794,6 +883,22 @@ void QGL_Shutdown( void )
 	qglEnableClientState		= NULL;
 	qglEnd						= NULL;
 	qglEndList					= NULL;
+	qglEvalCoord1d				= NULL;
+	qglEvalCoord1dv				= NULL;
+	qglEvalCoord1f				= NULL;
+	qglEvalCoord1fv				= NULL;
+	qglEvalCoord2d				= NULL;
+	qglEvalCoord2dv				= NULL;
+	qglEvalCoord2f				= NULL;
+	qglEvalCoord2fv				= NULL;
+	qglEvalMesh1				= NULL;
+	qglEvalMesh2				= NULL;
+	qglEvalPoint1				= NULL;
+	qglEvalPoint2				= NULL;
+
+
+
+
 
 
 
@@ -959,6 +1064,23 @@ HINSTANCE QGL_Init( char* pdllname )
 	qglEnableClientState		= dllEnableClientState = GPA("glEnableClientState");
 	qglEnd						= dllEnd = GPA("glEnd");
 	qglEndList					= dllEndList = GPA("glEndList");
+	qglEvalCoord1d				= dllEvalCoord1d = GPA("glEvalCoord1d");
+	qglEvalCoord1dv				= dllEvalCoord1dv = GPA("glEvalCoord1dv");
+	qglEvalCoord1f				= dllEvalCoord1f = GPA("glEvalCoord1f");
+	qglEvalCoord1fv				= dllEvalCoord1fv = GPA("glEvalCoord1fv");
+	qglEvalCoord2d				= dllEvalCoord2d = GPA("glEvalCoord2d");
+	qglEvalCoord2dv				= dllEvalCoord2dv = GPA("glEvalCoord2dv");
+	qglEvalCoord2f				= dllEvalCoord2f = GPA("glEvalCoord2f");
+	qglEvalCoord2fv				= dllEvalCoord2fv = GPA("glEvalCoord2fv");
+	qglEvalMesh1				= dllEvalMesh1 = GPA("glEvalMesh1");
+	qglEvalMesh2				= dllEvalMesh2 = GPA("glEvalMesh2");
+	qglEvalPoint1				= dllEvalPoint1 = GPA("glEvalPoint1");
+	qglEvalPoint2				= dllEvalPoint2 = GPA("glEvalPoint2");
+
+
+
+
+
 
 
 
@@ -1002,3 +1124,17 @@ HINSTANCE QGL_Init( char* pdllname )
 
 	return glw_state.hinstOpenGL;
 }
+
+void GLimp_EnableLogging( void )
+{
+	// TODO: Implement
+}
+
+
+void GLimp_LogNewFrame( void )
+{
+	if (glw_state.log_fp)
+		fprintf(glw_state.log_fp, "*** R_BeginFrame ***\n");
+}
+
+#pragma warning (default : 4113 4133 4047 )

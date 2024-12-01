@@ -110,6 +110,21 @@ extern	void ( APIENTRY * qglEnable )( GLenum cap );
 extern	void ( APIENTRY * qglEnableClientState )( GLenum array );
 extern	void ( APIENTRY * qglEnd )( void );
 extern	void ( APIENTRY * qglEndList )( void );
+extern	void ( APIENTRY * qglEvalCoord1d )( GLdouble u );
+extern	void ( APIENTRY * qglEvalCoord1dv )( const GLdouble* u );
+extern	void ( APIENTRY * qglEvalCoord1f )( GLfloat u );
+extern	void ( APIENTRY * qglEvalCoord1fv )( const GLfloat* u );
+extern	void ( APIENTRY * qglEvalCoord2d )( GLdouble u, GLdouble v );
+extern	void ( APIENTRY * qglEvalCoord2dv )( const GLdouble* u );
+extern	void ( APIENTRY * qglEvalCoord2f )( GLfloat u, GLfloat v );
+extern	void ( APIENTRY * qglEvalCoord2fv )( const GLfloat* u );
+extern	void ( APIENTRY * qglEvalMesh1 )( GLenum mode, GLint i1, GLint i2 );
+extern	void ( APIENTRY * qglEvalMesh2 )( GLenum mode, GLint i1, GLint i2, GLint j1, GLint j2 );
+extern	void ( APIENTRY * qglEvalPoint1 )( GLint i );
+extern	void ( APIENTRY * qglEvalPoint2 )( GLint i, GLint j );
+
+
+
 
 
 
