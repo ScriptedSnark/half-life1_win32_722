@@ -80,15 +80,14 @@ void GL_Config( void )
 }
 
 /*
-=================
+===============
 GL_Init
-
-=================
+===============
 */
 void GL_Init( void )
 {
 	gl_vendor = (const char*)qglGetString(GL_VENDOR);
-	Con_DPrintf( "GL_VENDOR: %s\n", gl_vendor);
+	Con_DPrintf("GL_VENDOR: %s\n", gl_vendor);
 	gl_renderer = (const char*)qglGetString(GL_RENDERER);
 	Con_DPrintf("GL_RENDERER: %s\n", gl_renderer);
 
@@ -102,6 +101,16 @@ void GL_Init( void )
 	GL_Config();
 }
 
+#if defined (_WIN32)
+//==========================================================================
+
+
+BOOL bSetupPixelFormat( HDC hDC )
+{
+	// TODO: Implement
+	return 0;
+}
+#endif
 
 DLL_EXPORT int GL_SetMode( HWND mainwindow, HDC* pmaindc, HGLRC* pbaseRC, int fD3D, char* pszDriver )
 {
@@ -136,35 +145,40 @@ DLL_EXPORT int GL_SetMode( HWND mainwindow, HDC* pmaindc, HGLRC* pbaseRC, int fD
 	}
 	else
 	{
-//		HDC hDC = GetDC(mainwindow);
-//		*pmaindc = hDC;
-//		if (bSetupPixelFormat(hDC))
-//		{
-//			HGLRC context = qwglCreateContext(hDC);
-//			*pbaseRC = context;
-//			if (context)
-//			{
-//				if (qwglMakeCurrent(*pmaindc, *pbaseRC))
-//					return 1;
-//			}
-//		}
+		HDC hDC = GetDC(mainwindow);
+		*pmaindc = hDC;
+		if (bSetupPixelFormat(hDC))
+		{
+			HGLRC context = qwglCreateContext(hDC);
+			*pbaseRC = context;
+			if (context)
+			{
+				if (qwglMakeCurrent(*pmaindc, *pbaseRC))
+					return TRUE;
+			}
+		}
 	}
 
 	if (hDll)
 	{
-//		qwglMakeCurrent(0, 0);
-//		if (*pbaseRC)
-//			qwglDeleteContext(*pbaseRC);
+		qwglMakeCurrent(NULL, NULL);
+		if (*pbaseRC)
+			qwglDeleteContext(*pbaseRC);
 		if (*pmaindc)
 			ReleaseDC(mainwindow, *pmaindc);
+
 		FreeLibrary(hDll);
 	}
-	return 0;
+
+	return FALSE;
 }
 
 DLL_EXPORT void GL_Shutdown( HWND hwnd, HDC hdc, HGLRC hglrc )
 {
-	// TODO: Implement
+	qwglMakeCurrent(NULL, NULL);
+	if (hglrc)
+		qwglDeleteContext(hglrc);
+	ReleaseDC(hwnd, hdc);
 }
 
 /*

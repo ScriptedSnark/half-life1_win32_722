@@ -29,6 +29,37 @@ typedef struct glwstate_s
 
 glwstate_t glw_state;
 
+int   ( WINAPI * qwglChoosePixelFormat )( HDC, CONST PIXELFORMATDESCRIPTOR * );
+int   ( WINAPI * qwglDescribePixelFormat )( HDC, int, UINT, LPPIXELFORMATDESCRIPTOR );
+int   ( WINAPI * qwglGetPixelFormat )( HDC );
+BOOL ( WINAPI * qwglSetPixelFormat )( HDC, int, CONST PIXELFORMATDESCRIPTOR* );
+BOOL ( WINAPI * qwglSwapBuffers )( HDC );
+
+BOOL ( WINAPI * qwglCopyContext )( HGLRC, HGLRC, UINT );
+HGLRC ( WINAPI * qwglCreateContext )( HDC );
+HGLRC ( WINAPI * qwglCreateLayerContext )( HDC, int );
+BOOL ( WINAPI * qwglDeleteContext )( HGLRC );
+HGLRC ( WINAPI * qwglGetCurrentContext )( VOID );
+HDC ( WINAPI * qwglGetCurrentDC )( VOID );
+PROC ( WINAPI * qwglGetProcAddress )( LPCSTR );
+BOOL ( WINAPI * qwglMakeCurrent )( HDC, HGLRC );
+BOOL ( WINAPI * qwglShareLists )( HGLRC, HGLRC );
+BOOL ( WINAPI * qwglUseFontBitmaps )( HDC, DWORD, DWORD, DWORD );
+
+BOOL ( WINAPI * qwglUseFontOutlines )( HDC, DWORD, DWORD, DWORD, FLOAT,
+										   FLOAT, int, LPGLYPHMETRICSFLOAT );
+
+BOOL ( WINAPI * qwglDescribeLayerPlane )( HDC, int, int, UINT,
+											LPLAYERPLANEDESCRIPTOR );
+int  ( WINAPI * qwglSetLayerPaletteEntries )( HDC, int, int, int,
+												CONST COLORREF* );
+int  ( WINAPI * qwglGetLayerPaletteEntries )(HDC, int, int, int,
+												COLORREF* );
+BOOL( WINAPI * qwglRealizeLayerPalette )( HDC, int, BOOL );
+BOOL( WINAPI * qwglSwapLayerBuffers )( HDC, UINT );
+
+
+
 
 void ( APIENTRY * qglAccum )( GLenum op, GLfloat value );
 void ( APIENTRY * qglAlphaFunc )( GLenum func, GLclampf ref );
@@ -116,8 +147,17 @@ void ( APIENTRY * qglEndList )( void );
 
 
 
+//void ( APIENTRY * qglViewport )( GLint x, GLint y, GLsizei width, GLsizei height );
 
+BOOL ( WINAPI * qwglSwapIntervalEXT )( int interval );
+BOOL ( WINAPI * qwglGetDeviceGammaRampEXT )( unsigned char* , unsigned char* , unsigned char* );
+BOOL ( WINAPI * qwglSetDeviceGammaRampEXT )( const unsigned char* , const unsigned char* , const unsigned char* );
 
+void ( APIENTRY * qglPointParameterfEXT )( GLenum param, GLfloat value );
+void ( APIENTRY * qglPointParameterfvEXT )( GLenum param, const GLfloat* value );
+void ( APIENTRY * qglColorTableEXT )( int, int, int, int, int, const void* );
+void ( APIENTRY * qglSelectTextureSGIS )( GLenum );
+void ( APIENTRY * qglMTexCoord2fSGIS )( GLenum, GLfloat, GLfloat );
 
 
 
@@ -764,8 +804,42 @@ void QGL_Shutdown( void )
 
 
 	// TODO: Implement
+
+
+
+
+
+
+	qwglCopyContext				= NULL;
+	qwglCreateContext			= NULL;
+	qwglCreateLayerContext		= NULL;
+	qwglDeleteContext			= NULL;
+	qwglDescribeLayerPlane		= NULL;
+	qwglGetCurrentContext		= NULL;
+	qwglGetCurrentDC			= NULL;
+	qwglGetLayerPaletteEntries	= NULL;
+	qwglGetProcAddress			= NULL;
+	qwglMakeCurrent				= NULL;
+	qwglRealizeLayerPalette		= NULL;
+	qwglSetLayerPaletteEntries	= NULL;
+	qwglShareLists				= NULL;
+	qwglSwapLayerBuffers		= NULL;
+	qwglUseFontBitmaps			= NULL;
+	qwglUseFontOutlines			= NULL;
+
+	qwglChoosePixelFormat		= NULL;
+	qwglDescribePixelFormat		= NULL;
+	qwglGetPixelFormat			= NULL;
+	qwglSetPixelFormat			= NULL;
+	qwglSwapBuffers				= NULL;
+
+	qwglSwapIntervalEXT			= NULL;
+
+	qwglGetDeviceGammaRampEXT	= NULL;
+	qwglSetDeviceGammaRampEXT	= NULL;
 }
 
+#pragma warning (disable : 4113 4133 4047 )
 #define GPA( a ) GetProcAddress( glw_state.hinstOpenGL, a )
 
 /*
@@ -890,15 +964,41 @@ HINSTANCE QGL_Init( char* pdllname )
 
 
 
-
-
-
-
-
-
-
 	// TODO: Implement
 
+
+
+
+
+	qwglCopyContext				= GPA("wglCopyContext");
+	qwglCreateContext			= GPA("wglCreateContext");
+	qwglCreateLayerContext		= GPA("wglCreateLayerContext");
+	qwglDeleteContext			= GPA("wglDeleteContext");
+	qwglDescribeLayerPlane		= GPA("wglDescribeLayerPlane");
+	qwglGetCurrentContext		= GPA("wglGetCurrentContext");
+	qwglGetCurrentDC			= GPA("wglGetCurrentDC");
+	qwglGetLayerPaletteEntries	= GPA("wglGetLayerPaletteEntries");
+	qwglGetProcAddress			= GPA("wglGetProcAddress");
+	qwglMakeCurrent				= GPA("wglMakeCurrent");
+	qwglRealizeLayerPalette		= GPA("wglRealizeLayerPalette");
+	qwglSetLayerPaletteEntries	= GPA("wglSetLayerPaletteEntries");
+	qwglShareLists				= GPA("wglShareLists");
+	qwglSwapLayerBuffers		= GPA("wglSwapLayerBuffers");
+	qwglUseFontBitmaps			= GPA("wglUseFontBitmapsA");
+	qwglUseFontOutlines			= GPA("wglUseFontOutlinesA");
+
+	qwglChoosePixelFormat		= GPA("wglChoosePixelFormat");
+	qwglDescribePixelFormat		= GPA("wglDescribePixelFormat");
+	qwglGetPixelFormat			= GPA("wglGetPixelFormat");
+	qwglSetPixelFormat			= GPA("wglSetPixelFormat");
+	qwglSwapBuffers				= GPA("wglSwapBuffers");
+
+	qwglSwapIntervalEXT			= NULL;
+	qglPointParameterfEXT		= NULL;
+	qglPointParameterfvEXT		= NULL;
+	qglColorTableEXT			= NULL;
+	qglSelectTextureSGIS		= NULL;
+	qglMTexCoord2fSGIS			= NULL;
 
 	return glw_state.hinstOpenGL;
 }
