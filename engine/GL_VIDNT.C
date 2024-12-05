@@ -25,6 +25,14 @@ cvar_t	vid_d3d = { "vid_d3d", "0" };
 viddef_t	vid;				// global video state
 
 
+
+int		texture_extension_number = 1;
+
+qboolean gl_mtexable = FALSE;
+
+//====================================
+
+
 int			window_center_x, window_center_y;
 RECT		window_rect;
 
@@ -44,7 +52,22 @@ void CheckArrayExtensions( void )
 
 void CheckMultiTextureExtensions( void )
 {
-	// TODO: Implement
+	if (vid_d3d.value)
+		return;
+	
+	if (strstr(gl_extensions, "GL_SGIS_multitexture "))
+	{
+		Con_Printf( "Multitexture extensions found.\n");
+		qglMTexCoord2fSGIS = (void*)qwglGetProcAddress("glMTexCoord2fSGIS");
+		qglSelectTextureSGIS = (void*)qwglGetProcAddress("glSelectTextureSGIS");
+		gl_mtexable = TRUE;
+		GL_SelectTexture(TEXTURE0_SGIS);
+	}
+	else
+	{
+		Con_Printf("NO Multitexture extensions found.\n");
+		return;
+	}
 }
 
 void GL_Config( void )
@@ -135,6 +158,30 @@ void GL_Init( void )
 
 	GL_Config();
 }
+
+/*
+=================
+GL_BeginRendering
+
+=================
+*/
+void GL_BeginRendering( int* x, int* y, int* width, int* height )
+{
+	*x = *y = 0;
+	*width = window_rect.right - window_rect.left;
+	*height = window_rect.bottom - window_rect.top;
+	vid.width = vid.conwidth = *width;
+	vid.height = vid.conheight = *height;
+	GLimp_LogNewFrame();
+}
+
+
+void GL_EndRendering( void )
+{
+	VID_Update(NULL);
+}
+
+// TODO: Implement
 
 #if defined (_WIN32)
 //==========================================================================

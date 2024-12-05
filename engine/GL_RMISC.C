@@ -2,7 +2,8 @@
 
 #include "quakedef.h"
 
-
+cvar_t	gl_dither = { "gl_dither", "1", TRUE };
+cvar_t	gl_spriteblend = { "gl_spriteblend", "1" };
 
 /*
 ====================

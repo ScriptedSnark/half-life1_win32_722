@@ -1727,15 +1727,15 @@ COM_CloseFile
 If it is a pak file handle, don't really close it
 ============
 */
-void COM_CloseFile( int h )
+void COM_CloseFile( int filepos, int filelen, int handle )
 {
 	searchpath_t* s;
 
 	for (s = com_searchpaths; s; s = s->next)
-		if (s->pack && s->pack->handle == h)
+		if (s->pack && s->pack->handle == handle)
 			return;
 
-	Sys_FileClose(h);
+	Sys_FileClose(handle);
 }
 
 
@@ -1793,14 +1793,14 @@ byte* COM_LoadFile( char* path, int usehunk, int* pLength )
 	if (!buf)
 	{
 		Sys_Error("COM_LoadFile: not enough space for %s", path);
-		COM_CloseFile(h[2]);
+		COM_CloseFile(h[0], h[1], h[2]);
 		return NULL;
 	}
 
 	buf[len] = 0;
 
 	Sys_FileRead(h[2], buf, len);
-	COM_CloseFile(h[2]);
+	COM_CloseFile(h[0], h[1], h[2]);
 
 	if (pLength)
 		*pLength = len;
@@ -1856,7 +1856,7 @@ byte* COM_LoadFileLimit( char* path, int pos, int cbmax, int* pcbread, int* phFi
 	{
 		if (path)
 			Sys_Error("COM_LoadFileLimit: not enough space for %s", path);
-		COM_CloseFile(h[2]);
+		COM_CloseFile(h[0], h[1], h[2]);
 		return NULL;
 	}
 
@@ -2092,10 +2092,10 @@ void COM_InitFilesystem( void )
 			if (!com_argv[i] || com_argv[i][0] == '+' || com_argv[i][0] == '-')
 				break;
 
-			search = Hunk_Alloc(sizeof(searchpath_t));
+			search = (searchpath_t*)Hunk_Alloc(sizeof(searchpath_t));
 			if (!strcmp(COM_FileExtension(com_argv[i]), "pak"))
 			{
-				search->pack = COM_LoadPackFile(com_argv[i]);
+				search->pack = (pack_t*)COM_LoadPackFile(com_argv[i]);
 				if (!search->pack)
 					Sys_Error("Couldn't load packfile: %s", com_argv[i]);
 			}
@@ -2296,7 +2296,7 @@ void LoadBMP8( int* phFile, byte** pPalette, int* nPalette, byte** pImage )
 
 GetOut:
 	if (phFile[2] != -1)
-		COM_CloseFile(phFile[2]);
+		COM_CloseFile(phFile[0], phFile[1], phFile[2]);
 
 	//return rc;
 }

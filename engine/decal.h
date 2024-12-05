@@ -25,4 +25,13 @@
 
 void		R_DecalRemoveAll( int textureIndex );
 
+extern void					Draw_CacheWadInit( char* name, int cacheMax, cachewad_t* wad );
+extern void					Draw_CacheWadHandler( cachewad_t* wad, PFNCACHE fn, int extraDataSize );
+
+
+
+extern void*				Draw_CacheGet( cachewad_t* wad, int index );
+
+extern int					Draw_CacheIndex( cachewad_t* wad, char* path );
+
 #endif // DECAL_H

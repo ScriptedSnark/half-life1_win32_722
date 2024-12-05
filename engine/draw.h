@@ -37,9 +37,6 @@ typedef struct cachewad_s
 	int				lumpCount;
 	int				cacheExtra;
 	PFNCACHE		pfnCacheBuild;
-	int				numpaths;
-	char** basedirs;
-	int* lumppathindices;
 
 #if defined( GLQUAKE )
 	int				tempWad;
@@ -50,6 +47,9 @@ typedef struct cachewad_s
 
 extern qfont_t* draw_chars;
 extern qfont_t* draw_creditsfont;
+extern qpic_t* draw_disc;	// also used on sbar
+
+extern cachewad_t menu_wad;
 
 void	Decal_Init( void );
 
@@ -57,12 +57,19 @@ void	Draw_Init( void );
 void	Draw_Shutdown( void );
 int		Draw_Character( int x, int y, int num );
 
+void	Draw_Pic( int x, int y, qpic_t *pic );
+
+
+
 
 void	Draw_ConsoleBackground( int lines );
 
 
+void	Draw_TileClear( int x, int y, int w, int h );
 
+void	Draw_FadeScreen( void );
 int		Draw_String( int x, int y, char* str );
-
+qpic_t* Draw_PicFromWad( char* name );
+qpic_t* Draw_CachePic( char* path );
 
 #endif // DRAW_H

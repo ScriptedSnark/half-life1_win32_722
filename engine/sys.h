@@ -88,6 +88,8 @@ extern int giActive;
 extern int giStateInfo;
 extern int giSubState;
 
+void	(*VID_Update)( struct vrect_s* rects );
+
 void	(*CDAudio_Play)( int track, int looping );
 void	(*CDAudio_Pause)( void );
 void	(*CDAudio_Resume)( void );

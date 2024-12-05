@@ -43,8 +43,17 @@ void ClientDLL_HudVidInit( void )
 
 
 
+/*
+==============
+ClientDLL_HudRedraw
 
-
+Called to redraw the HUD
+==============
+*/
+void ClientDLL_HudRedraw( int intermission )
+{
+	// TODO: Implement
+}
 
 /*
 ==============

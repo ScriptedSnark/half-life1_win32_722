@@ -97,16 +97,20 @@ typedef int (*pfnUserMsgHook)( const char* pszName, int iSize, void* pbuf );
 #include "net.h"
 #include "protocol.h"
 #include "cmd.h"
-
+#include "sbar.h"
 #include "sound.h"
-
 #include "render.h"
 #include "client.h"
 #include "progs.h"
 #include "server.h"
+#include "host_cmd.h"
 
-
-
+#ifdef GLQUAKE
+#include "gl_model.h"
+#else
+//#include "model.h"
+//#include "d_iface.h"
+#endif
 
 #include "input.h"
 
@@ -119,7 +123,7 @@ typedef int (*pfnUserMsgHook)( const char* pszName, int iSize, void* pbuf );
 
 #ifdef GLQUAKE
 #include "qgl.h"
-//#include "glquake.h"
+#include "glquake.h"
 #endif
 
 

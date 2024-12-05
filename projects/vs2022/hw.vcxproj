@@ -27,6 +27,8 @@
     <ClCompile Include="..\..\engine\CONSOLE.C" />
     <ClCompile Include="..\..\engine\crc.c" />
     <ClCompile Include="..\..\engine\cvar.c" />
+    <ClCompile Include="..\..\engine\decals.c" />
+    <ClCompile Include="..\..\engine\glHud.c" />
     <ClCompile Include="..\..\engine\GL_DRAW.C" />
     <ClCompile Include="..\..\engine\GL_RMAIN.C" />
     <ClCompile Include="..\..\engine\GL_RMISC.C" />
@@ -35,6 +37,7 @@
     <ClCompile Include="..\..\engine\GL_VIDNT.C" />
     <ClCompile Include="..\..\engine\host.c" />
     <ClCompile Include="..\..\engine\host_cmd.c" />
+    <ClCompile Include="..\..\engine\HUD.c" />
     <ClCompile Include="..\..\engine\in_win.c" />
     <ClCompile Include="..\..\engine\KEYS.C" />
     <ClCompile Include="..\..\engine\mathlib.c" />
@@ -82,7 +85,10 @@
     <ClInclude Include="..\..\engine\decal.h" />
     <ClInclude Include="..\..\engine\draw.h" />
     <ClInclude Include="..\..\engine\eiface.h" />
+    <ClInclude Include="..\..\engine\GLQUAKE.H" />
     <ClInclude Include="..\..\engine\gl_hw.h" />
+    <ClInclude Include="..\..\engine\GL_MODEL.H" />
+    <ClInclude Include="..\..\engine\host_cmd.h" />
     <ClInclude Include="..\..\engine\input.h" />
     <ClInclude Include="..\..\engine\keys.h" />
     <ClInclude Include="..\..\engine\mathlib.h" />
@@ -99,6 +105,7 @@
     <ClInclude Include="..\..\engine\render.h" />
     <ClInclude Include="..\..\engine\r_local.h" />
     <ClInclude Include="..\..\engine\r_shared.h" />
+    <ClInclude Include="..\..\engine\sbar.h" />
     <ClInclude Include="..\..\engine\screen.h" />
     <ClInclude Include="..\..\engine\server.h" />
     <ClInclude Include="..\..\engine\sound.h" />

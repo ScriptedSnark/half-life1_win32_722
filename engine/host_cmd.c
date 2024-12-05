@@ -1,6 +1,8 @@
 #include "quakedef.h"
 #include "winquake.h"
 
+int	gHostSpawnCount = 0;
+
 DLL_EXPORT BOOL SaveGame( char* pszSlot, char* pszComment )
 {
 	// TODO: Implement

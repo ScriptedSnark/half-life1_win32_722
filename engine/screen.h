@@ -10,10 +10,19 @@ void SCR_Init( void );
 void SCR_UpdateScreen( void );
 
 
+void SCR_BringDownConsole( void );
+void SCR_CenterPrint( char* str );
+
+void SCR_BeginLoadingPlaque( void );
 void SCR_EndLoadingPlaque( void );
 
-extern	float		scr_con_current;
+int SCR_ModalMessage( char* text );
 
+void Draw_CenterPic( qpic_t* pPic );
+
+
+extern	float		scr_con_current;
+extern	float		scr_conlines;		// lines of console to display
 
 
 
@@ -31,5 +40,7 @@ extern	qboolean	scr_skipupdate;
 
 extern	int			clearconsole;
 extern	int			clearnotify;
+
+extern	cvar_t scr_viewsize;
 
 #endif // SCREEN_H

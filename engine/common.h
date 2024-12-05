@@ -153,7 +153,7 @@ extern	char	com_gamedir[MAX_OSPATH];
 void COM_WriteFile( char* filename, void* data, int len );
 int COM_OpenFile( char* filename, int* hndl );
 int COM_FOpenFile( char* filename, FILE** file );
-void COM_CloseFile( int h );
+void COM_CloseFile( int filepos, int filelen, int handle );
 
 void COM_FreeFile( void* buffer );
 byte* COM_LoadFile( char* path, int usehunk, int* pLength );

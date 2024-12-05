@@ -15,6 +15,11 @@ void S_Init( void )
 	// TODO: Implement
 }
 
+void S_StopAllSounds( qboolean clear )
+{
+	// TODO: Implement
+}
+
 void S_ClearBuffer( void )
 {
 	// TODO: Implement

@@ -97,6 +97,8 @@ typedef struct netchan_s
 	double		outgoing_time[MAX_LATENT];
 } netchan_t;
 
+// Net graph
+void		SCR_InitNetGraph( void );
 
 // Start up networking
 void		NET_Init( void );

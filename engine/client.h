@@ -66,7 +66,40 @@ extern client_static_t	cls;
 //
 typedef struct
 {
-	vec3_t viewangles;
+	// TODO: Implement
+
+	// the client maintains its own idea of view angles, which are
+	// sent to the server each frame.  The server sets punchangle when
+	// the view is temporarliy offset, and an angle reset commands at the start
+	// of each level and after teleporting.
+	vec3_t		viewangles;
+
+
+	// TODO: Implement
+
+
+	qboolean	paused;			// send over by server
+
+
+	// TODO: Implement
+
+
+	int			intermission;	// don't change view angle, full screen, etc
+
+	// TODO: Implement
+
+	double		time;
+
+
+	// TODO: Implement
+
+
+	struct model_s*	worldmodel;	// cl_entitites[0].model
+
+
+	// TODO: Implement
+
+
 } client_state_t;
 
 

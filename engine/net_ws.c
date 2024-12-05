@@ -26,3 +26,9 @@ void NET_Init( void )
 {
 	// TODO: Implement
 }
+
+
+void SCR_InitNetGraph( void )
+{
+	// TODO: Implement
+}
