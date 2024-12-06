@@ -42,12 +42,55 @@ extern void	(*VID_GetVID)( struct viddef_s* pvid );
 
 void CheckTextureExtensions( void )
 {
-	// TODO: Implement
+	qboolean	texture_ext = FALSE;
+
+	if (vid_d3d.value)
+		return;
+
+	if (strstr(gl_extensions, "GL_EXT_paletted_texture") &&
+		strstr(gl_extensions, "GL_EXT_shared_texture_palette"))
+	{
+		qglColorTableEXT = (void*)qwglGetProcAddress("glColorTableEXT");
+		Con_Printf("Found paletted texture extension.\n");
+	}
+	else
+	{
+		qglColorTableEXT = NULL;
+	}
+
+	if (strstr(gl_extensions, "GL_EXT_texture_object "))
+		texture_ext = TRUE;
+
+	if (!texture_ext || COM_CheckParm("-gl11"))
+	{
+		return;
+	}
+
+	if ((qglBindTexture = (void*)qwglGetProcAddress("glBindTextureEXT")) == NULL)
+	{
+		Sys_Error("GetProcAddress for BindTextureEXT failed");
+		return;
+	}
 }
 
 void CheckArrayExtensions( void )
 {
-	// TODO: Implement
+	char* tmp;
+
+	/* check for texture extension */
+	tmp = (char*)(qglGetString(GL_EXTENSIONS));
+	while (*tmp)
+	{
+		if (strncmp(tmp, "GL_EXT_vertex_array", strlen("GL_EXT_vertex_array")) == 0)
+		{
+			// TODO: Implement this block
+
+			return;
+		}
+		tmp++;
+	}
+
+	Sys_Error("Vertex array extension not present");
 }
 
 void CheckMultiTextureExtensions( void )

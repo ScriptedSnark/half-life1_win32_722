@@ -586,8 +586,13 @@ char* Cmd_CompleteCommand( char* partial )
 
 // check functions
 	for (cmd = cmd_functions; cmd; cmd = cmd->next)
+	{
 		if (!Q_strncmp(partial, cmd->name, len))
-			return cmd->name;
+		{
+			if (Q_strlen(cmd->name) == len)
+				return cmd->name;
+		}
+	}
 
 	return NULL;
 }

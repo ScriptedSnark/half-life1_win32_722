@@ -45,8 +45,8 @@ typedef struct cachewad_s
 
 #include "qfont.h"
 
-extern qfont_t* draw_chars;
 extern qfont_t* draw_creditsfont;
+extern qfont_t* draw_chars;
 extern qpic_t* draw_disc;	// also used on sbar
 
 extern cachewad_t menu_wad;
@@ -54,20 +54,26 @@ extern cachewad_t menu_wad;
 void	Decal_Init( void );
 
 void	Draw_Init( void );
-void	Draw_Shutdown( void );
 int		Draw_Character( int x, int y, int num );
-
+void	Draw_DebugChar( char num );
 void	Draw_Pic( int x, int y, qpic_t *pic );
-
-
-
-
+void	Draw_AlphaSubPic( int xDest, int yDest, int xSrc, int ySrc, int iWidth, int iHeight, qpic_t* pPic, colorVec* pc, int iAlpha );
+void	Draw_AlphaPic( int x, int y, qpic_t* pic, colorVec* pc, int iAlpha );
+void	Draw_AlphaAddPic( int x, int y, qpic_t* pic, colorVec* pc, int iAlpha );
+void	Draw_TransPic( int x, int y, qpic_t* pic );
+void	Draw_TransPicTranslate( int x, int y, qpic_t* pic, unsigned char* translation );
+void	Draw_SpriteFrame( struct mspriteframe_s* pFrame, unsigned short* pPalette, int x, int y, const struct wrect_s* prcSubRect );
+void	Draw_SpriteFrameHoles( struct mspriteframe_s* pFrame, unsigned short* pPalette, int x, int y, const struct wrect_s* prcSubRect );
+void	Draw_SpriteFrameAdditive( struct mspriteframe_s* pFrame, unsigned short* pPalette, int x, int y, const struct wrect_s* prcSubRect );
 void	Draw_ConsoleBackground( int lines );
-
-
+void	Draw_FillRGBA( int x, int y, int w, int h, int r, int g, int b, int a );
 void	Draw_TileClear( int x, int y, int w, int h );
-
+void	Draw_Fill( int x, int y, int w, int h, int c );
 void	Draw_FadeScreen( void );
+void	Draw_BeginDisc( void );
+void	Draw_EndDisc( void );
+int		Draw_StringLen( char* psz );
+int		Draw_MessageFontInfo( short* pWidth );
 int		Draw_String( int x, int y, char* str );
 qpic_t* Draw_PicFromWad( char* name );
 qpic_t* Draw_CachePic( char* path );

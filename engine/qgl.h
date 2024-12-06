@@ -19,6 +19,8 @@ typedef void* HGLRC;
 
 #include <GL/gl.h>
 
+extern cvar_t	vid_d3d;
+
 HINSTANCE QGL_Init( char* pdllname );
 void QGL_Shutdown( void );
 
@@ -27,6 +29,8 @@ void GLimp_LogNewFrame( void );
 
 void GL_Config( void );
 DLL_EXPORT void GL_Init( void );
+
+#define GL_SHARED_TEXTURE_PALETTE_EXT 0x81FB
 
 #ifndef APIENTRY
 #define APIENTRY

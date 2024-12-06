@@ -70,4 +70,33 @@ typedef struct texture_s
 	byte*		pPal;
 } texture_t;
 
+
+
+
+
+
+/*
+==============================================================================
+
+SPRITE MODELS
+
+==============================================================================
+*/
+
+// FIXME: shorten these?
+typedef struct mspriteframe_s
+{
+	int		width;
+	int		height;
+	float	up, down, left, right;
+	int		gl_texturenum;
+} mspriteframe_t;
+
+
+
+
+
+
+
+
 #endif // GL_MODEL_H

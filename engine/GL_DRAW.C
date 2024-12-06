@@ -4,8 +4,8 @@
 #include "quakedef.h"
 #include "winquake.h"
 #include "decal.h"
+#include "pr_cmds.h"
 #include "opengl2d3d.h"
-
 
 cvar_t		gl_nobind = { "gl_nobind", "0" };
 cvar_t		gl_max_size = { "gl_max_size", "256" };
@@ -13,8 +13,9 @@ cvar_t		gl_round_down = { "gl_round_down", "3" };
 cvar_t		gl_picmip = { "gl_picmip", "0" };
 cvar_t		gl_palette_tex = { "gl_palette_tex", "1" };
 
-qfont_t* draw_chars;
+int		font_texture;
 qfont_t* draw_creditsfont;
+qfont_t* draw_chars;
 qpic_t* draw_disc;
 
 int			translate_texture;
@@ -41,6 +42,33 @@ int		texels;
 
 typedef struct
 {
+	int		tag;
+	byte	colors[768];
+} GL_PALETTE;
+
+GL_PALETTE gGLPalette[350];
+
+typedef struct
+{
+	char name[64];
+	qpic_t pic;
+	byte padding[32];
+} cachepic_t;
+
+#define	MAX_CACHED_PICS		16
+cachepic_t	menu_cachepics[MAX_CACHED_PICS];
+int			menu_numcachepics;
+
+byte		menuplyr_pixels[4096];
+
+int		pic_texels;
+int		pic_count;
+
+
+cachewad_t custom_wad;
+
+typedef struct
+{
 	int			texnum;
 	short		servercount;
 	short		paletteIndex;
@@ -54,7 +82,13 @@ gltexture_t gltextures[MAX_GLTEXTURES];
 int			numgltextures;
 
 float		chars_xsize, chars_ysize;
+float		creditsfont_ysize;
 
+void GL_PaletteInit( void );
+void GL_PaletteSelect( int paletteIndex );
+
+qpic_t* LoadTransBMP( char* pszName );
+qpic_t* LoadTransPic( char* pszName, qpic_t* ppic );
 
 void GL_Bind( int texnum )
 {
@@ -68,8 +102,8 @@ void GL_Bind( int texnum )
 	currenttexture = texnum;
 	qglBindTexture(GL_TEXTURE_2D, texnum);
 
-//	if (paletteIndex >= 0) TODO: Implement
-//		GL_PaletteSelect(paletteIndex);
+	if (paletteIndex >= 0)
+		GL_PaletteSelect(paletteIndex);
 }
 
 void GL_Texels_f( void )
@@ -98,8 +132,19 @@ void GL_SelectTexture( GLenum target )
 
 qpic_t* Draw_PicFromWad( char* name )
 {
-	// TODO: Implement
-	return NULL;
+	qpic_t* p;
+	glpic_t* gl;
+
+	p = (qpic_t*)W_GetLumpName(name);
+	gl = (glpic_t*)p->data;
+
+	gl->texnum = GL_LoadPicTexture(p, name);
+	gl->sl = 0;
+	gl->sh = 1;
+	gl->tl = 0;
+	gl->th = 1;
+
+	return p;
 }
 
 qpic_t* Draw_CachePic( char* path )
@@ -113,36 +158,157 @@ qpic_t* Draw_CachePic( char* path )
 	return ret;
 }
 
-int __cdecl Draw_StringLen( char *psz )
+/*
+===============
+Draw_StringLen
+===============
+*/
+int Draw_StringLen( char *psz )
 {
-	// TODO: Refactor
+	int totalWidth = 0;
 
-	int result; // eax
-	char *v2; // esi
-	char v3; // cl
-
-	result = 0;
-	v2 = psz;
-	if (psz && *psz)
+	while (psz && *psz)
 	{
-		do
-		{
-			v3 = v2[1];
-			result += draw_chars->fontinfo[*v2++].charwidth;
-		} while (v3);
+		totalWidth += draw_chars->fontinfo[*psz].charwidth;
+		psz++;
 	}
-	return result;
+
+	return totalWidth;
 }
 
+int Draw_MessageFontInfo( short* pWidth )
+{
+	int i;
 
+	if (!draw_creditsfont)
+		return 0;
 
+	if (pWidth)
+	{
+		for (i = 0; i < 256; i++)
+		{
+			*pWidth++ = draw_creditsfont->fontinfo[i].charwidth;
+		}
+	}
 
+	return draw_creditsfont->rowheight;
+}
 
+int Draw_MessageCharacterAdd( int x, int y, int num, int rr, int gg, int bb, unsigned int font )
+{
+	int				row, col;
+	int				rowheight, charwidth;
+	float			frow, fcol, xsize, ysize;
 
+	num &= 255;
 
+	rowheight = draw_creditsfont->rowheight;
+	if (y <= -rowheight)
+		return 0;			// totally off screen
 
+	charwidth = draw_creditsfont->fontinfo[num].charwidth;
 
+	col = draw_creditsfont->fontinfo[num].startoffset & 255;
+	fcol = col * chars_xsize;
+	row = (draw_creditsfont->fontinfo[num].startoffset & ~255) >> 8;
+	frow = row * creditsfont_ysize;
 
+	xsize = charwidth * chars_xsize;
+	ysize = rowheight * creditsfont_ysize;
+	
+	qglTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+	qglEnable(GL_ALPHA_TEST);
+	qglEnable(GL_BLEND);
+	qglBlendFunc(GL_ONE, GL_ONE);
+	qglColor4ub(rr, gg, bb, 255);
+
+	GL_DisableMultitexture();
+	GL_Bind(font_texture);
+
+	qglBegin(GL_QUADS);
+	qglTexCoord2f(fcol, frow);
+	qglVertex2f(x, y);
+	qglTexCoord2f(fcol + xsize, frow);
+	qglVertex2f(x + charwidth, y);
+	qglTexCoord2f(fcol + xsize, frow + ysize);
+	qglVertex2f(x + charwidth, y + rowheight);
+	qglTexCoord2f(fcol, frow + ysize);
+	qglVertex2f(x, y + rowheight);
+	qglEnd();
+
+	qglDisable(GL_BLEND);
+
+	return charwidth;
+}
+
+void Draw_CharToConback( int num, byte* dest )
+{
+}
+
+typedef struct
+{
+	char* name;
+	int	minimize, maximize;
+} quake_mode_t;
+
+quake_mode_t modes[] = {
+	{ "GL_NEAREST", GL_NEAREST, GL_NEAREST },
+	{ "GL_LINEAR", GL_LINEAR, GL_LINEAR },
+	{ "GL_NEAREST_MIPMAP_NEAREST", GL_NEAREST_MIPMAP_NEAREST, GL_NEAREST },
+	{ "GL_LINEAR_MIPMAP_NEAREST", GL_LINEAR_MIPMAP_NEAREST, GL_LINEAR },
+	{ "GL_NEAREST_MIPMAP_LINEAR", GL_NEAREST_MIPMAP_LINEAR, GL_NEAREST },
+	{ "GL_LINEAR_MIPMAP_LINEAR", GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR }
+};
+
+/*
+===============
+Draw_TextureMode_f
+===============
+*/
+void Draw_TextureMode_f( void )
+{
+	int		i;
+	gltexture_t* glt;
+
+	if (Cmd_Argc() == 1)
+	{
+		for (i = 0; i < 6; i++)
+		{
+			if (gl_filter_min == modes[i].minimize)
+			{
+				Con_Printf("%s\n", modes[i].name);
+				return;
+			}
+		}
+		Con_Printf("current filter is unknown???\n");
+		return;
+	}
+
+	for (i = 0; i < 6; i++)
+	{
+		if (!Q_strcasecmp(modes[i].name, Cmd_Argv(1)))
+			break;
+	}
+	if (i == 6)
+	{
+		Con_Printf("bad filter name\n");
+		return;
+	}
+
+	gl_filter_min = modes[i].minimize;
+	gl_filter_max = modes[i].maximize;
+
+	// change all the existing mipmap texture objects
+	for (i = 0, glt = gltextures; i < numgltextures; i++, glt++)
+	{
+		if (glt->mipmap)
+		{
+			GL_Bind(glt->texnum);
+			qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, gl_filter_min);
+			qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, gl_filter_max);
+		}
+	}
+}
 
 // This is called to reset all loaded decals
 // called from cl_parse.c and host.c
@@ -158,9 +324,10 @@ Draw_Init
 */
 void Draw_Init( void )
 {
-	int i;
+	int		i;
 	qpic_t* cb;
 	glpic_t* gl;
+	unsigned char* pPal;
 
 	Draw_CacheWadInit("cached.wad", 16, &menu_wad);
 	menu_wad.tempWad = TRUE;
@@ -175,6 +342,7 @@ void Draw_Init( void )
 
 	// TODO: Implement
 
+	Cmd_AddCommand("gl_texturemode", Draw_TextureMode_f);
 	Cmd_AddCommand("gl_texels", GL_Texels_f);
 
 	for (i = 0; i < 256; i++)
@@ -196,36 +364,34 @@ void Draw_Init( void )
 	conback->height = cb->height;
 
 	gl = (glpic_t*)conback->data;
-	gl->texnum = GL_LoadTexture("conback", GLT_SYSTEM, cb->width, cb->height, cb->data, FALSE, TEX_TYPE_NONE, &cb->data[cb->width * cb->height + 2]);
+	pPal = &cb->data[cb->width * cb->height + 2];
+	gl->texnum = GL_LoadTexture("conback", GLT_SYSTEM, cb->width, cb->height, cb->data, FALSE, TEX_TYPE_NONE, pPal);
 	gl->sl = 0;
 	gl->sh = 1;
 	gl->tl = 0;
 	gl->th = 1;
 
-	// TODO: Implement
-
 	float prev = gl_round_down.value;
 	gl_round_down.value = 0.0;
 
 	// now turn them into textures
-	char_texture = GL_LoadTexture("conchars", GLT_SYSTEM, 256, draw_chars->height, draw_chars->data, FALSE, 1, &draw_chars->data[draw_chars->height * 256 + 2]);
-	
-	// TODO: Implement
+	pPal = &draw_chars->data[256 * draw_chars->height + 2];
+	char_texture = GL_LoadTexture("conchars", GLT_SYSTEM, 256, draw_chars->height, draw_chars->data, FALSE, TEX_TYPE_ALPHA, pPal);
+	pPal = &draw_creditsfont->data[256 * draw_creditsfont->height + 2];
+	font_texture = GL_LoadTexture("creditsfont", GLT_SYSTEM, 256, draw_creditsfont->height, draw_creditsfont->data, FALSE, TEX_TYPE_NONE, pPal);
 
 	gl_round_down.value = prev;
 
 	chars_xsize = 1.0 / 256;
 	chars_ysize = 1.0 / draw_chars->height;
 
-	// TODO: Implement
+	creditsfont_ysize = 1.0 / draw_creditsfont->height;
 
 	// save a texture slot for translated picture
 	translate_texture = texture_extension_number++;
 
-	// TODO: Implement
+	draw_disc = (qpic_t*)LoadTransBMP("lambda");
 }
-
-
 
 /*
 ================
@@ -236,79 +402,49 @@ Draws a single character
 */
 int Draw_Character( int x, int y, int num )
 {
-	int rowheight; // ebx
-	int width; // esi
-	GLfloat v6; // ecx
-	GLfloat startoffset; // [esp+5Ch] [ebp-20h]
-	GLfloat v8; // [esp+5Ch] [ebp-20h]
-	GLfloat v9; // [esp+5Ch] [ebp-20h]
-	GLfloat v10; // [esp+5Ch] [ebp-20h]
-	GLfloat v11; // [esp+5Ch] [ebp-20h]
-	float v12; // [esp+5Ch] [ebp-20h]
-	float v13; // [esp+5Ch] [ebp-20h]
-	float v14; // [esp+5Ch] [ebp-20h]
-	GLfloat xsize; // [esp+60h] [ebp-1Ch]
-	GLfloat wtf; // [esp+60h] [ebp-1Ch]
-	float v17; // [esp+64h] [ebp-18h]
-	GLfloat v18; // [esp+64h] [ebp-18h]
-	GLfloat frow; // [esp+68h] [ebp-14h]
-	GLfloat fcol; // [esp+6Ch] [ebp-10h]
-	GLfloat v21; // [esp+70h] [ebp-Ch]
-	GLfloat v22; // [esp+74h] [ebp-8h]
-	GLfloat v23; // [esp+78h] [ebp-4h]
+	int				row, col;
+	int				rowheight, charwidth;
+	float			frow, fcol, xsize, ysize;
+
+	num &= 255;
 
 	rowheight = draw_chars->rowheight;
-	if (-rowheight >= y)
-		return 0;
+	if (y <= -rowheight)
+		return 0;			// totally off screen
 
-	width = draw_chars->fontinfo[num].charwidth;  // Do before that num &= 255
+	charwidth = draw_chars->fontinfo[num].charwidth;
 	if (y < 0 || num == 32)
-		return draw_chars->fontinfo[num].charwidth;
+		return draw_chars->fontinfo[num].charwidth;		// space
 
-	startoffset = (float)(unsigned __int8)draw_chars->fontinfo[num].startoffset;
-	fcol = startoffset * chars_xsize;
-	v8 = (float)((int)(draw_chars->fontinfo[num].startoffset & ~0xFFu) >> 8);
-	frow = v8 * chars_ysize;
-	v9 = (float)rowheight;
-	v17 = v9 * chars_ysize;
-	v10 = (float)width;
-	xsize = v10 * chars_xsize;
+	col = draw_chars->fontinfo[num].startoffset & 255;
+	fcol = col * chars_xsize;
+	row = (draw_chars->fontinfo[num].startoffset & ~255) >> 8;
+	frow = row * chars_ysize;
 
-	qglTexEnvf( 0x2300u, 0x2200u, 8448.0 );
-	qglEnable( 0xBC0u );
-	qglColor4f( 1.0, 1.0, 1.0, 1.0 );
+	xsize = charwidth * chars_xsize;
+	ysize = rowheight * chars_ysize;
+	
+	qglTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+	qglEnable(GL_ALPHA_TEST);
+	qglColor4f(1, 1, 1, 1);
+
 	GL_DisableMultitexture();
+	GL_Bind(char_texture);
 
-	GL_Bind( char_texture );
-
-	qglBegin( 7 );
-	qglTexCoord2f( fcol, frow );
-	v11 = (float)y;
-	v6 = v11;
-	v12 = (float)x;
-	v21 = v6;
-	v23 = v12;
-	qglVertex2f( v12, v6 );
-
-	wtf = xsize + fcol;
-	qglTexCoord2f( wtf, frow );
-	v13 = (float)(width + x);
-	v22 = v13;
-	qglVertex2f( v13, v21 );
-
-	v18 = v17 + frow;
-	qglTexCoord2f( wtf, v18 );
-	v14 = (float)(rowheight + y);
-	qglVertex2f( v22, v14 );
-
-	qglTexCoord2f( fcol, v18 );
-	qglVertex2f( v23, v14 );
-
+	qglBegin(GL_QUADS);
+	qglTexCoord2f(fcol, frow);
+	qglVertex2f(x, y);
+	qglTexCoord2f(fcol + xsize, frow);
+	qglVertex2f(x + charwidth, y);
+	qglTexCoord2f(fcol + xsize, frow + ysize);
+	qglVertex2f(x + charwidth, y + rowheight);
+	qglTexCoord2f(fcol, frow + ysize);
+	qglVertex2f(x, y + rowheight);
 	qglEnd();
 
-	qglDisable( 0xBE2 );
+	qglDisable(GL_BLEND);
 
-	return width;
+	return charwidth;
 }
 
 /*
@@ -318,24 +454,26 @@ Draw_String
 */
 int Draw_String( int x, int y, char* str )
 {
-	unsigned __int8 *v3; // ebx
-	int v4; // esi
-	unsigned __int8 v6; // [esp-4h] [ebp-10h]
-
-	v3 = (unsigned __int8 *)str;
-	v4 = x;
-	if (!*str)
-		return x;
-	do
+	while (*str)
 	{
-		v6 = *v3++;
-		v4 += Draw_Character( v4, y, v6 );
-	} while (*v3);
-	return v4;
+		x += Draw_Character(x, y, *str);
+		str++;
+	}
+	return x;
 }
 
+/*
+================
+Draw_DebugChar
 
-
+Draws a single character directly to the upper right corner of the screen.
+This is for debugging lockups by drawing different chars in different parts
+of the code.
+================
+*/
+void Draw_DebugChar( char num )
+{
+}
 
 /*
 =============
@@ -344,12 +482,167 @@ Draw_Pic
 */
 void Draw_Pic( int x, int y, qpic_t *pic )
 {
-	// TODO: Implement
+	glpic_t* gl;
+
+	if (!pic)
+		return;
+
+	qglEnable(GL_TEXTURE_2D);
+	qglDisable(GL_BLEND);
+	qglDisable(GL_DEPTH_TEST);
+	qglEnable(GL_ALPHA_TEST);
+	qglTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+
+	gl = (glpic_t*)pic->data;
+	qglColor4f(1, 1, 1, 1);
+	GL_Bind(gl->texnum);
+	qglBegin(GL_QUADS);
+	qglTexCoord2f(gl->sl, gl->tl);
+	qglVertex2f(x, y);
+	qglTexCoord2f(gl->sh, gl->tl);
+	qglVertex2f(x + pic->width, y);
+	qglTexCoord2f(gl->sh, gl->th);
+	qglVertex2f(x + pic->width, y + pic->height);
+	qglTexCoord2f(gl->sl, gl->th);
+	qglVertex2f(x, y + pic->height);
+	qglEnd();
 }
 
+/*
+=============
+Draw_AlphaSubPic
+=============
+*/
+void Draw_AlphaSubPic( int xDest, int yDest, int xSrc, int ySrc, int iWidth, int iHeight, qpic_t* pPic, colorVec* pc, int iAlpha )
+{
+	glpic_t* gl;
+	float flX, flY, flHeight, flWidth, alpha;
 
+	if (!pPic)
+		return;
 
+	qglBlendFunc(GL_ONE, GL_ONE);
+	qglTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+	qglEnable(GL_BLEND);
+	qglEnable(GL_ALPHA_TEST);
 
+	flWidth = (float)iWidth / (float)pPic->width;
+	flHeight = (float)iHeight / (float)pPic->height;
+
+	flX = (float)xSrc / (float)pPic->width;
+	flY = (float)ySrc / (float)pPic->height;
+
+	alpha = iAlpha / 255.0;
+
+	gl = (glpic_t*)pPic->data;
+	qglColor4f((pc->r * alpha) / 256.0, (pc->g * alpha) / 256.0, (pc->b * alpha) / 256.0, 1);
+	GL_Bind(gl->texnum);
+	qglBegin(GL_QUADS);
+	qglTexCoord2f(flX, flY);
+	qglVertex2f(xDest, yDest);
+	qglTexCoord2f(flX + flWidth, flY);
+	qglVertex2f(iWidth + xDest, yDest);
+	qglTexCoord2f(flX + flWidth, flY + flHeight);
+	qglVertex2f(iWidth + xDest, yDest + iHeight);
+	qglTexCoord2f(flX, flY + flHeight);
+	qglVertex2f(xDest, yDest + iHeight);
+	qglEnd();
+
+	qglDisable(GL_BLEND);
+}
+
+/*
+=============
+Draw_AlphaPic
+=============
+*/
+void Draw_AlphaPic( int x, int y, qpic_t* pic, colorVec* pc, int iAlpha )
+{
+	glpic_t* gl;
+	float alpha;
+
+	if (!pic)
+		return;
+
+	qglBlendFunc(GL_ONE, GL_ONE);
+	qglTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+	qglEnable(GL_BLEND);
+	qglEnable(GL_ALPHA_TEST);
+
+	alpha = iAlpha / 255.0;
+	if (pc)
+	{
+		qglColor3f((pc->r * alpha) / 256.0, (pc->g * alpha) / 256.0, (pc->b * alpha) / 256.0);
+	}
+	else
+	{
+		qglColor3f(alpha, alpha, alpha);
+	}
+
+	gl = (glpic_t*)pic->data;
+	GL_Bind(gl->texnum);
+	qglBegin(GL_QUADS);
+	qglTexCoord2f(gl->sl, gl->tl);
+	qglVertex2f(x, y);
+	qglTexCoord2f(gl->sh, gl->tl);
+	qglVertex2f(x + pic->width, y);
+	qglTexCoord2f(gl->sh, gl->th);
+	qglVertex2f(x + pic->width, y + pic->height);
+	qglTexCoord2f(gl->sl, gl->th);
+	qglVertex2f(x, y + pic->height);
+	qglEnd();
+
+	qglDisable(GL_BLEND);
+}
+
+/*
+=============
+Draw_AlphaAddPic
+=============
+*/
+void Draw_AlphaAddPic( int x, int y, qpic_t* pic, colorVec* pc, int iAlpha )
+{
+	glpic_t* gl;
+
+	if (!pic)
+		return;
+
+	qglEnable(GL_TEXTURE_2D);
+	qglBlendFunc(GL_SRC_ALPHA, GL_ONE);
+	qglEnable(GL_BLEND);
+	qglEnable(GL_ALPHA_TEST);
+	qglTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+
+	if (pc)
+	{
+		qglColor4f(pc->r / 255.0, pc->g / 255.0, pc->b / 255.0, iAlpha / 255.0);
+	}
+	else
+	{
+		qglColor4f(1, 1, 1, iAlpha / 255.0);
+	}
+
+	gl = (glpic_t*)pic->data;
+	GL_Bind(gl->texnum);
+	qglBegin(GL_QUADS);
+	qglTexCoord2f(gl->sl, gl->tl);
+	qglVertex2f(x, y);
+	qglTexCoord2f(gl->sh, gl->tl);
+	qglVertex2f(x + pic->width, y);
+	qglTexCoord2f(gl->sh, gl->th);
+	qglVertex2f(x + pic->width, y + pic->height);
+	qglTexCoord2f(gl->sl, gl->th);
+	qglVertex2f(x, y + pic->height);
+	qglEnd();
+
+	qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, gl_filter_max);
+}
+
+/*
+=============
+Draw_Pic2
+=============
+*/
 void Draw_Pic2( int x, int y, int w, int h, qpic_t* pic )
 {
 	glpic_t* gl;
@@ -360,54 +653,355 @@ void Draw_Pic2( int x, int y, int w, int h, qpic_t* pic )
 	qglEnable(GL_TEXTURE_2D);
 	qglDisable(GL_BLEND);
 	qglEnable(GL_ALPHA_TEST);
-
 	qglTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
-
 	qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, gl_filter_max);
 
 	gl = (glpic_t*)pic->data;
 	GL_Bind(gl->texnum);
-
 	qglBegin(GL_QUADS);
-
 	qglTexCoord2f(gl->sl, gl->tl);
 	qglVertex2f(x, y);
-
 	qglTexCoord2f(gl->sh, gl->tl);
 	qglVertex2f(x + w, y);
-
 	qglTexCoord2f(gl->sh, gl->th);
 	qglVertex2f(x + w, h - 1 + y);
-
 	qglTexCoord2f(gl->sl, gl->th);
 	qglVertex2f(x, h - 1 + y);
-
 	qglEnd();
 }
 
-
-
-
-
-
-void Draw_ConsoleBackground( int lines )
+/*
+=============
+Draw_TransPic
+=============
+*/
+void Draw_TransPic( int x, int y, qpic_t* pic )
 {
-	// TODO: Refactor
+	if (!pic)
+		return;
 
-	int v1; // eax
-	int v2; // esi
-	int v3; // esi
-	char ver[100]; // [esp+4h] [ebp-64h] BYREF
+	if (x < 0 || (unsigned)(x + pic->width) > vid.width || y < 0 ||
+		(unsigned)(y + pic->height) > vid.height)
+	{
+		Sys_Error("Draw_TransPic: bad coordinates");
+	}
 
-	Draw_Pic2( 0, lines - glheight, glwidth, glheight + 1, conback );
-	v1 = build_number();
-	sprintf( ver, "Half-Life 1.0 (build %d)", v1 );
-	v2 = vid.conwidth;
-	v3 = v2 - Draw_StringLen( ver );
-	if (con_loading == FALSE && (giSubState & 4) == 0)
-		Draw_String( v3, 0, ver );
+	Draw_Pic(x, y, pic);
 }
 
+
+/*
+=============
+Draw_TransPicTranslate
+
+Only used for the player color selection menu
+=============
+*/
+void Draw_TransPicTranslate( int x, int y, qpic_t* pic, unsigned char* translation )
+{
+	int				v, u, c;
+	unsigned		trans[64 * 64], * dest;
+	byte* src;
+	int				p;
+
+	if (!pic)
+		return;
+
+	GL_Bind(translate_texture);
+
+	c = pic->width * pic->height;
+
+	dest = trans;
+	for (v = 0; v < 64; v++, dest += 64)
+	{
+		src = &menuplyr_pixels[((v * pic->height) >> 6) * pic->width];
+		for (u = 0; u < 64; u++)
+		{
+			p = src[(u * pic->width) >> 6];
+			if (p == 255)
+				dest[u] = p;
+			else
+				dest[u] = 0xFF0000FF;
+		}
+	}
+
+	qglTexImage2D(GL_TEXTURE_2D, 0, 4, 64, 64, 0, GL_RGBA, GL_UNSIGNED_BYTE, trans);
+
+	qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	qglColor3f(1, 1, 1);
+	qglBegin(GL_QUADS);
+	qglTexCoord2f(0, 0);
+	qglVertex2f(x, y);
+	qglTexCoord2f(1, 0);
+	qglVertex2f(x + pic->width, y);
+	qglTexCoord2f(1, 1);
+	qglVertex2f(x + pic->width, y + pic->height);
+	qglTexCoord2f(0, 1);
+	qglVertex2f(x, y + pic->height);
+	qglEnd();
+}
+
+// Sprites are clipped to this rectangle (x,y,width,height) if ScissorTest is enabled
+int scissor_x = 0, scissor_y = 0, scissor_width = 0, scissor_height = 0;
+qboolean giScissorTest = FALSE;
+
+/*
+===============
+EnableScissorTest
+
+Set the scissor
+ the coordinate system for gl is upsidedown (inverted-y) as compared to software, so the
+ specified clipping rect must be flipped
+===============
+*/
+void EnableScissorTest( int x, int y, int width, int height )
+{
+	// Added casts to int because these warnings are so annoying
+	x = clamp(x, 0, (int)vid.width);
+	y = clamp(y, 0, (int)vid.height);
+	width = clamp(width, 0, (int)vid.width - x);
+	height = clamp(height, 0, (int)vid.height - y);
+
+	scissor_x = x;
+	scissor_y = y;
+	scissor_width = width;
+	scissor_height = height;
+
+	giScissorTest = TRUE;
+}
+
+/*
+===============
+DisableScissorTest
+===============
+*/
+void DisableScissorTest( void )
+{
+	scissor_x = 0;
+	scissor_y = 0;
+	scissor_width = 0;
+	scissor_height = 0;
+
+	giScissorTest = FALSE;
+}
+
+/*
+===============
+ValidateWRect
+
+Verify that this is a valid, properly ordered rectangle.
+===============
+*/
+int ValidateWRect( const wrect_t* prc )
+{
+	if (!prc)
+		return FALSE;
+
+	if ((prc->left >= prc->right) || (prc->top >= prc->bottom))
+	{
+		//!!!UNDONE Dev only warning msg
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
+/*
+===============
+IntersectWRect
+
+classic interview question
+===============
+*/
+int IntersectWRect( const wrect_t* prc1, const wrect_t* prc2, wrect_t* prc )
+{
+	wrect_t rc;
+
+	if (!prc)
+		prc = &rc;
+
+	prc->left = max(prc1->left, prc2->left);
+	prc->right = min(prc1->right, prc2->right);
+
+	if (prc->left < prc->right)
+	{
+		prc->top = max(prc1->top, prc2->top);
+		prc->bottom = min(prc1->bottom, prc2->bottom);
+
+		if (prc->top < prc->bottom)
+			return TRUE;
+	}
+
+	return FALSE;
+}
+
+/*
+===============
+AdjustSubRect
+===============
+*/
+void AdjustSubRect( mspriteframe_t* pFrame, float* pfLeft, float* pfRight, float* pfTop, float* pfBottom, int* pw, int* ph, const wrect_t* prcSubRect )
+{
+	wrect_t rc;
+
+	if (!ValidateWRect(prcSubRect))
+		return;
+
+	// clip sub rect to sprite
+
+	rc.top = rc.left = 0;
+	rc.right = *pw;
+	rc.bottom = *ph;
+
+	if (!IntersectWRect(prcSubRect, &rc, &rc))
+		return;
+
+	*pw = rc.right - rc.left;
+	*ph = rc.bottom - rc.top;
+
+	*pfLeft = rc.left / (float)pFrame->width;
+	*pfRight = rc.right / (float)pFrame->width;
+	*pfTop = rc.top / (float)pFrame->height;
+	*pfBottom = rc.bottom / (float)pFrame->height;
+}
+
+/*
+===============
+Draw_Frame
+===============
+*/
+void Draw_Frame( mspriteframe_t* pFrame, int ix, int iy, const wrect_t* prcSubRect )
+{
+	float	x;
+	float	y;
+
+	float	fLeft = 0;
+	float	fRight = 1;
+	float	fTop = 0;
+	float	fBottom = 1;
+	int		iWidth;
+	int		iHeight;
+
+	iWidth = pFrame->width;
+	iHeight = pFrame->height;
+
+	x = (float)ix + 0.5;
+	y = (float)iy + 0.5;
+
+	if (giScissorTest)
+	{
+		qglScissor(scissor_x, scissor_y, scissor_width, scissor_height);
+		qglEnable(GL_SCISSOR_TEST);
+	}
+
+	if (prcSubRect)
+	{
+		AdjustSubRect(pFrame, &fLeft, &fRight, &fTop, &fBottom, &iWidth, &iHeight, prcSubRect);
+	}
+
+	qglDepthMask(GL_FALSE);
+
+	GL_Bind(pFrame->gl_texturenum);
+	qglTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+	qglBegin(GL_QUADS);
+	qglTexCoord2f(fLeft, fTop);
+	qglVertex2f(x, y);
+	qglTexCoord2f(fRight, fTop);
+	qglVertex2f(x + iWidth, y);
+	qglTexCoord2f(fRight, fBottom);
+	qglVertex2f(x + iWidth, y + iHeight);
+	qglTexCoord2f(fLeft, fBottom);
+	qglVertex2f(x, y + iHeight);
+	qglEnd();
+
+	qglDepthMask(GL_TRUE);
+	qglDisable(GL_SCISSOR_TEST);
+}
+
+void Draw_SpriteFrame( mspriteframe_t* pFrame, unsigned short* pPalette, int x, int y, const wrect_t* prcSubRect )
+{
+	Draw_Frame(pFrame, x, y, prcSubRect);
+}
+
+void Draw_SpriteFrameHoles( mspriteframe_t* pFrame, unsigned short* pPalette, int x, int y, const wrect_t* prcSubRect )
+{
+	qglEnable(GL_ALPHA_TEST);
+
+	if (gl_spriteblend.value)
+	{
+		qglBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		qglEnable(GL_BLEND);
+	}
+
+	Draw_Frame(pFrame, x, y, prcSubRect);
+
+	qglDisable(GL_ALPHA_TEST);
+	qglDisable(GL_BLEND);
+}
+
+void Draw_SpriteFrameAdditive( mspriteframe_t* pFrame, unsigned short* pPalette, int x, int y, const wrect_t* prcSubRect )
+{
+	qglEnable(GL_BLEND);
+	qglBlendFunc(GL_ONE, GL_ONE);
+
+	Draw_Frame(pFrame, x, y, prcSubRect);
+
+	qglDisable(GL_BLEND);
+}
+
+/*
+================
+Draw_ConsoleBackground
+
+================
+*/
+void Draw_ConsoleBackground( int lines )
+{
+	char ver[100];
+	int x;
+
+	Draw_Pic2(0, lines - glheight, glwidth, glheight + 1, conback);
+
+	sprintf(ver, "Half-Life 1.0 (build %d)", build_number());
+
+	x = vid.conwidth - Draw_StringLen(ver);
+	if (!con_loading && !(giSubState & 4))
+	{
+		Draw_String(x, 0, ver);
+	}
+}
+
+/*
+===============
+Draw_FillRGBA
+
+Fills the given rectangle with a given color
+===============
+*/
+void Draw_FillRGBA( int x, int y, int w, int h, int r, int g, int b, int a )
+{
+	qglDisable(GL_TEXTURE_2D);
+	qglEnable(GL_BLEND);
+
+	qglTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+	qglBlendFunc(GL_SRC_ALPHA, GL_ONE);
+
+	qglColor4f(r / 255.0, g / 255.0, b / 255.0, a / 255.0);
+
+	qglBegin(GL_QUADS);
+	qglVertex2f(x, y);
+	qglVertex2f(x + w, y);
+	qglVertex2f(x + w, y + h);
+	qglVertex2f(x, y + h);
+	qglEnd();
+
+	qglColor3f(1, 1, 1);
+
+	qglEnable(GL_TEXTURE_2D);
+	qglDisable(GL_BLEND);
+}
 
 /*
 =============
@@ -419,10 +1013,24 @@ refresh window.
 */
 void Draw_TileClear( int x, int y, int w, int h )
 {
-	// TODO: Implement
+	Draw_FillRGBA(x, y, w, h, 0, 0, 0, 255);
 }
 
+/*
+=============
+Draw_Fill
 
+Fills a box of pixels with a single color
+=============
+*/
+void Draw_Fill( int x, int y, int w, int h, int c )
+{
+	Draw_FillRGBA(x, y, w, h,
+		host_basepal[c * 4],
+		host_basepal[c * 4 + 1],
+		host_basepal[c * 4 + 2],
+		255);
+}
 //=============================================================================
 
 /*
@@ -434,9 +1042,7 @@ void Draw_FadeScreen( void )
 {
 	qglEnable(GL_BLEND);
 	qglDisable(GL_TEXTURE_2D);
-
-	qglColor4f(0, 0, 0, 0.8f);
-
+	qglColor4f(0, 0, 0, 0.8);
 	qglBegin(GL_QUADS);
 
 	qglVertex2f(0, 0);
@@ -445,19 +1051,46 @@ void Draw_FadeScreen( void )
 	qglVertex2f(0, glheight);
 
 	qglEnd();
-
 	qglColor4f(1, 1, 1, 1);
-
 	qglEnable(GL_TEXTURE_2D);
 	qglDisable(GL_BLEND);
 }
 
+//=============================================================================
+
+/*
+================
+Draw_BeginDisc
+
+Draws the little blue disc in the corner of the screen.
+Call before beginning any disc IO.
+================
+*/
+void Draw_BeginDisc( void )
+{
+	if (!draw_disc)
+		return;
+
+	Draw_CenterPic(draw_disc);
+}
+
+/*
+================
+Draw_EndDisc
+
+Erases the disc icon.
+Call after completing any disc IO
+================
+*/
+void Draw_EndDisc( void )
+{
+}
 
 void ComputeScaledSize( int* wscale, int* hscale, int width, int height )
 {
 	int scaled_width, scaled_height;
 
-	for (scaled_width = 1; scaled_width < width; scaled_width <<= 1) 
+	for (scaled_width = 1; scaled_width < width; scaled_width <<= 1)
 		;
 
 	if (gl_round_down.value > 0 && 
@@ -465,7 +1098,7 @@ void ComputeScaledSize( int* wscale, int* hscale, int width, int height )
 		(gl_round_down.value == 1 || (scaled_width - width) > (scaled_width >> (int)gl_round_down.value)))
 		scaled_width >>= 1;
 
-	for (scaled_height = 1; scaled_height < height; scaled_height <<= 1) 
+	for (scaled_height = 1; scaled_height < height; scaled_height <<= 1)
 		;
 
 	if (gl_round_down.value > 0 && 
@@ -475,19 +1108,30 @@ void ComputeScaledSize( int* wscale, int* hscale, int width, int height )
 
 	if (wscale)
 		*wscale = min(scaled_width >> (int)gl_picmip.value, (int)gl_max_size.value);
-
 	if (hscale)
 		*hscale = min(scaled_height >> (int)gl_picmip.value, (int)gl_max_size.value);
 }
 
 //====================================================================
 
+/*
+================
+GL_FindTexture
+================
+*/
+int GL_FindTexture( char* identifier )
+{
+	int		i;
+	gltexture_t* glt;
 
-// TODO: Implement
+	for (i = 0, glt = gltextures; i < numgltextures; i++, glt++)
+	{
+		if (!strcmp(identifier, glt->identifier))
+			return glt->texnum;
+	}
 
-
-
-
+	return -1;
+}
 
 /*
 ================
@@ -521,7 +1165,7 @@ void GL_ResampleTexture( unsigned int* in, int inwidth, int inheight, unsigned i
 	{
 		inrow = in + inwidth * (int)((i + 0.25) * inheight / outheight);
 		inrow2 = in + inwidth * (int)((i + 0.75) * inheight / outheight);
-		
+
 		for (j = 0; j < outwidth; j++)
 		{
 			pix1 = (byte*)inrow + p1[j];
@@ -543,8 +1187,6 @@ GL_ResampleAlphaTexture
 */
 void GL_ResampleAlphaTexture( byte* in, int inwidth, int inheight, byte* out, int outwidth, int outheight )
 {
-	// TODO: Copy-pasted from 8684
-
 	int		i, j;
 	byte* inrow, * inrow2;
 	unsigned	frac, fracstep;
@@ -587,8 +1229,6 @@ void GL_ResampleAlphaTexture( byte* in, int inwidth, int inheight, byte* out, in
 
 void GL_ResampleTexturePoint( byte* in, int inwidth, int inheight, byte* out, int outwidth, int outheight )
 {
-	// TODO: Copy-pasted from 8684
-
 	int i, j;
 	unsigned ufrac, vfrac;
 	unsigned ufracstep, vfracstep;
@@ -645,12 +1285,8 @@ void GL_MipMap( byte* in, int width, int height )
 	}
 }
 
-
-
 void BoxFilter3x3( byte* out, byte* in, int w, int h, int x, int y )
 {
-	// TODO: Copy-pasted from 8684
-
 	int		i, j;
 	int		a = 0, r = 0, g = 0, b = 0;
 	int		count = 0, acount = 0;
@@ -702,6 +1338,9 @@ void GL_Upload32( unsigned int* data, int width, int height, qboolean mipmap, in
 	int			scaled_width, scaled_height;
 	qboolean	f4444 = FALSE;
 
+	if (vid_d3d.value && TEX_IS_ALPHA(iType))
+		f4444 = TRUE;
+
 	giTotalTexBytes += height * width;
 
 	if (iType != TEX_TYPE_LUM)
@@ -748,15 +1387,7 @@ void GL_Upload32( unsigned int* data, int width, int height, qboolean mipmap, in
 	{
 		if (!mipmap)
 		{
-			if (f4444)
-			{
-				Download4444();
-			}
-
-			{
-				// JAY: No paletted textures for now
-				qglTexImage2D(GL_TEXTURE_2D, GL_ZERO, iComponent, scaled_width, scaled_height, GL_ZERO, iFormat, GL_UNSIGNED_BYTE, data);
-			}
+			qglTexImage2D(GL_TEXTURE_2D, GL_ZERO, iComponent, scaled_width, scaled_height, GL_ZERO, iFormat, GL_UNSIGNED_BYTE, data);
 			goto done;
 		}
 
@@ -784,18 +1415,16 @@ void GL_Upload32( unsigned int* data, int width, int height, qboolean mipmap, in
 	
 	if (mipmap)
 	{
-		int	miplevel = 0;
+		int		miplevel;
 
+		miplevel = 0;
 		while (scaled_width > 1 || scaled_height > 1)
 		{
 			GL_MipMap((byte*)scaled, scaled_width, scaled_height);
-
 			scaled_width >>= 1;
 			scaled_height >>= 1;
-
 			if (scaled_width < 1)
 				scaled_width = 1;
-
 			if (scaled_height < 1)
 				scaled_height = 1;
 
@@ -827,14 +1456,10 @@ done:
 /*
 ===============
 GL_Upload16
-
-Alpha textures require additional methods
 ===============
 */
 void GL_Upload16( unsigned char* data, int width, int height, qboolean mipmap, int iType, unsigned char* pPal )
 {
-	// TODO: Copy-pasted from 8684
-
 	static	unsigned	trans[640 * 480];		// FIXME, temporary
 	int			i, s;
 	qboolean noalpha = TRUE;
@@ -861,12 +1486,10 @@ void GL_Upload16( unsigned char* data, int width, int height, qboolean mipmap, i
 			{
 				p = data[i];
 				pb = (byte*)&trans[i];
-
 				pb[0] = pPal[765];
 				pb[1] = pPal[766];
 				pb[2] = pPal[767];
 				pb[3] = p;
-
 				noalpha = FALSE;
 			}
 		}
@@ -876,12 +1499,10 @@ void GL_Upload16( unsigned char* data, int width, int height, qboolean mipmap, i
 			{
 				p = data[i];
 				pb = (byte*)&trans[i];
-
-				pb[0] = pPal[p * 3 + 0];
+				pb[0] = pPal[p * 3];
 				pb[1] = pPal[p * 3 + 1];
 				pb[2] = pPal[p * 3 + 2];
 				pb[3] = p;
-
 				noalpha = FALSE;
 			}
 		}
@@ -898,12 +1519,11 @@ void GL_Upload16( unsigned char* data, int width, int height, qboolean mipmap, i
 					pb[1] = 0;
 					pb[2] = 0;
 					pb[3] = 0;
-
 					noalpha = FALSE;
 				}
 				else
 				{
-					pb[0] = pPal[p * 3 + 0];
+					pb[0] = pPal[p * 3];
 					pb[1] = pPal[p * 3 + 1];
 					pb[2] = pPal[p * 3 + 2];
 					pb[3] = 255;
@@ -919,13 +1539,36 @@ void GL_Upload16( unsigned char* data, int width, int height, qboolean mipmap, i
 		if (s & 3)
 			Sys_Error("GL_Upload16: s&3");
 
+		unsigned char r, g, b, * ppix;
+
 		if (gl_dither.value)
 		{
 			for (i = 0; i < s; i++)
 			{
-				unsigned char r, g, b;
-				unsigned char* ppix;
+				p = data[i];
+				pb = (byte*)&trans[i];
+				ppix = &pPal[p * 3];
+				r = ppix[0];
+				g = ppix[1];
+				b = ppix[2];
 
+				if (r < 252)
+					r += RandomLong(0, 3);
+				if (g < 252)
+					g += RandomLong(0, 3);
+				if (b < 252)
+					b += RandomLong(0, 3);
+
+				pb[0] = r;
+				pb[1] = g;
+				pb[2] = b;
+				pb[3] = 255;
+			}
+		}
+		else
+		{
+			for (i = 0; i < s; i++)
+			{
 				p = data[i];
 				pb = (byte*)&trans[i];
 				ppix = &pPal[p * 3];
@@ -939,20 +1582,10 @@ void GL_Upload16( unsigned char* data, int width, int height, qboolean mipmap, i
 				pb[3] = 255;
 			}
 		}
-		else
-		{
-			for (i = 0; i < s; i += 4)
-			{
-				trans[i + 0] = *(unsigned int*)&pPal[3 * data[i + 0]] | 0xFF000000;
-				trans[i + 1] = *(unsigned int*)&pPal[3 * data[i + 1]] | 0xFF000000;
-				trans[i + 2] = *(unsigned int*)&pPal[3 * data[i + 2]] | 0xFF000000;
-				trans[i + 3] = *(unsigned int*)&pPal[3 * data[i + 3]] | 0xFF000000;
-			}
-		}
 	}
 	else if (iType == TEX_TYPE_LUM)
 	{
-		Q_memcpy(trans, data, s);
+		memcpy(trans, data, s);
 	}
 	else
 	{
@@ -962,16 +1595,60 @@ void GL_Upload16( unsigned char* data, int width, int height, qboolean mipmap, i
 	GL_Upload32(trans, width, height, mipmap, iType);
 }
 
+void GL_PaletteInit( void )
+{
+	int i;
 
+	for (i = 0; i < 350; i++)
+	{
+		gGLPalette[i].tag = -1;
+	}
+}
 
+int GL_PaletteTag( byte* pPal )
+{
+	int tag;
+	int i;
 
+	tag = *pPal;
 
+	for (i = 0; i < 768; i++)
+	{
+		tag = (tag + pPal[1]) ^ *pPal;
+		pPal++;
+	}
 
+	if (tag < 0)
+		tag = -tag;
 
+	return tag;
+}
 
+int GL_PaletteEqual( byte* pPal1, int tag1, byte* pPal2, int tag2 )
+{
+	int i;
 
-// TODO: Implement
+	if (tag1 != tag2)
+		return FALSE;
 
+	for (i = 0; i < 768; i++)
+	{
+		if (pPal1[i] != pPal2[i])
+			return FALSE;
+	}
+
+	return TRUE;
+}
+
+void GL_PaletteClearSky( void )
+{
+	int i;
+
+	for (i = 344; i < 350; i++)
+	{
+		gGLPalette[i].tag = -1;
+	}
+}
 
 /*
 ===============
@@ -980,11 +1657,59 @@ GL_PaletteAdd
 */
 short GL_PaletteAdd( unsigned char* pPal, qboolean isSky )
 {
-	// TODO: Implement
-	return 0;
+	if (!qglColorTableEXT)
+		return -1;
+	
+	int i, tag;
+	int limit;
+
+	i = 0;
+	limit = 350;
+
+	tag = GL_PaletteTag(pPal);
+
+	if (isSky)
+		i = 344;
+	else
+		limit = 344;
+
+	for (; i < limit; i++)
+	{
+		if (gGLPalette[i].tag < 0)
+		{
+			memcpy(gGLPalette[i].colors, pPal, sizeof(gGLPalette[i].colors));
+			gGLPalette[i].tag = tag;
+			return i;
+		}
+
+		if (GL_PaletteEqual(pPal, tag, gGLPalette[i].colors, gGLPalette[i].tag))
+		{
+			return i;
+		}
+	}
+	
+	return -1;
 }
 
+int g_currentpalette = -1;
 
+void GL_PaletteSelect( int paletteIndex )
+{
+	if (g_currentpalette == paletteIndex)
+		return;
+
+	if (qglColorTableEXT)
+	{
+		g_currentpalette = paletteIndex;
+		qglColorTableEXT(GL_SHARED_TEXTURE_PALETTE_EXT, GL_RGB, 256, GL_RGB, GL_UNSIGNED_BYTE, gGLPalette[paletteIndex].colors);
+	}
+}
+
+/*
+================
+GL_LoadTexture
+================
+*/
 int GL_LoadTexture( char* identifier, GL_TEXTURETYPE textureType, int width, int height, unsigned char* data, int mipmap, int iType, unsigned char* pPal )
 {
 	int			i;
@@ -995,7 +1720,8 @@ int GL_LoadTexture( char* identifier, GL_TEXTURETYPE textureType, int width, int
 	glt = NULL;
 
 tryagain:
-	if (identifier[0] != 0)
+	// see if the texture is allready present
+	if (identifier[0])
 	{
 		for (i = 0; i < numgltextures; i++)
 		{
@@ -1040,11 +1766,11 @@ tryagain:
 		if (numgltextures >= MAX_GLTEXTURES)
 			Sys_Error("Texture Overflow: MAX_GLTEXTURES");
 
-		glt->texnum = texture_extension_number++;
+		glt->texnum = texture_extension_number;
+		texture_extension_number++;
 	}
 
 	strcpy(glt->identifier, identifier);
-
 	glt->width = width;
 	glt->height = height;
 	glt->mipmap = mipmap;
@@ -1068,7 +1794,7 @@ tryagain:
 	if (!mipmap)
 	{
 		unsigned char* pTexture = NULL;
-		byte scaled[16384];
+		byte scaled[128 * 128];
 
 		if (mustRescale)
 		{
@@ -1112,9 +1838,109 @@ tryagain:
 		return glt->texnum | ((glt->paletteIndex + 1) << 16);
 }
 
+/*
+================
+GL_LoadPicTexture
+================
+*/
+int GL_LoadPicTexture( qpic_t* pic, char* pszName )
+{
+	unsigned char* pPal;
 
+	pPal = &pic->data[pic->width * pic->height + 2];
 
+	return GL_LoadTexture(pszName, GLT_SYSTEM, pic->width, pic->height, pic->data, FALSE, TEX_TYPE_ALPHA, pPal);
+}
 
+qpic_t* LoadTransBMP( char* pszName )
+{
+	return LoadTransPic(pszName, (qpic_t*)W_GetLumpName(pszName));
+}
 
+qpic_t* LoadTransPic( char* pszName, qpic_t* ppic )
+{
+	int		i, width, height;
+	gltexture_t* glt;
+	int* pbuf;
+	byte* pPal;
+	glpic_t* gl;
+	qpic_t* ppicNew;
+
+	if (!ppic)
+		return NULL;
+
+	ppicNew = (qpic_t*)malloc(sizeof(qpic_t) + sizeof(glpic_t));
+	gl = (glpic_t*)ppicNew->data;
+
+	ppicNew->width = ppic->width;
+	ppicNew->height = ppic->height;
+
+tryagain:
+	// see if the texture is allready present
+	if (pszName[0])
+	{
+		for (i = 0, glt = gltextures; i < numgltextures; i++, glt++)
+		{
+			if (!strcmp(pszName, glt->identifier))
+			{
+				if (glt->width == ppic->width && glt->height == ppic->height)
+					return ppic;
+
+				pszName[3]++;
+				goto tryagain;	// check again
+			}
+		}
+	}
+	else
+	{
+		glt = &gltextures[numgltextures];
+	}
+
+	numgltextures++;
+
+	strcpy(glt->identifier, pszName);
+	glt->texnum = texture_extension_number;
+	glt->width = ppic->width;
+	glt->height = ppic->height;
+	glt->mipmap = FALSE;
+
+	GL_Bind(glt->texnum);
+
+	pbuf = (int*)malloc(ppic->width * ppic->height * sizeof(int));
+
+	pPal = &ppic->data[ppic->width * ppic->height + 2];
+
+	for (i = 0; i < 768; i++)
+	{
+		pPal[i] = texgammatable[pPal[i]];
+	}
+
+	width = ppic->width;
+	height = ppic->height;
+
+	for (i = 0; i < width * height; i++)
+	{
+		byte b = ppic->data[i];
+		pbuf[i] = *(uint32*)&pPal[b * 3] & 0xFFFFFF;
+		
+		if (b != 0xFF)
+		{
+			pbuf[i] |= 0xFF000000;
+		}
+	}
+
+	GL_Upload32((unsigned int*)pbuf, width, height, FALSE, TEX_TYPE_ALPHA);
+
+	gl->texnum = texture_extension_number;
+	texture_extension_number++;
+	gl->sl = 0;
+	gl->sh = 1;
+	gl->tl = 0;
+	gl->th = 1;
+
+	free(pbuf);
+
+	return ppicNew;
+}
 
 
