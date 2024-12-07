@@ -78,7 +78,6 @@
     <ClCompile Include="..\..\engine\CONSOLE.C" />
     <ClCompile Include="..\..\engine\crc.c" />
     <ClCompile Include="..\..\engine\cvar.c" />
-    <ClCompile Include="..\..\engine\decals.c" />
     <ClCompile Include="..\..\engine\host.c" />
     <ClCompile Include="..\..\engine\host_cmd.c" />
     <ClCompile Include="..\..\engine\HUD.c" />

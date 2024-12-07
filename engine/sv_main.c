@@ -1,6 +1,7 @@
 // sv_main.c -- server main program
 
 #include "quakedef.h"
+#include "decal.h"
 
 server_t		sv;
 server_static_t	svs;
@@ -10,6 +11,14 @@ server_static_t	svs;
 
 
 globalvars_t gGlobalVariables;
+
+decalname_t	sv_decalnames[MAX_BASE_DECALS];
+
+
+// TODO: Implement
+
+int			sv_decalnamecount;
+
 
 
 // TODO: Implement

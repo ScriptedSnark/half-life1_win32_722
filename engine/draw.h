@@ -48,6 +48,7 @@ typedef struct cachewad_s
 extern qfont_t* draw_creditsfont;
 extern qfont_t* draw_chars;
 extern qpic_t* draw_disc;	// also used on sbar
+extern qpic_t* draw_backtile;
 
 void	Decal_Init( void );
 

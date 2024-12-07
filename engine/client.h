@@ -6,6 +6,27 @@
 // TODO: Implement
 
 
+#define	MAX_SCOREBOARDNAME		32
+typedef struct player_info_s
+{
+	// TODO: Implement
+
+
+	// Name
+	char	name[MAX_SCOREBOARDNAME];
+
+
+	// TODO: Implement
+
+
+	customization_t customdata;
+
+
+	// TODO: Implement
+
+
+} player_info_t;
+
 //
 // client_state_t should hold all pieces of the client state
 //
@@ -95,6 +116,13 @@ typedef struct
 
 
 	struct model_s*	worldmodel;	// cl_entitites[0].model
+
+
+	// TODO: Implement
+
+
+// all player information
+	player_info_t	players[MAX_CLIENTS];
 
 
 	// TODO: Implement

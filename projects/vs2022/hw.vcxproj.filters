@@ -150,9 +150,6 @@
     <ClCompile Include="..\..\engine\HUD.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\engine\decals.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\engine\anorm_dots.h">
