@@ -85,6 +85,7 @@ typedef int (*pfnUserMsgHook)( const char* pszName, int iSize, void* pbuf );
 #include "const.h"
 #include "progs.h"
 #include "common.h"
+#include "modelgen.h"
 #include "bspfile.h"
 #include "dll_state.h"
 #include "eiface.h"

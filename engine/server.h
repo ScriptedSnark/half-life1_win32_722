@@ -31,7 +31,15 @@ typedef struct
 	qboolean	active;				// false if only a net client
 	qboolean	paused;				// are we paused?
 
+
 	// TODO: Implement
+
+
+	struct model_s*	worldmodel;			// cl_entitites[0].model
+
+
+	// TODO: Implement
+
 
 	int			num_edicts;
 	int			max_edicts;

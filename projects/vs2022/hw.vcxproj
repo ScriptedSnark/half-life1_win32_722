@@ -91,6 +91,7 @@
     <ClInclude Include="..\..\engine\input.h" />
     <ClInclude Include="..\..\engine\keys.h" />
     <ClInclude Include="..\..\engine\mathlib.h" />
+    <ClInclude Include="..\..\engine\modelgen.h" />
     <ClInclude Include="..\..\engine\net.h" />
     <ClInclude Include="..\..\engine\opengl2d3d.h" />
     <ClInclude Include="..\..\engine\profile.h" />
