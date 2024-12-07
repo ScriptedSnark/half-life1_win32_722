@@ -131,14 +131,10 @@ typedef int (*pfnUserMsgHook)( const char* pszName, int iSize, void* pbuf );
 #include "view.h"
 #include "crc.h"
 
-
-
 #ifdef GLQUAKE
 #include "qgl.h"
 #include "glquake.h"
 #endif
-
-
 
 //=============================================================================
 
@@ -160,9 +156,8 @@ typedef struct
 //=============================================================================
 
 
-//=============================================================================
 
-
+extern qboolean noclip_anglehack;
 
 
 //

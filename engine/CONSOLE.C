@@ -722,13 +722,13 @@ void Con_DrawConsole( int lines, qboolean drawinput )
 	if (lines <= 0)
 		return;
 
-	// draw the background
+// draw the background
 	Draw_ConsoleBackground(lines);
 
 	if ((giSubState & 4) || con_loading)
 		return;
 
-	// draw the text
+// draw the text
 	con_vislines = lines;
 
 	rows = (lines - 16) / draw_chars->rowheight;		// rows of text to draw
@@ -749,7 +749,7 @@ void Con_DrawConsole( int lines, qboolean drawinput )
 		}
 	}
 
-	// draw the input prompt, user text, and cursor if desired
+// draw the input prompt, user text, and cursor if desired
 	if (drawinput)
 		Con_DrawInput();
 }

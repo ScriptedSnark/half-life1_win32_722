@@ -37,6 +37,7 @@
     <ClCompile Include="..\..\engine\host.c" />
     <ClCompile Include="..\..\engine\host_cmd.c" />
     <ClCompile Include="..\..\engine\HUD.c" />
+    <ClCompile Include="..\..\engine\in_camera.c" />
     <ClCompile Include="..\..\engine\in_win.c" />
     <ClCompile Include="..\..\engine\KEYS.C" />
     <ClCompile Include="..\..\engine\mathlib.c" />
@@ -183,6 +184,7 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
+      <AdditionalDependencies>winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -201,6 +203,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
+      <AdditionalDependencies>winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

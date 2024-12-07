@@ -131,14 +131,34 @@ typedef struct
 } client_state_t;
 
 
-// TODO: Implement
+//
+// cvars
+//
+extern	cvar_t	cl_name;
+extern	cvar_t	cl_color;
 
+extern	cvar_t	cl_upspeed;
+extern	cvar_t	cl_forwardspeed;
+extern	cvar_t	cl_backspeed;
+extern	cvar_t	cl_sidespeed;
+
+extern	cvar_t	cl_movespeedkey;
+
+extern	cvar_t	cl_yawspeed;
+extern	cvar_t	cl_pitchspeed;
 
 
 extern	cvar_t	lookspring;
-// TODO: Implement
+extern	cvar_t	lookstrafe;
 extern	cvar_t	sensitivity;
 
+extern	cvar_t	m_pitch;
+extern	cvar_t	m_yaw;
+extern	cvar_t	m_forward;
+extern	cvar_t	m_side;
+
+extern	cvar_t	cl_pitchup;
+extern	cvar_t	cl_pitchdown;
 
 // TODO: Implement
 

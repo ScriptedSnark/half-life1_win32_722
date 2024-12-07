@@ -2,6 +2,7 @@
 #include "winquake.h"
 
 int	gHostSpawnCount = 0;
+qboolean noclip_anglehack;
 
 DLL_EXPORT BOOL SaveGame( char* pszSlot, char* pszComment )
 {

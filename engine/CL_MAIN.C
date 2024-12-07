@@ -4,8 +4,16 @@
 #include "winquake.h"
 
 cvar_t	lookspring = { "lookspring", "0", TRUE };
-// TODO: Implement
+cvar_t	lookstrafe = { "lookstrafe", "0", TRUE };
 cvar_t	sensitivity = { "sensitivity", "3", TRUE };
+
+// TODO: Implement
+
+cvar_t	m_pitch = { "m_pitch", "0.022", TRUE };
+cvar_t	m_yaw = { "m_yaw", "0.022", TRUE };
+cvar_t	m_forward = { "m_forward", "1", TRUE };
+cvar_t	m_side = { "m_side", "0.8", TRUE };
+
 
 client_static_t	cls;
 client_state_t cl;
