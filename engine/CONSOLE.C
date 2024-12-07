@@ -747,7 +747,6 @@ void Con_DrawConsole( int lines, qboolean drawinput )
 		{
 			x += Draw_Character(x, y, text[charpos]);
 		}
-		y += draw_chars->rowheight;
 	}
 
 	// draw the input prompt, user text, and cursor if desired
