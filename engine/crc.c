@@ -2,7 +2,6 @@
 #include "quakedef.h"
 #include "crc.h"
 #include "common.h"
-#include "bspfile.h"
 
 #define CRC32_INIT_VALUE 0xFFFFFFFFUL
 #define CRC32_XOR_VALUE  0xFFFFFFFFUL

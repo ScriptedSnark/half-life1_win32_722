@@ -8,7 +8,7 @@
 
 
 
-cachewad_t menu_wad;
+
 
 
 void Draw_CacheWadInit( char* name, int cacheMax, cachewad_t* wad )

@@ -55,9 +55,19 @@
 // fall over
 #define	ROLL	2
 
-
+// SYSTEM INFO
 #define	MAX_QPATH		64			// max length of a quake game pathname
 #define	MAX_OSPATH		128			// max length of a filesystem pathname
+
+#define ON_EPSILON		0.1		// point on plane side epsilon
+
+
+// Resource counts
+
+
+
+#define MAX_BASE_DECALS_INDEX_BITS	9
+#define MAX_BASE_DECALS				(1<<MAX_BASE_DECALS_INDEX_BITS)
 
 
 #define	MAX_SFX				512
@@ -75,6 +85,7 @@ typedef int (*pfnUserMsgHook)( const char* pszName, int iSize, void* pbuf );
 #include "const.h"
 #include "progs.h"
 #include "common.h"
+#include "bspfile.h"
 #include "dll_state.h"
 #include "eiface.h"
 #include "pr_dlls.h"

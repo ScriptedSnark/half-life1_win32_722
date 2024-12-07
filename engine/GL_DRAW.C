@@ -65,8 +65,6 @@ int		pic_texels;
 int		pic_count;
 
 
-cachewad_t custom_wad;
-
 typedef struct
 {
 	int			texnum;
@@ -84,8 +82,14 @@ int			numgltextures;
 float		chars_xsize, chars_ysize;
 float		creditsfont_ysize;
 
-void GL_PaletteInit( void );
-void GL_PaletteSelect( int paletteIndex );
+char		decal_names[MAX_BASE_DECALS][16];
+
+cachewad_t	decal_wad;
+cachewad_t	custom_wad;
+cachewad_t	menu_wad;
+
+void	GL_PaletteInit( void );
+void	GL_PaletteSelect( int paletteIndex );
 
 qpic_t* LoadTransBMP( char* pszName );
 qpic_t* LoadTransPic( char* pszName, qpic_t* ppic );
@@ -314,6 +318,8 @@ void Draw_TextureMode_f( void )
 // called from cl_parse.c and host.c
 void Decal_Init( void )
 {
+	Draw_CacheWadInit("decals.wad", 512, &decal_wad);
+
 	// TODO: Implement
 }
 
@@ -332,7 +338,8 @@ void Draw_Init( void )
 	Draw_CacheWadInit("cached.wad", 16, &menu_wad);
 	menu_wad.tempWad = TRUE;
 
-	// TODO: Implement
+	Draw_CacheWadHandler(&decal_wad, Draw_MiptexTexture, MIP_EXTRASIZE);
+	Draw_CacheWadHandler(&custom_wad, Draw_MiptexTexture, MIP_EXTRASIZE);
 
 	Cvar_RegisterVariable(&gl_nobind);
 	Cvar_RegisterVariable(&gl_max_size);
@@ -340,7 +347,9 @@ void Draw_Init( void )
 	Cvar_RegisterVariable(&gl_picmip);
 	Cvar_RegisterVariable(&gl_palette_tex);
 
-	// TODO: Implement
+	GL_PaletteInit();
+
+	memset(decal_names, 0, sizeof(decal_names));
 
 	Cmd_AddCommand("gl_texturemode", Draw_TextureMode_f);
 	Cmd_AddCommand("gl_texels", GL_Texels_f);
@@ -1941,6 +1950,57 @@ tryagain:
 	free(pbuf);
 
 	return ppicNew;
+}
+
+/*
+===============
+Draw_MiptexTexture
+
+===============
+*/
+void Draw_MiptexTexture( cachewad_t* wad, byte* data )
+{	
+	texture_t* tex;
+	miptex_t* mip, tmp;
+	int			i, pix, paloffset, palettesize;
+	byte* pal, * bitmap;
+
+	if (wad->cacheExtra != MIP_EXTRASIZE)
+		Sys_Error("Draw_MiptexTexture: Bad cached wad %s\n", wad->name);
+
+	mip = (miptex_t*)(data + wad->cacheExtra);
+	tmp = *mip;
+
+	tex = (texture_t*)data;
+	memcpy(tex->name, tmp.name, sizeof(tex->name));
+
+	tex->width = LittleLong(tmp.width);
+	tex->height = LittleLong(tmp.height);
+	tex->anim_max = 0;
+	tex->anim_min = 0;
+	tex->anim_total = 0;
+	tex->alternate_anims = NULL;
+	tex->anim_next = NULL;
+
+	for (i = 0; i < MIPLEVELS; i++)
+		tex->offsets[i] = LittleLong(tmp.offsets[i]) + wad->cacheExtra;
+
+	pix = tex->width * tex->height;
+	palettesize = tex->offsets[0];
+	paloffset = palettesize + pix + (pix >> 2) + (pix >> 4) + (pix >> 6) + 2;
+	pal = (byte*)tex + paloffset;
+	bitmap = (byte*)tex + palettesize;
+
+	if (pal[765] || pal[766] || pal[767] != 255)
+	{
+		tex->name[0] = '}';
+		tex->gl_texturenum = GL_LoadTexture(tex->name, GLT_DECAL, tex->width, tex->height, bitmap, TRUE, TEX_TYPE_ALPHA_GRADIENT, pal);
+	}
+	else
+	{
+		tex->name[0] = '{';
+		tex->gl_texturenum = GL_LoadTexture(tex->name, GLT_DECAL, tex->width, tex->height, bitmap, TRUE, TEX_TYPE_ALPHA, pal);
+	}
 }
 
 

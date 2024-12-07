@@ -49,8 +49,6 @@ extern qfont_t* draw_creditsfont;
 extern qfont_t* draw_chars;
 extern qpic_t* draw_disc;	// also used on sbar
 
-extern cachewad_t menu_wad;
-
 void	Decal_Init( void );
 
 void	Draw_Init( void );
