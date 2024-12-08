@@ -13,7 +13,7 @@ typedef struct server_static_s
 
 	int			maxclients;				// Current max #
 
-	int stub_var;
+	
 } server_static_t;
 
 //=============================================================================
@@ -57,9 +57,15 @@ typedef struct client_s
 	qboolean spawned;					// false = don't send datagrams
 
 
+	// TODO: Implement
+
+
+	double rate;						// seconds / byte
 
 
 	// TODO: Implement
+
+
 } client_t;
 
 

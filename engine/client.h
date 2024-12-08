@@ -57,6 +57,13 @@ typedef struct
 	// TODO: Implement
 
 
+// Our sequenced channel to the remote server.
+	netchan_t   netchan;
+
+
+	// TODO: Implement
+
+
 	qboolean	demorecording;
 	qboolean	demoplayback;
 	qboolean	timedemo;

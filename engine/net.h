@@ -8,6 +8,10 @@
 
 #define	PORT_ANY	-1
 
+#define	MIN_RATE		100
+#define DEFAULT_RATE	9999 // Default data rate
+#define	MAX_RATE		10000
+
 typedef enum netsrc_s
 {
 	NS_CLIENT,
@@ -33,15 +37,30 @@ typedef struct netadr_s
 	unsigned short	port;
 } netadr_t;
 
-
-// Max length of a reliable message
-#define MAX_MSGLEN				7500 // 10 reserved for fragheader?
-
-
+extern	netadr_t	net_local_adr;
+extern	netadr_t	net_from;		// address of who sent the packet
 extern	sizebuf_t	net_message;
+
+// Net graph
+void		SCR_InitNetGraph( void );
+
+// Start up networking
+void		NET_Init( void );
+
+
+// Send packet over network layer
+void		NET_SendPacket( netsrc_t sock, int length, void* data, netadr_t to );
+// Start up/shut down sockets layer
+void		NET_Config( qboolean multiplayer );
+
+// Compare addresses
+qboolean	NET_CompareAdr( netadr_t a, netadr_t b );
+// Address conversion
+char*		NET_AdrToString( netadr_t a );
 
 //============================================================================
 
+#define	OLD_AVG		0.99		// total = oldtotal*OLD_AVG + new*(1-OLD_AVG)
 
 #define	MAX_LATENT	32
 
@@ -97,25 +116,17 @@ typedef struct netchan_s
 	double		outgoing_time[MAX_LATENT];
 } netchan_t;
 
-// Net graph
-void		SCR_InitNetGraph( void );
-
-// Start up networking
-void		NET_Init( void );
-
-
-
-// Start up/shut down sockets layer
-void		NET_Config( qboolean multiplayer );
-
-
-
-
-
+extern	int	net_drop;		// packets dropped before this one
 
 // Initialize subsystem
 void	Netchan_Init( void );
+void	Netchan_Transmit( netchan_t* chan, int length, byte* data );
+void	Netchan_OutOfBand( netsrc_t sock, netadr_t adr, int length, byte* data );
+void	Netchan_OutOfBandPrint( netsrc_t sock, netadr_t adr, char* format, ... );
+qboolean Netchan_Process( netchan_t* chan );
+void	Netchan_Setup( netsrc_t socketnumber, netchan_t* chan, netadr_t adr );
 
-
+qboolean Netchan_CanPacket( netchan_t* chan );
+qboolean Netchan_CanReliable( netchan_t* chan );
 
 #endif // NET_H
