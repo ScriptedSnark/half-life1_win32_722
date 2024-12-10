@@ -4,8 +4,6 @@
 #include "winquake.h"
 #endif
 
-#define	PACKET_HEADER	8
-
 /*
 
 packet header

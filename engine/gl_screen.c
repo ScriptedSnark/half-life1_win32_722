@@ -311,7 +311,7 @@ void SCR_Init( void )
 	Cvar_RegisterVariable(&scr_graphhigh);
 	Cvar_RegisterVariable(&scr_graphmean);
 
-	SCR_InitNetGraph();
+	NET_InitColors();
 
 //
 // register our commands

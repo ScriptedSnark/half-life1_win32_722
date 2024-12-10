@@ -12,11 +12,12 @@
 #define DEFAULT_RATE	9999 // Default data rate
 #define	MAX_RATE		10000
 
+#define	PACKET_HEADER	8
+
 typedef enum netsrc_s
 {
 	NS_CLIENT,
-	NS_SERVER,
-	NS_MULTICAST	// xxxMO
+	NS_SERVER
 } netsrc_t;
 
 typedef enum
@@ -41,13 +42,17 @@ extern	netadr_t	net_local_adr;
 extern	netadr_t	net_from;		// address of who sent the packet
 extern	sizebuf_t	net_message;
 
+extern	cvar_t	host_name;
+
 // Net graph
-void		SCR_InitNetGraph( void );
+void		NET_InitColors( void );
 
 // Start up networking
 void		NET_Init( void );
-
-
+// Shut down networking
+void		NET_Shutdown( void );
+// Retrieve packets from network layer
+qboolean	NET_GetPacket( netsrc_t sock );
 // Send packet over network layer
 void		NET_SendPacket( netsrc_t sock, int length, void* data, netadr_t to );
 // Start up/shut down sockets layer
@@ -55,8 +60,13 @@ void		NET_Config( qboolean multiplayer );
 
 // Compare addresses
 qboolean	NET_CompareAdr( netadr_t a, netadr_t b );
+qboolean	NET_CompareClassBAdr( netadr_t a, netadr_t b );
 // Address conversion
 char*		NET_AdrToString( netadr_t a );
+char*		NET_BaseAdrToString( netadr_t a );
+qboolean	NET_StringToSockaddr( char* s, struct sockaddr* sadr );
+qboolean	NET_StringToAdr( char* s, netadr_t* a );
+qboolean	NET_IsLocalAddress( netadr_t adr );
 
 //============================================================================
 

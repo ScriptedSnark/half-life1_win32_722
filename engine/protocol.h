@@ -8,6 +8,13 @@
 
 
 
+#define PORT_CLIENT		"27005"     // Must use atoi to convert to integer
+#define PORT_SERVER		"27015"     //  "
+
+
+
+
+
 //==============================================
 
 // if the high bit of the client to server byte is set, the low bits are
@@ -21,6 +28,7 @@
 #define	CM_UP		(1<<5)
 #define	CM_BUTTONS	(1<<6)
 #define	CM_IMPULSE	(1<<7)
+
 
 
 
