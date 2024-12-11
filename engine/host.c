@@ -115,7 +115,7 @@ Host_InitLocal
 */
 void Host_InitLocal( void )
 {
-	// TODO: Implement
+	Host_InitCommands();
 
 	Cvar_RegisterVariable(&maxfps);
 	Cvar_RegisterVariable(&host_framerate);

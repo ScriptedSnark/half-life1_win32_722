@@ -181,6 +181,7 @@ extern	double		realtime;			// not bounded in any way, changed at
 
 
 
+void Host_InitCommands( void );
 int Host_Init( quakeparms_t* parms );
 DLL_EXPORT void Host_Shutdown( void );
 

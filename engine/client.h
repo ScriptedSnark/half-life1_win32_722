@@ -116,7 +116,11 @@ typedef struct
 
 	// TODO: Implement
 
+	// Client clock
 	double		time;
+
+	// Old Client clock
+	double		oldtime;
 
 
 	// TODO: Implement
@@ -184,6 +188,9 @@ void	CL_DecayLights( void );
 void CL_Init( void );
 
 
+void CL_Disconnect( void );
+
+
 void CL_UpdateSoundFade( void );
 
 
@@ -231,6 +238,10 @@ void CL_EmitEntities( void );
 void CL_PredictMove( void );
 
 
+//
+// cl_parse.c
+//
+void CL_ParseServerMessage( void );
 
 
 
