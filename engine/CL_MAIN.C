@@ -4,6 +4,12 @@
 #include "winquake.h"
 
 
+// Only send this many requests before timing out.
+#define CL_CONNECTION_RETRIES		4
+
+
+
+
 cvar_t	cl_timeout = { "cl_timeout", "305", TRUE };
 cvar_t	cl_shownet = { "cl_shownet", "0" };
 
@@ -19,6 +25,15 @@ cvar_t	m_pitch = { "m_pitch", "0.022", TRUE };
 cvar_t	m_yaw = { "m_yaw", "0.022", TRUE };
 cvar_t	m_forward = { "m_forward", "1", TRUE };
 cvar_t	m_side = { "m_side", "0.8", TRUE };
+
+
+
+
+
+cvar_t	cl_resend = { "cl_resend", "3.0" };
+
+
+
 
 
 client_static_t	cls;
@@ -288,7 +303,74 @@ Resend a connect message if the last one has timed out
 */
 void CL_CheckForResend( void )
 {
-	// TODO: Implement
+	netadr_t	adr;
+	char	data[2048];
+	char szServerName[128];
+
+	if (cls.state == ca_disconnected && sv.active)
+	{
+		cls.state = ca_connecting;
+		strncpy(cls.servername, "localhost", sizeof(cls.servername) - 1);
+		CL_SendConnectPacket();
+		return;
+	}
+
+	// resend if we haven't gotten a reply yet
+	// We only resend during the connection process.
+	if (cls.state != ca_connecting)
+		return;
+
+	if (cl_resend.value < 1.5)
+		Cvar_SetValue("cl_resend", 1.5);
+	else if (cl_resend.value > 20.0)
+		Cvar_SetValue("cl_resend", 20.0);
+
+	// Wait at least the resend # of seconds.
+	if ((realtime - cls.connect_time) < cl_resend.value)
+		return;
+
+	strncpy(szServerName, cls.servername, sizeof(szServerName));
+
+	// Deal with local connection.
+	if (!_stricmp(cls.servername, "local"))
+		sprintf(szServerName, "%s", "localhost");
+
+	if (!NET_StringToAdr(szServerName, &adr))
+	{
+		Con_Printf("Bad server address\n");
+		cls.state = ca_disconnected;
+		return;
+	}
+
+	// Only retry so many times before failure.
+	if (cls.connect_retry >= CL_CONNECTION_RETRIES)
+	{
+		Con_Printf("Connection failed after %i retries.\n", cls.connect_retry);
+		cls.connect_time = -99999.0;
+		cls.connect_retry = 0;
+		cls.state = ca_disconnected;
+		return;
+	}
+
+	// Mark time of this attempt.
+	cls.connect_time = realtime;	// for retransmit requests
+
+	// Display appropriate message
+	if (_stricmp(szServerName, "localhost"))
+	{
+		if (cls.connect_retry == 0)
+			Con_Printf("Connecting to %s...\n", szServerName);			
+		else
+			Con_Printf("Retrying %s...\n", szServerName);
+	}
+
+	cls.connect_retry++;
+
+	// Request another challenge value.
+	sprintf(data, "%c%c%c%cgetchallenge\n", 255, 255, 255, 255);
+
+	// Send the request.
+	NET_SendPacket(NS_CLIENT, strlen(data), data, adr);
 }
 
 /*
