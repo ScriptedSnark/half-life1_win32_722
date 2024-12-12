@@ -38,6 +38,31 @@ void CL_UpdateSoundFade( void )
 	// TODO: Implement
 }
 
+/*
+=================
+CL_ParseMOTD
+
+=================
+*/
+void CL_ParseMOTD( void )
+{
+	// TODO: Implement
+}
+
+/*
+=================
+CL_ParseServerInfoResponse
+
+=================
+*/
+void CL_ParseServerInfoResponse( void )
+{
+	// TODO: Implement
+}
+
+
+// TODO: Implement
+
 
 /*
 =================
@@ -48,22 +73,88 @@ Responses to broadcasts, etc
 */
 void CL_ConnectionlessPacket( void )
 {
-//	int		c;
-//	char	data[6];
-//
-//	MSG_BeginReading();
-//	MSG_ReadLong();        // skip the -1 marker
-//
-//	c = MSG_ReadByte();
-//
-//	switch (c)
-//	{
-//		// TODO: Implement
-//
-//	default:
-//		Con_Printf("Unknown command:\n%c\n", c);
-//		break;
-//	}
+	int		c;
+	byte	data[6];
+
+	MSG_BeginReading();
+	MSG_ReadLong();        // skip the -1 marker
+
+	c = MSG_ReadByte();
+
+	switch (c)
+	{
+	case S2C_CONNECTION:
+		// Already connected?
+		if (cls.state == ca_connected)
+		{
+			if (!cls.demoplayback)
+			{
+				Con_Printf("Duplicate connect ack. received.  Ignored.\n");
+			}
+		}
+		else
+		{
+			// Initiate the network channel
+			Netchan_Setup(NS_CLIENT, &cls.netchan, net_from);
+
+			// Signon process will commence now that server ok'd connection.
+			MSG_WriteChar(&cls.netchan.message, clc_stringcmd);
+			MSG_WriteString(&cls.netchan.message, "new");
+
+			// Report connection success.
+			if (_stricmp("loopback", NET_AdrToString(net_from)))
+				Con_Printf("Connection accepted by %s\n", NET_AdrToString(net_from));
+			else
+				Con_DPrintf("Connection accepted.\n");
+
+			// Bump connection time to now so we don't resend a connection
+			// Request
+			cls.connect_time = realtime;
+
+			// Mark client as connected
+			cls.state = ca_connected;
+
+			// Not in the demo loop now
+			cls.demonum = -1;
+			// Need all the signon messages before playing ( or drawing first frame )
+			cls.signon = 0;
+
+			memset(cls.trueaddress, 0, sizeof(cls.trueaddress));
+		}
+		break;
+
+	case S2C_CHALLENGE:
+		cls.challenge = BigLong(MSG_ReadLong());
+		CL_SendConnectPacket();
+		break;
+
+	case A2C_PRINT:
+		Con_Printf(MSG_ReadString());
+		break;
+
+	// ping from somewhere
+	case A2A_PING:
+		data[0] = 0xFF;
+		data[1] = 0xFF;
+		data[2] = 0xFF;
+		data[3] = 0xFF;
+		data[4] = A2A_ACK;
+		data[5] = 0;
+		NET_SendPacket(NS_CLIENT, sizeof(data), data, net_from);
+		break;
+
+	case S2A_INFO:
+		CL_ParseServerInfoResponse();
+		break;
+
+	case M2A_MOTD:
+		CL_ParseMOTD();
+		break;
+
+	default:
+		Con_Printf("Unknown command:\n%c\n", c);
+		break;
+	}
 }
 
 /*
@@ -172,6 +263,20 @@ void CL_Disconnect( void )
 	// TODO: Implement
 }
 
+
+/*
+=================
+CL_SendConnectPacket
+
+called by CL_Connect and CL_CheckResend
+If we are in ca_connecting state and we have gotten a challenge
+  response before the timeout, send another "connect" request.
+=================
+*/
+void CL_SendConnectPacket( void )
+{
+	// TODO: Implement
+}
 
 
 /*

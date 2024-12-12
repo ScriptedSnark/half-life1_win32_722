@@ -34,6 +34,9 @@ typedef struct player_info_s
 #define	SIGNONS		3			// signon messages to receive before connected
 
 
+#define	MAX_MAPSTRING	2048
+#define	MAX_DEMOS		32
+#define	MAX_DEMONAME	16
 
 typedef enum
 {
@@ -60,25 +63,47 @@ typedef struct
 // Our sequenced channel to the remote server.
 	netchan_t   netchan;
 
+// Connection to server.
+	double		connect_time;		// If gap of connect_time to realtime > 3000, then resend connect packet
+
+	int			connect_retry;      // After CL_CONNECTION_RETRIES, give up...
+
+	int			challenge;			// from the server to use for connecting
+
+	qboolean	spectator;			// TRUE if connected as spectator
+
+	char		trueaddress[32];
+
+	float		slist_time;
+
+// connection information
+	int			signon;			// 0 to SIGNONS
+
+	char		servername[128];	// name of server from original connect
+	char		mapstring[MAX_QPATH];
+
+	char		spawnparams[MAX_MAPSTRING];
+
+// demo loop control
+	int			demonum;							// -1 = don't play demos
+	char		demos[MAX_DEMOS][MAX_DEMONAME];	// when not playing
+
+	// demo recording info must be here, because record is started before
+	// entering a map (and clearing client_state_t)
+	qboolean	demorecording;
+	qboolean	demoplayback;
+	qboolean	timedemo;
+
+
 
 	// TODO: Implement
 
 
-	qboolean	demorecording;
-	qboolean	demoplayback;
-	qboolean	timedemo;
 	float		demostarttime;
 	int			demostartframe;
 	int			forcetrack; //FF: totally unsure about this field!
 	FILE*		demofile;
 	void*		demoheader;
-
-
-	// TODO: Implement
-
-
-// connection information
-	int			signon;			// 0 to SIGNONS
 
 
 	// TODO: Implement

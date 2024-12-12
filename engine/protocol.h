@@ -8,8 +8,61 @@
 
 
 
+//=========================================
+
+// out of band message id bytes
+
+// M = master, S = server, C = client, A = any
+// the second character will allways be \n if the message isn't a single
+// byte long (?? not true anymore?)
+
+// Client connection is initiated by requesting a challenge value
+//  the server sends this value back
+#define S2C_CHALLENGE			'A'	// + challenge value
+
+// Send a userid, client remote address, is this server secure and engine build number
+#define S2C_CONNECTION			'B'
+
+
+
+
+// Response to server info requests
+#define S2A_INFO				'C' // + Address, hostname, map, gamedir, gamedescription, active players, maxplayers, protocol
+
+
+
+
+
+// Generic Ping Request
+#define A2A_PING				'i'	// respond with an A2A_ACK
+
+// Generic Ack
+#define A2A_ACK					'j'	// general acknowledgement without info
+
+// Print to client console.
+#define	A2C_PRINT				'l'	// print a message on client
+
+
+
+
+
+// MOTD response HLMaster
+#define	M2A_MOTD				'h'
+
+
+
+
+
 #define PORT_CLIENT		"27005"     // Must use atoi to convert to integer
 #define PORT_SERVER		"27015"     //  "
+
+
+
+
+//
+// client to server
+//
+#define	clc_stringcmd			4		// [string] message
 
 
 
