@@ -2,6 +2,7 @@
 
 #include "quakedef.h"
 #include "winquake.h"
+#include "crc.h"
 
 
 // Only send this many requests before timing out.
@@ -278,6 +279,59 @@ void CL_Disconnect( void )
 	// TODO: Implement
 }
 
+
+
+
+// HL1 CD Key
+#define GUID_LEN 13
+
+/*
+=================
+CL_GetCDKeyHash
+
+Connections will now use a hashed cd key value
+A LAN server will know not to allows more then xxx users with the same CD Key
+=================
+*/
+char* CL_GetCDKeyHash( void )
+{
+	char szKeyBuffer[256]; // Keys are about 13 chars long.	
+	static char szHashedKeyBuffer[256];
+	int nKeyLength = GUID_LEN;
+	int bDedicated = 0;
+	MD5Context_t ctx;
+	unsigned char digest[16]; // The MD5 Hash
+
+	// Get the cd key.
+	Launcher_GetCDKey(szKeyBuffer, &nKeyLength, &bDedicated);
+
+	// A dedicated server
+	if (bDedicated)
+	{
+		Con_Printf("Key has no meaning on dedicated server...\n");
+		return "";
+	}
+
+	if (nKeyLength <= 0 ||
+		nKeyLength >= 256)
+	{
+		Con_Printf("Bogus key length on CD Key...\n");
+		return "";
+	}
+
+	szKeyBuffer[nKeyLength] = 0;
+
+	// Now get the md5 hash of the key
+	memset(&ctx, 0, sizeof(ctx));
+	memset(digest, 0, sizeof(digest));
+
+	MD5Init(&ctx);
+	MD5Update(&ctx, (unsigned char*)szKeyBuffer, nKeyLength);
+	MD5Final(digest, &ctx);
+	memset(szHashedKeyBuffer, 0, sizeof(szHashedKeyBuffer));
+	strcpy(szHashedKeyBuffer, MD5_Print(digest));
+	return szHashedKeyBuffer;
+}
 
 /*
 =================
