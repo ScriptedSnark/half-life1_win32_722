@@ -94,3 +94,6 @@ void	(*CDAudio_Play)( int track, int looping );
 void	(*CDAudio_Pause)( void );
 void	(*CDAudio_Resume)( void );
 void	(*CDAudio_Update)( void );
+
+void	(*Launcher_InitCmds)( void );
+void	(*Launcher_GetCDKey)( char* pszCDKey, int* nLength, int* bDedicated );

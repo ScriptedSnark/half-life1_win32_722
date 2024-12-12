@@ -10,9 +10,17 @@
 
 
 
+// these two are not intended to be set directly
+cvar_t	cl_name = { "_cl_name", "player", TRUE };
+
 
 cvar_t	cl_timeout = { "cl_timeout", "305", TRUE };
 cvar_t	cl_shownet = { "cl_shownet", "0" };
+
+
+
+cvar_t	cl_spectator_password = { "cl_spectator_password", "0" };
+
 
 
 
@@ -344,7 +352,60 @@ If we are in ca_connecting state and we have gotten a challenge
 */
 void CL_SendConnectPacket( void )
 {
-	// TODO: Implement
+	netadr_t adr;
+	char	data[2048];
+	char szServerName[128];
+
+	strncpy(szServerName, cls.servername, sizeof(szServerName));
+
+	// Deal with local connection
+	if (!_strcmpi(cls.servername, "local"))
+	{
+		sprintf(szServerName, "%s", "localhost");
+	}
+
+	if (!NET_StringToAdr(szServerName, &adr))
+	{
+		Con_Printf("Bad server address\n");
+		cls.connect_time = -99999.0;
+		cls.connect_retry = 0;
+		cls.state = ca_disconnected;
+		return;
+	}
+
+	if (adr.port == (unsigned short)0)
+	{
+		adr.port = BigShort((unsigned short)atoi(PORT_SERVER));
+	}
+
+	if (strlen(cls.trueaddress) == 0)
+		strcpy(cls.trueaddress, "0");
+
+	if (cls.spectator)
+	{
+		sprintf(data, "%c%c%c%cconnect %i %i \"%s\" %i %i \"%s\" \"%s\" \"%s\"", 255, 255, 255, 255,
+			PROTOCOL_VERSION,
+			cls.challenge,
+			cl_name.string,
+			2,
+			strlen(CL_GetCDKeyHash()),
+			CL_GetCDKeyHash(),
+			cls.trueaddress,
+			cl_spectator_password.string);  // Send protocol and challenge value
+	}
+	else
+	{
+		sprintf(data, "%c%c%c%cconnect %i %i \"%s\" %i %i \"%s\" \"%s\"\n", 255, 255, 255, 255,
+			PROTOCOL_VERSION,
+			cls.challenge,
+			cl_name.string,
+			2,
+			strlen(CL_GetCDKeyHash()),
+			CL_GetCDKeyHash(),
+			cls.trueaddress);  // Send protocol and challenge value
+	}
+
+	NET_SendPacket(NS_CLIENT, strlen(data), data, adr);
 }
 
 

@@ -62,8 +62,6 @@ cvar_t	developer = { "developer", "0" };
 
 void Profile_Init( void );
 
-extern void	(*Launcher_InitCmds)( void );
-
 
 // TODO: Implement
 
