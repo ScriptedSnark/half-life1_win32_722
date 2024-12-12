@@ -2,7 +2,7 @@
 
 #include "quakedef.h"
 #include "winquake.h"
-#include "demo.h"
+#include "cl_demo.h"
 
 // Forward declarations
 void Cmd_CmdList_f( void );

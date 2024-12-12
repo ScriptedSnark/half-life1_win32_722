@@ -129,9 +129,6 @@
     <ClInclude Include="..\..\engine\decal.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\engine\demo.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\common\qfont.h">
       <Filter>Header Files\common</Filter>
     </ClInclude>
@@ -166,6 +163,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\engine\modelgen.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\engine\cl_demo.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

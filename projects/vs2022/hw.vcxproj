@@ -70,9 +70,9 @@
     <ClInclude Include="..\..\engine\bspfile.h" />
     <ClInclude Include="..\..\engine\cdll_int.h" />
     <ClInclude Include="..\..\engine\client.h" />
+    <ClInclude Include="..\..\engine\cl_demo.h" />
     <ClInclude Include="..\..\engine\cmodel.h" />
     <ClInclude Include="..\..\engine\conproc.h" />
-    <ClInclude Include="..\..\engine\demo.h" />
     <ClInclude Include="..\..\engine\cmd.h" />
     <ClInclude Include="..\..\engine\color.h" />
     <ClInclude Include="..\..\engine\common.h" />

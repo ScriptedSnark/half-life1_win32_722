@@ -291,6 +291,27 @@ void CL_CheckForResend( void )
 	// TODO: Implement
 }
 
+/*
+=====================
+CL_Connect_f
+
+User command to connect to server
+=====================
+*/
+void CL_Connect_f( void )
+{
+	cls.spectator = FALSE;
+
+	if (Cmd_Argc() < 2)
+	{
+		Con_Printf("usage: connect <server> [server password]\n");
+		return;
+	}
+
+	// TODO: Implement
+}
+
+
 
 
 /*
