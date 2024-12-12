@@ -204,6 +204,9 @@ extern qboolean cl_inmovie;
 
 extern	client_state_t	cl;
 
+extern int	msg_buckets[64];
+extern int	total_data[64];
+
 //=============================================================================
 
 // CL_MAIN.C

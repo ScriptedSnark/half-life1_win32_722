@@ -284,6 +284,12 @@ This is also called on Host_Error, so it shouldn't cause any errors
 */
 void CL_Disconnect( void )
 {
+	cls.connect_time = -99999.0;
+	cls.connect_retry = 0;
+
+	// stop sounds (especially looping!)
+	S_StopAllSounds(TRUE);
+
 	// TODO: Implement
 }
 
@@ -497,6 +503,9 @@ User command to connect to server
 */
 void CL_Connect_f( void )
 {
+	char* server;
+	char name[128], * p;
+
 	cls.spectator = FALSE;
 
 	if (Cmd_Argc() < 2)
@@ -505,7 +514,47 @@ void CL_Connect_f( void )
 		return;
 	}
 
+	server = Cmd_Args();
+	if (!server)
+		return;
+
+	// Disconnect from current server
+	// Don't call Host_Disconnect, because we don't want to shutdown the listen server!
+	CL_Disconnect();
+
+	// Get new server name
+	memset(name, 0, sizeof(name));
+	strncpy(name, server, sizeof(name));
+
+	p = name;
+	while (*p++)
+	{
+		if (*p == ' ')
+			break;
+	}
+
+	if (p[0] && p[1])
+		strcpy(cls.trueaddress, p + 1);
+	else
+		strcpy(cls.trueaddress, "0");
+
+	int num = atoi(server);  // In case it's an index.
+
+
 	// TODO: Implement
+
+
+	memset(msg_buckets, 0, sizeof(msg_buckets));
+	memset(total_data, 0, sizeof(total_data));
+
+	strncpy(cls.servername, name, sizeof(cls.servername) - 1);
+
+	// For the check for resend timer to fire a connection / getchallenge request.
+	cls.state = ca_connecting;
+	// Force connection request to fire.
+	cls.connect_time = -99999.0;
+
+	cls.connect_retry = 0;
 }
 
 
@@ -541,5 +590,36 @@ CL_Init
 */
 void CL_Init( void )
 {
+	CL_InitInput();
+
+	// TODO: Implement
+
+	Cvar_RegisterVariable(&cl_name);
+
+	// TODO: Implement
+
+	Cvar_RegisterVariable(&lookspring);
+	Cvar_RegisterVariable(&lookstrafe);
+	Cvar_RegisterVariable(&sensitivity);
+
+	// TODO: Implement
+
+	Cvar_RegisterVariable(&m_pitch);
+	Cvar_RegisterVariable(&m_yaw);
+	Cvar_RegisterVariable(&m_forward);
+	Cvar_RegisterVariable(&m_side);
+	Cvar_RegisterVariable(&cl_pitchup);
+	Cvar_RegisterVariable(&cl_pitchdown);
+
+	// TODO: Implement
+
+	Cvar_RegisterVariable(&cl_resend);
+	Cvar_RegisterVariable(&cl_timeout);
+	Cvar_RegisterVariable(&cl_shownet);
+
+	// TODO: Implement
+
+	Cvar_RegisterVariable(&cl_spectator_password);
+
 	// TODO: Implement
 }

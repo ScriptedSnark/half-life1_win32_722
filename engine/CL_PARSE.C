@@ -2,6 +2,11 @@
 
 #include "quakedef.h"
 
+
+int		last_data[64];
+int		msg_buckets[64];
+
+
 /*
 ================
 CL_RequestMissingResources
@@ -13,6 +18,11 @@ qboolean CL_RequestMissingResources( void )
 	// TODO: Implement
 	return FALSE;
 }
+
+
+
+int	total_data[64];
+
 
 
 
