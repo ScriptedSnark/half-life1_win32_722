@@ -48,7 +48,7 @@ typedef struct
 
 	vec3_t  mins;    // Send bbox down to client for use during prediction.
 	vec3_t  maxs;
-} entity_state_t;
+} sv_entity_state_t; // TODO: check for compatibility with entity_state_t
 
 #define	MAX_ENT_LEAFS	24
 typedef struct edict_s
@@ -60,7 +60,7 @@ typedef struct edict_s
 	int			num_leafs;
 	short		leafnums[MAX_ENT_LEAFS];
 
-	entity_state_t	baseline;
+	sv_entity_state_t	baseline;
 	
 	float		freetime;			// sv.time when the object was freed
 

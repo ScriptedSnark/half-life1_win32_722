@@ -65,7 +65,9 @@
 //
 // client to server
 //
+#define	clc_move				3		// [[usercmd_t]
 #define	clc_stringcmd			4		// [string] message
+#define	clc_delta				5		// [byte] sequence number, requests delta compression of message
 
 
 
@@ -98,6 +100,33 @@ ELEMENTS COMMUNICATED ACROSS THE NET
 */
 
 #define	MAX_CLIENTS		32
+
+#define	UPDATE_BACKUP	32	// copies of entity_state_t to keep buffered
+							// must be power of two
+#define	UPDATE_MASK		(UPDATE_BACKUP-1)
+
+// entity_state_t is the information conveyed from the server
+// in an update message
+typedef struct
+{
+	int		number;			// edict index
+
+	int		flags;			// nolerp, etc
+	vec3_t	origin;
+	vec3_t	angles;
+	int		modelindex;
+	int		frame;
+	int		colormap;
+	int		skinnum;
+	int		effects;
+} entity_state_t;
+
+#define	MAX_PACKET_ENTITIES	64	// doesn't count nails
+typedef struct
+{
+	int		num_entities;
+	entity_state_t	entities[MAX_PACKET_ENTITIES];
+} packet_entities_t;
 
 // Server default maxplayers value
 #define DEFAULT_SERVER_CLIENTS	8

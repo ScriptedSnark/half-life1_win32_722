@@ -355,6 +355,49 @@ void CL_AdjustAngles( void )
 }
 
 /*
+================
+CL_BaseMove
+
+Send the intended movement message to the server
+================
+*/
+void CL_BaseMove( usercmd_t *cmd )
+{
+	CL_AdjustAngles();
+
+	memset( cmd, 0, sizeof( *cmd ) );
+
+	VectorCopy( cl.viewangles, cmd->angles );
+	if (in_strafe.state & 1)
+	{
+		cmd->sidemove += cl_sidespeed.value * CL_KeyState( &in_right );
+		cmd->sidemove -= cl_sidespeed.value * CL_KeyState( &in_left );
+	}
+
+	cmd->sidemove += cl_sidespeed.value * CL_KeyState( &in_moveright );
+	cmd->sidemove -= cl_sidespeed.value * CL_KeyState( &in_moveleft );
+
+	cmd->upmove += cl_upspeed.value * CL_KeyState( &in_up );
+	cmd->upmove -= cl_upspeed.value * CL_KeyState( &in_down );
+
+	if (!(in_klook.state & 1))
+	{
+		cmd->forwardmove += cl_forwardspeed.value * CL_KeyState( &in_forward );
+		cmd->forwardmove -= cl_backspeed.value * CL_KeyState( &in_back );
+	}
+
+//
+// adjust for speed key
+//
+	if (in_speed.state & 1)
+	{
+		cmd->forwardmove *= cl_movespeedkey.value;
+		cmd->sidemove *= cl_movespeedkey.value;
+		cmd->upmove *= cl_movespeedkey.value;
+	}
+}
+
+/*
 ============
 CL_ButtonBits
 

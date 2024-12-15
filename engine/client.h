@@ -113,6 +113,70 @@ typedef struct
 
 extern client_static_t	cls;
 
+// player_state_t is the information needed by a player entity
+// to do move prediction and to generate a drawable entity
+typedef struct
+{
+	int			messagenum;		// all player's won't be updated each frame
+
+	double		state_time;		// not the same as the packet time,
+								// because player commands come asyncronously
+	usercmd_t	command;		// last command for prediction
+
+	vec3_t		origin;
+	vec3_t		viewangles;		// only for demos, not from server
+	vec3_t		velocity;
+	int			weaponframe;
+
+	int			modelindex;
+	int			frame;
+	int			skinnum;
+	int			effects;
+
+	int			flags;			// dead, gib, etc
+
+	float		waterjumptime;
+	int			onground;		// -1 = in air, else pmove entity number
+	int			oldbuttons;
+} player_state_t;
+
+// entity_state_t is the information conveyed from the server
+// in an update message
+typedef struct
+{
+	int		number;			// edict index
+	int		flags;			// nolerp, etc
+	vec3_t	origin;
+	vec3_t	angles;
+	int		modelindex;
+	int		frame;
+	int		colormap;
+	int		skinnum;
+	int		effects;
+} cl_entity_state_t;
+
+#define	MAX_PACKET_ENTITIES	64	// doesn't count nails
+typedef struct
+{
+	int		num_entities;
+	cl_entity_state_t	entities[MAX_PACKET_ENTITIES];
+} cl_packet_entities_t;
+
+typedef struct
+{
+	// generated on client side
+	usercmd_t	cmd;		// cmd that generated the frame
+	double		senttime;	// time cmd was sent off
+	int			delta_sequence;		// sequence number to delta from, -1 = full update
+
+	// received from server
+	double		receivedtime;	// time message was received, or -1
+	qboolean	invalid;		// true if the packet_entities delta was invalid
+
+	player_state_t	playerstate[MAX_CLIENTS];	// message received that reflects performing the usercmd
+	cl_packet_entities_t	packet_entities;
+} frame_t;
+
 //
 // the client_state_t structure is wiped completely at every
 // server signon
@@ -120,6 +184,8 @@ extern client_static_t	cls;
 typedef struct
 {
 	// TODO: Implement
+
+	int			validsequence;	// this is the sequence number of the last good
 
 	// the client maintains its own idea of view angles, which are
 	// sent to the server each frame.  The server sets punchangle when
@@ -150,6 +216,7 @@ typedef struct
 
 	// TODO: Implement
 
+	frame_t		frames[UPDATE_BACKUP];
 
 	struct model_s*	worldmodel;	// cl_entitites[0].model
 

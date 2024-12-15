@@ -571,6 +571,12 @@ void CL_DecayLights( void )
 	// TODO: Implement
 }
 
+// TODO: cl_input.c
+cvar_t	cl_nodelta = { "cl_nodelta","0" };
+
+void CL_BaseMove( usercmd_t *cmd );
+int CL_ButtonBits( int bResetState );
+byte COM_BlockSequenceCRCByte( byte* base, int length, int sequence );
 
 /*
 =================
@@ -579,7 +585,107 @@ CL_SendCmd
 */
 void CL_SendCmd( void )
 {
-	// TODO: Implement
+	sizebuf_t	buf;
+	byte		data[128];
+	int			i;
+	usercmd_t	*cmd, *oldcmd;
+	int			checksumIndex;
+	int			seq_hash;
+	usercmd_t nullcmd; // guarenteed to be zero
+
+	if (cls.state < ca_connected)
+		return;
+
+	// save this command off for prediction
+	i = cls.netchan.outgoing_sequence & UPDATE_MASK;
+	cmd = &cl.frames[i].cmd;
+	cl.frames[i].senttime = realtime;
+	cl.frames[i].receivedtime = -1;		// we haven't gotten a reply yet
+
+	memset(cmd, 0, sizeof(*cmd));
+
+//	seq_hash = (cls.netchan.outgoing_sequence & 0xffff) ; // ^ QW_CHECK_HASH;
+	seq_hash = cls.netchan.outgoing_sequence;
+
+	// get basic movement from keyboard
+	if (!cls.demoplayback && cls.signon == 3)
+	{
+		CL_BaseMove(cmd);
+
+		// allow mice or other external controllers to add to the move
+		IN_Move(cmd);
+	}
+
+	// if we are spectator, try autocam
+//	if (cl.spectator)
+//		Cam_Track(cmd);
+
+//	CL_FinishMove(cmd);
+
+//	Cam_FinishMove(cmd);
+
+// send this and the previous cmds in the message, so
+// if the last packet was dropped, it can be recovered
+	buf.maxsize = 128;
+	buf.cursize = 0;
+	buf.data = data;
+
+	MSG_WriteByte(&buf, clc_move);
+
+	// save the position for a checksum byte
+	checksumIndex = buf.cursize;
+	MSG_WriteByte(&buf, 0);
+
+	vec3_t cl_viewangles = {0,0,0};
+	VectorCopy(cl_viewangles, cl.frames[i].cmd.angles);
+
+	cl.frames[i].cmd.msec = (int)(host_frametime * 1000.0);
+	cl.frames[i].cmd.buttons = CL_ButtonBits( 1 );
+	cl.frames[i].cmd.impulse = 0;//dword_10577E70;
+
+	if (cl.frames[i].cmd.msec > 250)
+		cl.frames[i].cmd.msec = 100;
+
+	memset(&nullcmd, 0, sizeof(nullcmd));
+
+	i = (cls.netchan.outgoing_sequence-2) & UPDATE_MASK;
+	cmd = &cl.frames[i].cmd;
+	MSG_WriteUsercmd(&buf, cmd, &nullcmd);
+	oldcmd = cmd;
+
+	i = (cls.netchan.outgoing_sequence-1) & UPDATE_MASK;
+	cmd = &cl.frames[i].cmd;
+	MSG_WriteUsercmd(&buf, cmd, oldcmd);
+	oldcmd = cmd;
+
+	i = (cls.netchan.outgoing_sequence) & UPDATE_MASK;
+	cmd = &cl.frames[i].cmd;
+	MSG_WriteUsercmd(&buf, cmd, oldcmd);
+
+	// calculate a checksum over the move commands
+	buf.data[checksumIndex] = COM_BlockSequenceCRCByte(
+		buf.data + checksumIndex + 1, buf.cursize - checksumIndex - 1,
+		seq_hash);
+
+	// request delta compression of entities
+	if (cls.netchan.outgoing_sequence - cl.validsequence >= UPDATE_BACKUP-1)
+		cl.validsequence = 0;
+
+	if (cl.validsequence && !cl_nodelta.value && cls.state == ca_active &&
+		!cls.demorecording)
+	{
+		cl.frames[cls.netchan.outgoing_sequence&UPDATE_MASK].delta_sequence = cl.validsequence;
+		MSG_WriteByte(&buf, clc_delta);
+		MSG_WriteByte(&buf, cl.validsequence&255);
+	}
+	else
+		cl.frames[cls.netchan.outgoing_sequence&UPDATE_MASK].delta_sequence = -1;
+
+
+//
+// deliver the message
+//
+	Netchan_Transmit(&cls.netchan, buf.cursize, buf.data);
 }
 
 
