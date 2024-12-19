@@ -62,6 +62,8 @@
 
 
 
+#define svc_lastmsg				52
+
 //
 // client to server
 //

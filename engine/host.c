@@ -68,6 +68,48 @@ void Profile_Init( void );
 
 /*
 ================
+Host_Error
+
+This shuts down both the client and server
+================
+*/
+void Host_Error( char* error, ... )
+{
+	va_list		argptr;
+	char		string[1024];
+	static	qboolean inerror = FALSE;
+
+	if (inerror)
+		Sys_Error("Host_Error: recursively entered");
+	inerror = TRUE;
+
+	SCR_EndLoadingPlaque();		// reenable screen updates
+
+	va_start(argptr, error);
+	vsprintf(string, error, argptr);
+	va_end(argptr);
+	Con_Printf("Host_Error: %s\n", string);
+
+	if (sv.active)
+		Host_ShutdownServer(FALSE);
+
+	if (cls.state == ca_dedicated)
+		Sys_Error("Host_Error: %s\n", string);	// dedicated servers exit
+
+	CL_Disconnect();
+	cls.demonum = -1;
+
+	inerror = FALSE;
+
+	longjmp(host_abortserver, 1);
+}
+
+
+// TODO: Implement
+
+
+/*
+================
 Host_FindMaxClients
 ================
 */
@@ -144,6 +186,23 @@ Sends text to all active clients
 =================
 */
 void SV_BroadcastPrintf( char* fmt, ... )
+{
+	// TODO: Implement
+}
+
+
+// TODO: Implement
+
+
+
+/*
+==================
+Host_ShutdownServer
+
+This only happens at the end of a game, not between levels
+==================
+*/
+void Host_ShutdownServer( qboolean crash )
 {
 	// TODO: Implement
 }

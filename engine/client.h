@@ -199,6 +199,9 @@ typedef struct
 
 	qboolean	paused;			// send over by server
 
+	int			onground;
+
+
 
 	// TODO: Implement
 
@@ -239,6 +242,9 @@ typedef struct
 //
 extern	cvar_t	cl_name;
 extern	cvar_t	cl_color;
+
+extern	cvar_t	cl_timeout;
+extern	cvar_t	cl_shownet;
 
 extern	cvar_t	cl_upspeed;
 extern	cvar_t	cl_forwardspeed;
