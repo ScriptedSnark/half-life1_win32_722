@@ -61,6 +61,27 @@
 
 
 
+//
+// server to client
+//
+#define	svc_bad					0
+#define	svc_nop					1
+
+
+
+
+
+#define	svc_print				8		// [string] null terminated string
+#define	svc_stufftext			9		// [string] stuffed into client's console buffer
+											// the string should be \n terminated
+
+#define	svc_serverinfo			11		// [long] version
+											// [string] signon string
+											// [string]..[0]model cache
+											// [string]...[0]sounds cache
+
+
+
 
 #define svc_lastmsg				52
 

@@ -20,6 +20,23 @@ qboolean CL_RequestMissingResources( void )
 }
 
 
+/*
+=================
+CL_Parse_ServerInfo
+
+Read in server info packet.
+=================
+*/
+void CL_ParseServerInfo( void )
+{
+	Con_DPrintf("Serverinfo packet received.\n");
+
+	// TODO: Implement
+}
+
+
+
+
 
 int	total_data[64];
 
@@ -44,6 +61,9 @@ void CL_ParseServerMessage( void )
 	// For determining data parse sizes
 	int bufStart, bufEnd;
 
+//
+// if recording demos, copy the message out
+//
 	if (cl_shownet.value == 1.0)
 	{
 		Con_Printf("%i ", net_message.cursize);
@@ -53,7 +73,7 @@ void CL_ParseServerMessage( void )
 		Con_Printf("------------------\n");
 	}
 
-	cl.onground = 0;
+	cl.onground = 0;	// unless the server says otherwise
 
 	memset(last_data, 0, sizeof(last_data));
 
@@ -71,14 +91,44 @@ void CL_ParseServerMessage( void )
 		if (cmd == -1)
 			break;
 
-		if (cmd <= svc_lastmsg)
+		if (cmd > svc_lastmsg)
 		{
 			// TODO: Implement
+
+			continue;
 		}
-		else
+		
+		switch (cmd)
 		{
+		default:
 			// TODO: Implement
+			break;
+
+		case svc_nop:
+//			Con_Printf("svc_nop\n");
+			break;
+
+		// TODO: Implement
+
+		case svc_print:
+			Con_Printf("%s", MSG_ReadString());
+			break;
+
+		case svc_stufftext:
+			Cbuf_AddText(MSG_ReadString());
+			break;
+
+		// TODO: Implement
+
+		case svc_serverinfo:
+			CL_ParseServerInfo();
+			vid.recalc_refdef = TRUE;	// leave intermission full screen
+			break;
+
+		// TODO: Implement
 		}
+
+		// TODO: Implement
 	}
 
 	// end of message
