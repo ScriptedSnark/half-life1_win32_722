@@ -1,6 +1,7 @@
 // cl_parse.c  -- parse a message received from the server
 
 #include "quakedef.h"
+#include "pmove.h"
 #include "cl_demo.h"
 #include "cl_draw.h"
 
@@ -139,6 +140,35 @@ void CL_ParseServerInfo( void )
 }
 
 
+void CL_ParseMovevars( void )
+{
+	movevars.gravity			= MSG_ReadFloat();
+	movevars.stopspeed			= MSG_ReadFloat();
+	movevars.maxspeed			= MSG_ReadFloat();
+	movevars.spectatormaxspeed	= MSG_ReadFloat();
+	movevars.accelerate			= MSG_ReadFloat();
+	movevars.airaccelerate		= MSG_ReadFloat();
+	movevars.wateraccelerate	= MSG_ReadFloat();
+	movevars.friction			= MSG_ReadFloat();
+	movevars.edgefriction		= MSG_ReadFloat();
+	movevars.waterfriction		= MSG_ReadFloat();
+	movevars.entgravity			= MSG_ReadFloat();
+	movevars.bounce				= MSG_ReadFloat();
+	movevars.stepsize			= MSG_ReadFloat();
+	movevars.maxvelocity		= MSG_ReadFloat();
+	movevars.zmax				= MSG_ReadFloat();
+	movevars.waveHeight			= MSG_ReadFloat();
+
+	strcpy(movevars.skyName, MSG_ReadString());
+
+	if (strcmp(movevars.skyName, cl_skyname.string))
+		Cvar_Set("cl_skyname", movevars.skyName);
+
+	// TODO: Implement
+}
+
+
+
 
 
 
@@ -230,6 +260,29 @@ void CL_ParseServerMessage( void )
 			break;
 
 		// TODO: Implement
+
+		case svc_cdtrack:
+			cl.cdtrack = MSG_ReadByte();
+			cl.looptrack = MSG_ReadByte();
+
+			if ((cls.demoplayback || cls.demorecording) && cls.forcetrack != -1)
+			{
+				CDAudio_Play(cls.forcetrack, TRUE);
+			}
+			else
+			{
+				CDAudio_Play(cl.cdtrack, TRUE);
+			}
+			break;
+
+		// TODO: Implement
+
+		case svc_newmovevars:
+			CL_ParseMovevars();
+			break;
+
+		// TODO: Implement
+
 		}
 
 		// TODO: Implement

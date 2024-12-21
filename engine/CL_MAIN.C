@@ -28,6 +28,8 @@ cvar_t	lookspring = { "lookspring", "0", TRUE };
 cvar_t	lookstrafe = { "lookstrafe", "0", TRUE };
 cvar_t	sensitivity = { "sensitivity", "3", TRUE };
 
+cvar_t	cl_skyname = { "cl_skyname", "desert", TRUE };
+
 // TODO: Implement
 
 cvar_t	m_pitch = { "m_pitch", "0.022", TRUE };
@@ -734,6 +736,19 @@ void CL_Init( void )
 	// TODO: Implement
 
 	Cvar_RegisterVariable(&cl_name);
+
+	// TODO: Implement
+
+	Cvar_RegisterVariable(&cl_sidespeed);
+	Cvar_RegisterVariable(&cl_movespeedkey);
+
+	// TODO: Implement
+
+	Cvar_RegisterVariable(&cl_pitchspeed);
+
+	// TODO: Implement
+
+	Cvar_RegisterVariable(&cl_skyname);
 
 	// TODO: Implement
 

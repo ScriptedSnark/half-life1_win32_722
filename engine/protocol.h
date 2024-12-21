@@ -83,6 +83,16 @@
 
 
 
+
+#define	svc_cdtrack				32		// [byte] track [byte] looptrack
+
+
+
+
+#define svc_newmovevars			46
+
+
+
 #define svc_lastmsg				52
 
 //

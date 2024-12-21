@@ -42,6 +42,7 @@
     <ClInclude Include="..\..\engine\mathlib.h" />
     <ClInclude Include="..\..\engine\modelgen.h" />
     <ClInclude Include="..\..\engine\net.h" />
+    <ClInclude Include="..\..\engine\pmove.h" />
     <ClInclude Include="..\..\engine\profile.h" />
     <ClInclude Include="..\..\engine\progdefs.h" />
     <ClInclude Include="..\..\engine\protocol.h" />
@@ -90,6 +91,7 @@
     <ClCompile Include="..\..\engine\net_chan.c" />
     <ClCompile Include="..\..\engine\net_ws.c" />
     <ClCompile Include="..\..\engine\pe_export.c" />
+    <ClCompile Include="..\..\engine\pmove.c" />
     <ClCompile Include="..\..\engine\pr_cmds.c" />
     <ClCompile Include="..\..\engine\R_SURF.C" />
     <ClCompile Include="..\..\engine\SCREEN.C" />

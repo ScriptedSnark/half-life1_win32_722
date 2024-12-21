@@ -270,6 +270,7 @@ typedef struct
 
 	// TODO: Implement
 
+	int			cdtrack, looptrack;	// cd audio
 
 	CRC32_t		serverCRC;		// To determine if client is playing hacked .map. (entities lump is skipped)
 	CRC32_t		mapCRC;			// client's map CRC value, CL_CheckCRCs() checks this with cl.serverCRC to make sure
@@ -315,6 +316,8 @@ extern	cvar_t	cl_pitchspeed;
 extern	cvar_t	lookspring;
 extern	cvar_t	lookstrafe;
 extern	cvar_t	sensitivity;
+
+extern	cvar_t	cl_skyname;
 
 extern	cvar_t	m_pitch;
 extern	cvar_t	m_yaw;

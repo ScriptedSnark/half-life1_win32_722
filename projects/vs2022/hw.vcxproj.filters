@@ -156,6 +156,9 @@
     <ClCompile Include="..\..\engine\cl_draw.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\engine\pmove.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\engine\anorm_dots.h">
@@ -342,6 +345,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\engine\cl_draw.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\engine\pmove.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
