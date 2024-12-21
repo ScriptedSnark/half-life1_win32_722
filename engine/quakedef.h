@@ -80,6 +80,10 @@
 typedef int (*pfnUserMsgHook)( const char* pszName, int iSize, void* pbuf );
 
 
+//
+// stats are integers communicated to the client by the server
+//
+#define	MAX_CL_STATS		32
 
 
 

@@ -212,6 +212,15 @@ typedef struct
 	// TODO: Implement
 
 
+	// information for local display
+	int			stats[MAX_CL_STATS];	// health, etc
+
+	int			weapons;
+
+
+	// TODO: Implement
+
+
 	// the client maintains its own idea of view angles, which are
 	// sent to the server each frame.  The server sets punchangle when
 	// the view is temporarliy offset, and an angle reset commands at the start

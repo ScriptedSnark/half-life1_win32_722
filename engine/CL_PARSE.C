@@ -191,7 +191,8 @@ Parse incoming message from server.
 void CL_ParseServerMessage( void )
 {
 	// Index of svc_ or user command to issue.
-	int cmd;
+	int	cmd;
+	int	i;
 	// For determining data parse sizes
 	int bufStart, bufEnd;
 
@@ -240,6 +241,25 @@ void CL_ParseServerMessage( void )
 
 		case svc_nop:
 //			Con_Printf("svc_nop\n");
+			break;
+
+		// TODO: Implement
+
+		case svc_updatestat:
+			i = MSG_ReadByte();
+			if (i >= MAX_CL_STATS)
+				Sys_Error("svc_updatestat: %i is invalid", i);
+			cl.stats[i] = MSG_ReadLong();
+			break;
+
+		case svc_version:
+			i = MSG_ReadLong();
+			if (i != PROTOCOL_VERSION)
+				Host_Error("CL_ParseServerMessage: Server is protocol %i instead of %i\n", i, PROTOCOL_VERSION);
+			break;
+
+		case svc_setview:
+			cl.viewentity = MSG_ReadShort();
 			break;
 
 		// TODO: Implement

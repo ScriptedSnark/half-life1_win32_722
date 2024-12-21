@@ -61,14 +61,20 @@
 
 
 
+//==================
+// note that there are some defs.qc that mirror to these numbers
+// also related to svc_strings[] in cl_parse
+//==================
+
 //
 // server to client
 //
 #define	svc_bad					0
 #define	svc_nop					1
 
-
-
+#define svc_updatestat			3		// [byte] [long]
+#define	svc_version				4		// [long] server version
+#define	svc_setview				5		// [short] entity number
 
 
 #define	svc_print				8		// [string] null terminated string
