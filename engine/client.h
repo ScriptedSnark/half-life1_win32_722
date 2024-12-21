@@ -94,22 +94,29 @@ typedef struct
 	qboolean	demoplayback;
 	qboolean	timedemo;
 
-
-
-	// TODO: Implement
-
-
 	float		demostarttime;
 	int			demostartframe;
-	int			forcetrack; //FF: totally unsure about this field!
-	FILE*		demofile;
-	void*		demoheader;
+
+	int			forcetrack;			// -1 = use normal cd track
+
+	FILE*		demofile;			// For recording demos.
+	FILE*		demoheader;			// For saving startup data to start playing a demo midstream.
+
+	// I.e., demo is waiting for first nondeltacompressed message to arrive.
+	//  We don't actually start to record until a non-delta message is received
+	qboolean	demowaiting;
+	qboolean	demoappending;
+
+
 
 
 	// TODO: Implement
 
 
-} client_static_t; //FF: add comments for the fields
+
+
+
+} client_static_t;
 
 extern client_static_t	cls;
 
@@ -183,9 +190,27 @@ typedef struct
 //
 typedef struct
 {
-	// TODO: Implement
+	int			max_edicts;
+
+	resource_t	resourcesonhand;
+	resource_t	resourcesneeded;
+	resource_t	resourcelist[MAX_RESOURCES];	// Resource download list
+
+	int			num_resources;
+
+	int			servercount;	// server identification for prespawns, must match the svs.spawncount which
+								// is incremented on server spawning.  This supercedes svs.spawn_issued, in that
+								// we can now spend a fair amount of time sitting connected to the server
+								// but downloading models, sounds, etc.  So much time that it is possible that the
+								// server might change levels again and, if so, we need to know that.
 
 	int			validsequence;	// this is the sequence number of the last good
+								// world snapshot/update we got.  If this is 0, we can't
+								// render a frame yet
+
+
+	// TODO: Implement
+
 
 	// the client maintains its own idea of view angles, which are
 	// sent to the server each frame.  The server sets punchangle when
@@ -221,11 +246,41 @@ typedef struct
 
 	frame_t		frames[UPDATE_BACKUP];
 
+	// TODO: Implement
+
+	//
+	// information that is static for the entire time connected to a server
+	//
+	int			playernum;	 // player entity.  skips world. Add 1 to get cl_entitites index;
+
+	qboolean	spectator;   // we're spectating
+
+	// TODO: Implement
+
+	char		levelname[40];	// for display on solo scoreboard
+	int			maxclients;
+
+	int			gametype;
+
+	// refresh related state
+	int			viewentity;		    // cl_entitites[cl.viewentity] == player point of view
+
 	struct model_s*	worldmodel;	// cl_entitites[0].model
 
 
 	// TODO: Implement
 
+
+	CRC32_t		serverCRC;		// To determine if client is playing hacked .map. (entities lump is skipped)
+	CRC32_t		mapCRC;			// client's map CRC value, CL_CheckCRCs() checks this with cl.serverCRC to make sure
+								// that the client and server play the same map
+
+	float		weaponstarttime;
+	int			weaponsequence;
+
+	int			fPrecaching;
+
+	// TODO: Implement
 
 // all player information
 	player_info_t	players[MAX_CLIENTS];
@@ -319,7 +374,9 @@ void CAM_Think( void );
 
 // TODO: Implement
 
-
+void CL_CreateCustomizationList( void );
+void CL_ClearState( qboolean bQuiet );
+void CL_ClearClientState( void );
 void CL_ReadPackets( void );        // Read packets from server and other sources (ping requests, etc.)
 void CL_SendConnectPacket( void );  // Send the actual connection packet, after server supplies us a challenge value.
 void CL_CheckForResend( void );     // If we are in ca_connecting state and it has been cl_resend.value seconds, 

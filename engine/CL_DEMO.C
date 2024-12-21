@@ -12,6 +12,19 @@ void CL_RecordHUDCommand( char* cmdname )
 
 /*
 ====================
+CL_BeginDemoStartup
+====================
+*/
+void CL_BeginDemoStartup( void )
+{
+	// TODO: Implement
+}
+
+
+
+
+/*
+====================
 CL_StopPlayback
 
 Called when a demo file runs out, or the user starts a game

@@ -274,6 +274,37 @@ void CL_ReadPackets( void )
 }
 
 
+// TODO: Implement
+
+
+
+/*
+================
+CL_CreateCustomizationList
+
+================
+*/
+void CL_CreateCustomizationList( void )
+{
+	// TODO: Implement
+}
+
+void CL_ClearClientState( void )
+{
+	// TODO: Implement
+}
+
+/*
+=====================
+CL_ClearState
+
+=====================
+*/
+void CL_ClearState( qboolean bQuiet )
+{
+	// TODO: Implement
+}
+
 /*
 =====================
 CL_Disconnect
@@ -585,10 +616,12 @@ CL_SendCmd
 */
 void CL_SendCmd( void )
 {
+	// TODO: Reimplement
+
 	sizebuf_t	buf;
 	byte		data[128];
 	int			i;
-	usercmd_t	*cmd, *oldcmd;
+	usercmd_t* cmd, * oldcmd;
 	int			checksumIndex;
 	int			seq_hash;
 	usercmd_t nullcmd; // guarenteed to be zero
@@ -640,7 +673,7 @@ void CL_SendCmd( void )
 	VectorCopy(cl_viewangles, cl.frames[i].cmd.angles);
 
 	cl.frames[i].cmd.msec = (int)(host_frametime * 1000.0);
-	cl.frames[i].cmd.buttons = CL_ButtonBits( 1 );
+	cl.frames[i].cmd.buttons = CL_ButtonBits(1);
 	cl.frames[i].cmd.impulse = 0;//dword_10577E70;
 
 	if (cl.frames[i].cmd.msec > 250)

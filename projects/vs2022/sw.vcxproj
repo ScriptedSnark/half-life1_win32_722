@@ -22,6 +22,7 @@
     <ClInclude Include="..\..\engine\bothdefs.h" />
     <ClInclude Include="..\..\engine\client.h" />
     <ClInclude Include="..\..\engine\cl_demo.h" />
+    <ClInclude Include="..\..\engine\cl_draw.h" />
     <ClInclude Include="..\..\engine\cmodel.h" />
     <ClInclude Include="..\..\engine\conproc.h" />
     <ClInclude Include="..\..\engine\cmd.h" />
@@ -68,6 +69,7 @@
     <ClCompile Include="..\..\engine\cdll_int.c" />
     <ClCompile Include="..\..\engine\chase.c" />
     <ClCompile Include="..\..\engine\CL_DEMO.C" />
+    <ClCompile Include="..\..\engine\cl_draw.c" />
     <ClCompile Include="..\..\engine\cl_ents.c" />
     <ClCompile Include="..\..\engine\CL_MAIN.C" />
     <ClCompile Include="..\..\engine\CL_PARSE.C" />

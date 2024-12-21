@@ -169,6 +169,8 @@ int COM_FileTell( int filepos, int filelen, int handle );
 
 int COM_CompareFileTime( char* filename1, char* filename2, int* iCompare );
 
+void COM_ClearCustomizationList( struct customization_s* pHead, qboolean bCleanDecals );
+
 int COM_ListMaps( char* pszFileName, char* pszSubString );
 
 void COM_GetGameDir( char* szGameDir );

@@ -1,6 +1,8 @@
 // cl_parse.c  -- parse a message received from the server
 
 #include "quakedef.h"
+#include "cl_demo.h"
+#include "cl_draw.h"
 
 
 int		last_data[64];
@@ -21,6 +23,28 @@ qboolean CL_RequestMissingResources( void )
 
 
 /*
+================
+CL_DeallocateDynamicData
+
+================
+*/
+void CL_DeallocateDynamicData( void )
+{
+	// TODO: Implement
+}
+
+/*
+================
+CL_ReallocateDynamicData
+
+================
+*/
+void CL_ReallocateDynamicData( int nMaxClients )
+{
+	// TODO: Implement
+}
+
+/*
 =================
 CL_Parse_ServerInfo
 
@@ -29,9 +53,89 @@ Read in server info packet.
 */
 void CL_ParseServerInfo( void )
 {
-	Con_DPrintf("Serverinfo packet received.\n");
+	char* str;
+	int		i;
 
-	// TODO: Implement
+	Con_DPrintf("Serverinfo packet received.\n");
+//
+// wipe the client_state_t struct
+//
+	CL_ClearState(FALSE);
+	
+	SPR_Init();
+	
+	// Re-init hud video, especially if we changed game directories
+	ClientDLL_HudVidInit();
+	
+	cls.demowaiting = FALSE;
+	
+	CL_BeginDemoStartup();
+	
+	// parse protocol version number
+	i = MSG_ReadLong();
+	if (i != PROTOCOL_VERSION)
+	{
+		Con_Printf("Server returned version %i, not %i\n", i, PROTOCOL_VERSION);
+		return;
+	}
+
+	// Parse servercount (i.e., # of servers spawned since server .exe started)
+	// So that we can detect new server startup during download, etc.
+	cl.servercount = MSG_ReadLong();
+
+	// Because a server doesn't run during
+	//  demoplayback, but the decal system relies on this...
+	if (cls.demoplayback)
+	{
+		cl.servercount = gHostSpawnCount;
+	}
+
+	// The CRC of the server map must match the CRC of the client map. or else
+	//  the client is probably cheating.
+	cl.serverCRC = MSG_ReadLong();
+	cl.mapCRC = MSG_ReadLong();
+
+	cl.maxclients = MSG_ReadByte();
+
+	if (cl.maxclients < 1 || cl.maxclients > MAX_CLIENTS)
+	{
+		Con_Printf("Bad maxclients (%u) from server\n", cl.maxclients);
+		return;
+	}
+
+	CL_DeallocateDynamicData();
+	CL_ReallocateDynamicData(cl.maxclients);
+
+	cl.playernum = MSG_ReadByte();
+
+	// See if we're just spectating
+	if (cl.playernum & 128)
+	{
+		cl.spectator = TRUE;
+		cl.playernum &= ~128;
+	}
+
+	// Clear customization for all clients
+	for (i = 0; i < MAX_CLIENTS; i++)
+		COM_ClearCustomizationList(&cl.players[i].customdata, TRUE);
+
+	CL_CreateCustomizationList();
+
+	// parse gametype
+	cl.gametype = MSG_ReadByte();
+
+	// Recieve level name
+	str = MSG_ReadString();
+	strncpy(cl.levelname, str, sizeof(cl.levelname) - 1);
+
+	MSG_WriteByte(&cls.netchan.message, clc_stringcmd);
+	MSG_WriteString(&cls.netchan.message, va("resourcelist %i 0", cl.servercount));
+
+	// During a level transition the client remained active which could cause problems.
+	// knock it back down to 'connected'
+	cls.state = ca_connected;
+
+	gHostSpawnCount = cl.servercount;
 }
 
 
@@ -73,7 +177,7 @@ void CL_ParseServerMessage( void )
 		Con_Printf("------------------\n");
 	}
 
-	cl.onground = 0;	// unless the server says otherwise
+	cl.onground = FALSE;	// unless the server says otherwise
 
 	memset(last_data, 0, sizeof(last_data));
 

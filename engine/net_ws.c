@@ -52,9 +52,6 @@ sizebuf_t	net_message;
 WSADATA		winsockdata;
 #endif
 
-
-
-
 int			ip_sockets[2] = { 0, 0 };
 #ifdef _WIN32
 int			ipx_sockets[2] = { 0, 0 };

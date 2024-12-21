@@ -5,9 +5,29 @@
 #pragma once
 #endif
 
-void CL_RecordHUDCommand( char* cmdname );
+
+//
+// Structures
+//
+
+// header info
+typedef struct demoheader_s
+{
+	char szFileStamp[8];		// Should be HLDEMO
+	int nDemoProtocol;			// Should be DEMO_PROTOCOL
+	int nNetProtocolVersion;	// Should be PROTOCOL_VERSION
+	char szMapName[128];		// Name of map
+	char szDllDir[128];			// Name of game directory (com_gamedir)
+	CRC32_t mapCRC;
+	int nDirectoryOffset;		// Offset of Entry Directory.
+} demoheader_t;
 
 
 void CL_StopPlayback( void );
+
+
+
+void CL_BeginDemoStartup( void );
+void CL_RecordHUDCommand( char* cmdname );
 
 #endif // CL_DEMO_H

@@ -74,6 +74,8 @@
 
 #define	MAX_SFX				512
 
+#define MAX_RESOURCES		1280 // TODO: (MAX_MODELS + MAX_SOUNDS + MAX_EVENTS)
+
 // Client dispatch function for usermessages
 typedef int (*pfnUserMsgHook)( const char* pszName, int iSize, void* pbuf );
 
