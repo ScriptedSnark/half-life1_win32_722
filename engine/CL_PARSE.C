@@ -10,6 +10,151 @@ int		last_data[64];
 int		msg_buckets[64];
 
 
+
+// TODO: Implement
+
+/*
+==================
+CL_RegisterResources
+
+Clean up and move to next part of sequence.
+==================
+*/
+void CL_RegisterResources( sizebuf_t* msg )
+{
+	// TODO: Implement
+}
+
+void CL_MoveToOnHandList( resource_t* pResource )
+{
+	if (!pResource)
+	{
+		Con_DPrintf("Null resource passed to CL_MoveToOnHandList\n");
+		return;
+	}
+
+	// TODO: Implement
+}
+
+/*
+===============
+COM_SizeofResourceList
+
+===============
+*/
+int COM_SizeofResourceList( resource_t* pList, int* nWorldSize, int* nModelsSize, int* nDecalsSize, int* nSoundsSize, int* nSkinsSize )
+{
+	resource_t* p;
+	int nSize = 0;
+
+	*nModelsSize = 0;
+	*nWorldSize = 0;
+	*nDecalsSize = 0;
+	*nSoundsSize = 0;
+	*nSkinsSize = 0;
+
+	for (p = pList->pNext; p != pList; p = p->pNext)
+	{
+		nSize += p->nDownloadSize;
+
+		switch (p->type)
+		{
+		case t_sound:
+			*nSoundsSize += p->nDownloadSize;
+			break;
+		case t_skin:
+			*nSkinsSize += p->nDownloadSize;
+			break;
+		case t_model:
+			if (p->nIndex == 1) // worldmodel always take 1 slot
+			{
+				*nWorldSize = p->nDownloadSize;
+			}
+			else
+			{
+				*nModelsSize += p->nDownloadSize;
+			}
+			break;
+		case t_decal:
+			*nDecalsSize += p->nDownloadSize;
+			break;
+		}
+	}
+
+	return nSize;
+}
+
+void CL_AddToResourceList( resource_t* pResource, resource_t* pList )
+{
+	if (pResource->pPrev || pResource->pNext)
+	{
+		Con_Printf("Resource already linked\n");
+		return;
+	}
+
+	if (!pList->pPrev || !pList->pNext)
+	{
+		Sys_Error("Resource list corrupted.\n");
+	}
+
+	pResource->pPrev = pList->pPrev;
+	pList->pPrev->pNext = pResource;
+	pList->pPrev = pResource;
+	pResource->pNext = pList;
+}
+
+/*
+===============
+CL_ClearResourceList
+===============
+*/
+void CL_ClearResourceList( resource_t* pList )
+{
+	resource_t* p, * n = NULL;
+
+	for (p = pList->pNext; p && p != pList; p = n)
+	{
+		n = p->pNext;
+
+		CL_RemoveFromResourceList(p);
+		free(p);
+	}
+
+	pList->pPrev = pList;
+	pList->pNext = pList;
+}
+
+void CL_RemoveFromResourceList( resource_t* pResource )
+{
+	if (!pResource->pPrev || !pResource->pNext)
+	{
+		Sys_Error("Mislinked resource in CL_RemoveFromResourceList");
+	}
+
+	if (pResource->pNext == pResource || pResource->pPrev == pResource)
+	{
+		Sys_Error("Attempt to free last entry in list.");
+	}
+
+	pResource->pPrev->pNext = pResource->pNext;
+	pResource->pNext->pPrev = pResource->pPrev;
+	pResource->pPrev = NULL;
+	pResource->pNext = NULL;
+}
+
+/*
+===============
+CL_EstimateNeededResources
+
+Returns the size of needed resources to download
+===============
+*/
+int CL_EstimateNeededResources( void )
+{
+	// TODO: Implement
+	return 0;
+}
+
 /*
 ================
 CL_RequestMissingResources
@@ -22,6 +167,78 @@ qboolean CL_RequestMissingResources( void )
 	return FALSE;
 }
 
+/*
+===============
+CL_StartResourceDownloading
+
+Begin resource downloading, set incoming transfer data
+===============
+*/
+void CL_StartResourceDownloading( char* pszMessage, qboolean bCustom )
+{
+	if (pszMessage)
+		Con_DPrintf(pszMessage);
+
+	// TODO: Implement
+//	cls.dl.nTotalSize = COM_SizeofResourceList(&cl.resourcesneeded, &nWorldSize, &nModelsSize, &nDecalsSize, &nSoundsSize, &nSkinsSize);
+//	cls.dl.nTotalToTransfer = CL_EstimateNeededResources();
+//
+//	Con_DPrintf("Resources total %iK\n", cls.dl.nTotalSize / 1024);
+
+	// TODO: Implement
+}
+
+/*
+===============
+CL_ParseResourceList
+
+Parse the list of resources received from the server
+===============
+*/
+void CL_ParseResourceList( void )
+{
+	int		total, total_blocks;
+	int		i;
+	resource_t* resource;
+
+	// Get the number of resource blocks
+	total_blocks = MSG_ReadShort();
+	// Get the start index
+	i = MSG_ReadShort();
+	// Get the total number of resources
+	total = MSG_ReadShort();
+
+	for (; i < total; i++)
+	{
+		resource = (resource_t*)malloc(sizeof(resource_t));
+		memset(resource, 0, sizeof(resource_t));
+
+		resource->type = MSG_ReadByte();
+		strcpy(resource->szFileName, MSG_ReadString());
+		resource->nIndex = MSG_ReadShort();
+		resource->nDownloadSize = MSG_ReadLong();
+		resource->pNext = resource->pPrev = NULL;
+		resource->ucFlags = MSG_ReadByte() & ~RES_WASMISSING;
+
+		if (resource->ucFlags & RES_CUSTOM)
+		{
+			MSG_ReadBuf(sizeof(resource->rgucMD5_hash), resource->rgucMD5_hash);
+		}
+
+		// Add new entry in the linked list
+		CL_AddToResourceList(resource, &cl.resourcesneeded);
+	}
+
+	// Check if there are still unparsed blocks
+	if (total < total_blocks)
+	{
+		cls.state = ca_connected;
+	}
+	else
+	{
+		CL_StartResourceDownloading("Verifying and downloading resources...\n", FALSE);
+	}
+}
 
 /*
 ================
@@ -297,8 +514,18 @@ void CL_ParseServerMessage( void )
 
 		// TODO: Implement
 
+		case svc_resourcelist:
+			CL_ParseResourceList();
+			break;
+
 		case svc_newmovevars:
 			CL_ParseMovevars();
+			break;
+
+		// TODO: Implement
+
+		case svc_resourcerequest:
+			CL_SendResourceListBlock();
 			break;
 
 		// TODO: Implement

@@ -94,9 +94,10 @@
 
 
 
-
+#define svc_resourcelist		45
 #define svc_newmovevars			46
 
+#define svc_resourcerequest		48
 
 
 #define svc_lastmsg				52
@@ -104,10 +105,14 @@
 //
 // client to server
 //
+#define	clc_bad					0
 #define	clc_move				3		// [[usercmd_t]
 #define	clc_stringcmd			4		// [string] message
 #define	clc_delta				5		// [byte] sequence number, requests delta compression of message
 
+
+
+#define clc_resourcelist		8
 
 
 

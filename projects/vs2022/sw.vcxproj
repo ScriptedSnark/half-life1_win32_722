@@ -36,6 +36,7 @@
     <ClInclude Include="..\..\engine\decal.h" />
     <ClInclude Include="..\..\engine\draw.h" />
     <ClInclude Include="..\..\engine\eiface.h" />
+    <ClInclude Include="..\..\engine\hashpak.h" />
     <ClInclude Include="..\..\engine\host_cmd.h" />
     <ClInclude Include="..\..\engine\input.h" />
     <ClInclude Include="..\..\engine\keys.h" />
@@ -82,6 +83,7 @@
     <ClCompile Include="..\..\engine\CONSOLE.C" />
     <ClCompile Include="..\..\engine\crc.c" />
     <ClCompile Include="..\..\engine\cvar.c" />
+    <ClCompile Include="..\..\engine\hashpak.c" />
     <ClCompile Include="..\..\engine\host.c" />
     <ClCompile Include="..\..\engine\host_cmd.c" />
     <ClCompile Include="..\..\engine\HUD.c" />

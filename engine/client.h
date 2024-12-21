@@ -363,6 +363,11 @@ void CL_UpdateSoundFade( void );
 
 
 // Resource
+void CL_CreateResourceList( void );
+void CL_ClearResourceList( resource_t* pList );
+void CL_AddToResourceList( resource_t* pResource, resource_t* pList );
+void CL_RemoveFromResourceList( resource_t* pResource );
+void CL_SendResourceListBlock( void );
 qboolean CL_RequestMissingResources( void );
 
 

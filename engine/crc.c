@@ -658,7 +658,7 @@ The md5 hash returns a 16 byte identifier based on the file's data.  This identi
   download such custom data or if I have already seen it.
  ==================
  */
-qboolean MD5_Hash_File( unsigned char *digest, char *pszFileName )
+qboolean MD5_Hash_File( unsigned char* digest, char* pszFileName, BOOL bUsefopen /* = FALSE */, BOOL bSeed /* = FALSE */, unsigned int* seed /* = NULL */ )
 {
 	MD5Context_t ctx;
 	FILE *fp;

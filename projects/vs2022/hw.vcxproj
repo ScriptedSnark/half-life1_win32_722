@@ -35,6 +35,7 @@
     <ClCompile Include="..\..\engine\GL_RSURF.C" />
     <ClCompile Include="..\..\engine\gl_screen.c" />
     <ClCompile Include="..\..\engine\GL_VIDNT.C" />
+    <ClCompile Include="..\..\engine\hashpak.c" />
     <ClCompile Include="..\..\engine\host.c" />
     <ClCompile Include="..\..\engine\host_cmd.c" />
     <ClCompile Include="..\..\engine\HUD.c" />
@@ -91,6 +92,7 @@
     <ClInclude Include="..\..\engine\GLQUAKE.H" />
     <ClInclude Include="..\..\engine\gl_hw.h" />
     <ClInclude Include="..\..\engine\GL_MODEL.H" />
+    <ClInclude Include="..\..\engine\hashpak.h" />
     <ClInclude Include="..\..\engine\host_cmd.h" />
     <ClInclude Include="..\..\engine\input.h" />
     <ClInclude Include="..\..\engine\keys.h" />

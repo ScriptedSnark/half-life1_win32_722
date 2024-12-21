@@ -22,6 +22,9 @@ void MD5Init( MD5Context_t* context );
 void MD5Update( MD5Context_t* context, unsigned char const* buf,
 	unsigned int len );
 void MD5Final( unsigned char* digest, MD5Context_t* context );
+void Transform( unsigned int buf[4], unsigned int const in[16] );
+
+int MD5_Hash_File( unsigned char* digest, char* pszFileName, int bUsefopen, int bSeed, unsigned int* seed );
 char* MD5_Print( unsigned char* hash );
 
 #endif

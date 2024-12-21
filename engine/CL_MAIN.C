@@ -3,6 +3,7 @@
 #include "quakedef.h"
 #include "winquake.h"
 #include "crc.h"
+#include "hashpak.h"
 
 
 // Only send this many requests before timing out.
@@ -294,6 +295,13 @@ void CL_CreateCustomizationList( void )
 void CL_ClearClientState( void )
 {
 	// TODO: Implement
+
+	cl.resourcesneeded.pPrev = &cl.resourcesneeded;
+	cl.resourcesneeded.pNext = &cl.resourcesneeded;
+	cl.resourcesonhand.pPrev = &cl.resourcesonhand;
+	cl.resourcesonhand.pNext = &cl.resourcesonhand;
+
+	CL_CreateResourceList();
 }
 
 /*
@@ -304,6 +312,12 @@ CL_ClearState
 */
 void CL_ClearState( qboolean bQuiet )
 {
+	// TODO: Implement
+
+	CL_ClearClientState();
+
+	SZ_Clear(&cls.netchan.message);
+
 	// TODO: Implement
 }
 
@@ -722,6 +736,155 @@ void CL_SendCmd( void )
 //
 	Netchan_Transmit(&cls.netchan, buf.cursize, buf.data);
 }
+
+
+// TODO: Implement
+
+
+
+
+/*
+=================
+CL_SendResourceListBlock
+
+=================
+*/
+void CL_SendResourceListBlock( void )
+{
+	int		i;
+	int		arg, size;
+
+	if (cls.state == ca_dedicated || cls.state == ca_disconnected)
+	{
+		Con_Printf("custom resource list not valid -- not connected\n");
+		return;
+	}
+
+	arg = MSG_ReadLong();
+	if (!cls.demoplayback && arg != cl.servercount)
+	{
+		Con_Printf("CL_SendResourceListBlock_f from different level\n");
+		return;
+	}
+
+	i = MSG_ReadLong();
+	if (i < 0 || i > cl.num_resources)
+	{
+		Con_Printf("custom resource list request out of range\n");
+		return;
+	}
+
+	// Send resource list
+	MSG_WriteByte(&cls.netchan.message, clc_resourcelist);
+	MSG_WriteShort(&cls.netchan.message, cl.num_resources);
+	MSG_WriteShort(&cls.netchan.message, i);
+	size = cls.netchan.message.cursize;
+
+	MSG_WriteShort(&cls.netchan.message, 0);
+
+	for (; i < cl.num_resources; i++)
+	{
+		if (cls.netchan.message.cursize + 128 >= cls.netchan.message.maxsize)
+			break;
+
+		MSG_WriteByte(&cls.netchan.message, cl.resourcelist[i].type);
+		MSG_WriteString(&cls.netchan.message, cl.resourcelist[i].szFileName);
+		MSG_WriteShort(&cls.netchan.message, cl.resourcelist[i].nIndex);
+		MSG_WriteLong(&cls.netchan.message, cl.resourcelist[i].nDownloadSize);
+		MSG_WriteByte(&cls.netchan.message, cl.resourcelist[i].ucFlags);
+
+		if (cl.resourcelist[i].ucFlags & RES_CUSTOM)
+			SZ_Write(&cls.netchan.message, cl.resourcelist[i].rgucMD5_hash, sizeof(cl.resourcelist[i].rgucMD5_hash));
+	}
+
+	*(unsigned short*)&cls.netchan.message.data[size] = i;
+
+	if (i < cl.num_resources)
+	{
+		MSG_WriteByte(&cls.netchan.message, clc_stringcmd);
+		MSG_WriteString(&cls.netchan.message, va("customrsrclist %i %i\n", cl.servercount, i));
+	}
+}
+
+/*
+====================
+CL_AddResource
+
+Adds a new resource to the client resource list
+====================
+*/
+resource_t* CL_AddResource( resourcetype_t type, char* name, int size, qboolean bFatalIfMissing, int index )
+{
+	resource_t* r;
+
+	r = &cl.resourcelist[cl.num_resources];
+	if (cl.num_resources >= MAX_RESOURCES)
+		Sys_Error("Too many resources on client.");
+	cl.num_resources++;
+
+	r->type = type;
+	strcpy(r->szFileName, name);
+	r->nDownloadSize = size;
+	r->nIndex = index;
+
+	if (bFatalIfMissing)
+	{
+		r->ucFlags |= RES_FATALIFMISSING;
+	}
+
+	return r;
+}
+
+/*
+====================
+CL_CreateResourceList
+
+====================
+*/
+void CL_CreateResourceList( void )
+{
+	FILE* fp;
+	int			nSize;
+	char		szFileName[128];
+	unsigned char	rgucMD5_hash[16];
+
+	resource_t* pNewResource;
+
+	cl.num_resources = 0;
+
+	sprintf(szFileName, "pldecal.wad");
+
+	memset(rgucMD5_hash, 0, sizeof(rgucMD5_hash));
+
+	nSize = COM_FindFile(szFileName, NULL, &fp);
+	if (nSize == -1)
+	{
+		nSize = 0;
+	}
+	else
+	{
+		MD5_Hash_File(rgucMD5_hash, szFileName, FALSE, FALSE, NULL);
+	}
+
+	if (nSize)
+	{
+		pNewResource = CL_AddResource(t_decal, szFileName, nSize, FALSE, 0);
+		if (pNewResource)
+		{
+			pNewResource->ucFlags |= RES_CUSTOM;
+			memcpy(pNewResource->rgucMD5_hash, rgucMD5_hash, sizeof(pNewResource->rgucMD5_hash));
+			HPAK_AddLump("custom.hpk", pNewResource, NULL, fp);
+		}
+	}
+
+	if (fp)
+		fclose(fp);
+}
+
+
+
+
+// TODO: Implement
 
 
 /*
