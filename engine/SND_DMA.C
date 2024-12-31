@@ -15,6 +15,15 @@ void S_Init( void )
 	// TODO: Implement
 }
 
+// =======================================================================
+// Shutdown sound engine
+// =======================================================================
+
+void S_Shutdown( void )
+{
+	// TODO: Implement
+}
+
 void S_StopAllSounds( qboolean clear )
 {
 	// TODO: Implement

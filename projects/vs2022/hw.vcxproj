@@ -54,6 +54,7 @@
     <ClCompile Include="..\..\engine\SND_WIN.C" />
     <ClCompile Include="..\..\engine\sv_main.c" />
     <ClCompile Include="..\..\engine\sv_send.c" />
+    <ClCompile Include="..\..\engine\sv_upld.c" />
     <ClCompile Include="..\..\engine\sys_win.c" />
     <ClCompile Include="..\..\engine\view.c" />
     <ClCompile Include="..\..\engine\wad.c" />
@@ -170,13 +171,13 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <TargetName>hw</TargetName>
-    <OutDir>$(SolutionDir)..\..\engine\GL_Debug\</OutDir>
-    <IntDir>$(Configuration)\$(ProjectName)\int\</IntDir>
+    <OutDir>$(SolutionDir)..\..\build\$(PlatformTarget)\engine\GL_$(Configuration)_STEAM\</OutDir>
+    <IntDir>$(Configuration)\$(PlatformTarget)\$(ProjectName)\int\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <TargetName>hw</TargetName>
-    <OutDir>$(SolutionDir)..\..\engine\GL_Release\</OutDir>
-    <IntDir>$(Configuration)\$(ProjectName)\int\</IntDir>
+    <OutDir>$(SolutionDir)..\..\build\$(PlatformTarget)\engine\GL_$(Configuration)_STEAM\</OutDir>
+    <IntDir>$(Configuration)\$(PlatformTarget)\$(ProjectName)\int\</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -192,6 +193,12 @@
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
       <AdditionalDependencies>winmm.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <PostBuildEvent>
+      <Command>IF EXIST "$(ProjectDir)..\..\PostBuild.bat" (CALL "$(ProjectDir)..\..\PostBuild.bat" engine "$(OutDir)" "$(TargetName)$(TargetExt)")</Command>
+    </PostBuildEvent>
+    <PostBuildEvent>
+      <Message>Automatic deployment script</Message>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -211,6 +218,12 @@
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
       <AdditionalDependencies>winmm.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <PostBuildEvent>
+      <Command>IF EXIST "$(ProjectDir)..\..\PostBuild.bat" (CALL "$(ProjectDir)..\..\PostBuild.bat" engine "$(OutDir)" "$(TargetName)$(TargetExt)")</Command>
+    </PostBuildEvent>
+    <PostBuildEvent>
+      <Message>Automatic deployment script</Message>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

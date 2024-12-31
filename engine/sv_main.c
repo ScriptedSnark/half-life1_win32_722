@@ -54,3 +54,30 @@ void SV_Init( void )
 {
 	// TODO: Implement
 }
+
+void SV_ClearChannel( qboolean forceclear )
+{
+	// TODO: Implement; not sure if this function belongs here.
+}
+
+/*
+================
+SV_DeallocateDynamicData
+
+================
+*/
+void SV_DeallocateDynamicData( void )
+{
+	// TODO: Implement
+}
+
+/*
+================
+SV_DeallocateDynamicData
+
+================
+*/
+void SV_ReallocateDynamicData( void )
+{
+	// TODO: Implement
+}

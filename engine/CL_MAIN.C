@@ -738,9 +738,53 @@ void CL_SendCmd( void )
 }
 
 
+/*
+==================
+Host_NextDemo
+
+Skip to next demo
+==================
+*/
+void Host_NextDemo( void )
+{
+	char    str[1024];
+
+	if (cls.demonum == -1)
+		return;
+
+	SCR_BeginLoadingPlaque( );
+
+	if (!cls.demos[cls.demonum][0] || cls.demonum == MAX_DEMOS)
+	{
+		cls.demonum = 0;
+
+		if (!cls.demos[cls.demonum][0])
+		{
+			scr_drawloading = FALSE;
+			Con_Printf( "No demos listed with startdemos\n" );
+			cls.demonum = -1;
+		}
+		return;
+	}
+
+	snprintf( str, sizeof( str ), "playdemo %s\n", cls.demos[cls.demonum] );
+	Cbuf_InsertText( str );
+	cls.demonum++;
+}
+
 // TODO: Implement
 
+/*
+=====================
+CL_Disconnect_f
 
+Disconnects user from the server
+=====================
+*/
+void CL_Disconnect_f( void )
+{
+	// TODO: Implement
+}
 
 
 /*

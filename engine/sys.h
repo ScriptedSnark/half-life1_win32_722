@@ -82,6 +82,8 @@ void Sys_SetFPCW( void );
 extern qboolean	g_bInStartup;
 extern qboolean	g_bInactive;
 
+extern qboolean	gfUseLANAuthentication;
+
 extern qboolean gfBackground;
 
 extern int giActive;
@@ -89,6 +91,7 @@ extern int giStateInfo;
 extern int giSubState;
 
 void	(*VID_Update)( struct vrect_s* rects );
+void	(*VID_Shutdown)(void);
 
 void	(*CDAudio_Play)( int track, int looping );
 void	(*CDAudio_Pause)( void );

@@ -23,6 +23,8 @@ HWND*				pmainwindow;
 qboolean			g_bInStartup = FALSE;
 qboolean			g_bInactive = FALSE;
 
+qboolean			gfUseLANAuthentication = TRUE;
+
 char				g_szProfileName[MAX_QPATH];
 qboolean			g_bForceReloadOnCA_Active = FALSE;
 
@@ -664,6 +666,7 @@ DLL_EXPORT void GameSetBackground( qboolean bNewSetting )
 {
 	gfBackground = bNewSetting;
 }
+
 
 // Called when the game starts up
 DLL_EXPORT int GameInit( char* lpCmdLine, unsigned char* pMem, int iSize, exefuncs_t* pef, void* pwnd, char* profile, int bIsDedicated )

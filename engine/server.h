@@ -12,6 +12,10 @@ typedef struct server_static_s
 	struct client_s* clients;			// array of up to [maxclients] client slots
 
 	int			maxclients;				// Current max #
+	int			maxclientslimit;		// Max allowed on server.
+	int			spawncount;				// Number of servers spawned since start,
+										// used to check late spawns (e.g., when d/l'ing lots of
+										// data)
 
 	
 } server_static_t;
@@ -26,6 +30,7 @@ typedef enum server_state_e
 	ss_active	// Running
 } server_state_t;
 
+// sizeof(server_t) = 0x34F90u
 typedef struct
 {
 	qboolean	active;				// false if only a net client
@@ -60,7 +65,18 @@ typedef struct client_s
 	// TODO: Implement
 
 
+	//===== NETWORK ============
+	netchan_t netchan;					// The client's net connection.
+
+
+	// TODO: Implement
+
+
 	double rate;						// seconds / byte
+
+	// TODO: Implement
+
+	customization_t customdata;			// Head of custom client data list
 
 
 	// TODO: Implement
@@ -95,8 +111,13 @@ extern	jmp_buf 	host_abortserver;
 void SV_Init( void );
 void SV_CheckTimeouts( void );
 
+void SV_DeallocateDynamicData( void );
 
 void SV_BroadcastPrintf( char* fmt, ... );
+
+void SV_ClearChannel( qboolean forceclear );
+
+void SV_ClearResourceLists(client_t* cl);
 
 
 //

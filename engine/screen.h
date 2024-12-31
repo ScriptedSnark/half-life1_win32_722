@@ -23,6 +23,7 @@ void Draw_CenterPic( qpic_t* pPic );
 
 extern	float		scr_con_current;
 extern	float		scr_conlines;		// lines of console to display
+extern qboolean		scr_drawloading;
 
 
 
