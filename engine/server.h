@@ -39,6 +39,9 @@ typedef struct
 
 	// TODO: Implement
 
+	char name[MAX_QPATH]; // map name
+	char oldname[MAX_QPATH];
+	char startspot[MAX_QPATH];
 
 	struct model_s*	worldmodel;			// cl_entitites[0].model
 

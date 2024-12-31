@@ -3,6 +3,7 @@
 #include "quakedef.h"
 #include "winquake.h"
 #include "exefuncs.h"
+#include "gameinfo.h"
 
 #include <io.h>
 
@@ -812,10 +813,71 @@ DLL_EXPORT int GameInit( char* lpCmdLine, unsigned char* pMem, int iSize, exefun
 	return TRUE;
 }
 
-
 DLL_EXPORT int GetGameInfo( struct GameInfo_s* pGI, char* pszChannel )
 {
-	// TODO: Implement
+	GameInfo_t gi;
+	memset(&gi, 0, sizeof(GameInfo_t));
+
+	gi.build_number = build_number();
+	gi.multiplayer = svs.maxclients != 1;
+	gi.maxclients = svs.maxclients;
+
+	strncpy(gi.levelname, sv.name, sizeof(gi.levelname) - 1);
+
+	gi.active = sv.active;
+
+	if (net_local_adr.type == NA_IP)
+	{
+		gi.ip = net_local_adr.ip;
+		gi.port = net_local_adr.port;
+	}
+
+#if 0 // TODO: Implement
+	if (pszChannel && *pszChannel && sub_1007A250(pszChannel))
+	{
+		gi.unknown = TRUE;
+	}
+#endif
+
+	gi.state = cls.state;
+	gi.signon = cls.signon;
+
+	memset(gi.state_description, 0, sizeof(gi.state_description));
+	switch (cls.state)
+	{
+		case ca_active:
+			sprintf(gi.state_description, "Currently in a game");
+			break;
+		case ca_disconnected:
+			sprintf(gi.state_description, "Disconnected");
+			break;
+		case ca_uninitialized:
+#if 0 // TODO: Implement; this needs work on client_static_t
+			if (cls.download)
+			{
+				sprintf(gi.state_description, "Downloading %s, %i percent complete", &cls.downloading_file, cls.download_percent);
+			}
+			else
+			{
+				sprintf(gi.state_description, "Initializing and downloading");
+			}
+#endif
+			break;
+		case ca_connected:
+			sprintf(gi.state_description, "Connected to server");
+			break;
+		case ca_connecting:
+			sprintf(gi.state_description, "Connecting");
+			break;
+		case ca_dedicated:
+			sprintf(gi.state_description, "Running dedicated server");
+			break;
+		default:
+			sprintf(gi.state_description, "?");
+			break;
+	}
+
+	memcpy(pGI, &gi, sizeof(GameInfo_t));
 	return 1;
 }
 

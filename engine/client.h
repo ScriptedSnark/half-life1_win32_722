@@ -107,14 +107,7 @@ typedef struct
 	qboolean	demowaiting;
 	qboolean	demoappending;
 
-
-
-
 	// TODO: Implement
-
-
-
-
 
 } client_static_t;
 
