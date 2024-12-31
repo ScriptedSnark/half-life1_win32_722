@@ -835,7 +835,7 @@ DLL_EXPORT int GetGameInfo( struct GameInfo_s* pGI, char* pszChannel )
 #if 0 // TODO: Implement
 	if (pszChannel && *pszChannel && sub_1007A250(pszChannel))
 	{
-		gi.unknown = TRUE;
+		gi.channel = TRUE;
 	}
 #endif
 
