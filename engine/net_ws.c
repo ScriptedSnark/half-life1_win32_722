@@ -799,6 +799,8 @@ int NET_IPSocket( char* net_interface, int port )
 /*
 ====================
 NET_OpenIP
+
+Opens the socket for IP communication
 ====================
 */
 void NET_OpenIP( void )
@@ -1104,9 +1106,48 @@ void Net_BadConnection_f( void )
 	Cbuf_AddText("ping\n");
 }
 
+/*
+====================
+MaxPlayers_f
+
+How many players can connect to server
+====================
+*/
 void MaxPlayers_f( void )
 {
-	// TODO: Implement
+	int n;
+
+	// We just want to know how many players can connect to this server
+	if (Cmd_Argc() != 2)
+	{
+		Con_Printf("\"maxplayers\" is \"%u\"\n", svs.maxclients);
+		return;
+	}
+
+	if (sv.active)
+	{
+		Con_Printf("maxplayers cannot be changed while a server is running.\n");
+		return;
+	}
+
+	n = Q_atoi(Cmd_Argv(1));
+
+	if (n < 1)
+		n = 1;
+
+	if (n > svs.maxclientslimit)
+	{
+		Con_Printf("\"maxplayers\" set to \"%u\"\n", svs.maxclientslimit);
+		n = svs.maxclientslimit;
+	}
+
+	// Set maxclients
+	svs.maxclients = n;
+
+	if (n == 1)
+		Cvar_Set("deathmatch", "0");
+	else
+		Cvar_Set("deathmatch", "1");
 }
 
 /*
