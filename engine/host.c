@@ -501,6 +501,21 @@ void Profile_Init( void );
 
 /*
 ================
+COM_EntsForPlayerSlots
+
+Returns the appropriate size of the edicts array to allocate
+based on the stated # of max players
+================
+*/
+int COM_EntsForPlayerSlots( int nPlayers )
+{
+	return 15 * (nPlayers - 1) + 800;
+}
+
+// TODO: Implement
+
+/*
+================
 Host_EndGame
 ================
 */

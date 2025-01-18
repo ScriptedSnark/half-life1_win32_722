@@ -15,7 +15,7 @@
 
 // these two are not intended to be set directly
 cvar_t	cl_name = { "_cl_name", "player", TRUE };
-
+cvar_t	cl_color = { "_cl_color", "0", TRUE };
 
 cvar_t	cl_timeout = { "cl_timeout", "305", TRUE };
 cvar_t	cl_shownet = { "cl_shownet", "0" };
@@ -54,7 +54,7 @@ client_static_t	cls;
 client_state_t cl;
 // FIXME: put these on hunk?
 efrag_t			cl_efrags[MAX_EFRAGS];
-//cl_entity_t*	cl_entities; TODO: Implement
+cl_entity_t*	cl_entities;
 //cl_entity_t		cl_static_entities[MAX_STATIC_ENTITIES]; TODO: Implement
 lightstyle_t	cl_lightstyle[MAX_LIGHTSTYLES];
 dlight_t		cl_dlights[MAX_DLIGHTS];
@@ -693,8 +693,50 @@ void CL_Connect_f( void )
 	cls.connect_retry = 0;
 }
 
+// TODO: Implement
 
 
+/*
+=================
+CL_SignonReply
+
+A svc_signonnum has been received, perform a client side setup
+=================
+*/
+void CL_SignonReply( void )
+{
+	char 	str[8192];
+
+	Con_DPrintf("CL_SignonReply: %i\n", cls.signon);
+
+	switch (cls.signon)
+	{
+	case 1:
+		MSG_WriteByte(&cls.netchan.message, clc_stringcmd);
+		MSG_WriteString(&cls.netchan.message, va("name \"%s\"\n", cl_name.string));
+
+		MSG_WriteByte(&cls.netchan.message, clc_stringcmd);
+		MSG_WriteString(&cls.netchan.message, va("color %i %i\n", ((int)cl_color.value) >> 4, ((int)cl_color.value) & 15));
+
+		MSG_WriteByte(&cls.netchan.message, clc_stringcmd);
+		sprintf(str, "spawn %i %s", cl.servercount, cls.spawnparams);
+		MSG_WriteString(&cls.netchan.message, str);
+		break;
+
+	case 2:
+		MSG_WriteByte(&cls.netchan.message, clc_stringcmd);
+		MSG_WriteString(&cls.netchan.message, "begin");
+		Cache_Report();		// print remaining memory
+		break;
+
+	case 3:
+		SCR_EndLoadingPlaque();		// allow normal screen updates
+		break;
+	}
+}
+
+
+// TODO: Implement
 
 /*
 ===============

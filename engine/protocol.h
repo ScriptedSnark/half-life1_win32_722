@@ -98,6 +98,7 @@
 #define svc_spawnbaseline		22
 
 
+#define svc_signonnum			25		// [byte]  used for the signon sequence
 
 #define svc_killedmonster		27
 #define svc_foundsecret			28

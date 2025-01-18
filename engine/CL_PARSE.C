@@ -87,21 +87,21 @@ CL_EntityNum
 This error checks and tracks the total number of entities
 ===============
 */
-//cl_entity_t* CL_EntityNum( int num )
-//{
-//	if (num >= cl.num_entities)
-//	{
-//		if (num >= cl.max_edicts)
-//			Host_Error("CL_EntityNum: %i is an invalid number, cl.max_edicts is %i", num, cl.max_edicts);
-//		while (cl.num_entities <= num)
-//		{
-//			cl_entities[cl.num_entities].colormap = vid.colormap;
-//			cl.num_entities++;
-//		}
-//	}
-//
-//	return &cl_entities[num];
-//}
+cl_entity_t* CL_EntityNum( int num )
+{
+	if (num >= cl.num_entities)
+	{
+		if (num >= cl.max_edicts)
+			Host_Error("CL_EntityNum: %i is an invalid number, cl.max_edicts is %i", num, cl.max_edicts);
+		while (cl.num_entities <= num)
+		{
+//			cl_entities[cl.num_entities].colormap = vid.colormap; TODO: Implement
+			cl.num_entities++;
+		}
+	}
+
+	return &cl_entities[num];
+}
 
 // TODO: Implement
 
@@ -549,6 +549,12 @@ CL_DeallocateDynamicData
 */
 void CL_DeallocateDynamicData( void )
 {
+	if (cl_entities)
+	{
+		free(cl_entities);
+		cl_entities = NULL;
+	}
+
 	// TODO: Implement
 }
 
@@ -560,6 +566,17 @@ CL_ReallocateDynamicData
 */
 void CL_ReallocateDynamicData( int nMaxClients )
 {
+	cl.max_edicts = COM_EntsForPlayerSlots(nMaxClients);
+
+	if (cl.max_edicts <= 0)
+		Sys_Error("CL_ReallocateDynamicData allocating 0 entities");
+
+	if (cl_entities)
+		Con_Printf("CL_Reallocate cl_entities\n");
+
+	cl_entities = (cl_entity_t*)malloc(sizeof(cl_entity_t) * cl.max_edicts);
+	memset(cl_entities, 0, (sizeof(cl_entity_t) * cl.max_edicts));
+
 	// TODO: Implement
 }
 
@@ -657,9 +674,43 @@ void CL_ParseServerInfo( void )
 	gHostSpawnCount = cl.servercount;
 }
 
+/*
+==================
+CL_ParseBaseline
+==================
+*/
 void CL_ParseBaseline( cl_entity_t* ent )
 {
-	// TODO: Implement
+	int			i;
+
+	ent->baseline.entityType = MSG_ReadByte();
+	ent->baseline.modelindex = MSG_ReadShort();
+	ent->baseline.sequence = MSG_ReadByte();
+	ent->baseline.frame = MSG_ReadByte();
+
+	if (ent->baseline.entityType != 0)
+		ent->baseline.scale = MSG_ReadByte() * (1.0 / 10.0);
+	else
+		ent->baseline.scale = MSG_ReadWord() * (1.0 / 256.0);
+
+	ent->baseline.colormap = MSG_ReadByte();
+	ent->baseline.skin = MSG_ReadShort();
+	ent->baseline.solid = MSG_ReadByte();
+
+	for (i = 0; i < 3; i++)
+	{
+		ent->baseline.origin[i] = MSG_ReadCoord();
+		ent->baseline.angles[i] = MSG_ReadFloat();
+		ent->baseline.mins[i] = MSG_ReadCoord();
+		ent->baseline.maxs[i] = MSG_ReadCoord();
+	}
+
+	ent->baseline.rendermode = MSG_ReadByte();
+	ent->baseline.renderamt = MSG_ReadByte();
+	ent->baseline.rendercolor.r = MSG_ReadByte();
+	ent->baseline.rendercolor.g = MSG_ReadByte();
+	ent->baseline.rendercolor.b = MSG_ReadByte();
+	ent->baseline.renderfx = MSG_ReadByte();
 }
 
 // TODO: Implement
@@ -860,7 +911,17 @@ void CL_ParseServerMessage( void )
 		case svc_spawnbaseline:
 			i = MSG_ReadShort();
 			// must use CL_EntityNum() to force cl.num_entities up
-//			CL_ParseBaseline(CL_EntityNum(i)); TODO: Implement
+			CL_ParseBaseline(CL_EntityNum(i));
+			break;
+
+		// TODO: Implement
+
+		case svc_signonnum:
+			i = MSG_ReadByte();
+			if (i <= cls.signon)
+				Host_Error("Received signon %i when at %i", i, cls.signon);
+			cls.signon = i;
+			CL_SignonReply();
 			break;
 
 		// TODO: Implement
@@ -890,6 +951,8 @@ void CL_ParseServerMessage( void )
 				CDAudio_Play(cl.cdtrack, TRUE);
 			}
 			break;
+
+		// TODO: Implement
 
 		case svc_newusermsg:
 			// TODO: Implement

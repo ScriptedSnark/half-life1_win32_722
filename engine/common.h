@@ -178,6 +178,9 @@ void COM_GetGameDir( char* szGameDir );
 void LoadBMP8( int* h, byte** pPalette, int* nPalette, byte** pImage );
 byte* LoadBMP16( FILE* fin, qboolean is15bit );
 
+// Additional shared functions
+int COM_EntsForPlayerSlots( int nPlayers );
+
 int build_number( void );
 
 extern qboolean		standard_quake, rogue, hipnotic;

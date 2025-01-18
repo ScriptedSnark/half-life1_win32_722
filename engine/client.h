@@ -420,7 +420,16 @@ extern qboolean cl_inmovie;
 
 // TODO: Implement
 
+extern client_static_t	cls;
 extern	client_state_t	cl;
+
+// FIXME, allocate dynamically
+extern	efrag_t			cl_efrags[MAX_EFRAGS];
+extern	cl_entity_t*	cl_entities;
+//extern  cl_entity_t		cl_static_entities[MAX_STATIC_ENTITIES]; TODO: Implement
+extern	lightstyle_t	cl_lightstyle[MAX_LIGHTSTYLES];
+extern	dlight_t		cl_dlights[MAX_DLIGHTS];
+extern	dlight_t		cl_elights[MAX_ELIGHTS];
 
 extern int	msg_buckets[64];
 extern int	total_data[64];
@@ -513,3 +522,9 @@ void V_StartPitchDrift( void );
 void V_StopPitchDrift( void );
 
 // TODO: Implement
+
+//
+// CL_TENT.C
+//
+void CL_InitTEnts( void );
+void CL_SignonReply( void );
