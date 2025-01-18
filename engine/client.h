@@ -72,6 +72,10 @@ typedef struct player_info_s
 	char	name[MAX_SCOREBOARDNAME];
 
 
+	// skin information
+	int		color;
+
+
 	// TODO: Implement
 
 
@@ -354,8 +358,8 @@ typedef struct
 	int			num_statics;	// held in cl_staticentities array
 
 
-
 	// TODO: Implement
+
 
 	int			cdtrack, looptrack;	// cd audio
 
@@ -369,6 +373,7 @@ typedef struct
 	int			fPrecaching;
 
 	// TODO: Implement
+
 
 // all player information
 	player_info_t	players[MAX_CLIENTS];

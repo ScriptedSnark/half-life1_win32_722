@@ -775,8 +775,16 @@ void CL_ParseMovevars( void )
 }
 
 
+// TODO: Implement
 
 
+void CL_PlayerDropped( int nPlayerNumber )
+{
+	COM_ClearCustomizationList(&cl.players[nPlayerNumber].customdata, TRUE);
+}
+
+
+// TODO: Implement
 
 
 int	total_data[64];
@@ -802,6 +810,8 @@ void CL_ParseServerMessage( void )
 	int	i;
 	// For determining data parse sizes
 	int bufStart, bufEnd;
+
+	int	slot, value;
 
 //
 // if recording demos, copy the message out
@@ -896,12 +906,32 @@ void CL_ParseServerMessage( void )
 
 		// TODO: Implement
 
+		case svc_updatename:
+			i = MSG_ReadByte();
+			slot = i & ~128;
+			value = (i & 128) >> 7;
+			if (slot >= cl.maxclients)
+				Host_Error("CL_ParseServerMessage: svc_updatename > MAX_SCOREBOARD");
+			strcpy(cl.players[slot].name, MSG_ReadString());
+			if (value)
+			{
+				CL_PlayerDropped(slot);
+			}
+			break;
+
 		case svc_updatefrags:
 			i = MSG_ReadByte();
 			MSG_ReadShort();
 			break;
 
 		// TODO: Implement
+
+		case svc_updatecolors:
+			i = MSG_ReadByte();
+			if (i >= cl.maxclients)
+				Host_Error("CL_ParseServerMessage: svc_updatecolors > MAX_SCOREBOARD");
+			cl.players[i].color = MSG_ReadByte();
+			break;
 
 		case svc_damage:
 			break;

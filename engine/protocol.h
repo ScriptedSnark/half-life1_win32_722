@@ -86,11 +86,11 @@
 											// [string]..[0]model cache
 											// [string]...[0]sounds cache
 
-
+#define svc_updatename			13		// [byte] [string]
 #define	svc_updatefrags			14		// [byte] [short]
 
 
-
+#define svc_updatecolors		17		// [byte] [byte]
 
 #define	svc_damage				19
 
