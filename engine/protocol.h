@@ -80,7 +80,7 @@
 #define	svc_print				8		// [string] null terminated string
 #define	svc_stufftext			9		// [string] stuffed into client's console buffer
 											// the string should be \n terminated
-
+#define	svc_setangle			10		// [angle3] set the view angle to this absolute value
 #define	svc_serverinfo			11		// [long] version
 											// [string] signon string
 											// [string]..[0]model cache

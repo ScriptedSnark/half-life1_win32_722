@@ -897,7 +897,12 @@ void CL_ParseServerMessage( void )
 			Cbuf_AddText(MSG_ReadString());
 			break;
 
-		// TODO: Implement
+		case svc_setangle:
+			for (i = 0; i < 3; i++)
+			{
+				cl.viewangles[i] = MSG_ReadHiresAngle();
+			}
+			break;
 
 		case svc_serverinfo:
 			CL_ParseServerInfo();
