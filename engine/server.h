@@ -79,6 +79,11 @@ typedef struct client_s
 
 	// TODO: Implement
 
+	resource_t resourcesonhand;			// Head of resources accounted for list
+	resource_t resourcesneeded;			// Head of resources to download list
+
+	// TODO: Implement
+
 	customization_t customdata;			// Head of custom client data list
 
 

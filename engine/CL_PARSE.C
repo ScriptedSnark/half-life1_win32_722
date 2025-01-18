@@ -386,7 +386,7 @@ qboolean CL_RequestMissingResources( void )
 {
 	resource_t* p;
 
-	if (cls.dl.file || cls.dl.downloading)
+	if (cls.dl.download || cls.dl.isdownloading)
 		return FALSE;
 
 	if (!cls.dl.custom && cls.state != ca_uninitialized)
@@ -478,10 +478,15 @@ void CL_StartResourceDownloading( char* pszMessage, qboolean bCustom )
 	}
 
 	cls.dl.doneregistering = FALSE;
-	cls.dl.downloading = FALSE;
+	cls.dl.isdownloading = FALSE;
 
+	cls.dl.fLastStatusUpdate = realtime;
+	cls.dl.fLastDownloadTime = realtime;
 
-	// TODO: Implement
+	cls.dl.nRemainingToTransfer = cls.dl.nTotalToTransfer;
+
+	memset(cls.dl.rgStats, 0, sizeof(cls.dl.rgStats));
+	cls.dl.nCurStat = 0;
 }
 
 /*

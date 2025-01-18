@@ -16,6 +16,50 @@ typedef struct
 
 
 
+#define MAX_DL_STATS	8
+typedef struct
+{
+	qboolean bUsed;
+	float fTime;
+	int nBytesRemaining;
+} downloadtime_t;
+
+typedef struct
+{
+	FILE*		download;				// Handle of file being downloaded
+	resource_t* resource;
+	qboolean	doneregistering;
+
+	char		extension[MAX_QPATH];	// The extension of a file that we are downloading from the server
+										// ".cst" if it's a custom resource
+	CRC32_t		crcFile;				// For detecting that client's resource is different
+	char		filename[MAX_QPATH];	// The filename
+
+	// TODO: Implement
+
+	int			percent;
+
+	qboolean	isdownloading;			// TRUE if downloading is in progress
+
+	int			nTotalSize;
+	int			nTotalToTransfer;
+	int			nRemainingToTransfer;
+
+	float		fLastStatusUpdate;		// The time of the last update
+	float		fLastDownloadTime;		// The last time the file was downloaded
+
+	downloadtime_t rgStats[MAX_DL_STATS];
+	int			nCurStat;
+
+	// TODO: Implement
+
+	qboolean	custom;					// TRUE is downloading a custom resource
+	FILE*		upload;					// Handle of file being uploaded
+
+	// TODO: Implement
+
+} incomingtransfer_t;
+
 
 
 #define	MAX_SCOREBOARDNAME		32
@@ -38,36 +82,6 @@ typedef struct player_info_s
 
 
 } player_info_t;
-
-typedef struct
-{
-	FILE* file;
-	resource_t* resource;
-	qboolean	doneregistering;
-
-	char		extension[MAX_QPATH];	// The extension of a file that we are downloading from the server
-										// ".cst" if it's a custom resource
-	CRC32_t		crcFile;				// For detecting that client's resource is different
-	char		filename[MAX_QPATH];	// The filename
-
-	// TODO: Implement
-
-	int			percent;
-
-	qboolean	downloading;			// The downloading is in progress
-
-	int			nTotalSize;
-	int			nTotalToTransfer;
-	int			nRemainingToTransfer;
-
-	// TODO: Implement
-
-	qboolean	custom;					// TRUE is downloading a custom resource
-	FILE* custFile;
-
-	// TODO: Implement
-
-} incomingtransfer_t;
 
 //
 // client_state_t should hold all pieces of the client state

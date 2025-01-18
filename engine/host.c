@@ -525,7 +525,7 @@ void Host_EndGame( char* message, ... )
 	cls.demonum = oldn;
 
 	if (cls.state == ca_dedicated)
-		Sys_Error( "Host_EndGame: %s\n", string );	// dedicated servers exit
+		Sys_Error("Host_EndGame: %s\n", string);	// dedicated servers exit
 
 	if (cls.demonum != -1)
 	{
@@ -534,16 +534,16 @@ void Host_EndGame( char* message, ... )
 		cls.demonum = oldn;
 
 		Host_NextDemo();
-		longjmp( host_enddemo, 1 );
+		longjmp(host_enddemo, 1);
 	}
 
 	scr_disabled_for_loading = FALSE;
 
 	CL_Disconnect();
 
-	Cbuf_AddText( "cd stop\n" );
+	Cbuf_AddText("cd stop\n");
 	Cbuf_Execute();
-	longjmp( host_abortserver, 1 );
+	longjmp(host_abortserver, 1);
 }
 
 
@@ -589,7 +589,7 @@ void Host_Error( char* error, ... )
 ================
 Host_FindMaxClients
 
-NOTE: mostly SV_SetMaxclients in 8684
+Determine the value of svs.maxclients
 ================
 */
 void Host_FindMaxClients( void )
@@ -624,19 +624,31 @@ void Host_FindMaxClients( void )
 		svs.maxclients = MAX_CLIENTS;
 	}
 
-	svs.clients = (client_t*)Hunk_AllocName( sizeof( client_t ) * svs.maxclients, "clients" );
+	// Determine absolute limit
+	svs.maxclientslimit = 32;
+
+	// If we're a listen server and we're low on memory, reduce maximum player limit
+	if (host_parms.memsize <= 0x1000000)
+	{
+		svs.maxclientslimit = 4;
+	}
+
+	svs.clients = (client_t*)Hunk_AllocName(sizeof(client_t) * svs.maxclientslimit, "clients");
 
 	for (i = 0, cl = svs.clients; i < svs.maxclientslimit; i++, cl++)
 	{
-		Q_memset( cl, 0, sizeof( client_t ) );
+		memset(cl, 0, sizeof(client_t));
 
-		// TODO: implement
+		cl->resourcesneeded.pPrev = &cl->resourcesneeded;
+		cl->resourcesneeded.pNext = &cl->resourcesneeded;
+		cl->resourcesonhand.pPrev = &cl->resourcesonhand;
+		cl->resourcesonhand.pNext = &cl->resourcesonhand;
 	}
 
 	if (svs.maxclients > 1)
-		Cvar_SetValue( "deathmatch", 1 );
+		Cvar_SetValue("deathmatch", 1);
 	else
-		Cvar_SetValue( "deathmatch", 0 );
+		Cvar_SetValue("deathmatch", 0);
 }
 
 /*
@@ -672,408 +684,408 @@ void Host_InitLocal( void )
 	Cvar_RegisterVariable(&deathmatch);
 	Cvar_RegisterVariable(&mapcyclefile);
 	Cvar_RegisterVariable(&coop);
-	Cvar_RegisterVariable(&pausable );
+	Cvar_RegisterVariable(&pausable);
 	Cvar_RegisterVariable(&skill);
 
 	// REGISTER CVARS FOR SKILL LEVEL STUFF
 	// Agrunt
-	Cvar_RegisterVariable( &sk_agrunt_health1 );// {"sk_agrunt_health1","0"};
-	Cvar_RegisterVariable( &sk_agrunt_health2 );// {"sk_agrunt_health2","0"};
-	Cvar_RegisterVariable( &sk_agrunt_health3 );// {"sk_agrunt_health3","0"};
+	Cvar_RegisterVariable(&sk_agrunt_health1);// {"sk_agrunt_health1","0"};
+	Cvar_RegisterVariable(&sk_agrunt_health2);// {"sk_agrunt_health2","0"};
+	Cvar_RegisterVariable(&sk_agrunt_health3);// {"sk_agrunt_health3","0"};
 
-	Cvar_RegisterVariable( &sk_agrunt_dmg_punch1 );// {"sk_agrunt_dmg_punch1","0"};
-	Cvar_RegisterVariable( &sk_agrunt_dmg_punch2 );// {"sk_agrunt_dmg_punch2","0"};
-	Cvar_RegisterVariable( &sk_agrunt_dmg_punch3 );// {"sk_agrunt_dmg_punch3","0"};
+	Cvar_RegisterVariable(&sk_agrunt_dmg_punch1);// {"sk_agrunt_dmg_punch1","0"};
+	Cvar_RegisterVariable(&sk_agrunt_dmg_punch2);// {"sk_agrunt_dmg_punch2","0"};
+	Cvar_RegisterVariable(&sk_agrunt_dmg_punch3);// {"sk_agrunt_dmg_punch3","0"};
 
 	// Apache
-	Cvar_RegisterVariable( &sk_apache_health1 );// {"sk_apache_health1","0"};
-	Cvar_RegisterVariable( &sk_apache_health2 );// {"sk_apache_health2","0"};
-	Cvar_RegisterVariable( &sk_apache_health3 );// {"sk_apache_health3","0"};
+	Cvar_RegisterVariable(&sk_apache_health1);// {"sk_apache_health1","0"};
+	Cvar_RegisterVariable(&sk_apache_health2);// {"sk_apache_health2","0"};
+	Cvar_RegisterVariable(&sk_apache_health3);// {"sk_apache_health3","0"};
 
 	// Barney
-	Cvar_RegisterVariable( &sk_barney_health1 );// {"sk_barney_health1","0"};
-	Cvar_RegisterVariable( &sk_barney_health2 );// {"sk_barney_health2","0"};
-	Cvar_RegisterVariable( &sk_barney_health3 );// {"sk_barney_health3","0"};
+	Cvar_RegisterVariable(&sk_barney_health1);// {"sk_barney_health1","0"};
+	Cvar_RegisterVariable(&sk_barney_health2);// {"sk_barney_health2","0"};
+	Cvar_RegisterVariable(&sk_barney_health3);// {"sk_barney_health3","0"};
 
 	// Bullsquid
-	Cvar_RegisterVariable( &sk_bullsquid_health1 );// {"sk_bullsquid_health1","0"};
-	Cvar_RegisterVariable( &sk_bullsquid_health2 );// {"sk_bullsquid_health2","0"};
-	Cvar_RegisterVariable( &sk_bullsquid_health3 );// {"sk_bullsquid_health3","0"};
+	Cvar_RegisterVariable(&sk_bullsquid_health1);// {"sk_bullsquid_health1","0"};
+	Cvar_RegisterVariable(&sk_bullsquid_health2);// {"sk_bullsquid_health2","0"};
+	Cvar_RegisterVariable(&sk_bullsquid_health3);// {"sk_bullsquid_health3","0"};
 
-	Cvar_RegisterVariable( &sk_bullsquid_dmg_bite1 );// {"sk_bullsquid_dmg_bite1","0"};
-	Cvar_RegisterVariable( &sk_bullsquid_dmg_bite2 );// {"sk_bullsquid_dmg_bite2","0"};
-	Cvar_RegisterVariable( &sk_bullsquid_dmg_bite3 );// {"sk_bullsquid_dmg_bite3","0"};
+	Cvar_RegisterVariable(&sk_bullsquid_dmg_bite1);// {"sk_bullsquid_dmg_bite1","0"};
+	Cvar_RegisterVariable(&sk_bullsquid_dmg_bite2);// {"sk_bullsquid_dmg_bite2","0"};
+	Cvar_RegisterVariable(&sk_bullsquid_dmg_bite3);// {"sk_bullsquid_dmg_bite3","0"};
 
-	Cvar_RegisterVariable( &sk_bullsquid_dmg_whip1 );// {"sk_bullsquid_dmg_whip1","0"};
-	Cvar_RegisterVariable( &sk_bullsquid_dmg_whip2 );// {"sk_bullsquid_dmg_whip2","0"};
-	Cvar_RegisterVariable( &sk_bullsquid_dmg_whip3 );// {"sk_bullsquid_dmg_whip3","0"};
+	Cvar_RegisterVariable(&sk_bullsquid_dmg_whip1);// {"sk_bullsquid_dmg_whip1","0"};
+	Cvar_RegisterVariable(&sk_bullsquid_dmg_whip2);// {"sk_bullsquid_dmg_whip2","0"};
+	Cvar_RegisterVariable(&sk_bullsquid_dmg_whip3);// {"sk_bullsquid_dmg_whip3","0"};
 
-	Cvar_RegisterVariable( &sk_bullsquid_dmg_spit1 );// {"sk_bullsquid_dmg_spit1","0"};
-	Cvar_RegisterVariable( &sk_bullsquid_dmg_spit2 );// {"sk_bullsquid_dmg_spit2","0"};
-	Cvar_RegisterVariable( &sk_bullsquid_dmg_spit3 );// {"sk_bullsquid_dmg_spit3","0"};
+	Cvar_RegisterVariable(&sk_bullsquid_dmg_spit1);// {"sk_bullsquid_dmg_spit1","0"};
+	Cvar_RegisterVariable(&sk_bullsquid_dmg_spit2);// {"sk_bullsquid_dmg_spit2","0"};
+	Cvar_RegisterVariable(&sk_bullsquid_dmg_spit3);// {"sk_bullsquid_dmg_spit3","0"};
 
 
-	Cvar_RegisterVariable( &sk_bigmomma_health_factor1 );// {"sk_bigmomma_health_factor1","1.0"};
-	Cvar_RegisterVariable( &sk_bigmomma_health_factor2 );// {"sk_bigmomma_health_factor2","1.0"};
-	Cvar_RegisterVariable( &sk_bigmomma_health_factor3 );// {"sk_bigmomma_health_factor3","1.0"};
+	Cvar_RegisterVariable(&sk_bigmomma_health_factor1);// {"sk_bigmomma_health_factor1","1.0"};
+	Cvar_RegisterVariable(&sk_bigmomma_health_factor2);// {"sk_bigmomma_health_factor2","1.0"};
+	Cvar_RegisterVariable(&sk_bigmomma_health_factor3);// {"sk_bigmomma_health_factor3","1.0"};
 
-	Cvar_RegisterVariable( &sk_bigmomma_dmg_slash1 );// {"sk_bigmomma_dmg_slash1","50"};
-	Cvar_RegisterVariable( &sk_bigmomma_dmg_slash2 );// {"sk_bigmomma_dmg_slash2","50"};
-	Cvar_RegisterVariable( &sk_bigmomma_dmg_slash3 );// {"sk_bigmomma_dmg_slash3","50"};
+	Cvar_RegisterVariable(&sk_bigmomma_dmg_slash1);// {"sk_bigmomma_dmg_slash1","50"};
+	Cvar_RegisterVariable(&sk_bigmomma_dmg_slash2);// {"sk_bigmomma_dmg_slash2","50"};
+	Cvar_RegisterVariable(&sk_bigmomma_dmg_slash3);// {"sk_bigmomma_dmg_slash3","50"};
 
-	Cvar_RegisterVariable( &sk_bigmomma_dmg_blast1 );// {"sk_bigmomma_dmg_blast1","100"};
-	Cvar_RegisterVariable( &sk_bigmomma_dmg_blast2 );// {"sk_bigmomma_dmg_blast2","100"};
-	Cvar_RegisterVariable( &sk_bigmomma_dmg_blast3 );// {"sk_bigmomma_dmg_blast3","100"};
+	Cvar_RegisterVariable(&sk_bigmomma_dmg_blast1);// {"sk_bigmomma_dmg_blast1","100"};
+	Cvar_RegisterVariable(&sk_bigmomma_dmg_blast2);// {"sk_bigmomma_dmg_blast2","100"};
+	Cvar_RegisterVariable(&sk_bigmomma_dmg_blast3);// {"sk_bigmomma_dmg_blast3","100"};
 
-	Cvar_RegisterVariable( &sk_bigmomma_radius_blast1 );// {"sk_bigmomma_radius_blast1","250"};
-	Cvar_RegisterVariable( &sk_bigmomma_radius_blast2 );// {"sk_bigmomma_radius_blast2","250"};
-	Cvar_RegisterVariable( &sk_bigmomma_radius_blast3 );// {"sk_bigmomma_radius_blast3","250"};
+	Cvar_RegisterVariable(&sk_bigmomma_radius_blast1);// {"sk_bigmomma_radius_blast1","250"};
+	Cvar_RegisterVariable(&sk_bigmomma_radius_blast2);// {"sk_bigmomma_radius_blast2","250"};
+	Cvar_RegisterVariable(&sk_bigmomma_radius_blast3);// {"sk_bigmomma_radius_blast3","250"};
 
 	// Gargantua
-	Cvar_RegisterVariable( &sk_gargantua_health1 );// {"sk_gargantua_health1","0"};
-	Cvar_RegisterVariable( &sk_gargantua_health2 );// {"sk_gargantua_health2","0"};
-	Cvar_RegisterVariable( &sk_gargantua_health3 );// {"sk_gargantua_health3","0"};
+	Cvar_RegisterVariable(&sk_gargantua_health1);// {"sk_gargantua_health1","0"};
+	Cvar_RegisterVariable(&sk_gargantua_health2);// {"sk_gargantua_health2","0"};
+	Cvar_RegisterVariable(&sk_gargantua_health3);// {"sk_gargantua_health3","0"};
 
-	Cvar_RegisterVariable( &sk_gargantua_dmg_slash1 );// {"sk_gargantua_dmg_slash1","0"};
-	Cvar_RegisterVariable( &sk_gargantua_dmg_slash2 );// {"sk_gargantua_dmg_slash2","0"};
-	Cvar_RegisterVariable( &sk_gargantua_dmg_slash3 );// {"sk_gargantua_dmg_slash3","0"};
+	Cvar_RegisterVariable(&sk_gargantua_dmg_slash1);// {"sk_gargantua_dmg_slash1","0"};
+	Cvar_RegisterVariable(&sk_gargantua_dmg_slash2);// {"sk_gargantua_dmg_slash2","0"};
+	Cvar_RegisterVariable(&sk_gargantua_dmg_slash3);// {"sk_gargantua_dmg_slash3","0"};
 
-	Cvar_RegisterVariable( &sk_gargantua_dmg_fire1 );// {"sk_gargantua_dmg_fire1","0"};
-	Cvar_RegisterVariable( &sk_gargantua_dmg_fire2 );// {"sk_gargantua_dmg_fire2","0"};
-	Cvar_RegisterVariable( &sk_gargantua_dmg_fire3 );// {"sk_gargantua_dmg_fire3","0"};
+	Cvar_RegisterVariable(&sk_gargantua_dmg_fire1);// {"sk_gargantua_dmg_fire1","0"};
+	Cvar_RegisterVariable(&sk_gargantua_dmg_fire2);// {"sk_gargantua_dmg_fire2","0"};
+	Cvar_RegisterVariable(&sk_gargantua_dmg_fire3);// {"sk_gargantua_dmg_fire3","0"};
 
-	Cvar_RegisterVariable( &sk_gargantua_dmg_stomp1 );// {"sk_gargantua_dmg_stomp1","0"};
-	Cvar_RegisterVariable( &sk_gargantua_dmg_stomp2 );// {"sk_gargantua_dmg_stomp2","0"};
-	Cvar_RegisterVariable( &sk_gargantua_dmg_stomp3 );// {"sk_gargantua_dmg_stomp3","0"};
+	Cvar_RegisterVariable(&sk_gargantua_dmg_stomp1);// {"sk_gargantua_dmg_stomp1","0"};
+	Cvar_RegisterVariable(&sk_gargantua_dmg_stomp2);// {"sk_gargantua_dmg_stomp2","0"};
+	Cvar_RegisterVariable(&sk_gargantua_dmg_stomp3);// {"sk_gargantua_dmg_stomp3","0"};
 
 
 	// Hassassin
-	Cvar_RegisterVariable( &sk_hassassin_health1 );// {"sk_hassassin_health1","0"};
-	Cvar_RegisterVariable( &sk_hassassin_health2 );// {"sk_hassassin_health2","0"};
-	Cvar_RegisterVariable( &sk_hassassin_health3 );// {"sk_hassassin_health3","0"};
+	Cvar_RegisterVariable(&sk_hassassin_health1);// {"sk_hassassin_health1","0"};
+	Cvar_RegisterVariable(&sk_hassassin_health2);// {"sk_hassassin_health2","0"};
+	Cvar_RegisterVariable(&sk_hassassin_health3);// {"sk_hassassin_health3","0"};
 
 
 	// Headcrab
-	Cvar_RegisterVariable( &sk_headcrab_health1 );// {"sk_headcrab_health1","0"};
-	Cvar_RegisterVariable( &sk_headcrab_health2 );// {"sk_headcrab_health2","0"};
-	Cvar_RegisterVariable( &sk_headcrab_health3 );// {"sk_headcrab_health3","0"};
+	Cvar_RegisterVariable(&sk_headcrab_health1);// {"sk_headcrab_health1","0"};
+	Cvar_RegisterVariable(&sk_headcrab_health2);// {"sk_headcrab_health2","0"};
+	Cvar_RegisterVariable(&sk_headcrab_health3);// {"sk_headcrab_health3","0"};
 
-	Cvar_RegisterVariable( &sk_headcrab_dmg_bite1 );// {"sk_headcrab_dmg_bite1","0"};
-	Cvar_RegisterVariable( &sk_headcrab_dmg_bite2 );// {"sk_headcrab_dmg_bite2","0"};
-	Cvar_RegisterVariable( &sk_headcrab_dmg_bite3 );// {"sk_headcrab_dmg_bite3","0"};
+	Cvar_RegisterVariable(&sk_headcrab_dmg_bite1);// {"sk_headcrab_dmg_bite1","0"};
+	Cvar_RegisterVariable(&sk_headcrab_dmg_bite2);// {"sk_headcrab_dmg_bite2","0"};
+	Cvar_RegisterVariable(&sk_headcrab_dmg_bite3);// {"sk_headcrab_dmg_bite3","0"};
 
 
 	// Hgrunt 
-	Cvar_RegisterVariable( &sk_hgrunt_health1 );// {"sk_hgrunt_health1","0"};
-	Cvar_RegisterVariable( &sk_hgrunt_health2 );// {"sk_hgrunt_health2","0"};
-	Cvar_RegisterVariable( &sk_hgrunt_health3 );// {"sk_hgrunt_health3","0"};
+	Cvar_RegisterVariable(&sk_hgrunt_health1);// {"sk_hgrunt_health1","0"};
+	Cvar_RegisterVariable(&sk_hgrunt_health2);// {"sk_hgrunt_health2","0"};
+	Cvar_RegisterVariable(&sk_hgrunt_health3);// {"sk_hgrunt_health3","0"};
 
-	Cvar_RegisterVariable( &sk_hgrunt_kick1 );// {"sk_hgrunt_kick1","0"};
-	Cvar_RegisterVariable( &sk_hgrunt_kick2 );// {"sk_hgrunt_kick2","0"};
-	Cvar_RegisterVariable( &sk_hgrunt_kick3 );// {"sk_hgrunt_kick3","0"};
+	Cvar_RegisterVariable(&sk_hgrunt_kick1);// {"sk_hgrunt_kick1","0"};
+	Cvar_RegisterVariable(&sk_hgrunt_kick2);// {"sk_hgrunt_kick2","0"};
+	Cvar_RegisterVariable(&sk_hgrunt_kick3);// {"sk_hgrunt_kick3","0"};
 
-	Cvar_RegisterVariable( &sk_hgrunt_pellets1 );
-	Cvar_RegisterVariable( &sk_hgrunt_pellets2 );
-	Cvar_RegisterVariable( &sk_hgrunt_pellets3 );
+	Cvar_RegisterVariable(&sk_hgrunt_pellets1);
+	Cvar_RegisterVariable(&sk_hgrunt_pellets2);
+	Cvar_RegisterVariable(&sk_hgrunt_pellets3);
 
-	Cvar_RegisterVariable( &sk_hgrunt_gspeed1 );
-	Cvar_RegisterVariable( &sk_hgrunt_gspeed2 );
-	Cvar_RegisterVariable( &sk_hgrunt_gspeed3 );
+	Cvar_RegisterVariable(&sk_hgrunt_gspeed1);
+	Cvar_RegisterVariable(&sk_hgrunt_gspeed2);
+	Cvar_RegisterVariable(&sk_hgrunt_gspeed3);
 
 	// Houndeye
-	Cvar_RegisterVariable( &sk_houndeye_health1 );// {"sk_houndeye_health1","0"};
-	Cvar_RegisterVariable( &sk_houndeye_health2 );// {"sk_houndeye_health2","0"};
-	Cvar_RegisterVariable( &sk_houndeye_health3 );// {"sk_houndeye_health3","0"};
+	Cvar_RegisterVariable(&sk_houndeye_health1);// {"sk_houndeye_health1","0"};
+	Cvar_RegisterVariable(&sk_houndeye_health2);// {"sk_houndeye_health2","0"};
+	Cvar_RegisterVariable(&sk_houndeye_health3);// {"sk_houndeye_health3","0"};
 
-	Cvar_RegisterVariable( &sk_houndeye_dmg_blast1 );// {"sk_houndeye_dmg_blast1","0"};
-	Cvar_RegisterVariable( &sk_houndeye_dmg_blast2 );// {"sk_houndeye_dmg_blast2","0"};
-	Cvar_RegisterVariable( &sk_houndeye_dmg_blast3 );// {"sk_houndeye_dmg_blast3","0"};
+	Cvar_RegisterVariable(&sk_houndeye_dmg_blast1);// {"sk_houndeye_dmg_blast1","0"};
+	Cvar_RegisterVariable(&sk_houndeye_dmg_blast2);// {"sk_houndeye_dmg_blast2","0"};
+	Cvar_RegisterVariable(&sk_houndeye_dmg_blast3);// {"sk_houndeye_dmg_blast3","0"};
 
 
 	// ISlave
-	Cvar_RegisterVariable( &sk_islave_health1 );// {"sk_islave_health1","0"};
-	Cvar_RegisterVariable( &sk_islave_health2 );// {"sk_islave_health2","0"};
-	Cvar_RegisterVariable( &sk_islave_health3 );// {"sk_islave_health3","0"};
+	Cvar_RegisterVariable(&sk_islave_health1);// {"sk_islave_health1","0"};
+	Cvar_RegisterVariable(&sk_islave_health2);// {"sk_islave_health2","0"};
+	Cvar_RegisterVariable(&sk_islave_health3);// {"sk_islave_health3","0"};
 
-	Cvar_RegisterVariable( &sk_islave_dmg_claw1 );// {"sk_islave_dmg_claw1","0"};
-	Cvar_RegisterVariable( &sk_islave_dmg_claw2 );// {"sk_islave_dmg_claw2","0"};
-	Cvar_RegisterVariable( &sk_islave_dmg_claw3 );// {"sk_islave_dmg_claw3","0"};
+	Cvar_RegisterVariable(&sk_islave_dmg_claw1);// {"sk_islave_dmg_claw1","0"};
+	Cvar_RegisterVariable(&sk_islave_dmg_claw2);// {"sk_islave_dmg_claw2","0"};
+	Cvar_RegisterVariable(&sk_islave_dmg_claw3);// {"sk_islave_dmg_claw3","0"};
 
-	Cvar_RegisterVariable( &sk_islave_dmg_clawrake1 );// {"sk_islave_dmg_clawrake1","0"};
-	Cvar_RegisterVariable( &sk_islave_dmg_clawrake2 );// {"sk_islave_dmg_clawrake2","0"};
-	Cvar_RegisterVariable( &sk_islave_dmg_clawrake3 );// {"sk_islave_dmg_clawrake3","0"};
+	Cvar_RegisterVariable(&sk_islave_dmg_clawrake1);// {"sk_islave_dmg_clawrake1","0"};
+	Cvar_RegisterVariable(&sk_islave_dmg_clawrake2);// {"sk_islave_dmg_clawrake2","0"};
+	Cvar_RegisterVariable(&sk_islave_dmg_clawrake3);// {"sk_islave_dmg_clawrake3","0"};
 
-	Cvar_RegisterVariable( &sk_islave_dmg_zap1 );// {"sk_islave_dmg_zap1","0"};
-	Cvar_RegisterVariable( &sk_islave_dmg_zap2 );// {"sk_islave_dmg_zap2","0"};
-	Cvar_RegisterVariable( &sk_islave_dmg_zap3 );// {"sk_islave_dmg_zap3","0"};
+	Cvar_RegisterVariable(&sk_islave_dmg_zap1);// {"sk_islave_dmg_zap1","0"};
+	Cvar_RegisterVariable(&sk_islave_dmg_zap2);// {"sk_islave_dmg_zap2","0"};
+	Cvar_RegisterVariable(&sk_islave_dmg_zap3);// {"sk_islave_dmg_zap3","0"};
 
 
 	// Icthyosaur
-	Cvar_RegisterVariable( &sk_ichthyosaur_health1 );// {"sk_ichthyosaur_health1","0"};
-	Cvar_RegisterVariable( &sk_ichthyosaur_health2 );// {"sk_ichthyosaur_health2","0"};
-	Cvar_RegisterVariable( &sk_ichthyosaur_health3 );// {"sk_ichthyosaur_health3","0"};
+	Cvar_RegisterVariable(&sk_ichthyosaur_health1);// {"sk_ichthyosaur_health1","0"};
+	Cvar_RegisterVariable(&sk_ichthyosaur_health2);// {"sk_ichthyosaur_health2","0"};
+	Cvar_RegisterVariable(&sk_ichthyosaur_health3);// {"sk_ichthyosaur_health3","0"};
 
-	Cvar_RegisterVariable( &sk_ichthyosaur_shake1 );// {"sk_ichthyosaur_health3","0"};
-	Cvar_RegisterVariable( &sk_ichthyosaur_shake2 );// {"sk_ichthyosaur_health3","0"};
-	Cvar_RegisterVariable( &sk_ichthyosaur_shake3 );// {"sk_ichthyosaur_health3","0"};
+	Cvar_RegisterVariable(&sk_ichthyosaur_shake1);// {"sk_ichthyosaur_health3","0"};
+	Cvar_RegisterVariable(&sk_ichthyosaur_shake2);// {"sk_ichthyosaur_health3","0"};
+	Cvar_RegisterVariable(&sk_ichthyosaur_shake3);// {"sk_ichthyosaur_health3","0"};
 
 
 
 	// Leech
-	Cvar_RegisterVariable( &sk_leech_health1 );// {"sk_leech_health1","0"};
-	Cvar_RegisterVariable( &sk_leech_health2 );// {"sk_leech_health2","0"};
-	Cvar_RegisterVariable( &sk_leech_health3 );// {"sk_leech_health3","0"};
+	Cvar_RegisterVariable(&sk_leech_health1);// {"sk_leech_health1","0"};
+	Cvar_RegisterVariable(&sk_leech_health2);// {"sk_leech_health2","0"};
+	Cvar_RegisterVariable(&sk_leech_health3);// {"sk_leech_health3","0"};
 
-	Cvar_RegisterVariable( &sk_leech_dmg_bite1 );// {"sk_leech_dmg_bite1","0"};
-	Cvar_RegisterVariable( &sk_leech_dmg_bite2 );// {"sk_leech_dmg_bite2","0"};
-	Cvar_RegisterVariable( &sk_leech_dmg_bite3 );// {"sk_leech_dmg_bite3","0"};
+	Cvar_RegisterVariable(&sk_leech_dmg_bite1);// {"sk_leech_dmg_bite1","0"};
+	Cvar_RegisterVariable(&sk_leech_dmg_bite2);// {"sk_leech_dmg_bite2","0"};
+	Cvar_RegisterVariable(&sk_leech_dmg_bite3);// {"sk_leech_dmg_bite3","0"};
 
 
 	// Controller
-	Cvar_RegisterVariable( &sk_controller_health1 );
-	Cvar_RegisterVariable( &sk_controller_health2 );
-	Cvar_RegisterVariable( &sk_controller_health3 );
+	Cvar_RegisterVariable(&sk_controller_health1);
+	Cvar_RegisterVariable(&sk_controller_health2);
+	Cvar_RegisterVariable(&sk_controller_health3);
 
-	Cvar_RegisterVariable( &sk_controller_dmgzap1 );
-	Cvar_RegisterVariable( &sk_controller_dmgzap2 );
-	Cvar_RegisterVariable( &sk_controller_dmgzap3 );
+	Cvar_RegisterVariable(&sk_controller_dmgzap1);
+	Cvar_RegisterVariable(&sk_controller_dmgzap2);
+	Cvar_RegisterVariable(&sk_controller_dmgzap3);
 
-	Cvar_RegisterVariable( &sk_controller_speedball1 );
-	Cvar_RegisterVariable( &sk_controller_speedball2 );
-	Cvar_RegisterVariable( &sk_controller_speedball3 );
+	Cvar_RegisterVariable(&sk_controller_speedball1);
+	Cvar_RegisterVariable(&sk_controller_speedball2);
+	Cvar_RegisterVariable(&sk_controller_speedball3);
 
-	Cvar_RegisterVariable( &sk_controller_dmgball1 );
-	Cvar_RegisterVariable( &sk_controller_dmgball2 );
-	Cvar_RegisterVariable( &sk_controller_dmgball3 );
+	Cvar_RegisterVariable(&sk_controller_dmgball1);
+	Cvar_RegisterVariable(&sk_controller_dmgball2);
+	Cvar_RegisterVariable(&sk_controller_dmgball3);
 
 	// Nihilanth
-	Cvar_RegisterVariable( &sk_nihilanth_health1 );// {"sk_nihilanth_health1","0"};
-	Cvar_RegisterVariable( &sk_nihilanth_health2 );// {"sk_nihilanth_health2","0"};
-	Cvar_RegisterVariable( &sk_nihilanth_health3 );// {"sk_nihilanth_health3","0"};
+	Cvar_RegisterVariable(&sk_nihilanth_health1);// {"sk_nihilanth_health1","0"};
+	Cvar_RegisterVariable(&sk_nihilanth_health2);// {"sk_nihilanth_health2","0"};
+	Cvar_RegisterVariable(&sk_nihilanth_health3);// {"sk_nihilanth_health3","0"};
 
-	Cvar_RegisterVariable( &sk_nihilanth_zap1 );
-	Cvar_RegisterVariable( &sk_nihilanth_zap2 );
-	Cvar_RegisterVariable( &sk_nihilanth_zap3 );
+	Cvar_RegisterVariable(&sk_nihilanth_zap1);
+	Cvar_RegisterVariable(&sk_nihilanth_zap2);
+	Cvar_RegisterVariable(&sk_nihilanth_zap3);
 
 	// Scientist
-	Cvar_RegisterVariable( &sk_scientist_health1 );// {"sk_scientist_health1","0"};
-	Cvar_RegisterVariable( &sk_scientist_health2 );// {"sk_scientist_health2","0"};
-	Cvar_RegisterVariable( &sk_scientist_health3 );// {"sk_scientist_health3","0"};
+	Cvar_RegisterVariable(&sk_scientist_health1);// {"sk_scientist_health1","0"};
+	Cvar_RegisterVariable(&sk_scientist_health2);// {"sk_scientist_health2","0"};
+	Cvar_RegisterVariable(&sk_scientist_health3);// {"sk_scientist_health3","0"};
 
 
 	// Snark
-	Cvar_RegisterVariable( &sk_snark_health1 );// {"sk_snark_health1","0"};
-	Cvar_RegisterVariable( &sk_snark_health2 );// {"sk_snark_health2","0"};
-	Cvar_RegisterVariable( &sk_snark_health3 );// {"sk_snark_health3","0"};
+	Cvar_RegisterVariable(&sk_snark_health1);// {"sk_snark_health1","0"};
+	Cvar_RegisterVariable(&sk_snark_health2);// {"sk_snark_health2","0"};
+	Cvar_RegisterVariable(&sk_snark_health3);// {"sk_snark_health3","0"};
 
-	Cvar_RegisterVariable( &sk_snark_dmg_bite1 );// {"sk_snark_dmg_bite1","0"};
-	Cvar_RegisterVariable( &sk_snark_dmg_bite2 );// {"sk_snark_dmg_bite2","0"};
-	Cvar_RegisterVariable( &sk_snark_dmg_bite3 );// {"sk_snark_dmg_bite3","0"};
+	Cvar_RegisterVariable(&sk_snark_dmg_bite1);// {"sk_snark_dmg_bite1","0"};
+	Cvar_RegisterVariable(&sk_snark_dmg_bite2);// {"sk_snark_dmg_bite2","0"};
+	Cvar_RegisterVariable(&sk_snark_dmg_bite3);// {"sk_snark_dmg_bite3","0"};
 
-	Cvar_RegisterVariable( &sk_snark_dmg_pop1 );// {"sk_snark_dmg_pop1","0"};
-	Cvar_RegisterVariable( &sk_snark_dmg_pop2 );// {"sk_snark_dmg_pop2","0"};
-	Cvar_RegisterVariable( &sk_snark_dmg_pop3 );// {"sk_snark_dmg_pop3","0"};
+	Cvar_RegisterVariable(&sk_snark_dmg_pop1);// {"sk_snark_dmg_pop1","0"};
+	Cvar_RegisterVariable(&sk_snark_dmg_pop2);// {"sk_snark_dmg_pop2","0"};
+	Cvar_RegisterVariable(&sk_snark_dmg_pop3);// {"sk_snark_dmg_pop3","0"};
 
 
 
 	// Zombie
-	Cvar_RegisterVariable( &sk_zombie_health1 );// {"sk_zombie_health1","0"};
-	Cvar_RegisterVariable( &sk_zombie_health2 );// {"sk_zombie_health3","0"};
-	Cvar_RegisterVariable( &sk_zombie_health3 );// {"sk_zombie_health3","0"};
+	Cvar_RegisterVariable(&sk_zombie_health1);// {"sk_zombie_health1","0"};
+	Cvar_RegisterVariable(&sk_zombie_health2);// {"sk_zombie_health3","0"};
+	Cvar_RegisterVariable(&sk_zombie_health3);// {"sk_zombie_health3","0"};
 
-	Cvar_RegisterVariable( &sk_zombie_dmg_one_slash1 );// {"sk_zombie_dmg_one_slash1","0"};
-	Cvar_RegisterVariable( &sk_zombie_dmg_one_slash2 );// {"sk_zombie_dmg_one_slash2","0"};
-	Cvar_RegisterVariable( &sk_zombie_dmg_one_slash3 );// {"sk_zombie_dmg_one_slash3","0"};
+	Cvar_RegisterVariable(&sk_zombie_dmg_one_slash1);// {"sk_zombie_dmg_one_slash1","0"};
+	Cvar_RegisterVariable(&sk_zombie_dmg_one_slash2);// {"sk_zombie_dmg_one_slash2","0"};
+	Cvar_RegisterVariable(&sk_zombie_dmg_one_slash3);// {"sk_zombie_dmg_one_slash3","0"};
 
-	Cvar_RegisterVariable( &sk_zombie_dmg_both_slash1 );// {"sk_zombie_dmg_both_slash1","0"};
-	Cvar_RegisterVariable( &sk_zombie_dmg_both_slash2 );// {"sk_zombie_dmg_both_slash2","0"};
-	Cvar_RegisterVariable( &sk_zombie_dmg_both_slash3 );// {"sk_zombie_dmg_both_slash3","0"};
+	Cvar_RegisterVariable(&sk_zombie_dmg_both_slash1);// {"sk_zombie_dmg_both_slash1","0"};
+	Cvar_RegisterVariable(&sk_zombie_dmg_both_slash2);// {"sk_zombie_dmg_both_slash2","0"};
+	Cvar_RegisterVariable(&sk_zombie_dmg_both_slash3);// {"sk_zombie_dmg_both_slash3","0"};
 
 
 	//Turret
-	Cvar_RegisterVariable( &sk_turret_health1 );// {"sk_turret_health1","0"};
-	Cvar_RegisterVariable( &sk_turret_health2 );// {"sk_turret_health2","0"};
-	Cvar_RegisterVariable( &sk_turret_health3 );// {"sk_turret_health3","0"};
+	Cvar_RegisterVariable(&sk_turret_health1);// {"sk_turret_health1","0"};
+	Cvar_RegisterVariable(&sk_turret_health2);// {"sk_turret_health2","0"};
+	Cvar_RegisterVariable(&sk_turret_health3);// {"sk_turret_health3","0"};
 
 
 	// MiniTurret
-	Cvar_RegisterVariable( &sk_miniturret_health1 );// {"sk_miniturret_health1","0"};
-	Cvar_RegisterVariable( &sk_miniturret_health2 );// {"sk_miniturret_health2","0"};
-	Cvar_RegisterVariable( &sk_miniturret_health3 );// {"sk_miniturret_health3","0"};
+	Cvar_RegisterVariable(&sk_miniturret_health1);// {"sk_miniturret_health1","0"};
+	Cvar_RegisterVariable(&sk_miniturret_health2);// {"sk_miniturret_health2","0"};
+	Cvar_RegisterVariable(&sk_miniturret_health3);// {"sk_miniturret_health3","0"};
 
 
 	// Sentry Turret
-	Cvar_RegisterVariable( &sk_sentry_health1 );// {"sk_sentry_health1","0"};
-	Cvar_RegisterVariable( &sk_sentry_health2 );// {"sk_sentry_health2","0"};
-	Cvar_RegisterVariable( &sk_sentry_health3 );// {"sk_sentry_health3","0"};
+	Cvar_RegisterVariable(&sk_sentry_health1);// {"sk_sentry_health1","0"};
+	Cvar_RegisterVariable(&sk_sentry_health2);// {"sk_sentry_health2","0"};
+	Cvar_RegisterVariable(&sk_sentry_health3);// {"sk_sentry_health3","0"};
 
 
 	// PLAYER WEAPONS
 
 	// Crowbar whack
-	Cvar_RegisterVariable( &sk_plr_crowbar1 );// {"sk_plr_crowbar1","0"};
-	Cvar_RegisterVariable( &sk_plr_crowbar2 );// {"sk_plr_crowbar2","0"};
-	Cvar_RegisterVariable( &sk_plr_crowbar3 );// {"sk_plr_crowbar3","0"};
+	Cvar_RegisterVariable(&sk_plr_crowbar1);// {"sk_plr_crowbar1","0"};
+	Cvar_RegisterVariable(&sk_plr_crowbar2);// {"sk_plr_crowbar2","0"};
+	Cvar_RegisterVariable(&sk_plr_crowbar3);// {"sk_plr_crowbar3","0"};
 
 	// Glock Round
-	Cvar_RegisterVariable( &sk_plr_9mm_bullet1 );// {"sk_plr_9mm_bullet1","0"};
-	Cvar_RegisterVariable( &sk_plr_9mm_bullet2 );// {"sk_plr_9mm_bullet2","0"};
-	Cvar_RegisterVariable( &sk_plr_9mm_bullet3 );// {"sk_plr_9mm_bullet3","0"};
+	Cvar_RegisterVariable(&sk_plr_9mm_bullet1);// {"sk_plr_9mm_bullet1","0"};
+	Cvar_RegisterVariable(&sk_plr_9mm_bullet2);// {"sk_plr_9mm_bullet2","0"};
+	Cvar_RegisterVariable(&sk_plr_9mm_bullet3);// {"sk_plr_9mm_bullet3","0"};
 
 	// 357 Round
-	Cvar_RegisterVariable( &sk_plr_357_bullet1 );// {"sk_plr_357_bullet1","0"};
-	Cvar_RegisterVariable( &sk_plr_357_bullet2 );// {"sk_plr_357_bullet2","0"};
-	Cvar_RegisterVariable( &sk_plr_357_bullet3 );// {"sk_plr_357_bullet3","0"};
+	Cvar_RegisterVariable(&sk_plr_357_bullet1);// {"sk_plr_357_bullet1","0"};
+	Cvar_RegisterVariable(&sk_plr_357_bullet2);// {"sk_plr_357_bullet2","0"};
+	Cvar_RegisterVariable(&sk_plr_357_bullet3);// {"sk_plr_357_bullet3","0"};
 
 	// MP5 Round
-	Cvar_RegisterVariable( &sk_plr_9mmAR_bullet1 );// {"sk_plr_9mmAR_bullet1","0"};
-	Cvar_RegisterVariable( &sk_plr_9mmAR_bullet2 );// {"sk_plr_9mmAR_bullet2","0"};
-	Cvar_RegisterVariable( &sk_plr_9mmAR_bullet3 );// {"sk_plr_9mmAR_bullet3","0"};
+	Cvar_RegisterVariable(&sk_plr_9mmAR_bullet1);// {"sk_plr_9mmAR_bullet1","0"};
+	Cvar_RegisterVariable(&sk_plr_9mmAR_bullet2);// {"sk_plr_9mmAR_bullet2","0"};
+	Cvar_RegisterVariable(&sk_plr_9mmAR_bullet3);// {"sk_plr_9mmAR_bullet3","0"};
 
 
 	// M203 grenade
-	Cvar_RegisterVariable( &sk_plr_9mmAR_grenade1 );// {"sk_plr_9mmAR_grenade1","0"};
-	Cvar_RegisterVariable( &sk_plr_9mmAR_grenade2 );// {"sk_plr_9mmAR_grenade2","0"};
-	Cvar_RegisterVariable( &sk_plr_9mmAR_grenade3 );// {"sk_plr_9mmAR_grenade3","0"};
+	Cvar_RegisterVariable(&sk_plr_9mmAR_grenade1);// {"sk_plr_9mmAR_grenade1","0"};
+	Cvar_RegisterVariable(&sk_plr_9mmAR_grenade2);// {"sk_plr_9mmAR_grenade2","0"};
+	Cvar_RegisterVariable(&sk_plr_9mmAR_grenade3);// {"sk_plr_9mmAR_grenade3","0"};
 
 
 	// Shotgun buckshot
-	Cvar_RegisterVariable( &sk_plr_buckshot1 );// {"sk_plr_buckshot1","0"};
-	Cvar_RegisterVariable( &sk_plr_buckshot2 );// {"sk_plr_buckshot2","0"};
-	Cvar_RegisterVariable( &sk_plr_buckshot3 );// {"sk_plr_buckshot3","0"};
+	Cvar_RegisterVariable(&sk_plr_buckshot1);// {"sk_plr_buckshot1","0"};
+	Cvar_RegisterVariable(&sk_plr_buckshot2);// {"sk_plr_buckshot2","0"};
+	Cvar_RegisterVariable(&sk_plr_buckshot3);// {"sk_plr_buckshot3","0"};
 
 
 	// Crossbow
-	Cvar_RegisterVariable( &sk_plr_xbow_bolt_monster1 );// {"sk_plr_xbow_bolt1","0"};
-	Cvar_RegisterVariable( &sk_plr_xbow_bolt_monster2 );// {"sk_plr_xbow_bolt2","0"};
-	Cvar_RegisterVariable( &sk_plr_xbow_bolt_monster3 );// {"sk_plr_xbow_bolt3","0"};
+	Cvar_RegisterVariable(&sk_plr_xbow_bolt_monster1);// {"sk_plr_xbow_bolt1","0"};
+	Cvar_RegisterVariable(&sk_plr_xbow_bolt_monster2);// {"sk_plr_xbow_bolt2","0"};
+	Cvar_RegisterVariable(&sk_plr_xbow_bolt_monster3);// {"sk_plr_xbow_bolt3","0"};
 
-	Cvar_RegisterVariable( &sk_plr_xbow_bolt_client1 );// {"sk_plr_xbow_bolt1","0"};
-	Cvar_RegisterVariable( &sk_plr_xbow_bolt_client2 );// {"sk_plr_xbow_bolt2","0"};
-	Cvar_RegisterVariable( &sk_plr_xbow_bolt_client3 );// {"sk_plr_xbow_bolt3","0"};
+	Cvar_RegisterVariable(&sk_plr_xbow_bolt_client1);// {"sk_plr_xbow_bolt1","0"};
+	Cvar_RegisterVariable(&sk_plr_xbow_bolt_client2);// {"sk_plr_xbow_bolt2","0"};
+	Cvar_RegisterVariable(&sk_plr_xbow_bolt_client3);// {"sk_plr_xbow_bolt3","0"};
 
 
 	// RPG
-	Cvar_RegisterVariable( &sk_plr_rpg1 );// {"sk_plr_rpg1","0"};
-	Cvar_RegisterVariable( &sk_plr_rpg2 );// {"sk_plr_rpg2","0"};
-	Cvar_RegisterVariable( &sk_plr_rpg3 );// {"sk_plr_rpg3","0"};
+	Cvar_RegisterVariable(&sk_plr_rpg1);// {"sk_plr_rpg1","0"};
+	Cvar_RegisterVariable(&sk_plr_rpg2);// {"sk_plr_rpg2","0"};
+	Cvar_RegisterVariable(&sk_plr_rpg3);// {"sk_plr_rpg3","0"};
 
 
 	// Gauss Gun
-	Cvar_RegisterVariable( &sk_plr_gauss1 );// {"sk_plr_gauss1","0"};
-	Cvar_RegisterVariable( &sk_plr_gauss2 );// {"sk_plr_gauss2","0"};
-	Cvar_RegisterVariable( &sk_plr_gauss3 );// {"sk_plr_gauss3","0"};
+	Cvar_RegisterVariable(&sk_plr_gauss1);// {"sk_plr_gauss1","0"};
+	Cvar_RegisterVariable(&sk_plr_gauss2);// {"sk_plr_gauss2","0"};
+	Cvar_RegisterVariable(&sk_plr_gauss3);// {"sk_plr_gauss3","0"};
 
 
 	// Egon Gun
-	Cvar_RegisterVariable( &sk_plr_egon_narrow1 );// {"sk_plr_egon_narrow1","0"};
-	Cvar_RegisterVariable( &sk_plr_egon_narrow2 );// {"sk_plr_egon_narrow2","0"};
-	Cvar_RegisterVariable( &sk_plr_egon_narrow3 );// {"sk_plr_egon_narrow3","0"};
+	Cvar_RegisterVariable(&sk_plr_egon_narrow1);// {"sk_plr_egon_narrow1","0"};
+	Cvar_RegisterVariable(&sk_plr_egon_narrow2);// {"sk_plr_egon_narrow2","0"};
+	Cvar_RegisterVariable(&sk_plr_egon_narrow3);// {"sk_plr_egon_narrow3","0"};
 
-	Cvar_RegisterVariable( &sk_plr_egon_wide1 );// {"sk_plr_egon_wide1","0"};
-	Cvar_RegisterVariable( &sk_plr_egon_wide2 );// {"sk_plr_egon_wide2","0"};
-	Cvar_RegisterVariable( &sk_plr_egon_wide3 );// {"sk_plr_egon_wide3","0"};
+	Cvar_RegisterVariable(&sk_plr_egon_wide1);// {"sk_plr_egon_wide1","0"};
+	Cvar_RegisterVariable(&sk_plr_egon_wide2);// {"sk_plr_egon_wide2","0"};
+	Cvar_RegisterVariable(&sk_plr_egon_wide3);// {"sk_plr_egon_wide3","0"};
 
 
 	// Hand Grendade
-	Cvar_RegisterVariable( &sk_plr_hand_grenade1 );// {"sk_plr_hand_grenade1","0"};
-	Cvar_RegisterVariable( &sk_plr_hand_grenade2 );// {"sk_plr_hand_grenade2","0"};
-	Cvar_RegisterVariable( &sk_plr_hand_grenade3 );// {"sk_plr_hand_grenade3","0"};
+	Cvar_RegisterVariable(&sk_plr_hand_grenade1);// {"sk_plr_hand_grenade1","0"};
+	Cvar_RegisterVariable(&sk_plr_hand_grenade2);// {"sk_plr_hand_grenade2","0"};
+	Cvar_RegisterVariable(&sk_plr_hand_grenade3);// {"sk_plr_hand_grenade3","0"};
 
 
 	// Satchel Charge
-	Cvar_RegisterVariable( &sk_plr_satchel1 );// {"sk_plr_satchel1","0"};
-	Cvar_RegisterVariable( &sk_plr_satchel2 );// {"sk_plr_satchel2","0"};
-	Cvar_RegisterVariable( &sk_plr_satchel3 );// {"sk_plr_satchel3","0"};
+	Cvar_RegisterVariable(&sk_plr_satchel1);// {"sk_plr_satchel1","0"};
+	Cvar_RegisterVariable(&sk_plr_satchel2);// {"sk_plr_satchel2","0"};
+	Cvar_RegisterVariable(&sk_plr_satchel3);// {"sk_plr_satchel3","0"};
 
 
 	// Tripmine
-	Cvar_RegisterVariable( &sk_plr_tripmine1 );// {"sk_plr_tripmine1","0"};
-	Cvar_RegisterVariable( &sk_plr_tripmine2 );// {"sk_plr_tripmine2","0"};
-	Cvar_RegisterVariable( &sk_plr_tripmine3 );// {"sk_plr_tripmine3","0"};
+	Cvar_RegisterVariable(&sk_plr_tripmine1);// {"sk_plr_tripmine1","0"};
+	Cvar_RegisterVariable(&sk_plr_tripmine2);// {"sk_plr_tripmine2","0"};
+	Cvar_RegisterVariable(&sk_plr_tripmine3);// {"sk_plr_tripmine3","0"};
 
 
 	// WORLD WEAPONS
-	Cvar_RegisterVariable( &sk_12mm_bullet1 );// {"sk_12mm_bullet1","0"};
-	Cvar_RegisterVariable( &sk_12mm_bullet2 );// {"sk_12mm_bullet2","0"};
-	Cvar_RegisterVariable( &sk_12mm_bullet3 );// {"sk_12mm_bullet3","0"};
+	Cvar_RegisterVariable(&sk_12mm_bullet1);// {"sk_12mm_bullet1","0"};
+	Cvar_RegisterVariable(&sk_12mm_bullet2);// {"sk_12mm_bullet2","0"};
+	Cvar_RegisterVariable(&sk_12mm_bullet3);// {"sk_12mm_bullet3","0"};
 
-	Cvar_RegisterVariable( &sk_9mmAR_bullet1 );// {"sk_9mm_bullet1","0"};
-	Cvar_RegisterVariable( &sk_9mmAR_bullet2 );// {"sk_9mm_bullet1","0"};
-	Cvar_RegisterVariable( &sk_9mmAR_bullet3 );// {"sk_9mm_bullet1","0"};
+	Cvar_RegisterVariable(&sk_9mmAR_bullet1);// {"sk_9mm_bullet1","0"};
+	Cvar_RegisterVariable(&sk_9mmAR_bullet2);// {"sk_9mm_bullet1","0"};
+	Cvar_RegisterVariable(&sk_9mmAR_bullet3);// {"sk_9mm_bullet1","0"};
 
-	Cvar_RegisterVariable( &sk_9mm_bullet1 );// {"sk_9mm_bullet1","0"};
-	Cvar_RegisterVariable( &sk_9mm_bullet2 );// {"sk_9mm_bullet2","0"};
-	Cvar_RegisterVariable( &sk_9mm_bullet3 );// {"sk_9mm_bullet3","0"};
+	Cvar_RegisterVariable(&sk_9mm_bullet1);// {"sk_9mm_bullet1","0"};
+	Cvar_RegisterVariable(&sk_9mm_bullet2);// {"sk_9mm_bullet2","0"};
+	Cvar_RegisterVariable(&sk_9mm_bullet3);// {"sk_9mm_bullet3","0"};
 
 
 	// HORNET
-	Cvar_RegisterVariable( &sk_hornet_dmg1 );// {"sk_hornet_dmg1","0"};
-	Cvar_RegisterVariable( &sk_hornet_dmg2 );// {"sk_hornet_dmg2","0"};
-	Cvar_RegisterVariable( &sk_hornet_dmg3 );// {"sk_hornet_dmg3","0"};
+	Cvar_RegisterVariable(&sk_hornet_dmg1);// {"sk_hornet_dmg1","0"};
+	Cvar_RegisterVariable(&sk_hornet_dmg2);// {"sk_hornet_dmg2","0"};
+	Cvar_RegisterVariable(&sk_hornet_dmg3);// {"sk_hornet_dmg3","0"};
 
 	// HEALTH/SUIT CHARGE DISTRIBUTION
-	Cvar_RegisterVariable( &sk_suitcharger1 );
-	Cvar_RegisterVariable( &sk_suitcharger2 );
-	Cvar_RegisterVariable( &sk_suitcharger3 );
+	Cvar_RegisterVariable(&sk_suitcharger1);
+	Cvar_RegisterVariable(&sk_suitcharger2);
+	Cvar_RegisterVariable(&sk_suitcharger3);
 
-	Cvar_RegisterVariable( &sk_battery1 );
-	Cvar_RegisterVariable( &sk_battery2 );
-	Cvar_RegisterVariable( &sk_battery3 );
+	Cvar_RegisterVariable(&sk_battery1);
+	Cvar_RegisterVariable(&sk_battery2);
+	Cvar_RegisterVariable(&sk_battery3);
 
-	Cvar_RegisterVariable( &sk_healthcharger1 );
-	Cvar_RegisterVariable( &sk_healthcharger2 );
-	Cvar_RegisterVariable( &sk_healthcharger3 );
+	Cvar_RegisterVariable(&sk_healthcharger1);
+	Cvar_RegisterVariable(&sk_healthcharger2);
+	Cvar_RegisterVariable(&sk_healthcharger3);
 
-	Cvar_RegisterVariable( &sk_healthkit1 );
-	Cvar_RegisterVariable( &sk_healthkit2 );
-	Cvar_RegisterVariable( &sk_healthkit3 );
+	Cvar_RegisterVariable(&sk_healthkit1);
+	Cvar_RegisterVariable(&sk_healthkit2);
+	Cvar_RegisterVariable(&sk_healthkit3);
 
-	Cvar_RegisterVariable( &sk_scientist_heal1 );
-	Cvar_RegisterVariable( &sk_scientist_heal2 );
-	Cvar_RegisterVariable( &sk_scientist_heal3 );
+	Cvar_RegisterVariable(&sk_scientist_heal1);
+	Cvar_RegisterVariable(&sk_scientist_heal2);
+	Cvar_RegisterVariable(&sk_scientist_heal3);
 
 // monster damage adjusters
-	Cvar_RegisterVariable( &sk_monster_head1 );
-	Cvar_RegisterVariable( &sk_monster_head2 );
-	Cvar_RegisterVariable( &sk_monster_head3 );
+	Cvar_RegisterVariable(&sk_monster_head1);
+	Cvar_RegisterVariable(&sk_monster_head2);
+	Cvar_RegisterVariable(&sk_monster_head3);
 
-	Cvar_RegisterVariable( &sk_monster_chest1 );
-	Cvar_RegisterVariable( &sk_monster_chest2 );
-	Cvar_RegisterVariable( &sk_monster_chest3 );
+	Cvar_RegisterVariable(&sk_monster_chest1);
+	Cvar_RegisterVariable(&sk_monster_chest2);
+	Cvar_RegisterVariable(&sk_monster_chest3);
 
-	Cvar_RegisterVariable( &sk_monster_stomach1 );
-	Cvar_RegisterVariable( &sk_monster_stomach2 );
-	Cvar_RegisterVariable( &sk_monster_stomach3 );
+	Cvar_RegisterVariable(&sk_monster_stomach1);
+	Cvar_RegisterVariable(&sk_monster_stomach2);
+	Cvar_RegisterVariable(&sk_monster_stomach3);
 
-	Cvar_RegisterVariable( &sk_monster_arm1 );
-	Cvar_RegisterVariable( &sk_monster_arm2 );
-	Cvar_RegisterVariable( &sk_monster_arm3 );
+	Cvar_RegisterVariable(&sk_monster_arm1);
+	Cvar_RegisterVariable(&sk_monster_arm2);
+	Cvar_RegisterVariable(&sk_monster_arm3);
 
-	Cvar_RegisterVariable( &sk_monster_leg1 );
-	Cvar_RegisterVariable( &sk_monster_leg2 );
-	Cvar_RegisterVariable( &sk_monster_leg3 );
+	Cvar_RegisterVariable(&sk_monster_leg1);
+	Cvar_RegisterVariable(&sk_monster_leg2);
+	Cvar_RegisterVariable(&sk_monster_leg3);
 
 // player damage adjusters
-	Cvar_RegisterVariable( &sk_player_head1 );
-	Cvar_RegisterVariable( &sk_player_head2 );
-	Cvar_RegisterVariable( &sk_player_head3 );
+	Cvar_RegisterVariable(&sk_player_head1);
+	Cvar_RegisterVariable(&sk_player_head2);
+	Cvar_RegisterVariable(&sk_player_head3);
 
-	Cvar_RegisterVariable( &sk_player_chest1 );
-	Cvar_RegisterVariable( &sk_player_chest2 );
-	Cvar_RegisterVariable( &sk_player_chest3 );
+	Cvar_RegisterVariable(&sk_player_chest1);
+	Cvar_RegisterVariable(&sk_player_chest2);
+	Cvar_RegisterVariable(&sk_player_chest3);
 
-	Cvar_RegisterVariable( &sk_player_stomach1 );
-	Cvar_RegisterVariable( &sk_player_stomach2 );
-	Cvar_RegisterVariable( &sk_player_stomach3 );
+	Cvar_RegisterVariable(&sk_player_stomach1);
+	Cvar_RegisterVariable(&sk_player_stomach2);
+	Cvar_RegisterVariable(&sk_player_stomach3);
 
-	Cvar_RegisterVariable( &sk_player_arm1 );
-	Cvar_RegisterVariable( &sk_player_arm2 );
-	Cvar_RegisterVariable( &sk_player_arm3 );
+	Cvar_RegisterVariable(&sk_player_arm1);
+	Cvar_RegisterVariable(&sk_player_arm2);
+	Cvar_RegisterVariable(&sk_player_arm3);
 
-	Cvar_RegisterVariable( &sk_player_leg1 );
-	Cvar_RegisterVariable( &sk_player_leg2 );
-	Cvar_RegisterVariable( &sk_player_leg3 );
+	Cvar_RegisterVariable(&sk_player_leg1);
+	Cvar_RegisterVariable(&sk_player_leg2);
+	Cvar_RegisterVariable(&sk_player_leg3);
 // END REGISTER CVARS FOR SKILL LEVEL STUFF
 
 	Host_FindMaxClients();

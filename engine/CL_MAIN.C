@@ -410,16 +410,16 @@ void CL_Disconnect( void )
 	cls.demoplayback = FALSE;
 	cls.signon = 0;
 
-	if (cls.dl.file)
+	if (cls.dl.download)
 	{
-		fclose(cls.dl.file);
-		cls.dl.file = NULL;
+		fclose(cls.dl.download);
+		cls.dl.download = NULL;
 	}
 
-	if (cls.dl.custFile)
+	if (cls.dl.upload)
 	{
-		COM_FreeFile(cls.dl.custFile);
-		cls.dl.custFile = NULL;
+		COM_FreeFile(cls.dl.upload);
+		cls.dl.upload = NULL;
 	}
 
 	CL_ClearState(TRUE);
