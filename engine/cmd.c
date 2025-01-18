@@ -675,13 +675,10 @@ void Cmd_ForwardToServer( void )
 		return;
 	}
 
-	if (cls.demoplayback)
+	if (cls.demoplayback || isDedicated)
 		return;		// not really connected
 
-	//FF: UNDONE!
-	// TODO: Implement
-	/*
-	MSG_WriteByte(&cls.netchan.message, 4); //4 == clc_stringcmd
+	MSG_WriteByte(&cls.netchan.message, clc_stringcmd);
 	if (Q_strcasecmp(Cmd_Argv(0), "cmd") != 0)
 	{
 		SZ_Print(&cls.netchan.message, Cmd_Argv(0));
@@ -691,7 +688,6 @@ void Cmd_ForwardToServer( void )
 		SZ_Print(&cls.netchan.message, Cmd_Args());
 	else
 		SZ_Print(&cls.netchan.message, "\n");
-	*/
 }
 
 

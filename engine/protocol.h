@@ -71,12 +71,12 @@
 //
 #define	svc_bad					0
 #define	svc_nop					1
-
+#define	svc_disconnect			2
 #define svc_updatestat			3		// [byte] [long]
 #define	svc_version				4		// [long] server version
 #define	svc_setview				5		// [short] entity number
-
-
+#define svc_sound				6		// <see code>
+#define	svc_time				7		// [float] server time
 #define	svc_print				8		// [string] null terminated string
 #define	svc_stufftext			9		// [string] stuffed into client's console buffer
 											// the string should be \n terminated
@@ -87,10 +87,31 @@
 											// [string]...[0]sounds cache
 
 
+#define	svc_updatefrags			14		// [byte] [short]
 
+
+
+
+#define	svc_damage				19
+
+
+#define svc_spawnbaseline		22
+
+
+
+#define svc_killedmonster		27
+#define svc_foundsecret			28
+
+#define svc_spawnstaticsound	29		// [coord3] [byte] samp [byte] vol [byte] aten
 
 
 #define	svc_cdtrack				32		// [byte] track [byte] looptrack
+
+
+
+#define svc_newusermsg			39
+
+
 
 
 
@@ -147,23 +168,7 @@ ELEMENTS COMMUNICATED ACROSS THE NET
 
 #define	UPDATE_BACKUP	32	// copies of entity_state_t to keep buffered
 							// must be power of two
-#define	UPDATE_MASK		(UPDATE_BACKUP-1)
-
-// entity_state_t is the information conveyed from the server
-// in an update message
-typedef struct
-{
-	int		number;			// edict index
-
-	int		flags;			// nolerp, etc
-	vec3_t	origin;
-	vec3_t	angles;
-	int		modelindex;
-	int		frame;
-	int		colormap;
-	int		skinnum;
-	int		effects;
-} entity_state_t;
+#define	UPDATE_MASK		(UPDATE_BACKUP - 1)
 
 #define	MAX_PACKET_ENTITIES	64	// doesn't count nails
 typedef struct

@@ -294,7 +294,18 @@ void CL_CreateCustomizationList( void )
 
 void CL_ClearClientState( void )
 {
+	int i;
+
 	// TODO: Implement
+
+	CL_ClearResourceLists();
+
+	for (i = 0; i < MAX_CLIENTS; i++)
+	{
+		COM_ClearCustomizationList(&cl.players[i].customdata, FALSE);
+	}
+
+	Q_memset(&cl, 0, sizeof(client_state_t));
 
 	cl.resourcesneeded.pPrev = &cl.resourcesneeded;
 	cl.resourcesneeded.pNext = &cl.resourcesneeded;
@@ -752,7 +763,7 @@ void Host_NextDemo( void )
 	if (cls.demonum == -1)
 		return;
 
-	SCR_BeginLoadingPlaque( );
+	SCR_BeginLoadingPlaque();
 
 	if (!cls.demos[cls.demonum][0] || cls.demonum == MAX_DEMOS)
 	{
@@ -942,6 +953,8 @@ void CL_Init( void )
 
 	// TODO: Implement
 
+	ClientDLL_HudVidInit();
+
 	Cvar_RegisterVariable(&cl_name);
 
 	// TODO: Implement
@@ -983,4 +996,11 @@ void CL_Init( void )
 	Cvar_RegisterVariable(&cl_spectator_password);
 
 	// TODO: Implement
+
+	memset(&cl, 0, sizeof(client_state_t));
+
+	cl.resourcesneeded.pPrev = &cl.resourcesneeded;
+	cl.resourcesneeded.pNext = &cl.resourcesneeded;
+	cl.resourcesonhand.pPrev = &cl.resourcesonhand;
+	cl.resourcesonhand.pNext = &cl.resourcesonhand;
 }

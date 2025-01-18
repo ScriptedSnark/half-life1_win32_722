@@ -828,7 +828,7 @@ DLL_EXPORT int GetGameInfo( struct GameInfo_s* pGI, char* pszChannel )
 
 	if (net_local_adr.type == NA_IP)
 	{
-		gi.ip = net_local_adr.ip;
+		*(uint32*)gi.ip = *(uint32*)net_local_adr.ip;
 		gi.port = net_local_adr.port;
 	}
 
@@ -853,9 +853,9 @@ DLL_EXPORT int GetGameInfo( struct GameInfo_s* pGI, char* pszChannel )
 			break;
 		case ca_uninitialized:
 #if 0 // TODO: Implement; this needs work on client_static_t
-			if (cls.download)
+			if (cls.dl.file)
 			{
-				sprintf(gi.state_description, "Downloading %s, %i percent complete", &cls.downloading_file, cls.download_percent);
+				sprintf(gi.state_description, "Downloading %s, %i percent complete", &cls.dl.filename, cls.dl.percent);
 			}
 			else
 			{
@@ -878,7 +878,7 @@ DLL_EXPORT int GetGameInfo( struct GameInfo_s* pGI, char* pszChannel )
 	}
 
 	memcpy(pGI, &gi, sizeof(GameInfo_t));
-	return 1;
+	return TRUE;
 }
 
 void ReloadProfile( char* pszPlayerName )

@@ -1255,7 +1255,7 @@ void Host_ShutdownServer( qboolean crash )
 		//SV_ClearEntities();
 	}
 
-	Q_memset( &sv, 0, sizeof( server_t ) );
+	memset(&sv, 0, sizeof(server_t));
 
 	//
 	// clear structures
@@ -1265,7 +1265,7 @@ void Host_ShutdownServer( qboolean crash )
 
 	SV_ClearClientStates();
 
-	Host_ClearClients( FALSE );
+	Host_ClearClients(FALSE);
 
 	Master_Shutdown();
 }
@@ -1277,8 +1277,8 @@ void SV_ClearClientStates( void )
 
 	for (i = 0, cl = svs.clients; i < svs.maxclients; i++, cl++)
 	{
-		COM_ClearCustomizationList( &cl->customdata, FALSE );
-		SV_ClearResourceLists( cl );
+		COM_ClearCustomizationList(&cl->customdata, FALSE);
+		SV_ClearResourceLists(cl);
 	}
 }
 
@@ -1290,8 +1290,15 @@ This clears all the memory used by both the client and server, but does
 not reinitialize anything.
 ================
 */
-void Host_ClearMemory(qboolean bQuiet)
+void Host_ClearMemory( qboolean bQuiet )
 {
+	CM_FreePAS();
+
+	// TODO: Implement
+
+	if (!bQuiet)
+		Con_DPrintf("Clearing memory\n");
+
 	// TODO: Implement
 }
 

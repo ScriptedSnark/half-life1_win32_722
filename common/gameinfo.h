@@ -13,7 +13,7 @@ typedef struct GameInfo_s
 	qboolean	active; // sv.active
 
 	// remote address
-	unsigned int	ip;
+	unsigned char	ip[4];
 	unsigned short	port;
 
 	qboolean	channel;

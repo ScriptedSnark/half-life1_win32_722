@@ -27,6 +27,35 @@ typedef struct player_info_s
 
 } player_info_t;
 
+typedef struct
+{
+	FILE* file;
+	resource_t* resource;
+	qboolean	doneregistering;
+
+	char		extension[MAX_QPATH];	// The extension of a file that we are downloading from the server
+										// ".cst" if it's a custom resource
+	CRC32_t		crcFile;				// For detecting that client's resource is different
+	char		filename[MAX_QPATH];	// The filename
+
+	// TODO: Implement
+
+	int			percent;
+
+	qboolean	downloading;			// The downloading is in progress
+
+	int			nTotalSize;
+	int			nTotalToTransfer;
+	int			nRemainingToTransfer;
+
+	// TODO: Implement
+
+	qboolean	custom;					// TRUE is downloading a custom resource
+
+	// TODO: Implement
+
+} incomingtransfer_t;
+
 //
 // client_state_t should hold all pieces of the client state
 //
@@ -106,6 +135,14 @@ typedef struct
 	//  We don't actually start to record until a non-delta message is received
 	qboolean	demowaiting;
 	qboolean	demoappending;
+
+	// TODO: Implement
+
+	int			td_lastframe;		// to meter out one message a frame
+	int			td_startframe;		// host_framecount at start
+	float		td_starttime;		// realtime at second frame of timedemo
+
+	incomingtransfer_t dl;
 
 	// TODO: Implement
 
@@ -237,6 +274,8 @@ typedef struct
 
 	// TODO: Implement
 
+	double		mtime[2];		// the timestamp of last two messages
+
 	// Client clock
 	double		time;
 
@@ -268,6 +307,12 @@ typedef struct
 	int			viewentity;		    // cl_entitites[cl.viewentity] == player point of view
 
 	struct model_s*	worldmodel;	// cl_entitites[0].model
+
+	// TODO: Implement
+
+	int			num_entities;	// held in cl_entities array
+	int			num_statics;	// held in cl_staticentities array
+
 
 
 	// TODO: Implement
@@ -362,6 +407,7 @@ void CL_AddToResourceList( resource_t* pResource, resource_t* pList );
 void CL_RemoveFromResourceList( resource_t* pResource );
 void CL_SendResourceListBlock( void );
 qboolean CL_RequestMissingResources( void );
+void CL_ClearResourceLists( void );
 
 
 //

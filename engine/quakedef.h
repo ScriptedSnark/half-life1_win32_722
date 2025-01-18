@@ -108,8 +108,6 @@ typedef int (*pfnUserMsgHook)( const char* pszName, int iSize, void* pbuf );
 
 
 
-
-
 #include "wad.h"
 #include "draw.h"
 #include "cvar.h"
@@ -191,6 +189,7 @@ void Host_InitCommands( void );
 int Host_Init( quakeparms_t* parms );
 DLL_EXPORT void Host_Shutdown( void );
 void Host_Error( char* error, ... );
+void Host_EndGame( char* message, ... );
 void Host_ShutdownServer( qboolean crash );
 
 

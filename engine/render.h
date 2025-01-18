@@ -1,6 +1,35 @@
 // refresh.h -- public interface to refresh functions
 
+
+
 // TODO: Implement
+
+
+//=============================================================================
+
+typedef struct efrag_s
+{
+	struct mleaf_s* leaf;
+	struct efrag_s* leafnext;
+	struct cl_entity_s* entity;
+	struct efrag_s* entnext;
+} efrag_t;
+
+
+typedef struct cl_entity_s
+{
+
+
+	entity_state_t			baseline;		// to fill in defaults in updates
+
+
+
+
+	colorVec				cvFloorColor;
+} cl_entity_t;
+
+// TODO: Implement
+
 
 typedef struct
 {
