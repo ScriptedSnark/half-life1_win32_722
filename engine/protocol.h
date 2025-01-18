@@ -85,7 +85,7 @@
 											// [string] signon string
 											// [string]..[0]model cache
 											// [string]...[0]sounds cache
-
+#define	svc_lightstyle			12		// [byte] [string]
 #define svc_updatename			13		// [byte] [string]
 #define	svc_updatefrags			14		// [byte] [short]
 
