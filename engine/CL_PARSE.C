@@ -807,7 +807,7 @@ void CL_ParseServerMessage( void )
 {
 	// Index of svc_ or user command to issue.
 	int	cmd;
-	int	i;
+	int	i, j;
 	// For determining data parse sizes
 	int bufStart, bufEnd;
 
@@ -1006,6 +1006,12 @@ void CL_ParseServerMessage( void )
 			break;
 
 		// TODO: Implement
+
+		case svc_chokecount:
+			i = MSG_ReadByte();
+			for (j = 0; j < i; j++)
+				cl.frames[(cls.netchan.incoming_acknowledged - 1 - j) & UPDATE_MASK].receivedtime = -2;
+			break;
 
 		case svc_resourcelist:
 			CL_ParseResourceList();

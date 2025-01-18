@@ -115,7 +115,7 @@
 
 
 
-
+#define	svc_chokecount   		44		// # of packets held back on channel because too much data was flowing.
 #define svc_resourcelist		45
 #define svc_newmovevars			46
 

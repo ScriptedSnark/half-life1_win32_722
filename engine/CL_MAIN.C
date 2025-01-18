@@ -816,7 +816,7 @@ void CL_SendCmd( void )
 	checksumIndex = buf.cursize;
 	MSG_WriteByte(&buf, 0);
 
-	vec3_t cl_viewangles = {0,0,0};
+	vec3_t cl_viewangles = { 0,0,0 };
 	VectorCopy(cl_viewangles, cl.frames[i].cmd.angles);
 
 	cl.frames[i].cmd.msec = (int)(host_frametime * 1000.0);
@@ -828,12 +828,12 @@ void CL_SendCmd( void )
 
 	memset(&nullcmd, 0, sizeof(nullcmd));
 
-	i = (cls.netchan.outgoing_sequence-2) & UPDATE_MASK;
+	i = (cls.netchan.outgoing_sequence - 2) & UPDATE_MASK;
 	cmd = &cl.frames[i].cmd;
 	MSG_WriteUsercmd(&buf, cmd, &nullcmd);
 	oldcmd = cmd;
 
-	i = (cls.netchan.outgoing_sequence-1) & UPDATE_MASK;
+	i = (cls.netchan.outgoing_sequence - 1) & UPDATE_MASK;
 	cmd = &cl.frames[i].cmd;
 	MSG_WriteUsercmd(&buf, cmd, oldcmd);
 	oldcmd = cmd;
@@ -848,18 +848,18 @@ void CL_SendCmd( void )
 		seq_hash);
 
 	// request delta compression of entities
-	if (cls.netchan.outgoing_sequence - cl.validsequence >= UPDATE_BACKUP-1)
+	if (cls.netchan.outgoing_sequence - cl.validsequence >= UPDATE_BACKUP - 1)
 		cl.validsequence = 0;
 
 	if (cl.validsequence && !cl_nodelta.value && cls.state == ca_active &&
 		!cls.demorecording)
 	{
-		cl.frames[cls.netchan.outgoing_sequence&UPDATE_MASK].delta_sequence = cl.validsequence;
+		cl.frames[cls.netchan.outgoing_sequence & UPDATE_MASK].delta_sequence = cl.validsequence;
 		MSG_WriteByte(&buf, clc_delta);
-		MSG_WriteByte(&buf, cl.validsequence&255);
+		MSG_WriteByte(&buf, cl.validsequence & 255);
 	}
 	else
-		cl.frames[cls.netchan.outgoing_sequence&UPDATE_MASK].delta_sequence = -1;
+		cl.frames[cls.netchan.outgoing_sequence & UPDATE_MASK].delta_sequence = -1;
 
 
 //
