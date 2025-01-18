@@ -60,6 +60,26 @@
 #define PORT_SERVER		"27015"     //  "
 
 
+#define	SU_VIEWHEIGHT	(1<<0)
+#define	SU_IDEALPITCH	(1<<1)
+#define	SU_PUNCH1		(1<<2)
+
+
+#define	SU_VELOCITY1	(1<<5)
+
+
+#define	SU_WEAPONS		(1<<8)
+#define	SU_ITEMS		(1<<9)
+#define	SU_ONGROUND		(1<<10)		// no data follows, the bit is it
+#define	SU_INWATER		(1<<11)		// no data follows, the bit is it
+
+
+#define	SU_FULLYINWATER	(1<<15)
+
+// defaults for clientinfo messages
+#define	DEFAULT_VIEWHEIGHT	22
+
+
 
 //==================
 // note that there are some defs.qc that mirror to these numbers
@@ -88,7 +108,7 @@
 #define	svc_lightstyle			12		// [byte] [string]
 #define svc_updatename			13		// [byte] [string]
 #define	svc_updatefrags			14		// [byte] [short]
-
+#define	svc_clientdata			15		// <shortbits + data>
 
 #define svc_updatecolors		17		// [byte] [byte]
 

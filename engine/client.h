@@ -192,6 +192,10 @@ typedef struct
 
 	// TODO: Implement
 
+	float		latency;		// rolling average
+
+	// TODO: Implement
+
 } client_static_t;
 
 extern client_static_t	cls;
@@ -284,6 +288,9 @@ typedef struct
 								// world snapshot/update we got.  If this is 0, we can't
 								// render a frame yet
 
+	int			parsecount;		// server message counter
+
+
 
 	// TODO: Implement
 
@@ -303,13 +310,34 @@ typedef struct
 	// of each level and after teleporting.
 	vec3_t		viewangles;
 
+	vec3_t		mvelocity[2];	// update by server, used for lean+bob
+								// (0 is newest)
+
+
+	// TODO: Implement
+
+	vec3_t		punchangle;		// temporary offset
+
+	// TODO: Implement
+
+
+// pitch drifting vars
+	float		idealpitch;
+
+
+	// TODO: Implement
+
+
+	float		viewheight;
+
 
 	// TODO: Implement
 
 
 	qboolean	paused;			// send over by server
-
 	int			onground;
+	int			inwater;
+	int			waterlevel;
 
 
 

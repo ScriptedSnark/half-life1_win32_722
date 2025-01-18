@@ -78,6 +78,10 @@ char* svc_strings[] =
 	"svc_clientmaxspeed"
 };
 
+int	oldparsecountmod;
+int	parsecountmod;
+double	parsecounttime;
+
 //=============================================================================
 
 /*
@@ -713,6 +717,102 @@ void CL_ParseBaseline( cl_entity_t* ent )
 	ent->baseline.renderfx = MSG_ReadByte();
 }
 
+
+/*
+==================
+CL_ParseClientdata
+
+Server information pertaining to this client only
+==================
+*/
+void CL_ParseClientdata( int bits )
+{
+	int				i;
+	float		latency;
+	frame_t* frame;
+
+// calculate simulated time of message
+	oldparsecountmod = parsecountmod;
+
+	i = cls.netchan.incoming_acknowledged;
+	cl.parsecount = i;
+	i &= UPDATE_MASK;
+	parsecountmod = i;
+	frame = &cl.frames[i];
+	parsecounttime = cl.frames[i].senttime;
+
+	frame->receivedtime = realtime;
+
+// calculate latency
+	latency = frame->receivedtime - frame->senttime;
+
+	if (latency < 0 || latency > 1.0)
+	{
+//		Con_Printf("Odd latency: %5.2f\n", latency);
+	}
+	else
+	{
+		// drift the average latency towards the observed latency
+
+		if (latency < cls.latency)
+			cls.latency = latency;
+		else
+			cls.latency += 0.001;	// drift up, so correction are needed		
+	}
+
+	if (bits & SU_VIEWHEIGHT)
+		cl.viewheight = MSG_ReadChar();
+	else
+		cl.viewheight = DEFAULT_VIEWHEIGHT;
+
+	if (bits & SU_IDEALPITCH)
+		cl.idealpitch = MSG_ReadChar();
+	else
+		cl.idealpitch = 0;
+
+	VectorCopy(cl.mvelocity[0], cl.mvelocity[1]);
+	for (i = 0; i < 3; i++)
+	{
+		if (bits & (SU_PUNCH1 << i))
+			cl.punchangle[i] = MSG_ReadHiresAngle();
+		else
+			cl.punchangle[i] = 0;
+		if (bits & (SU_VELOCITY1 << i))
+			cl.mvelocity[0][i] = MSG_ReadChar() * 16;
+		else
+			cl.mvelocity[0][i] = 0;
+	}
+
+	if (bits & SU_WEAPONS)
+		cl.weapons = MSG_ReadLong();
+
+	cl.onground = (bits & SU_ONGROUND) != 0;
+	cl.inwater = (bits & SU_INWATER) != 0;
+
+	if (cl.inwater)
+	{
+		if (bits & SU_FULLYINWATER)
+			cl.waterlevel = 3;
+		else
+			cl.waterlevel = 2;
+	}
+	else
+	{
+		cl.waterlevel = 0;
+	}
+
+	if (bits & SU_ITEMS)
+		cl.stats[STAT_WEAPON] = MSG_ReadShort();
+	else
+		cl.stats[STAT_WEAPON] = 0;
+
+	i = MSG_ReadShort();
+	if (i != cl.stats[STAT_HEALTH])
+	{
+		cl.stats[STAT_HEALTH] = i;
+	}
+}
+
 // TODO: Implement
 
 /*
@@ -933,6 +1033,11 @@ void CL_ParseServerMessage( void )
 		case svc_updatefrags:
 			i = MSG_ReadByte();
 			MSG_ReadShort();
+			break;
+
+		case svc_clientdata:
+			i = MSG_ReadShort();
+			CL_ParseClientdata(i);
 			break;
 
 		// TODO: Implement
