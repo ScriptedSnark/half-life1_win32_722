@@ -64,7 +64,17 @@
 #define MAX_MSGLEN		7500		// max length of a reliable message
 
 
+
+#define MAX_LIGHTSTYLE_INDEX_BITS	6
+#define MAX_LIGHTSTYLES				(1<<MAX_LIGHTSTYLE_INDEX_BITS)
+
+
+
 // Resource counts
+
+
+
+
 
 
 
@@ -79,6 +89,10 @@
 // Client dispatch function for usermessages
 typedef int (*pfnUserMsgHook)( const char* pszName, int iSize, void* pbuf );
 
+
+
+
+#define	MAX_STYLESTRING	64
 
 //
 // stats are integers communicated to the client by the server
@@ -184,6 +198,7 @@ extern	double		realtime;			// not bounded in any way, changed at
 
 
 
+void Host_ClearMemory( qboolean bQuiet );
 
 void Host_InitCommands( void );
 int Host_Init( quakeparms_t* parms );

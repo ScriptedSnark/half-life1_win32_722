@@ -21,6 +21,7 @@
     <ClCompile Include="..\..\engine\CL_MAIN.C" />
     <ClCompile Include="..\..\engine\CL_PARSE.C" />
     <ClCompile Include="..\..\engine\cl_pred.c" />
+    <ClCompile Include="..\..\engine\CL_TENT.C" />
     <ClCompile Include="..\..\engine\cmd.c" />
     <ClCompile Include="..\..\engine\cmodel.c" />
     <ClCompile Include="..\..\engine\common.c" />
@@ -76,6 +77,7 @@
     <ClInclude Include="..\..\engine\client.h" />
     <ClInclude Include="..\..\engine\cl_demo.h" />
     <ClInclude Include="..\..\engine\cl_draw.h" />
+    <ClInclude Include="..\..\engine\cl_tent.h" />
     <ClInclude Include="..\..\engine\cmodel.h" />
     <ClInclude Include="..\..\engine\conproc.h" />
     <ClInclude Include="..\..\engine\cmd.h" />

@@ -6,6 +6,18 @@
 // TODO: Implement
 
 
+typedef struct
+{
+	int		length;
+	char	map[MAX_STYLESTRING];
+} lightstyle_t;
+
+
+
+
+
+
+
 #define	MAX_SCOREBOARDNAME		32
 typedef struct player_info_s
 {
@@ -51,6 +63,7 @@ typedef struct
 	// TODO: Implement
 
 	qboolean	custom;					// TRUE is downloading a custom resource
+	FILE* custFile;
 
 	// TODO: Implement
 
@@ -62,6 +75,21 @@ typedef struct
 
 #define	SIGNONS		3			// signon messages to receive before connected
 
+#define	MAX_DLIGHTS		32
+#define	MAX_ELIGHTS		64		// entity only point lights
+typedef struct dlight_s
+{
+	vec3_t	origin;
+	float	radius;
+	color24	color;
+	float	die;				// stop lighting after this time
+	float	decay;				// drop this each second
+	float	minlight;			// don't add when contributing less
+	int		key;
+	qboolean	dark;			// subtracts light instead of adding
+} dlight_t;
+
+#define	MAX_EFRAGS		640
 
 #define	MAX_MAPSTRING	2048
 #define	MAX_DEMOS		32
@@ -307,9 +335,7 @@ typedef struct
 	int			viewentity;		    // cl_entitites[cl.viewentity] == player point of view
 
 	struct model_s*	worldmodel;	// cl_entitites[0].model
-
-	// TODO: Implement
-
+	efrag_t*	free_efrags;
 	int			num_entities;	// held in cl_entities array
 	int			num_statics;	// held in cl_staticentities array
 
@@ -458,6 +484,11 @@ void CL_PredictMove( void );
 // cl_parse.c
 //
 void CL_ParseServerMessage( void );
+
+
+
+void CL_DeallocateDynamicData( void );
+
 
 
 

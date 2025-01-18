@@ -34,3 +34,18 @@ void CL_StopPlayback( void )
 {
 	// TODO: Implement
 }
+
+
+
+
+/*
+====================
+CL_Stop_f
+
+stop recording a demo
+====================
+*/
+void CL_Stop_f( void )
+{
+	// TODO: Implement
+}

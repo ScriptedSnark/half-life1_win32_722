@@ -4,6 +4,8 @@
 #include "winquake.h"
 #include "crc.h"
 #include "hashpak.h"
+#include "cl_demo.h"
+#include "cl_tent.h"
 
 
 // Only send this many requests before timing out.
@@ -50,6 +52,15 @@ cvar_t	cl_resend = { "cl_resend", "3.0" };
 
 client_static_t	cls;
 client_state_t cl;
+// FIXME: put these on hunk?
+efrag_t			cl_efrags[MAX_EFRAGS];
+//cl_entity_t*	cl_entities; TODO: Implement
+//cl_entity_t		cl_static_entities[MAX_STATIC_ENTITIES]; TODO: Implement
+lightstyle_t	cl_lightstyle[MAX_LIGHTSTYLES];
+dlight_t		cl_dlights[MAX_DLIGHTS];
+dlight_t		cl_elights[MAX_ELIGHTS];
+
+
 
 qboolean cl_inmovie;
 
@@ -323,13 +334,31 @@ CL_ClearState
 */
 void CL_ClearState( qboolean bQuiet )
 {
-	// TODO: Implement
+	int			i;
+
+	if (!sv.active)
+		Host_ClearMemory(bQuiet);
 
 	CL_ClearClientState();
 
 	SZ_Clear(&cls.netchan.message);
 
-	// TODO: Implement
+// clear other arrays
+	memset(cl_efrags, 0, sizeof(cl_efrags));
+	memset(cl_dlights, 0, sizeof(cl_dlights));
+	memset(cl_elights, 0, sizeof(cl_elights));
+	memset(cl_lightstyle, 0, sizeof(cl_lightstyle));
+
+	CL_TempEntInit();
+
+//
+// allocate the efrags and chain together into a free list
+//	
+	cl.free_efrags = cl_efrags;
+	for (i = 0; i < MAX_EFRAGS - 1; i++)
+		cl.free_efrags[i].entnext = &cl.free_efrags[i + 1];
+
+	cl.free_efrags[i].entnext = NULL;
 }
 
 /*
@@ -347,6 +376,55 @@ void CL_Disconnect( void )
 
 	// stop sounds (especially looping!)
 	S_StopAllSounds(TRUE);
+
+	// if running a local server, shut it down
+	if (cls.demoplayback)
+		CL_StopPlayback();
+	else if (cls.state == ca_active
+			 || cls.state == ca_connected
+			 || cls.state == ca_uninitialized
+			 || cls.state == ca_connecting)
+	{
+		if (cls.demorecording)
+			CL_Stop_f();
+
+		if (cls.netchan.remote_address.type != NA_UNUSED)
+		{
+			byte	final[20];
+
+			// Send a drop command.
+			final[0] = clc_stringcmd;
+			strcpy((char*)(final + 1), "dropclient");
+			Netchan_Transmit(&cls.netchan, 12, final);
+			Netchan_Transmit(&cls.netchan, 12, final);
+			Netchan_Transmit(&cls.netchan, 12, final);
+		}
+
+		cls.state = ca_disconnected;
+
+		if (sv.active)
+			Host_ShutdownServer(FALSE);
+	}
+
+	cls.timedemo = FALSE;
+	cls.demoplayback = FALSE;
+	cls.signon = 0;
+
+	if (cls.dl.file)
+	{
+		fclose(cls.dl.file);
+		cls.dl.file = NULL;
+	}
+
+	if (cls.dl.custFile)
+	{
+		COM_FreeFile(cls.dl.custFile);
+		cls.dl.custFile = NULL;
+	}
+
+	CL_ClearState(TRUE);
+
+	CL_DeallocateDynamicData();
 
 	// TODO: Implement
 }

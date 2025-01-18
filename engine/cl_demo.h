@@ -27,6 +27,11 @@ void CL_StopPlayback( void );
 
 
 
+void CL_Stop_f( void );
+
+
+
+
 void CL_BeginDemoStartup( void );
 void CL_RecordHUDCommand( char* cmdname );
 
