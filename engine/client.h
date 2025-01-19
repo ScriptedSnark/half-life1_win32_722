@@ -234,7 +234,7 @@ typedef struct
 	int			renderfx;
 
 	int			sequence;
-
+	float		animtime;
 
 	float		framerate;
 	int			body;
@@ -536,6 +536,7 @@ void CL_Disconnect_f( void );
 void CL_SetSolidPlayers( int playernum );
 void CL_SetUpPlayerPrediction( qboolean dopred );
 void CL_EmitEntities( void );
+void CL_ParsePacketEntities( qboolean delta );
 void CL_ParsePlayerinfo( void );
 
 
@@ -548,6 +549,7 @@ void CL_PredictMove( void );
 //
 // cl_parse.c
 //
+cl_entity_t* CL_EntityNum( int num );
 void CL_ParseServerMessage( void );
 
 

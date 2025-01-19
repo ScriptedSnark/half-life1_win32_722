@@ -5,6 +5,343 @@
 int cl_playerindex; // player index
 
 /*
+=========================================================================
+
+PACKET ENTITY PARSING / LINKING
+
+=========================================================================
+*/
+
+/*
+==================
+CL_ReadDeltaFlags
+
+Parse delta flags
+==================
+*/
+int CL_ReadDeltaFlags( int* flags, int* bboxflags )
+{
+	// TODO: Refactor
+
+	int v2;
+	int Byte;
+	int num;
+
+	v2 = 0;
+	Byte = MSG_ReadByte();
+	if ((Byte & 1) != 0)
+		Byte |= MSG_ReadByte() << 8;
+	if ((Byte & 0x100) != 0)
+		Byte |= MSG_ReadByte() << 16;
+	if ((Byte & 0x800000) != 0)
+		Byte |= MSG_ReadByte() << 24;
+
+	if (Byte < 0)
+		v2 = MSG_ReadByte();
+	if ((Byte & 0x8000) != 0)
+		num = MSG_ReadShort();
+	else
+		num = MSG_ReadByte();
+	*flags = Byte;
+	*bboxflags = v2;
+	return num;
+}
+
+/*
+==================
+CL_ParseCustomEntityDelta
+
+Can go from either a baseline or a previous packet_entity
+==================
+*/
+int	custombitcounts[32];	/// just for protocol profiling
+void CL_ParseCustomEntityDelta( entity_state_t* from, entity_state_t* to, int bits, int custombits, int number )
+{
+	// TODO: Refactor
+
+	int v5; // ecx
+	int Short; // eax
+	float Byte; // [esp+Ch] [ebp-4h]
+	float v8; // [esp+Ch] [ebp-4h]
+	float v9; // [esp+Ch] [ebp-4h]
+	float v10; // [esp+Ch] [ebp-4h]
+	float v11; // [esp+Ch] [ebp-4h]
+
+	// set everything to the state we are delta'ing from
+	*to = *from;
+
+	v5 = 0;
+	to->entityType = 1;
+	to->number = number;
+	do
+	{
+		if (((1 << v5) & bits) != 0)
+			++custombitcounts[v5];
+		++v5;
+	} while (v5 < 32);
+
+	to->flags = bits;
+
+	if ((bits & 2) != 0)
+		to->origin[0] = MSG_ReadCoord();
+	if ((bits & 4) != 0)
+		to->origin[1] = MSG_ReadCoord();
+	if ((bits & 8) != 0)
+		to->origin[2] = MSG_ReadCoord();
+	if ((bits & 0x20) != 0)
+		to->angles[0] = MSG_ReadCoord();
+	if ((bits & 0x40) != 0)
+		to->angles[1] = MSG_ReadCoord();
+	if ((bits & 0x80) != 0)
+		to->angles[2] = MSG_ReadCoord();
+
+	if ((bits & 0x200) != 0)
+	{
+		to->sequence = MSG_ReadShort();
+		to->skin = MSG_ReadShort();
+	}
+
+	if ((bits & 1024) != 0)
+		to->rendermode = MSG_ReadByte();
+
+	if ((bits & 2048) != 0)
+	{
+		Short = MSG_ReadShort();
+		to->modelindex = Short;
+		if (Short >= 512)
+			Host_Error("CL_ParseCustomEntity: bad model number");
+	}
+	if ((bits & 4096) != 0)
+	{
+		Byte = (float)MSG_ReadByte();
+		v8 = Byte * 0.1;
+		to->scale = v8;
+	}
+	if ((bits & 0x4000) != 0)
+		to->body = MSG_ReadByte();
+	if ((bits & 0x10000) != 0)
+	{
+		to->rendercolor.r = MSG_ReadByte();
+		to->rendercolor.g = MSG_ReadByte();
+		to->rendercolor.b = MSG_ReadByte();
+		to->renderfx = MSG_ReadByte();
+	}
+	if ((bits & 0x20000) != 0)
+		to->renderamt = MSG_ReadByte();
+	if ((bits & 0x80000) != 0)
+	{
+		v9 = (float)MSG_ReadByte();
+		to->frame = v9;
+	}
+	if ((bits & 0x40000) != 0)
+	{
+		v10 = (float)MSG_ReadByte();
+		v11 = v10 * 0.1;
+		to->animtime = v11;
+	}
+}
+
+/*
+==================
+CL_ParseDelta
+
+Can go from either a baseline or a previous packet_entity
+==================
+*/
+int	deltabitcounts[32];	/// just for protocol profiling
+void CL_ParseDelta( entity_state_t* from, entity_state_t* to, int bits, int bboxbits, int number )
+{
+	int v5; // ecx
+	int i; // ecx
+	int Byte; // ebp
+	double v8; // st7
+	float v11; // [esp+10h] [ebp-Ch]
+	float Word; // [esp+10h] [ebp-Ch]
+	float v13; // [esp+10h] [ebp-Ch]
+	float v14; // [esp+10h] [ebp-Ch]
+	float v15; // [esp+10h] [ebp-Ch]
+	float v16; // [esp+10h] [ebp-Ch]
+	float v17; // [esp+10h] [ebp-Ch]
+	float v18; // [esp+18h] [ebp-4h]
+	float v19; // [esp+18h] [ebp-4h]
+
+	// set everything to the state we are delta'ing from
+	*to = *from;
+
+	v5 = 0;
+	to->entityType = 0;
+	to->number = number;
+	do
+	{
+		if (((1 << v5) & bits) != 0)
+			++deltabitcounts[v5];
+		++v5;
+	} while (v5 < 32);
+
+	for (i = 0; i < 8; ++i)
+	{
+		if (((1 << i) & bboxbits) != 0)
+			++deltabitcounts[i + 32];
+	}
+
+	to->flags = bits;
+
+	if ((bits & 0x800) != 0)
+		to->modelindex = MSG_ReadShort();
+
+	if ((bits & 0x80) != 0)
+	{
+		v11 = (double)MSG_ReadWord() / 256.0;
+		to->frame = v11;
+	}
+
+	if ((bits & 0x40) != 0)
+		to->movetype = MSG_ReadByte();
+
+	if ((bits & 0x40000) != 0)
+		to->colormap = MSG_ReadByte();
+
+	if ((bits & 0x80000) != 0)
+	{
+		to->skin = MSG_ReadShort();
+		to->solid = MSG_ReadByte();
+	}
+
+	if ((bits & 0x40000000) != 0)
+	{
+		Word = (float)MSG_ReadWord();
+		to->scale = Word * 0.00390625;
+	}
+
+	if ((bits & 0x4000) != 0)
+		to->effects = MSG_ReadByte();
+	if ((bits & 2) != 0)
+		to->origin[0] = MSG_ReadCoord();
+	if ((bits & 0x200) != 0)
+		to->angles[0] = MSG_ReadHiresAngle();
+	if ((bits & 4) != 0)
+		to->origin[1] = MSG_ReadCoord();
+	if ((bits & 0x20) != 0)
+		to->angles[1] = MSG_ReadHiresAngle();
+	if ((bits & 8) != 0)
+		to->origin[2] = MSG_ReadCoord();
+	if ((bits & 0x400) != 0)
+		to->angles[2] = MSG_ReadHiresAngle();
+
+	if ((bits & 0x1000) != 0)
+	{
+		Byte = MSG_ReadByte();
+		v13 = (float)(int)(__int64)(cl.time * 100.0);
+		v8 = v13;
+		v14 = (float)(unsigned __int8)(__int64)v13;
+		v15 = (v8 - v14) / 100.0;
+		v18 = v15;
+		v16 = (float)MSG_ReadByte();
+		v19 = v16 / 100.0 + v18;
+
+//		if (v10) TODO: Potential uninitialized memory, solve
+		{
+			do
+				v19 = v19 - 2.56;
+			while (v19 > cl.time + 0.1);
+		}
+
+		to->sequence = Byte;
+		to->animtime = v19;
+	}
+	if ((bits & 0x10000) != 0)
+	{
+		v17 = (double)MSG_ReadChar() / 16.0;
+		to->framerate = v17;
+	}
+	if ((bits & 0x1000000) != 0)
+		to->controller[0] = MSG_ReadByte();
+	if ((bits & 0x2000000) != 0)
+		to->controller[1] = MSG_ReadByte();
+	if ((bits & 0x4000000) != 0)
+		to->controller[2] = MSG_ReadByte();
+	if ((bits & 0x8000000) != 0)
+		to->controller[3] = MSG_ReadByte();
+	if ((bits & 0x10000000) != 0)
+		to->blending[0] = MSG_ReadByte();
+	if ((bits & 0x20000000) != 0)
+		to->blending[1] = MSG_ReadByte();
+	if ((bits & 0x400000) != 0)
+		to->body = MSG_ReadByte();
+
+	if ((bits & 0x100000) != 0)
+	{
+		to->rendermode = MSG_ReadByte();
+		to->renderamt = MSG_ReadByte();
+		to->rendercolor.r = MSG_ReadByte();
+		to->rendercolor.g = MSG_ReadByte();
+		to->rendercolor.b = MSG_ReadByte();
+		to->renderfx = MSG_ReadByte();
+	}
+
+	if ((bboxbits & 1) != 0)
+		to->mins[0] = MSG_ReadCoord();
+	if ((bboxbits & 2) != 0)
+		to->mins[1] = MSG_ReadCoord();
+	if ((bboxbits & 4) != 0)
+		to->mins[2] = MSG_ReadCoord();
+	if ((bboxbits & 8) != 0)
+		to->maxs[0] = MSG_ReadCoord();
+	if ((bboxbits & 16) != 0)
+		to->maxs[1] = MSG_ReadCoord();
+	if ((bboxbits & 32) != 0)
+		to->maxs[2] = MSG_ReadCoord();
+}
+
+/*
+=================
+CL_FlushEntityPacket
+=================
+*/
+void CL_FlushEntityPacket( void )
+{
+	int			num;
+	entity_state_t	olde, newe;
+	int			flags, bboxflags;
+	unsigned int peeklong;
+
+	memset(&olde, 0, sizeof(olde));
+
+	cl.validsequence = 0;		// can't render a frame
+	cl.frames[cls.netchan.incoming_sequence & UPDATE_MASK].invalid = TRUE;
+	
+	// read it all, but ignore it
+	while (1)
+	{
+		peeklong = *(unsigned int*)&net_message.data[msg_readcount];
+		if (peeklong)
+			num = CL_ReadDeltaFlags(&flags, &bboxflags);
+		else
+			num = MSG_ReadLong();
+
+		if (msg_badread)
+		{	// something didn't parse right...
+			Host_EndGame("msg_badread in packetentities\n");
+		}
+
+		if (!num)
+			break;	// done
+
+		if (flags & U_REMOVE)
+			continue;
+
+		if (flags & U_CUSTOM)
+		{
+			CL_ParseCustomEntityDelta(&olde, &newe, flags, bboxflags, num);
+		}
+		else
+		{
+			CL_ParseDelta(&olde, &newe, flags, bboxflags, num);
+		}
+	}
+}
+
+/*
 ==================
 CL_ParsePacketEntities
 
@@ -14,13 +351,209 @@ rest of the data stream.
 */
 void CL_ParsePacketEntities( qboolean delta )
 {
+	int			oldpacket, newpacket;
+	packet_entities_t* oldp, * newp, dummy;
+	int			oldindex, newindex;
+	int			num, newnum, oldnum;
+	int			flags, bboxflags;
+	qboolean	full;
+	byte		from;
+	unsigned int peeklong;
+	int			newp_number; // # of entities in new packet.
+
 	if (cls.signon == 2)
 	{
+		// We are done with signon sequence.
 		cls.signon = SIGNONS;
+
+		// Clear loading plaque.
 		CL_SignonReply();
 	}
 
-	// TODO: Implement
+	// Frame # of packet we are deltaing to
+	newpacket = cls.netchan.incoming_sequence & UPDATE_MASK;
+
+	// Packed entities for current frame
+	newp = &cl.frames[newpacket].packet_entities;
+	cl.frames[newpacket].invalid = FALSE;
+
+	// Retrieve size of packet.
+	newp_number = MSG_ReadShort();
+	if (!newp_number)
+		newp_number = 1;
+
+	if (newp->entities)
+		free(newp->entities);
+
+	newp->entities = (entity_state_t*)malloc(sizeof(entity_state_t) * newp_number);
+	if (!newp->entities)
+		Sys_Error("CL_ParsePacketEntities:  Failed to allocate space for %i entities.\n", newp_number);
+
+	memset(newp->entities, 0, sizeof(entity_state_t) * newp_number);
+
+	newp->num_entities = newp_number;
+
+	if (delta)
+	{
+		from = MSG_ReadByte();
+
+		oldpacket = cl.frames[newpacket].delta_sequence;
+
+		if ((from & UPDATE_MASK) != (oldpacket & UPDATE_MASK))
+			Con_DPrintf("WARNING: from mismatch\n");
+	}
+	else
+	{
+		cls.demowaiting = FALSE;
+		oldpacket = -1;
+	}
+
+	full = FALSE;
+	if (oldpacket != -1)
+	{
+		if (cls.netchan.outgoing_sequence - oldpacket >= UPDATE_BACKUP - 1)
+		{	// we can't use this, it is too old
+			CL_FlushEntityPacket();
+			if (newp->entities)
+				free(newp->entities);
+			dummy.num_entities = 0;
+			dummy.entities = NULL;
+			return;
+		}
+		cl.validsequence = cls.netchan.incoming_sequence;
+		oldp = &cl.frames[oldpacket & UPDATE_MASK].packet_entities;
+	}
+	else
+	{
+		// Use a dummy packet entity as default. If the old packet is valid, 
+		// it will be overwritten
+		oldp = &dummy;
+		dummy.num_entities = 0;
+		dummy.entities = NULL;
+		cl.validsequence = cls.netchan.incoming_sequence;
+		full = TRUE;
+	}
+
+	oldindex = 0;
+	newindex = 0;
+	newp->num_entities = 0;
+
+	while (1)
+	{
+		peeklong = *(unsigned int*)&net_message.data[msg_readcount];
+		if (peeklong)
+			num = CL_ReadDeltaFlags(&flags, &bboxflags);
+		else
+			num = MSG_ReadLong();
+
+		if (msg_badread)
+		{	// something didn't parse right...
+			Host_EndGame("msg_badread in packetentities\n");
+		}
+
+		if (!num)
+		{
+			while (oldindex < oldp->num_entities)
+			{	// copy all the rest of the entities from the old packet
+//				Con_Printf("copy %i\n", oldp->entities[oldindex].number);
+				if (newindex >= MAX_PACKET_ENTITIES)
+					Host_EndGame("CL_ParsePacketEntities: newindex == MAX_PACKET_ENTITIES");
+				newp->entities[newindex] = oldp->entities[oldindex];
+				newindex++;
+				oldindex++;
+			}
+			break;
+		}
+		newnum = num;
+		oldnum = oldindex >= oldp->num_entities ? 9999 : oldp->entities[oldindex].number;
+
+		while (newnum > oldnum)
+		{
+			if (full)
+			{
+				Con_Printf("WARNING: oldcopy on full update");
+				CL_FlushEntityPacket();
+
+				if (newp->entities)
+					free(newp->entities);
+				dummy.num_entities = 0;
+				dummy.entities = NULL;
+				return;
+			}
+
+//			Con_Printf("copy %i\n", oldnum);
+			// copy one of the old entities over to the new packet unchanged
+			if (newindex >= MAX_PACKET_ENTITIES)
+				Host_EndGame("CL_ParsePacketEntities: newindex == MAX_PACKET_ENTITIES");
+			newp->entities[newindex] = oldp->entities[oldindex];
+			newindex++;
+			oldindex++;
+			oldnum = oldindex >= oldp->num_entities ? 9999 : oldp->entities[oldindex].number;
+		}
+
+		if (newnum < oldnum)
+		{	// new from baseline
+//Con_Printf("baseline %i\n", newnum);
+			if (flags & U_REMOVE)
+			{
+				if (full)
+				{
+					cl.validsequence = 0;
+					Con_Printf("WARNING: U_REMOVE on full update\n");
+					CL_FlushEntityPacket();
+					if (newp->entities)
+						free(newp->entities);
+					newp->num_entities = 0;
+					newp->entities = NULL;
+					return;
+				}
+				continue;
+			}
+			if (newindex >= MAX_PACKET_ENTITIES)
+				Host_EndGame("CL_ParsePacketEntities: newindex == MAX_PACKET_ENTITIES");
+
+			CL_EntityNum(newnum);
+
+			if (flags & U_CUSTOM)
+			{
+				CL_ParseCustomEntityDelta(&cl_entities[newnum].baseline, &newp->entities[newindex], flags, bboxflags, newnum);
+			}
+			else
+			{
+				CL_ParseDelta(&cl_entities[newnum].baseline, &newp->entities[newindex], flags, bboxflags, newnum);
+			}
+			newindex++;
+			continue;
+		}
+
+		if (newnum == oldnum)
+		{	// delta from previous
+			if (full)
+			{
+				cl.validsequence = 0;
+				Con_Printf("WARNING: delta on full update");
+			}
+			if (flags & U_REMOVE)
+			{
+				oldindex++;
+//				sub_C71ACE0(oldnum); TODO: Implement
+				continue;
+			}
+//Con_Printf("delta %i\n",newnum);
+			if (flags & U_CUSTOM)
+			{
+				CL_ParseCustomEntityDelta(&oldp->entities[oldindex], &newp->entities[newindex], flags, bboxflags, newnum);
+			}
+			else
+			{
+				CL_ParseDelta(&oldp->entities[oldindex], &newp->entities[newindex], flags, bboxflags, newnum);
+			}
+			newindex++;
+			oldindex++;
+		}
+	}
+
+	newp->num_entities = newindex;
 }
 
 //========================================

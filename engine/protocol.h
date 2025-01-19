@@ -210,8 +210,9 @@
 #define	CM_BUTTONS	(1<<6)
 #define	CM_IMPULSE	(1<<7)
 
-
-
+//==============================================
+#define	U_REMOVE	(1<<4)		// REMOVE this entity, don't add it
+#define	U_CUSTOM	(1<<13)		// Custom entity data (beams)
 
 
 /*
@@ -228,11 +229,11 @@ ELEMENTS COMMUNICATED ACROSS THE NET
 							// must be power of two
 #define	UPDATE_MASK		(UPDATE_BACKUP - 1)
 
-#define	MAX_PACKET_ENTITIES	64	// doesn't count nails
+#define	MAX_PACKET_ENTITIES	256	// doesn't count nails
 typedef struct
 {
 	int		num_entities;
-	entity_state_t	entities[MAX_PACKET_ENTITIES];
+	entity_state_t* entities;
 } packet_entities_t;
 
 // Server default maxplayers value
