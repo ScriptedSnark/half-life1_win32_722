@@ -72,7 +72,7 @@ typedef struct
 	short ping;
 	byte thisplayer;  // TRUE if this is the calling player
 
-	// stuff that's unused at the moment,  but should be done
+// stuff that's unused at the moment,  but should be done
 	byte spectator;
 	byte packetloss;
 } hud_player_info_t;

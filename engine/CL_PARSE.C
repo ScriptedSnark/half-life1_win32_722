@@ -647,12 +647,10 @@ void CL_ParseServerInfo( void )
 	CL_ReallocateDynamicData(cl.maxclients);
 
 	cl.playernum = MSG_ReadByte();
-
-	// See if we're just spectating
-	if (cl.playernum & 128)
+	if (cl.playernum & PN_SPECTATOR)
 	{
 		cl.spectator = TRUE;
-		cl.playernum &= ~128;
+		cl.playernum &= ~PN_SPECTATOR;
 	}
 
 	// Clear customization for all clients
@@ -911,7 +909,7 @@ void CL_ParseServerMessage( void )
 	// For determining data parse sizes
 	int bufStart, bufEnd;
 
-	int	slot, value;
+	int	slot, spectator;
 
 //
 // if recording demos, copy the message out
@@ -1019,12 +1017,12 @@ void CL_ParseServerMessage( void )
 
 		case svc_updatename:
 			i = MSG_ReadByte();
-			slot = i & ~128;
-			value = (i & 128) >> 7;
+			slot = i & ~PN_SPECTATOR;
+			spectator = (i & PN_SPECTATOR) != 0;
 			if (slot >= cl.maxclients)
 				Host_Error("CL_ParseServerMessage: svc_updatename > MAX_SCOREBOARD");
 			strcpy(cl.players[slot].name, MSG_ReadString());
-			if (value)
+			if (spectator)
 			{
 				CL_PlayerDropped(slot);
 			}
@@ -1110,7 +1108,21 @@ void CL_ParseServerMessage( void )
 			MSG_ReadLong();
 			break;
 
-		// TODO: Implement
+		case svc_download:
+			// TODO: Implement
+			break;
+
+		case svc_packetentities:
+			CL_ParsePacketEntities(FALSE);
+			break;
+
+		case svc_deltapacketentities:
+			CL_ParsePacketEntities(TRUE);
+			break;
+
+		case svc_playerinfo:
+			CL_ParsePlayerinfo();
+			break;
 
 		case svc_chokecount:
 			i = MSG_ReadByte();

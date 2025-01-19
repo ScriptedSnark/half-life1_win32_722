@@ -64,6 +64,8 @@ dlight_t		cl_elights[MAX_ELIGHTS];
 
 qboolean cl_inmovie;
 
+int g_playerbits[MAX_CLIENTS];
+
 /*
 =================
 CL_UpdateSoundFade

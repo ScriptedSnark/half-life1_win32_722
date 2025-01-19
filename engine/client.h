@@ -75,6 +75,8 @@ typedef struct player_info_s
 	// skin information
 	int		color;
 
+	// TRUE if joined the game as spectator
+	qboolean spectator;
 
 	// TODO: Implement
 
@@ -215,6 +217,8 @@ typedef struct
 	vec3_t		velocity;
 	int			weaponframe;
 
+	int			movetype;
+
 	int			modelindex;
 	int			frame;
 	int			skinnum;
@@ -222,32 +226,34 @@ typedef struct
 
 	int			flags;			// dead, gib, etc
 
-	float		waterjumptime;
-	int			onground;		// -1 = in air, else pmove entity number
-	int			oldbuttons;
+
+	// Render information
+	int			rendermode;
+	int			renderamt;
+	color24		rendercolor;
+	int			renderfx;
+
+	int			sequence;
+
+
+	float		framerate;
+	int			body;
+	byte		controller[4];
+	byte		blending[4];
+
+	int			weaponmodel;
+
+
+
+	// If standing on conveyor, e.g.
+	vec3_t		basevelocity;
+
+	// Friction, for prediction.
+	float		friction;
+
+
+
 } player_state_t;
-
-// entity_state_t is the information conveyed from the server
-// in an update message
-typedef struct
-{
-	int		number;			// edict index
-	int		flags;			// nolerp, etc
-	vec3_t	origin;
-	vec3_t	angles;
-	int		modelindex;
-	int		frame;
-	int		colormap;
-	int		skinnum;
-	int		effects;
-} cl_entity_state_t;
-
-#define	MAX_PACKET_ENTITIES	64	// doesn't count nails
-typedef struct
-{
-	int		num_entities;
-	cl_entity_state_t	entities[MAX_PACKET_ENTITIES];
-} cl_packet_entities_t;
 
 typedef struct
 {
@@ -261,7 +267,7 @@ typedef struct
 	qboolean	invalid;		// true if the packet_entities delta was invalid
 
 	player_state_t	playerstate[MAX_CLIENTS];	// message received that reflects performing the usercmd
-	cl_packet_entities_t	packet_entities;
+	packet_entities_t	packet_entities;
 } frame_t;
 
 //
@@ -451,6 +457,8 @@ extern	cvar_t	cl_pitchdown;
 
 extern qboolean cl_inmovie;
 
+extern int g_playerbits[MAX_CLIENTS];
+
 // TODO: Implement
 
 extern client_static_t	cls;
@@ -528,6 +536,7 @@ void CL_Disconnect_f( void );
 void CL_SetSolidPlayers( int playernum );
 void CL_SetUpPlayerPrediction( qboolean dopred );
 void CL_EmitEntities( void );
+void CL_ParsePlayerinfo( void );
 
 
 //
