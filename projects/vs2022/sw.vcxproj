@@ -97,6 +97,7 @@
     <ClCompile Include="..\..\engine\pe_export.c" />
     <ClCompile Include="..\..\engine\pmove.c" />
     <ClCompile Include="..\..\engine\pr_cmds.c" />
+    <ClCompile Include="..\..\engine\R_PART.C" />
     <ClCompile Include="..\..\engine\R_SURF.C" />
     <ClCompile Include="..\..\engine\SCREEN.C" />
     <ClCompile Include="..\..\engine\SND_DMA.C" />

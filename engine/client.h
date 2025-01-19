@@ -323,6 +323,7 @@ typedef struct
 	// TODO: Implement
 
 	vec3_t		punchangle;		// temporary offset
+	vec3_t		crosshairangle;
 
 	// TODO: Implement
 
@@ -376,6 +377,8 @@ typedef struct
 
 	qboolean	spectator;   // we're spectating
 
+	struct model_s*	model_precache[MAX_MODELS];
+
 	// TODO: Implement
 
 	char		levelname[40];	// for display on solo scoreboard
@@ -390,6 +393,7 @@ typedef struct
 	efrag_t*	free_efrags;
 	int			num_entities;	// held in cl_entities array
 	int			num_statics;	// held in cl_staticentities array
+	cl_entity_t viewent;			// the gun model
 
 
 	// TODO: Implement

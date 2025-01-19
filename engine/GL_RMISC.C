@@ -26,3 +26,13 @@ void R_Init( void )
 {
 	// TODO: Implement
 }
+
+/*
+===============
+R_NewMap
+===============
+*/
+void R_NewMap( void )
+{
+	// TODO: Implement
+}

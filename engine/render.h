@@ -24,6 +24,8 @@ typedef struct cl_entity_s
 
 
 
+	struct model_s* model;
+
 
 	colorVec				cvFloorColor;
 } cl_entity_t;
@@ -57,6 +59,14 @@ extern	struct texture_s* r_notexture_mip;
 
 void R_Init( void );
 void R_InitTextures( void );
+
+
+
+void R_NewMap( void );
+
+
+void R_ParseParticleEffect( void );
+
 
 
 void R_SetStackBase( void );

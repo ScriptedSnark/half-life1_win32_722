@@ -525,10 +525,10 @@ void Host_EndGame( char* message, ... )
 	va_list		argptr;
 	char		string[1024];
 
-	va_start( argptr, message );
-	vsnprintf( string, sizeof( string ), message, argptr );
-	va_end( argptr );
-	Con_DPrintf( "Host_EndGame: %s\n", string );
+	va_start(argptr, message);
+	vsnprintf(string, sizeof(string), message, argptr);
+	va_end(argptr);
+	Con_DPrintf("Host_EndGame: %s\n", string);
 
 	oldn = cls.demonum;
 

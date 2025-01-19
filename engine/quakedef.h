@@ -71,8 +71,10 @@
 
 
 // Resource counts
-
-
+#define MAX_MODEL_INDEX_BITS		9	// sent as a short
+#define MAX_MODELS					(1<<MAX_MODEL_INDEX_BITS)
+#define MAX_SOUND_INDEX_BITS		9
+#define MAX_SOUNDS					(1<<MAX_SOUND_INDEX_BITS)
 
 
 
@@ -86,10 +88,27 @@
 
 #define MAX_RESOURCES		1280 // TODO: (MAX_MODELS + MAX_SOUNDS + MAX_EVENTS)
 
+
+#define MAX_USERMSGS		128
+
 // Client dispatch function for usermessages
-typedef int (*pfnUserMsgHook)( const char* pszName, int iSize, void* pbuf );
+typedef int (*pfnUserMsgHook)(const char* pszName, int iSize, void* pbuf);
 
+typedef struct _UserMsg UserMsg;
 
+typedef struct _UserMsg
+{
+	int				iMsg;
+	// byte size of message, or -1 for variable sized
+	int				iSize;
+	char			szName[12];
+	UserMsg*		next;
+	// Client only dispatch function for message
+	pfnUserMsgHook	pfn;
+} UserMsg;
+
+// Max user message data size
+#define MAX_USER_MSG_DATA	64
 
 
 #define	MAX_STYLESTRING	64

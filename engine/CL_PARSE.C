@@ -10,7 +10,7 @@
 int		last_data[64];
 int		msg_buckets[64];
 
-
+UserMsg* gClientUserMsgs = NULL;
 
 // TODO: Implement
 
@@ -107,6 +107,106 @@ cl_entity_t* CL_EntityNum( int num )
 	return &cl_entities[num];
 }
 
+/*
+=====================
+AddNewUserMsg
+
+Registers a new user message on the client
+=====================
+*/
+void AddNewUserMsg( void )
+{
+	UserMsg* pList;
+	UserMsg umsg;
+
+	int	i;
+	int	fFound = 0;
+
+	umsg.iMsg = MSG_ReadByte();
+	umsg.iSize = MSG_ReadByte();
+	umsg.pfn = NULL;
+
+	if (umsg.iSize == 255)
+		umsg.iSize = -1;
+
+	i = MSG_ReadLong();
+	strncpy(&umsg.szName[0], (char*)&i, sizeof(i));
+	i = MSG_ReadLong();
+	strncpy(&umsg.szName[4], (char*)&i, sizeof(i));
+	i = MSG_ReadLong();
+	strncpy(&umsg.szName[8], (char*)&i, sizeof(i));
+	i = MSG_ReadLong();
+	strncpy((char*)&umsg.next, (char*)&i, sizeof(i));
+
+	// Scan all user messages
+	for (pList = gClientUserMsgs; pList; pList = pList->next)
+	{
+		if (!_strcmpi(pList->szName, umsg.szName))
+		{
+			fFound = 1;
+			pList->iMsg = umsg.iMsg;
+			pList->iSize = umsg.iSize;
+		}
+	}
+
+	if (!fFound)
+	{
+		UserMsg* pumsg;
+
+		pumsg = (UserMsg*)Z_Malloc(sizeof(UserMsg));
+		memcpy(pumsg, &umsg, sizeof(UserMsg));
+		pumsg->next = gClientUserMsgs;
+		gClientUserMsgs = pumsg;
+	}
+}
+
+/*
+=================
+DispatchUserMsg
+=================
+*/
+void DispatchUserMsg( int iMsg )
+{
+	static char buf[MAX_USER_MSG_DATA];
+	int MsgSize = 0;
+	int fFound = 0;
+
+	UserMsg* pList;
+
+	if (iMsg <= svc_lastmsg || iMsg >= MAX_USERMSGS)
+	{
+		Con_DPrintf("Illegal User Msg %d\n", iMsg);
+		return;
+	}
+
+	for (pList = gClientUserMsgs; pList; pList = pList->next)
+	{
+		if (pList->iMsg == iMsg)
+		{
+			MsgSize = pList->iSize;
+			if (!fFound)
+			{
+				if (MsgSize == -1)
+					MsgSize = MSG_ReadByte();
+
+				MSG_ReadBuf(MsgSize, buf);
+			}
+
+			fFound = 1;
+
+//			if (pList->pfn)
+//				pList->pfn(pList->szName, MsgSize, buf);
+//			else
+				Con_DPrintf("UserMsg: No pfn %s %d\n", pList->szName, iMsg);
+		}
+	}
+
+	if (!fFound)
+	{
+		Con_DPrintf("UserMsg: Not Present on Client %d\n", iMsg);
+	}
+}
+
 // TODO: Implement
 
 
@@ -117,6 +217,80 @@ CL_ParseStartSoundPacket
 */
 void CL_ParseStartSoundPacket( void )
 {
+	int Byte; // ebp
+	int v1; // eax
+	int v2; // esi
+	int v3; // ebx
+	int *v4; // edi
+	float v6; // [esp+10h] [ebp-68h]
+	float v7; // [esp+10h] [ebp-68h]
+	int Short; // [esp+14h] [ebp-64h]
+	int channel; // [esp+14h] [ebp-64h]
+	int v10; // [esp+18h] [ebp-60h]
+	float v11; // [esp+1Ch] [ebp-5Ch]
+	float v12; // [esp+20h] [ebp-58h]
+	int v13[3]; // [esp+24h] [ebp-54h] BYREF
+	int Str[18]; // [esp+30h] [ebp-48h] BYREF
+
+	Byte = MSG_ReadByte();
+	if ((Byte & 1) != 0)
+	{
+		v6 = (double)MSG_ReadByte() / 255.0;
+		v12 = v6;
+	}
+	else
+	{
+		v12 = 1.0;
+	}
+	if ((Byte & 2) != 0)
+	{
+		v7 = (double)MSG_ReadByte() / 64.0;
+		v11 = v7;
+	}
+	else
+	{
+		v11 = 1.0;
+	}
+	Short = MSG_ReadShort();
+	if ((Byte & 4) != 0)
+		v1 = MSG_ReadShort();
+	else
+		v1 = MSG_ReadByte();
+	v2 = v1;
+	v3 = Short >> 3;
+	channel = Short & 7;
+	if (v3 >= cl.max_edicts)
+		Host_Error("CL_ParseStartSoundPacket: ent = %i", v3);
+	v4 = v13;
+	do
+		*((float *)++v4 - 1) = MSG_ReadCoord();
+	while (v4 < Str);
+	if ((Byte & 8) != 0)
+		v10 = MSG_ReadByte();
+	else
+		v10 = 100;
+
+	// TODO: Implement
+}
+
+// TODO: Implement
+
+/*
+==================
+CL_ParseStartSoundPacket
+==================
+*/
+void CL_ParseDownload( void )
+{
+	int read;
+	CRC32_t crc;
+	char szFileName[128];
+
+	memset(szFileName, 0, sizeof(szFileName));
+
+	read = MSG_ReadShort();
+	crc = MSG_ReadShort();
+
 	// TODO: Implement
 }
 
@@ -150,12 +324,17 @@ void CL_RegisterResources( void )
 		return;
 	}
 
-	// TODO: Implement
+	cl.worldmodel = cl.model_precache[1];
+
+	cl_entities->model = cl.worldmodel;
+
+	if (!cl.worldmodel)
+		Sys_Error("Client world model is NULL\n");
 
 	Con_DPrintf("Setting up renderer...\n");
 	time1 = Sys_FloatTime();
 
-//	R_NewMap();			// Tell rendering system we have a new set of models. (TODO: Implement)
+	R_NewMap();			// Tell rendering system we have a new set of models.
 	time2 = Sys_FloatTime();
 
 	Hunk_Check();		// make sure nothing is hurt
@@ -192,6 +371,7 @@ void CL_MoveToOnHandList( resource_t* pResource )
 	case t_skin:
 		break;
 	case t_model:
+		cl.model_precache[1] = (struct model_s*)0x324242;
 		// TODO: Implement
 		break;
 	case t_decal:
@@ -943,11 +1123,17 @@ void CL_ParseServerMessage( void )
 
 		if (cmd > svc_lastmsg)
 		{
-			// TODO: Implement
+			msg_buckets[63]++;
+			DispatchUserMsg(cmd);
 
+			// Mark end position
+			bufEnd = msg_readcount;
+			last_data[63] += bufEnd - bufStart;
 			continue;
 		}
 		
+		// TODO: Implement
+
 		switch (cmd)
 		{
 		default:
@@ -1047,6 +1233,10 @@ void CL_ParseServerMessage( void )
 			cl.players[i].color = MSG_ReadByte();
 			break;
 
+		case svc_particle:
+			R_ParseParticleEffect();
+			break;
+
 		case svc_damage:
 			break;
 
@@ -1097,19 +1287,29 @@ void CL_ParseServerMessage( void )
 			break;
 
 		// TODO: Implement
+		
+		case svc_weaponanim:
+			cl.weaponstarttime = 0.0f;
+			cl.weaponsequence = MSG_ReadByte();
+			cl.viewent.baseline.body = MSG_ReadByte();
+			break;
+
+		// TODO: Implement
+
+		case svc_roomtype:
+			Cvar_SetValue("room_type", MSG_ReadShort());
+			break;
+
+		case svc_addangle:
+			cl.viewangles[YAW] += MSG_ReadHiresAngle();
+			break;
 
 		case svc_newusermsg:
-			// TODO: Implement
-			MSG_ReadByte();
-			MSG_ReadByte();
-			MSG_ReadLong();
-			MSG_ReadLong();
-			MSG_ReadLong();
-			MSG_ReadLong();
+			AddNewUserMsg();
 			break;
 
 		case svc_download:
-			// TODO: Implement
+			CL_ParseDownload();
 			break;
 
 		case svc_packetentities:
@@ -1146,6 +1346,12 @@ void CL_ParseServerMessage( void )
 
 		// TODO: Implement
 
+		case svc_crosshairangle:
+			cl.crosshairangle[PITCH] = MSG_ReadChar() * 0.2f;
+			cl.crosshairangle[YAW] = MSG_ReadChar() * 0.2f;
+			break;
+
+		// TODO: Implement
 		}
 
 		// TODO: Implement

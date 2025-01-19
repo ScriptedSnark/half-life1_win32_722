@@ -90,7 +90,7 @@
 #define	svc_clientdata			15		// <shortbits + data>
 
 #define svc_updatecolors		17		// [byte] [byte]
-
+#define	svc_particle			18		// [vec3] <variable>
 #define	svc_damage				19
 
 
@@ -108,7 +108,10 @@
 #define	svc_cdtrack				32		// [byte] track [byte] looptrack
 
 
+#define svc_weaponanim			35
 
+#define svc_roomtype			37		// [byte] roomtype (dsp effect)
+#define svc_addangle			38		// [angle3] set the view angle to this absolute value
 #define svc_newusermsg			39
 #define svc_download			40
 #define	svc_packetentities		41		// [...]  Non-delta compressed entities
@@ -120,7 +123,8 @@
 
 #define svc_resourcerequest		48
 
-
+#define svc_crosshairangle		50		// [char] pitch * 5 [char] yaw * 5
+#define svc_soundfade			41      // char percent, char holdtime, char fadeouttime, char fadeintime
 #define svc_lastmsg				52
 
 //
