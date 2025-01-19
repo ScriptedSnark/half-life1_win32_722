@@ -352,8 +352,7 @@ typedef struct
 
 
 	int			intermission;	// don't change view angle, full screen, etc
-
-	// TODO: Implement
+	int			completed_time;	// latched ffrom time at intermission start
 
 	double		mtime[2];		// the timestamp of last two messages
 
@@ -377,6 +376,9 @@ typedef struct
 
 	qboolean	spectator;   // we're spectating
 
+//
+// information that is static for the entire time connected to a server
+//
 	struct model_s*	model_precache[MAX_MODELS];
 
 	// TODO: Implement

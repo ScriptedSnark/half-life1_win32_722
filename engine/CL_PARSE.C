@@ -1107,6 +1107,9 @@ void CL_ParseServerMessage( void )
 
 	memset(last_data, 0, sizeof(last_data));
 
+//
+// parse the message
+//
 	while (1)
 	{
 		if (msg_badread)
@@ -1132,12 +1135,21 @@ void CL_ParseServerMessage( void )
 			continue;
 		}
 		
+		SHOWNET(svc_strings[cmd]);
+
 		// TODO: Implement
 
+		if (cmd <= 63)
+			msg_buckets[cmd]++;
+
+	// other commands
 		switch (cmd)
 		{
 		default:
+			Con_DPrintf("Last 3 messages parsed.\n");
 			// TODO: Implement
+			Con_DPrintf("BAD:  %3i:%s\n", msg_readcount - 1, svc_strings[cmd]);
+			Host_Error("CL_ParseServerMessage: Illegible server message\n");
 			break;
 
 		case svc_nop:
@@ -1224,7 +1236,10 @@ void CL_ParseServerMessage( void )
 			CL_ParseClientdata(i);
 			break;
 
-		// TODO: Implement
+		case svc_stopsound:
+			i = MSG_ReadShort();
+			// TODO: Implement
+			break;
 
 		case svc_updatecolors:
 			i = MSG_ReadByte();
@@ -1270,7 +1285,18 @@ void CL_ParseServerMessage( void )
 			CL_ParseStaticSound();
 			break;
 
-		// TODO: Implement
+		case svc_intermission:
+			cl.intermission = 1;
+			vid.recalc_refdef = TRUE;	// go to full screen
+			cl.completed_time = cl.time;
+			break;
+
+		case svc_finale:
+			cl.intermission = 2;
+			vid.recalc_refdef = TRUE;	// go to full screen
+			cl.completed_time = cl.time;
+			SCR_CenterPrint(MSG_ReadString());
+			break;
 
 		case svc_cdtrack:
 			cl.cdtrack = MSG_ReadByte();
@@ -1354,7 +1380,9 @@ void CL_ParseServerMessage( void )
 		// TODO: Implement
 		}
 
-		// TODO: Implement
+		// Mark end position
+		bufEnd = msg_readcount;
+		last_data[cmd] += bufEnd - bufStart;
 	}
 
 	// end of message

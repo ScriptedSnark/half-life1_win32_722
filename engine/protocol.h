@@ -88,7 +88,7 @@
 #define svc_updatename			13		// [byte] [string]
 #define	svc_updatefrags			14		// [byte] [short]
 #define	svc_clientdata			15		// <shortbits + data>
-
+#define svc_stopsound			16		// <see code>
 #define svc_updatecolors		17		// [byte] [byte]
 #define	svc_particle			18		// [vec3] <variable>
 #define	svc_damage				19
@@ -103,11 +103,11 @@
 #define svc_foundsecret			28
 
 #define svc_spawnstaticsound	29		// [coord3] [byte] samp [byte] vol [byte] aten
-
-
+#define svc_intermission		30		// [string] music
+#define svc_finale				31		// [string] music [string] text
 #define	svc_cdtrack				32		// [byte] track [byte] looptrack
 
-
+#define svc_cutscene			34
 #define svc_weaponanim			35
 
 #define svc_roomtype			37		// [byte] roomtype (dsp effect)
