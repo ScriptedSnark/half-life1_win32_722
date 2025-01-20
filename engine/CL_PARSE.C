@@ -371,8 +371,16 @@ void CL_MoveToOnHandList( resource_t* pResource )
 	case t_skin:
 		break;
 	case t_model:
-		cl.model_precache[1] = (struct model_s*)0x324242;
-		// TODO: Implement
+		cl.model_precache[pResource->nIndex] = Mod_ForName(pResource->szFileName, FALSE);
+		if (!cl.model_precache[pResource->nIndex])
+		{
+			Con_Printf("Model %s not found\n", pResource->szFileName);
+			if (pResource->ucFlags & RES_FATALIFMISSING)
+			{
+				Con_Printf("Cannot continue without model, disconnecting\n");
+				CL_Disconnect();
+			}
+		}
 		break;
 	case t_decal:
 		if (!(pResource->ucFlags & RES_CUSTOM))

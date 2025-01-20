@@ -31,6 +31,7 @@
     <ClCompile Include="..\..\engine\cvar.c" />
     <ClCompile Include="..\..\engine\glHud.c" />
     <ClCompile Include="..\..\engine\GL_DRAW.C" />
+    <ClCompile Include="..\..\engine\GL_MODEL.C" />
     <ClCompile Include="..\..\engine\GL_RMAIN.C" />
     <ClCompile Include="..\..\engine\GL_RMISC.C" />
     <ClCompile Include="..\..\engine\GL_RSURF.C" />

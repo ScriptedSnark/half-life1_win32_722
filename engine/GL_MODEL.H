@@ -346,9 +346,14 @@ typedef struct
 	vec3_t		position;
 } DECALLIST;
 
+//============================================================================
 
+void Mod_ClearAll( void );
+model_t* Mod_ForName( char* name, qboolean crash );
+model_t* Mod_FindName( char* name );
+void* Mod_Extradata( model_t* mod );	// handles caching
+void Mod_TouchModel( char* name );
 
-
-
+mleaf_t* Mod_PointInLeaf( vec_t* p, model_t* model );
 
 #endif // GL_MODEL_H
