@@ -44,6 +44,7 @@
     <ClCompile Include="..\..\engine\in_camera.c" />
     <ClCompile Include="..\..\engine\in_win.c" />
     <ClCompile Include="..\..\engine\KEYS.C" />
+    <ClCompile Include="..\..\engine\l_studio.c" />
     <ClCompile Include="..\..\engine\mathlib.c" />
     <ClCompile Include="..\..\engine\net_chan.c" />
     <ClCompile Include="..\..\engine\net_ws.c" />
@@ -121,6 +122,7 @@
     <ClInclude Include="..\..\engine\screen.h" />
     <ClInclude Include="..\..\engine\server.h" />
     <ClInclude Include="..\..\engine\sound.h" />
+    <ClInclude Include="..\..\engine\spritegn.h" />
     <ClInclude Include="..\..\engine\studio.h" />
     <ClInclude Include="..\..\engine\sys.h" />
     <ClInclude Include="..\..\engine\vid.h" />

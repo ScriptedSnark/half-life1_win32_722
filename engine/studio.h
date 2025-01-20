@@ -1,6 +1,8 @@
 #ifndef _STUDIO_H_
 #define _STUDIO_H_
 
+#define IDSTUDIOHEADER	(('T'<<24)+('S'<<16)+('D'<<8)+'I') // little-endian "IDST"
+
 /*
 ==============================================================================
 

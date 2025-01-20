@@ -388,7 +388,6 @@ void CL_MoveToOnHandList( resource_t* pResource )
 			Draw_DecalSetName(pResource->nIndex, pResource->szFileName);
 		}
 		break;
-
 	default:
 		Con_DPrintf("Unknown resource type\n");
 		break;

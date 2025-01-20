@@ -9,6 +9,10 @@ model_t* loadmodel;
 char loadname[32];	// for hunk tags
 char* wadpath;
 
+void Mod_LoadSpriteModel( model_t* mod, void* buffer );
+void Mod_LoadBrushModel( model_t* mod, void* buffer );
+void Mod_LoadAliasModel( model_t* mod, void* buffer );
+void Mod_LoadStudioModel( model_t* mod, void* buffer );
 model_t* Mod_LoadModel( model_t* mod, qboolean crash );
 
 model_t mod_known[MAX_MODELS];
@@ -148,8 +152,79 @@ Loads a model into the cache
 */
 model_t* Mod_LoadModel( model_t* mod, qboolean crash )
 {
-	// TODO: Implement
-	return NULL;
+	unsigned* buf;
+	byte	stackbuf[1024];		// avoid dirtying the cache heap
+
+	if (mod->type == mod_alias || mod->type == mod_studio)
+	{
+		if (Cache_Check(&mod->cache))
+		{
+			mod->needload = NL_PRESENT;
+			return mod;
+		}
+	}
+	else
+	{
+		if (mod->needload == NL_PRESENT || mod->needload == (NL_NEEDS_LOADED | NL_UNREFERENCED))
+			return mod;		// not cached at all
+	}
+
+//
+// because the world is so huge, load it one piece at a time
+//
+	if (!crash)
+	{
+
+	}
+
+//
+// load the file
+//
+	buf = (unsigned*)COM_LoadStackFile(mod->name, stackbuf, sizeof(stackbuf));
+	if (!buf)
+	{
+		if (crash)
+			Sys_Error("Mod_NumForName: %s not found", mod->name);
+		return NULL;
+	}
+
+	if (developer.value > 1.0)
+		Con_DPrintf("loading %s\n", mod->name);
+
+//
+// allocate a new model
+//
+	COM_FileBase(mod->name, loadname);
+
+	loadmodel = mod;
+
+//
+// fill it in
+//
+
+// call the apropriate loader
+	mod->needload = NL_PRESENT;
+
+	switch (LittleLong(*(unsigned*)buf))
+	{
+	case IDPOLYHEADER:
+		Mod_LoadAliasModel(mod, buf);
+		break;
+
+	case IDSPRITEHEADER:
+		Mod_LoadSpriteModel(mod, buf);
+		break;
+
+	case IDSTUDIOHEADER:
+		Mod_LoadStudioModel(mod, buf);
+		break;
+
+	default:
+		Mod_LoadBrushModel(mod, buf);
+		break;
+	}
+
+	return mod;
 }
 
 /*
@@ -168,6 +243,10 @@ model_t* Mod_ForName( char* name, qboolean crash )
 	return Mod_LoadModel(mod, crash);
 }
 
+void Mod_MarkClient( model_t* pModel )
+{
+	pModel->needload = (NL_NEEDS_LOADED | NL_UNREFERENCED);
+}
 
 /*
 ===============================================================================
@@ -183,3 +262,57 @@ byte* mod_base;
 #define PIXELS_SIZE			(MIPSCALE * (512 * 512) / 64)
 #define PALETTE_SIZE		(256 * 3)
 #define TEXTUREDATA_SIZE	(PIXELS_SIZE + PALETTE_SIZE + sizeof(unsigned short))
+
+// TODO: Implement
+
+/*
+=================
+Mod_LoadBrushModel
+=================
+*/
+void Mod_LoadBrushModel( model_t* mod, void* buffer )
+{
+	// TODO: Implement
+}
+
+/*
+==============================================================================
+
+ALIAS MODELS
+
+==============================================================================
+*/
+
+
+
+// TODO: Implement
+
+
+
+//=========================================================================
+
+/*
+=================
+Mod_LoadAliasModel
+=================
+*/
+void Mod_LoadAliasModel( model_t* mod, void* buffer )
+{
+	// TODO: Implement
+}
+
+//=============================================================================
+
+// TODO: Implement
+
+/*
+===============
+Mod_LoadSpriteModel
+===============
+*/
+void Mod_LoadSpriteModel( model_t* mod, void* buffer )
+{
+	// TODO: Implement
+}
+
+// TODO: Implement

@@ -5,6 +5,18 @@
 #pragma once
 #endif
 
+#include "modelgen.h"
+#include "spritegn.h"
+
+/*
+
+d*_t structures are on-disk representations
+m*_t structures are in-memory
+
+*/
+
+#include "studio.h"
+
 #define STUDIO_RENDER 1
 #define STUDIO_EVENTS 2
 
@@ -353,6 +365,7 @@ model_t* Mod_ForName( char* name, qboolean crash );
 model_t* Mod_FindName( char* name );
 void* Mod_Extradata( model_t* mod );	// handles caching
 void Mod_TouchModel( char* name );
+void Mod_MarkClient( model_t* pModel );
 
 mleaf_t* Mod_PointInLeaf( vec_t* p, model_t* model );
 
