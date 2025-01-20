@@ -26,7 +26,7 @@ void GL_BeginRendering( int* x, int* y, int* width, int* height );
 void GL_EndRendering( void );
 
 extern	int texture_extension_number;
-
+extern	int	texture_mode;
 
 extern	float	gldepthmin, gldepthmax;
 

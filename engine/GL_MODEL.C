@@ -4,6 +4,8 @@
 // on the same machine.
 
 #include "quakedef.h"
+#include "decal.h"
+#include "textures.h"
 
 model_t* loadmodel;
 char loadname[32];	// for hunk tags
@@ -261,7 +263,215 @@ byte* mod_base;
 #define MIPSCALE			(64 + 16 + 4 + 1)
 #define PIXELS_SIZE			(MIPSCALE * (512 * 512) / 64)
 #define PALETTE_SIZE		(256 * 3)
-#define TEXTUREDATA_SIZE	(PIXELS_SIZE + PALETTE_SIZE + sizeof(unsigned short))
+#define TEXTUREDATA_SIZE	(PIXELS_SIZE + PALETTE_SIZE + sizeof(word))
+
+/*
+===============
+Mod_LoadTextures
+===============
+*/
+void Mod_LoadTextures( lump_t* l )
+{
+	int				i, j, pixels, palette, num, max, altmax;
+	miptex_t* mt;
+	texture_t* tx, * tx2;
+	texture_t* anims[10];
+	texture_t* altanims[10];
+	dmiptexlump_t* m;
+	byte			dtexdata[TEXTUREDATA_SIZE + MIP_EXTRASIZE + sizeof(miptex_t)];
+	unsigned char* pPal;
+	qboolean		wads_parsed = FALSE;
+	double			starttime;
+	byte* rawtex;
+
+	starttime = Sys_FloatTime();
+
+	if (!l->filelen)
+	{
+		loadmodel->textures = NULL;
+		return;
+	}
+	m = (dmiptexlump_t*)(mod_base + l->fileofs);
+
+	m->nummiptex = LittleLong(m->nummiptex);
+
+	loadmodel->numtextures = m->nummiptex;
+	loadmodel->textures = (texture_t**)Hunk_AllocName(m->nummiptex * sizeof(*loadmodel->textures), loadname);
+
+	for (i = 0; i < m->nummiptex; i++)
+	{
+		m->dataofs[i] = LittleLong(m->dataofs[i]);
+		if (m->dataofs[i] == -1)
+			continue;
+		mt = (miptex_t*)((byte*)m + m->dataofs[i]);
+
+		if (r_wadtextures.value || !LittleLong(mt->offsets[0]))
+		{
+			if (!wads_parsed)
+			{
+				TEX_InitFromWad(wadpath);
+				TEX_AddAnimatingTextures();
+				wads_parsed = TRUE;
+			}
+
+			if (!TEX_LoadLump(mt->name, dtexdata))
+			{
+				m->dataofs[i] = -1;
+				continue;
+			}
+
+			mt = (miptex_t*)dtexdata;
+		}
+
+		mt->width = LittleLong(mt->width);
+		mt->height = LittleLong(mt->height);
+		for (j = 0; j < MIPLEVELS; j++)
+			mt->offsets[j] = LittleLong(mt->offsets[j]);
+
+		if ((mt->width & 15) || (mt->height & 15))
+			Sys_Error("Texture %s is not 16 aligned", mt->name);
+
+		// total amount of pixels and palette entires
+		pixels = mt->width * mt->height / 64 * MIPSCALE;
+		palette = *(word*)((byte*)mt + pixels + sizeof(miptex_t)) * 3;
+
+		tx = (texture_t*)Hunk_AllocName(sizeof(texture_t) + palette, loadname);
+
+		loadmodel->textures[i] = tx;
+
+		// copy data
+		memcpy(tx->name, mt->name, sizeof(tx->name));
+		tx->width = mt->width;
+		tx->height = mt->height;
+
+		// palette is at the end of current texture field
+		pPal = (byte*)mt + pixels + sizeof(miptex_t) + sizeof(word);
+		tx->pPal = (byte*)(tx + 1);
+
+		// store palette data
+		memcpy(tx + 1, pPal, palette);
+
+		rawtex = (byte*)(mt + 1);
+
+		if (!Q_strncmp(mt->name, "sky", 3))
+			R_InitSky();
+		else
+		{
+			texture_mode = GL_LINEAR_MIPMAP_NEAREST; //_LINEAR;
+
+			if (mt->name[0] == '{')
+			{
+				tx->gl_texturenum = GL_LoadTexture(mt->name, GLT_WORLD, tx->width, tx->height, rawtex, TRUE, TEX_TYPE_ALPHA, pPal);
+			}
+			else
+			{
+				tx->gl_texturenum = GL_LoadTexture(mt->name, GLT_WORLD, tx->width, tx->height, rawtex, TRUE, TEX_TYPE_NONE, pPal);
+			}
+
+			texture_mode = GL_LINEAR;
+		}
+	}
+
+	if (wads_parsed)
+	{
+		TEX_CleanupWadInfo();
+	}
+
+//
+// sequence the animations
+//
+	for (i = 0; i < m->nummiptex; i++)
+	{
+		tx = loadmodel->textures[i];
+		if (!tx || (tx->name[0] != '+' && tx->name[0] != '-'))
+			continue;
+		if (tx->anim_next)
+			continue; // allready sequenced
+
+	// find the number of frames in the animation
+		memset(anims, 0, sizeof(anims));
+		memset(altanims, 0, sizeof(altanims));
+
+		max = tx->name[1];
+		altmax = 0;
+		if (max >= 'a' && max <= 'z')
+			max -= 'a' - 'A';
+		if (max >= '0' && max <= '9')
+		{
+			max -= '0';
+			altmax = 0;
+			anims[max] = tx;
+			max++;
+		}
+		else if (max >= 'A' && max <= 'J')
+		{
+			altmax = max - 'A';
+			max = 0;
+			altanims[altmax] = tx;
+			altmax++;
+		}
+		else
+			Sys_Error("Bad animating texture %s", tx->name);
+
+		for (j = i + 1; j < m->nummiptex; j++)
+		{
+			tx2 = loadmodel->textures[j];
+			if (!tx2 || (tx2->name[0] != '+' && tx2->name[0] != '-'))
+				continue;
+			if (Q_strcmp(tx2->name + 2, tx->name + 2))
+				continue;
+
+			num = tx2->name[1];
+			if (num >= 'a' && num <= 'z')
+				num -= 'a' - 'A';
+			if (num >= '0' && num <= '9')
+			{
+				num -= '0';
+				anims[num] = tx2;
+				if (num + 1 > max)
+					max = num + 1;
+			}
+			else if (num >= 'A' && num <= 'J')
+			{
+				num = num - 'A';
+				altanims[num] = tx2;
+				if (num + 1 > altmax)
+					altmax = num + 1;
+			}
+			else
+				Sys_Error("Bad animating texture %s", tx->name);
+		}
+
+#define	ANIM_CYCLE	1
+	// link them all together
+		for (j = 0; j < max; j++)
+		{
+			tx2 = anims[j];
+			if (!tx2)
+				Sys_Error("Missing frame %i of %s", j, tx->name);
+			tx2->anim_total = max * ANIM_CYCLE;
+			tx2->anim_min = j * ANIM_CYCLE;
+			tx2->anim_max = (j + 1) * ANIM_CYCLE;
+			tx2->anim_next = anims[(j + 1) % max];
+			if (altmax)
+				tx2->alternate_anims = altanims[0];
+		}
+		for (j = 0; j < altmax; j++)
+		{
+			tx2 = altanims[j];
+			if (!tx2)
+				Sys_Error("Missing frame %i of %s", j, tx->name);
+			tx2->anim_total = altmax * ANIM_CYCLE;
+			tx2->anim_min = j * ANIM_CYCLE;
+			tx2->anim_max = (j + 1) * ANIM_CYCLE;
+			tx2->anim_next = altanims[(j + 1) % altmax];
+			if (max)
+				tx2->alternate_anims = anims[0];
+		}
+	}
+
+	Con_DPrintf("Texture load: %6.1fms\n", (Sys_FloatTime() - starttime) * 1000.0);
+}
 
 // TODO: Implement
 

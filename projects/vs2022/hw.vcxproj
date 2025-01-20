@@ -60,6 +60,7 @@
     <ClCompile Include="..\..\engine\sv_send.c" />
     <ClCompile Include="..\..\engine\sv_upld.c" />
     <ClCompile Include="..\..\engine\sys_win.c" />
+    <ClCompile Include="..\..\engine\textures.c" />
     <ClCompile Include="..\..\engine\view.c" />
     <ClCompile Include="..\..\engine\wad.c" />
     <ClCompile Include="..\..\engine\world.c" />
@@ -125,6 +126,7 @@
     <ClInclude Include="..\..\engine\spritegn.h" />
     <ClInclude Include="..\..\engine\studio.h" />
     <ClInclude Include="..\..\engine\sys.h" />
+    <ClInclude Include="..\..\engine\textures.h" />
     <ClInclude Include="..\..\engine\vid.h" />
     <ClInclude Include="..\..\engine\view.h" />
     <ClInclude Include="..\..\engine\vmodes.h" />
