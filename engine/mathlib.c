@@ -52,3 +52,16 @@ void AngleVectors( vec3_t angles, vec3_t forward, vec3_t right, vec3_t up )
 }
 
 // TODO: Implement
+
+float Length( const vec_t* v )
+{
+	int		i;
+	float	length;
+
+	length = 0;
+	for (i = 0; i < 3; i++)
+		length += v[i] * v[i];
+	length = sqrt(length);		// FIXME
+
+	return length;
+}
