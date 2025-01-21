@@ -18,16 +18,47 @@ typedef struct efrag_s
 
 typedef struct cl_entity_s
 {
+	// TODO: Implement
 
+	entity_state_t	baseline;		// to fill in defaults in updates
 
-	entity_state_t			baseline;		// to fill in defaults in updates
+	// Actual render position and angles
+	vec3_t			origin;
+	vec3_t			angles;
 
+	int				rendermode;
+	int				renderamt;
+	color24			rendercolor;
+	int				renderfx;
 
+	struct model_s* model;			// cl.model_precache[ curstate.modelindes ];  all visible entities have a model
+	struct efrag_s* efrags;			// linked list of efrags
 
-	struct model_s* model;
+	float			frame;
 
+	// TODO: Implement
 
-	colorVec				cvFloorColor;
+	byte* colormap;
+	int				effects;
+	int				skin;
+
+	// TODO: Implement
+
+	int				movetype;
+	float			animtime;
+	float			framerate;
+	int				body;
+
+	// TODO: Implement
+
+	byte			controller[4];
+	byte			blending[4];
+
+	float			scale;
+
+	// TODO: Implement
+
+	colorVec		cvFloorColor;
 } cl_entity_t;
 
 // TODO: Implement

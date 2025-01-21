@@ -99,7 +99,7 @@ cl_entity_t* CL_EntityNum( int num )
 			Host_Error("CL_EntityNum: %i is an invalid number, cl.max_edicts is %i", num, cl.max_edicts);
 		while (cl.num_entities <= num)
 		{
-//			cl_entities[cl.num_entities].colormap = vid.colormap; TODO: Implement
+			cl_entities[cl.num_entities].colormap = vid.colormap;
 			cl.num_entities++;
 		}
 	}
@@ -194,9 +194,9 @@ void DispatchUserMsg( int iMsg )
 
 			fFound = 1;
 
-//			if (pList->pfn)
-//				pList->pfn(pList->szName, MsgSize, buf);
-//			else
+			if (pList->pfn)
+				pList->pfn(pList->szName, MsgSize, buf);
+			else
 				Con_DPrintf("UserMsg: No pfn %s %d\n", pList->szName, iMsg);
 		}
 	}
@@ -551,7 +551,7 @@ int CL_EstimateNeededResources( void )
 		if (nSize == -1)
 		{
 			nDownloadSize = p->nDownloadSize;
-			p->ucFlags |= 2u;
+			p->ucFlags |= RES_WASMISSING;
 		}
 		else
 		{

@@ -17,7 +17,16 @@ CL_BeginDemoStartup
 */
 void CL_BeginDemoStartup( void )
 {
-	// TODO: Implement
+	if (cls.demoheader)
+		fclose(cls.demoheader);
+
+	cls.demoheader = tmpfile();
+	if (!cls.demoheader)
+	{
+		Con_DPrintf("ERROR: couldn't open temporary header file.\n");
+		return;
+	}
+	Con_DPrintf("Spooling demo header.\n");
 }
 
 
