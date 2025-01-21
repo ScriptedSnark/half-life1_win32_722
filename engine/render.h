@@ -62,6 +62,10 @@ void R_InitTextures( void );
 
 
 
+void R_InitSky( void );
+
+
+
 void R_NewMap( void );
 
 

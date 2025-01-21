@@ -73,6 +73,9 @@ extern	int	currenttexture;
 extern	int	cnttextures[2];
 
 
+extern	cvar_t	r_wadtextures;
+
+
 extern	cvar_t	gl_dither;
 extern	cvar_t	gl_spriteblend;
 
