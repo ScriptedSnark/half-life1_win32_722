@@ -156,7 +156,8 @@ extern void ClientDLL_Shutdown( void );
 extern void ClientDLL_HudInit( void );
 void __declspec( dllexport ) ClientDLL_HudVidInit( void );
 extern void	ClientDLL_UpdateClientData( void );
+extern void ClientDLL_DemoUpdateClientData( client_data_t* cdat );
 extern void ClientDLL_HudRedraw( int intermission );
-
+void ClientDLL_Reset( client_data_t* cdat );
 
 #endif // CDLL_INT_H

@@ -1075,6 +1075,7 @@ void CL_Init( void )
 
 	// TODO: Implement
 
+	ClientDLL_HudInit();
 	ClientDLL_HudVidInit();
 
 	Cvar_RegisterVariable(&cl_name);

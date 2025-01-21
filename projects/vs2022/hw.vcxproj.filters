@@ -183,6 +183,9 @@
     <ClCompile Include="..\..\engine\GL_WARP.C">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\engine\cdll_exp.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\engine\anorm_dots.h">
@@ -387,6 +390,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\engine\gl_water.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\engine\hud_handlers.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

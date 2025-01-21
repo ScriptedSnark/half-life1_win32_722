@@ -24,6 +24,7 @@ typedef struct demoheader_s
 
 
 void CL_StopPlayback( void );
+void CL_WriteDLLUpdate( client_data_t* cdata );
 
 
 

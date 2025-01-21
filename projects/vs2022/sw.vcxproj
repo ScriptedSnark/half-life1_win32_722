@@ -71,6 +71,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\engine\buildnum.c" />
+    <ClCompile Include="..\..\engine\cdll_exp.c" />
     <ClCompile Include="..\..\engine\cdll_int.c" />
     <ClCompile Include="..\..\engine\chase.c" />
     <ClCompile Include="..\..\engine\CL_DEMO.C" />

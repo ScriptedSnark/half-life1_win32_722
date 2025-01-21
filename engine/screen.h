@@ -42,6 +42,7 @@ extern	qboolean	scr_skipupdate;
 extern	int			clearconsole;
 extern	int			clearnotify;
 
-extern	cvar_t scr_viewsize;
+extern	cvar_t		scr_viewsize;
+extern	float		scr_fov_value;
 
 #endif // SCREEN_H

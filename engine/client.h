@@ -325,6 +325,8 @@ typedef struct
 	vec3_t		punchangle;		// temporary offset
 	vec3_t		crosshairangle;
 
+	float		maxspeed;
+
 	// TODO: Implement
 
 

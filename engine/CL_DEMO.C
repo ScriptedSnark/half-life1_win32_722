@@ -3,12 +3,27 @@
 #include "quakedef.h"
 #include "cl_demo.h"
 
+/*
+====================
+CL_RecordHUDCommand
+
+====================
+*/
 void CL_RecordHUDCommand( char* cmdname )
 {
 	// TODO: Implement
 }
 
+/*
+====================
+CL_WriteDLLUpdate
 
+====================
+*/
+void CL_WriteDLLUpdate( client_data_t* cdata )
+{
+	// TODO: Implement
+}
 
 /*
 ====================
