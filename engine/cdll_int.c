@@ -31,25 +31,25 @@ cl_enginefunc_t cl_enginefuncs =
 	NULL, // TODO: Implement
 	NULL, // TODO: Implement
 	NULL, // TODO: Implement
+	Draw_FillRGBA,
 	NULL, // TODO: Implement
 	NULL, // TODO: Implement
 	NULL, // TODO: Implement
 	NULL, // TODO: Implement
 	NULL, // TODO: Implement
 	NULL, // TODO: Implement
+	hudHookUserMsg,
 	NULL, // TODO: Implement
 	NULL, // TODO: Implement
+	hudGetPlayerInfo,
+	hudPlaySoundByName,
+	hudPlaySoundByIndex,
+	AngleVectors,
 	NULL, // TODO: Implement
 	NULL, // TODO: Implement
+	Draw_String,
 	NULL, // TODO: Implement
-	NULL, // TODO: Implement
-	NULL, // TODO: Implement
-	NULL, // TODO: Implement
-	NULL, // TODO: Implement
-	NULL, // TODO: Implement
-	NULL, // TODO: Implement
-	NULL, // TODO: Implement
-	NULL // TODO: Implement
+	hudConsolePrint
 };
 
 // Pointers to the exported client functions themselves

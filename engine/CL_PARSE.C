@@ -209,6 +209,46 @@ void DispatchUserMsg( int iMsg )
 
 // TODO: Implement
 
+pfnUserMsgHook HookServerMsg( const char* pszName, pfnUserMsgHook pfn )
+{
+	UserMsg* pList, * pLastMatch;
+	pfnUserMsgHook pfnRet;
+
+	pLastMatch = NULL;
+
+	for (pList = gClientUserMsgs; pList; pList = pList->next)
+	{
+		if (!_stricmp(pszName, pList->szName))
+		{
+			pfnRet = pList->pfn;
+			if (pfnRet == pfn)
+				return pfnRet;
+
+			pLastMatch = pList;
+		}
+	}
+
+	pList = (UserMsg*)malloc(sizeof(UserMsg));
+	memset(pList, 0, sizeof(UserMsg));
+
+	if (pLastMatch)
+	{
+		memcpy(pList, pLastMatch, sizeof(*pList));
+	}
+	else
+	{
+		strcpy(pList->szName, pszName);
+	}
+
+	pList->pfn = pfn;
+	pList->next = gClientUserMsgs;
+	gClientUserMsgs = pList;
+	
+	return NULL;
+}
+
+// TODO: Implement
+
 
 /*
 ==================

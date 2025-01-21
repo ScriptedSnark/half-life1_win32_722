@@ -44,6 +44,6 @@ float Length( const vec_t* v );
 
 // TODO: Implement
 
-void AngleVectors(vec3_t angles, vec3_t forward, vec3_t right, vec3_t up);
+void AngleVectors( const vec_t* angles, vec_t* forward, vec_t* right, vec_t* up );
 
 float	anglemod(float a);

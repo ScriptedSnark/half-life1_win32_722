@@ -71,6 +71,7 @@ typedef struct player_info_s
 	// Name
 	char	name[MAX_SCOREBOARDNAME];
 
+	short	ping;
 
 	// skin information
 	int		color;

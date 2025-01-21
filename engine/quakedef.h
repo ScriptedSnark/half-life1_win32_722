@@ -92,7 +92,8 @@
 #define MAX_USERMSGS		128
 
 // Client dispatch function for usermessages
-typedef int (*pfnUserMsgHook)(const char* pszName, int iSize, void* pbuf);
+typedef int (*pfnUserMsgHook)( const char* pszName, int iSize, void* pbuf );
+pfnUserMsgHook HookServerMsg( const char* pszName, pfnUserMsgHook pfn );
 
 typedef struct _UserMsg UserMsg;
 
