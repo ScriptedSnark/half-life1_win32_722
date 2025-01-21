@@ -65,6 +65,11 @@ typedef struct
 
 cldll_func_t cl_funcs;
 
+#define LOAD_IFACE_FUNC(func, hModule, pszName)							\
+	func = DECLTYPE(func)(GetProcAddress(hModule, pszName));			\
+	if (!func)												\
+		Sys_Error("could not link client.dll function " pszName "\n")
+
 /*
 ==============
 ClientDLL_Init
@@ -91,29 +96,12 @@ void ClientDLL_Init( void )
 	if (!hModule)
 		Sys_Error("could not load library %s", szDllName);
 
-	cl_funcs.pInitFunc = DECLTYPE(cl_funcs.pInitFunc)GetProcAddress(hModule, "Initialize");
-	if (!cl_funcs.pInitFunc)
-		Sys_Error("could not link client.dll function Initialize\n");
-
-	cl_funcs.pHudVidInitFunc = DECLTYPE(cl_funcs.pHudVidInitFunc)GetProcAddress(hModule, "HUD_VidInit");
-	if (!cl_funcs.pHudVidInitFunc)
-		Sys_Error("could not link client.dll function HUD_VidInit\n");
-
-	cl_funcs.pHudInitFunc = DECLTYPE(cl_funcs.pHudInitFunc)GetProcAddress(hModule, "HUD_Init");
-	if (!cl_funcs.pHudInitFunc)
-		Sys_Error("could not link client.dll function HUD_Init\n");
-
-	cl_funcs.pHudRedrawFunc = DECLTYPE(cl_funcs.pHudRedrawFunc)GetProcAddress(hModule, "HUD_Redraw");
-	if (!cl_funcs.pHudRedrawFunc)
-		Sys_Error("could not link client.dll function HUD_Redraw\n");
-
-	cl_funcs.pHudUpdateClientDataFunc = DECLTYPE(cl_funcs.pHudUpdateClientDataFunc)GetProcAddress(hModule, "HUD_UpdateClientData");
-	if (!cl_funcs.pHudUpdateClientDataFunc)
-		Sys_Error("could not link client.dll function HUD_UpdateClientData\n");
-
-	cl_funcs.pHudResetFunc = DECLTYPE(cl_funcs.pHudResetFunc)GetProcAddress(hModule, "HUD_Reset");
-	if (!cl_funcs.pHudResetFunc)
-		Sys_Error("could not link client.dll function HUD_Reset\n");
+	LOAD_IFACE_FUNC(cl_funcs.pInitFunc, hModule, "Initialize");
+	LOAD_IFACE_FUNC(cl_funcs.pHudVidInitFunc, hModule, "HUD_VidInit");
+	LOAD_IFACE_FUNC(cl_funcs.pHudInitFunc, hModule, "HUD_Init");
+	LOAD_IFACE_FUNC(cl_funcs.pHudRedrawFunc, hModule, "HUD_Redraw");
+	LOAD_IFACE_FUNC(cl_funcs.pHudUpdateClientDataFunc, hModule, "HUD_UpdateClientData");
+	LOAD_IFACE_FUNC(cl_funcs.pHudResetFunc, hModule, "HUD_Reset");
 
 	cl_funcs.pInitFunc(&cl_enginefuncs, CLDLL_INTERFACE_VERSION);
 }
