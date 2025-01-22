@@ -77,4 +77,7 @@ int		Draw_String( int x, int y, char* str );
 qpic_t* Draw_PicFromWad( char* name );
 qpic_t* Draw_CachePic( char* path );
 
+void	EnableScissorTest( int x, int y, int width, int height );
+void	DisableScissorTest( void );
+
 #endif // DRAW_H

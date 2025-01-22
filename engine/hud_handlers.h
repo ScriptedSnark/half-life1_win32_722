@@ -4,6 +4,13 @@
 #pragma once
 #endif
 
+int		GetScreenInfo( SCREENINFO* pscrinfo );
+
+// cvar handling
+int		hudRegisterVariable( char* szName, char* szValue );
+float	hudGetCvarFloat( char* szName );
+char*	hudGetCvarString( char* szName );
+
 int		hudAddCommand( char* cmd_name, void (*function)(void) );
 
 // message handling

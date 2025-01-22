@@ -1257,7 +1257,7 @@ This only happens at the end of a game, not between levels
 */
 void Host_ShutdownServer( qboolean crash )
 {
-	int		i;
+//	int		i;
 
 	if (!sv.active)
 		return;

@@ -495,7 +495,7 @@ void CL_Init( void );
 
 void CL_Disconnect( void );
 
-
+void CL_SignonReply( void );
 void CL_UpdateSoundFade( void );
 
 
@@ -580,4 +580,6 @@ void V_StopPitchDrift( void );
 // CL_TENT.C
 //
 void CL_InitTEnts( void );
-void CL_SignonReply( void );
+
+int ModelFrameCount( struct model_s* model );
+struct mspriteframe_s* R_GetSpriteFrame( struct msprite_s* pSprite, int frame );

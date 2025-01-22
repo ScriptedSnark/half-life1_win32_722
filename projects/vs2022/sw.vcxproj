@@ -61,6 +61,7 @@
     <ClInclude Include="..\..\engine\studio.h" />
     <ClInclude Include="..\..\engine\sys.h" />
     <ClInclude Include="..\..\engine\textures.h" />
+    <ClInclude Include="..\..\engine\tmessage.h" />
     <ClInclude Include="..\..\engine\vid.h" />
     <ClInclude Include="..\..\engine\view.h" />
     <ClInclude Include="..\..\engine\vmodes.h" />
@@ -110,6 +111,7 @@
     <ClCompile Include="..\..\engine\sv_send.c" />
     <ClCompile Include="..\..\engine\sys_win.c" />
     <ClCompile Include="..\..\engine\textures.c" />
+    <ClCompile Include="..\..\engine\tmessage.c" />
     <ClCompile Include="..\..\engine\vid_win.c" />
     <ClCompile Include="..\..\engine\wad.c" />
     <ClCompile Include="..\..\engine\zone.c" />

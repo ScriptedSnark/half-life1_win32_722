@@ -235,6 +235,41 @@ typedef struct mspriteframe_s
 	int		gl_texturenum;
 } mspriteframe_t;
 
+typedef struct mspritegroup_s
+{
+	int				numframes;
+	float*			intervals;
+	mspriteframe_t* frames[1];
+} mspritegroup_t;
+
+typedef struct mspriteframedesc_s
+{
+	spriteframetype_t	type;
+	mspriteframe_t*		frameptr;
+} mspriteframedesc_t;
+
+typedef struct msprite_s
+{
+	short				type;
+	short				texFormat;
+	int					maxwidth;
+	int					maxheight;
+	int					numframes;
+	int					paloffset;
+	float				beamlength;		// remove?
+	void*				cachespot;		// remove?
+	mspriteframedesc_t	frames[1];
+} msprite_t;
+
+/*
+==============================================================================
+
+ALIAS MODELS
+
+Alias models are position independent, so the cache manager can move them.
+==============================================================================
+*/
+
 
 
 // TODO: Implement
@@ -368,5 +403,7 @@ void Mod_TouchModel( char* name );
 void Mod_MarkClient( model_t* pModel );
 
 mleaf_t* Mod_PointInLeaf( vec_t* p, model_t* model );
+
+model_t* Mod_LoadModel( model_t* mod, qboolean crash );
 
 #endif // GL_MODEL_H

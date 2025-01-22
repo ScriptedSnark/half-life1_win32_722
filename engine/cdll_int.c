@@ -12,7 +12,11 @@
 #include "winquake.h"
 #include "screen.h"
 #include "cl_demo.h"
+#include "cl_draw.h"
+#include "tmessage.h"
 #include "hud_handlers.h"
+
+client_sprite_t* SPR_GetList( char* psz, int* piCount );
 
 void CL_ResetButtonBits( int bits );
 int CL_ButtonBits( int );
@@ -20,23 +24,23 @@ int CL_ButtonBits( int );
 // Global table of exported engine functions to client dll
 cl_enginefunc_t cl_enginefuncs =
 {
-	NULL, // TODO: Implement
-	NULL, // TODO: Implement
-	NULL, // TODO: Implement
-	NULL, // TODO: Implement
-	NULL, // TODO: Implement
-	NULL, // TODO: Implement
-	NULL, // TODO: Implement
-	NULL, // TODO: Implement
-	NULL, // TODO: Implement
-	NULL, // TODO: Implement
-	NULL, // TODO: Implement
+	SPR_Load,
+	SPR_Frames,
+	SPR_Height,
+	SPR_Width,
+	SPR_Set,
+	SPR_Draw,
+	SPR_DrawHoles,
+	SPR_DrawAdditive,
+	SPR_EnableScissor,
+	SPR_DisableScissor,
+	SPR_GetList,
 	Draw_FillRGBA,
-	NULL, // TODO: Implement
-	NULL, // TODO: Implement
-	NULL, // TODO: Implement
-	NULL, // TODO: Implement
-	NULL, // TODO: Implement
+	GetScreenInfo,
+	SetCrosshair,
+	hudRegisterVariable,
+	hudGetCvarFloat,
+	hudGetCvarString,
 	hudAddCommand,
 	hudHookUserMsg,
 	hudServerCmd,
@@ -45,8 +49,8 @@ cl_enginefunc_t cl_enginefuncs =
 	hudPlaySoundByName,
 	hudPlaySoundByIndex,
 	AngleVectors,
-	NULL, // TODO: Implement
-	NULL, // TODO: Implement
+	TextMessageGet,
+	TextMessageDrawCharacter,
 	Draw_String,
 	hudDrawConsoleStringLen,
 	hudConsolePrint
@@ -238,4 +242,60 @@ ClientDLL_Reset
 void ClientDLL_Reset( client_data_t* cdat )
 {
 	cl_funcs.pHudResetFunc();
+}
+
+/*
+=================
+SPR_GetList
+
+Loads a sprite list. This is a text file defining a list of HUD elements
+Free the returned list with COM_FreeFile
+=================
+*/
+client_sprite_t* SPR_GetList( char* psz, int* piCount )
+{
+	char* pfile;
+	int		iCount, i;
+	client_sprite_t* ps, * pret;
+
+	pfile = (char*)COM_LoadFile(psz, 2, NULL);
+	if (!pfile)
+		return NULL;
+
+	pfile = COM_Parse(pfile);
+	iCount = atoi(com_token);
+	if (!iCount)
+		return NULL;
+	
+	pret = (client_sprite_t*)Hunk_Alloc(sizeof(client_sprite_t) * iCount);
+	if (pret)
+	{
+		ps = pret;
+
+		for (i = 0; i < iCount; i++, ps++)
+		{
+			pfile = COM_Parse(pfile);
+			strcpy(ps->szName, com_token);
+
+			pfile = COM_Parse(pfile);
+			ps->iRes = atoi(com_token);
+
+			pfile = COM_Parse(pfile);
+			strcpy(ps->szSprite, com_token);
+
+			pfile = COM_Parse(pfile);
+			ps->rc.left = atoi(com_token);
+			pfile = COM_Parse(pfile);
+			ps->rc.top = atoi(com_token);
+			pfile = COM_Parse(pfile);
+			ps->rc.right = ps->rc.left + atoi(com_token);
+			pfile = COM_Parse(pfile);
+			ps->rc.bottom = ps->rc.top + atoi(com_token);
+		}
+
+		if (piCount)
+			*piCount = iCount;
+	}
+
+	return pret;
 }
