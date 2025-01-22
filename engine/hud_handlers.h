@@ -4,6 +4,12 @@
 #pragma once
 #endif
 
+int		hudAddCommand( char* cmd_name, void (*function)(void) );
+
+// message handling
+int		hudServerCmd( char* pszCmdString );
+int		hudClientCmd( char* pszCmdString );
+
 int		hudHookUserMsg( char* szMsgName, pfnUserMsgHook pfn );
 
 void	hudPlaySoundByName( char* szSound, float volume );

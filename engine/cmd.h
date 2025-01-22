@@ -71,6 +71,8 @@ DLL_EXPORT void	Cmd_AddCommand( char* cmd_name, xcommand_t function );
 // register commands and functions to call for them.
 // The cmd_name is referenced later, so it should not be in temp memory
 
+void	Cmd_AddHUDCommand( char* cmd_name, xcommand_t function );
+
 qboolean Cmd_Exists( char* cmd_name );
 // used by the cvar code to check for cvar / command name overlap
 

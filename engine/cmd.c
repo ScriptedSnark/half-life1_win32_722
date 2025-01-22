@@ -551,6 +551,44 @@ void	Cmd_AddCommand( char* cmd_name, xcommand_t function )
 
 /*
 ============
+Cmd_AddHUDCommand
+
+============
+*/
+void	Cmd_AddHUDCommand( char* cmd_name, xcommand_t function )
+{
+	cmd_function_t* cmd;
+
+	if (host_initialized)	// because hunk allocation would get stomped
+		Sys_Error("Cmd_AddCommand after host_initialized");
+
+// fail if the command is a variable name
+	if (Cvar_VariableString(cmd_name)[0])
+	{
+		Con_Printf("Cmd_AddCommand: %s already defined as a var\n", cmd_name);
+		return;
+	}
+
+// fail if the command already exists
+	for (cmd = cmd_functions; cmd; cmd = cmd->next)
+	{
+		if (!Q_strcmp(cmd_name, cmd->name))
+		{
+			Con_Printf("Cmd_AddCommand: %s already defined\n", cmd_name);
+			return;
+		}
+	}
+
+	cmd = Hunk_Alloc(sizeof(cmd_function_t));
+	cmd->name = cmd_name;
+	cmd->function = function;
+	cmd->next = cmd_functions;
+	cmd->huddll = TRUE;
+	cmd_functions = cmd;
+}
+
+/*
+============
 Cmd_Exists
 ============
 */

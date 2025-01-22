@@ -37,10 +37,10 @@ cl_enginefunc_t cl_enginefuncs =
 	NULL, // TODO: Implement
 	NULL, // TODO: Implement
 	NULL, // TODO: Implement
-	NULL, // TODO: Implement
+	hudAddCommand,
 	hudHookUserMsg,
-	NULL, // TODO: Implement
-	NULL, // TODO: Implement
+	hudServerCmd,
+	hudClientCmd,
 	hudGetPlayerInfo,
 	hudPlaySoundByName,
 	hudPlaySoundByIndex,
@@ -48,7 +48,7 @@ cl_enginefunc_t cl_enginefuncs =
 	NULL, // TODO: Implement
 	NULL, // TODO: Implement
 	Draw_String,
-	NULL, // TODO: Implement
+	hudDrawConsoleStringLen,
 	hudConsolePrint
 };
 

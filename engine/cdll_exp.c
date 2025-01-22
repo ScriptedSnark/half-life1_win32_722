@@ -12,9 +12,35 @@
 // TODO: Implement
 
 
+int hudAddCommand( char* cmd_name, void (*function)(void) )
+{
+	Cmd_AddHUDCommand(cmd_name, function);
+	return 1;
+}
 
+int hudServerCmd( char* pszCmdString )
+{
+	char buf[256];
+	// just like the client typed "cmd xxxxx" at the console
 
+	strcpy(buf, "cmd ");
+	strncat(buf, pszCmdString, 250);
 
+	Cmd_TokenizeString(buf);
+	Cmd_ForwardToServer();
+
+	return TRUE;
+}
+
+int hudClientCmd( char* pszCmdString )
+{
+	if (!pszCmdString)
+		return 0;
+
+	Cbuf_AddText(pszCmdString);
+	Cbuf_AddText("\n");
+	return 1;
+}
 
 int hudHookUserMsg( char* szMsgName, pfnUserMsgHook pfn )
 {
