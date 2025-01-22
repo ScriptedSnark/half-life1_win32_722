@@ -33,5 +33,15 @@ void HudSizeDown( void )
 
 void Sbar_Draw( void )
 {
+	if (giHudLevel == 0)
+		return;
+
+	if (scr_con_current == vid.height)
+		return; // console is full screen
+
+	scr_copyeverything = TRUE;
+
 	// TODO: Implement
+
+	ClientDLL_HudRedraw(0);
 }
