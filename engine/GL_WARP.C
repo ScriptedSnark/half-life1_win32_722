@@ -199,6 +199,17 @@ void R_LoadSkys( void )
 
 
 /*
+=================
+R_DrawSkyChain
+=================
+*/
+void R_DrawSkyChain( msurface_t* s )
+{
+	// TODO: Implement
+}
+
+
+/*
 ==============
 R_ClearSkyBox
 ==============

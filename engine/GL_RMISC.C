@@ -16,7 +16,7 @@ cvar_t	r_novis = { "r_novis", "0" };
 
 
 cvar_t	r_mirroralpha = { "r_mirroralpha", "1" };
-
+cvar_t	r_wateralpha = { "r_wateralpha", "1" };
 
 
 cvar_t	r_wadtextures = { "r_wadtextures", "0" };
@@ -94,6 +94,7 @@ void R_Init( void )
 	// TODO: Implement
 
 	Cvar_RegisterVariable(&r_mirroralpha);
+	Cvar_RegisterVariable(&r_wateralpha);
 
 	// TODO: Implement
 

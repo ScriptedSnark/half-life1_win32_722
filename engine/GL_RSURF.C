@@ -1,5 +1,6 @@
 #include "quakedef.h"
 #include "cmodel.h"
+#include "gl_water.h"
 
 #define	BLOCK_WIDTH		128
 #define	BLOCK_HEIGHT	128
@@ -93,12 +94,105 @@ void R_BlendLightmaps( void )
 
 /*
 ================
+R_RenderBrushPoly
+================
+*/
+void R_RenderBrushPoly( msurface_t* fa )
+{
+	// TODO: Implement
+}
+
+/*
+================
+R_MirrorChain
+================
+*/
+void R_MirrorChain( msurface_t* s )
+{
+	if (mirror)
+		return;
+	mirror = TRUE;
+	mirror_plane = s->plane;
+}
+
+/*
+================
+R_DrawWaterChain
+================
+*/
+void R_DrawWaterChain( msurface_t* pChain )
+{
+	// TODO: Implement
+}
+
+/*
+================
 DrawTextureChains
 ================
 */
 void DrawTextureChains( void )
 {
-	// TODO: Implement
+	int		i;
+	msurface_t* s;
+	texture_t* t;
+	int iSounds;
+
+	currententity = cl_entities;
+
+	iSounds = 100;
+	if (!gl_texsort.value)
+	{
+		GL_DisableMultitexture();
+
+		if (skychain)
+		{
+			R_DrawSkyChain(skychain);
+			skychain = NULL;
+		}
+
+		if (waterchain)
+		{
+			R_DrawWaterChain(waterchain);
+			waterchain = NULL;
+		}
+
+		// JAY: Disable this return to turn on water lightmaps (broken)
+		//return;
+	}
+
+	for (i = 0; i < cl.worldmodel->numtextures; i++)
+	{
+		t = cl.worldmodel->textures[i];
+		if (!t)
+			continue;
+		s = t->texturechain;
+		if (!s)
+			continue;
+		if (i == skytexturenum)
+		{
+			R_DrawSkyChain(t->texturechain);
+		}
+		else if (i == mirrortexturenum && r_mirroralpha.value != 1.0)
+		{
+			R_MirrorChain(s);
+			continue;
+		}
+		else
+		{
+			if ((s->flags & SURF_DRAWTURB) && r_wateralpha.value != 1.0)
+				continue;	// draw translucent water later
+			for (; s; s = s->texturechain)
+				R_RenderBrushPoly(s);
+		}
+
+		t->texturechain = NULL;
+
+		if (iSounds-- == 0)
+		{
+			S_ExtraUpdate();
+			iSounds = 100;
+		}
+	}
 }
 
 // TODO: Implement

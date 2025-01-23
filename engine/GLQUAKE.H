@@ -110,6 +110,7 @@ extern	cvar_t	r_novis;
 
 
 extern	cvar_t	r_mirroralpha;
+extern	cvar_t	r_wateralpha;
 
 
 extern	cvar_t	r_wadtextures;
