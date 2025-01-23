@@ -41,6 +41,9 @@ texture_t*	r_notexture_mip;
 
 int			d_lightstylevalue[256];	// 8.8 fraction of base light value
 
+
+void R_MarkLeaves( void );
+
 // TODO: Implement
 
 /*
@@ -65,10 +68,67 @@ R_PolyBlend
 */
 void R_PolyBlend( void )
 {
-
+	// TODO: Implement
 }
 
+
+
 // TODO: Implement
+
+void R_SetFrustum( void )
+{
+	// TODO: Implement
+}
+
+
+
+/*
+===============
+R_SetupFrame
+===============
+*/
+void R_SetupFrame( void )
+{
+	// TODO: Implement
+}
+
+
+void MYgluPerspective( GLdouble fovy, GLdouble aspect,
+	GLdouble zNear, GLdouble zFar )
+{
+	GLdouble xmin, xmax, ymin, ymax;
+
+	ymax = zNear * tan(fovy * M_PI / 360.0);
+	ymin = -ymax;
+
+	xmin = ymin * aspect;
+	xmax = ymax * aspect;
+
+	qglFrustum(xmin, xmax, ymin, ymax, zNear, zFar);
+}
+
+
+/*
+====================
+CalcFov
+====================
+*/
+float CalcFov( float fov_x, float width, float height )
+{
+	float	a;
+	float	x;
+
+	if (fov_x < 1 || fov_x > 179)
+		fov_x = 90;	// error, set to 90
+
+	x = width / tan(fov_x / 360 * M_PI);
+
+	a = atan(height / x);
+
+	a = a * 360 / M_PI;
+
+	return a;
+}
 
 /*
 =============
@@ -77,7 +137,7 @@ R_SetupGL
 */
 void R_SetupGL( void )
 {
-
+	// TODO: Implement
 }
 
 /*
@@ -89,6 +149,30 @@ r_refdef must be set before the first call
 */
 void R_RenderScene( void )
 {
+	R_SetupFrame();
+
+	R_SetFrustum();
+
+	R_SetupGL();
+
+	R_MarkLeaves();	// done here so we know if we're in water
+
+	R_DrawWorld();		// adds static entities to the list
+
+	S_ExtraUpdate();	// don't let sound get messed up if going slow
+
+	// TODO: Implement
+
+	qglDisable(GL_FOG);
+
+	// TODO: Implement
+
+	S_ExtraUpdate();
+
+	// TODO: Implement
+
+	GL_DisableMultitexture();
+
 	// TODO: Implement
 }
 

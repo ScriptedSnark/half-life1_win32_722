@@ -37,6 +37,28 @@ void GL_EnableMultitexture( void )
 // TODO: Implement
 
 /*
+=============
+R_DrawWorld
+=============
+*/
+void R_DrawWorld( void )
+{
+	// TODO: Implement
+}
+
+/*
+===============
+R_MarkLeaves
+===============
+*/
+void R_MarkLeaves( void )
+{
+	// TODO: Implement
+}
+
+// TODO: Implement
+
+/*
 ==================
 GL_BuildLightmaps
 
