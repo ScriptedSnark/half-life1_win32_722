@@ -818,8 +818,7 @@ void CL_SendCmd( void )
 	checksumIndex = buf.cursize;
 	MSG_WriteByte(&buf, 0);
 
-	vec3_t cl_viewangles = { 0,0,0 };
-	VectorCopy(cl_viewangles, cl.frames[i].cmd.angles);
+	VectorCopy(cl.viewangles, cl.frames[i].cmd.angles);
 
 	cl.frames[i].cmd.msec = (int)(host_frametime * 1000.0);
 	cl.frames[i].cmd.buttons = CL_ButtonBits(1);
