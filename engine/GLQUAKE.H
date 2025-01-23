@@ -72,6 +72,11 @@ extern	int glx, gly, glwidth, glheight;
 
 
 
+extern	int		c_brush_polys, c_alias_polys;
+
+
+
+
 //
 // screen size info
 //

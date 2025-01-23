@@ -46,6 +46,11 @@ void S_Update( vec_t* origin, vec_t* forward, vec_t* right, vec_t* up )
 	// TODO: Implement
 }
 
+void S_ExtraUpdate( void )
+{
+	// TODO: Implement
+}
+
 void S_LocalSound( char* sound )
 {
 	// TODO: Implement

@@ -10,6 +10,7 @@ void S_Shutdown( void );
 void S_StopAllSounds( qboolean clear );
 DLL_EXPORT void S_ClearBuffer( void );
 void S_Update( vec_t* origin, vec_t* forward, vec_t* right, vec_t* up );
+void S_ExtraUpdate( void );
 
 
 // shutdown the DMA xfer.
