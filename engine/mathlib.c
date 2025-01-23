@@ -62,6 +62,15 @@ void AngleVectors( const vec_t* angles, vec_t* forward, vec_t* right, vec_t* up 
 
 // TODO: Implement
 
+void CrossProduct( const vec_t* v1, const vec_t* v2, vec_t* cross )
+{
+	cross[0] = v1[1] * v2[2] - v1[2] * v2[1];
+	cross[1] = v1[2] * v2[0] - v1[0] * v2[2];
+	cross[2] = v1[0] * v2[1] - v1[1] * v2[0];
+}
+
+double sqrt(double x);
+
 float Length( const vec_t* v )
 {
 	int		i;
@@ -74,3 +83,55 @@ float Length( const vec_t* v )
 
 	return length;
 }
+
+float VectorNormalize( vec_t* v )
+{
+	float	length, ilength;
+
+	length = v[0] * v[0] + v[1] * v[1] + v[2] * v[2];
+	length = sqrt(length);		// FIXME
+
+	if (length)
+	{
+		ilength = 1 / length;
+		v[0] *= ilength;
+		v[1] *= ilength;
+		v[2] *= ilength;
+	}
+
+	return length;
+
+}
+
+
+// TODO: Implement
+
+
+/*
+================
+R_ConcatRotations
+================
+*/
+void R_ConcatRotations( float in1[3][3], float in2[3][3], float out[3][3] )
+{
+	out[0][0] = in1[0][0] * in2[0][0] + in1[0][1] * in2[1][0] +
+		in1[0][2] * in2[2][0];
+	out[0][1] = in1[0][0] * in2[0][1] + in1[0][1] * in2[1][1] +
+		in1[0][2] * in2[2][1];
+	out[0][2] = in1[0][0] * in2[0][2] + in1[0][1] * in2[1][2] +
+		in1[0][2] * in2[2][2];
+	out[1][0] = in1[1][0] * in2[0][0] + in1[1][1] * in2[1][0] +
+		in1[1][2] * in2[2][0];
+	out[1][1] = in1[1][0] * in2[0][1] + in1[1][1] * in2[1][1] +
+		in1[1][2] * in2[2][1];
+	out[1][2] = in1[1][0] * in2[0][2] + in1[1][1] * in2[1][2] +
+		in1[1][2] * in2[2][2];
+	out[2][0] = in1[2][0] * in2[0][0] + in1[2][1] * in2[1][0] +
+		in1[2][2] * in2[2][0];
+	out[2][1] = in1[2][0] * in2[0][1] + in1[2][1] * in2[1][1] +
+		in1[2][2] * in2[2][1];
+	out[2][2] = in1[2][0] * in2[0][2] + in1[2][1] * in2[1][2] +
+		in1[2][2] * in2[2][2];
+}
+
+// TODO: Implement

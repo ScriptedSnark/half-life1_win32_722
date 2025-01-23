@@ -40,7 +40,13 @@ extern	int nanmask;
 
 // TODO: Implement
 
+void R_ConcatRotations( float in1[3][3], float in2[3][3], float out[3][3] );
+
+// TODO: Implement
+
 float Length( const vec_t* v );
+void CrossProduct( const vec_t* v1, const vec_t* v2, vec_t* cross );
+float VectorNormalize( vec_t* v );		// returns vector length
 
 // TODO: Implement
 

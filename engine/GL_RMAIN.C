@@ -17,7 +17,7 @@ mplane_t	frustum[4];
 
 int			c_brush_polys, c_alias_polys;
 
-
+qboolean	envmap;				// true during envmap command capture
 int			currenttexture = -1;	// to avoid unnecessary texture sets
 int			cnttextures[2] = { -1, -1 };     // cached
 
@@ -42,7 +42,6 @@ float	r_world_matrix[16];
 float	r_base_world_matrix[16];
 float	gProjectionMatrix[16];
 float	gWorldToScreen[16];
-float	gScreenToWorld[16];
 
 //
 // screen size info
@@ -341,7 +340,118 @@ R_SetupGL
 */
 void R_SetupGL( void )
 {
-	// TODO: Implement
+	float	screenaspect;
+	float	yfov;
+	int		i, j, k;
+	extern	int glwidth, glheight;
+	int		x, x2, y2, y, w, h;
+
+	//
+	// set up viewpoint
+	//
+	qglMatrixMode(GL_PROJECTION);
+	qglLoadIdentity();
+	x = r_refdef.vrect.x;
+	x2 = r_refdef.vrect.x + r_refdef.vrect.width;
+	y = glheight - r_refdef.vrect.y;
+	y2 = glheight - (r_refdef.vrect.y + r_refdef.vrect.height);
+
+	// fudge around because of frac screen scale
+	if (x > 0)
+		x--;
+	if (x2 < glwidth)
+		x2++;
+	if (y2 < 0)
+		y2--;
+	if (y < glheight)
+		y++;
+
+	w = x2 - x;
+	h = y - y2;
+
+	if (envmap)
+	{
+		x = y2 = 0;
+		glwidth = glheight = w = h = gl_envmapsize.value;
+	}
+
+	qglViewport(glx + x, gly + y2, w, h);
+	screenaspect = (float)glwidth / glheight;
+
+	// Calculate the FOV value
+	yfov = CalcFov(scr_fov_value, glwidth, glheight);
+	MYgluPerspective(yfov, screenaspect, 4.0, gl_zmax.value);
+
+	if (mirror)
+	{
+		if (mirror_plane->normal[2])
+			qglScalef(1, -1, 1);
+		else
+			qglScalef(-1, 1, 1);
+		qglCullFace(GL_BACK);
+	}
+	else
+		qglCullFace(GL_FRONT);
+
+	qglGetFloatv(GL_PROJECTION_MATRIX, gProjectionMatrix);
+
+	qglMatrixMode(GL_MODELVIEW);
+	qglLoadIdentity();
+
+	qglRotatef(-90, 1, 0, 0);	    // put Z going up
+	qglRotatef(90, 0, 0, 1);	    // put Z going up
+	qglRotatef(-r_refdef.viewangles[2], 1, 0, 0);
+	qglRotatef(-r_refdef.viewangles[0], 0, 1, 0);
+	qglRotatef(-r_refdef.viewangles[1], 0, 0, 1);
+	qglTranslatef(-r_refdef.vieworg[0], -r_refdef.vieworg[1], -r_refdef.vieworg[2]);
+
+	qglGetFloatv(GL_MODELVIEW_MATRIX, r_world_matrix);
+
+	//
+	// set drawing parms
+	//
+	if (gl_cull.value)
+		qglEnable(GL_CULL_FACE);
+	else
+		qglDisable(GL_CULL_FACE);
+
+	qglDisable(GL_BLEND);
+	qglDisable(GL_ALPHA_TEST);
+	qglEnable(GL_DEPTH_TEST);
+
+	//
+	// Transform world-to-screen translation matrices
+	//
+
+	if (gl_flipmatrix.value)
+	{
+		// inverted matrix
+		for (i = 0; i < 4; i++)
+		{
+			for (j = 0; j < 4; j++)
+			{
+				gWorldToScreen[i * 4 + j] = 0;
+				for (k = 0; k < 4; k++)
+				{
+					gWorldToScreen[i * 4 + j] += r_world_matrix[k * 4 + i] * gProjectionMatrix[j * 4 + k];
+				}
+			}
+		}
+	}
+	else
+	{
+		for (i = 0; i < 4; i++)
+		{
+			for (j = 0; j < 4; j++)
+			{
+				gWorldToScreen[i * 4 + j] = 0;
+				for (k = 0; k < 4; k++)
+				{
+					gWorldToScreen[i * 4 + j] += r_world_matrix[i * 4 + k] * gProjectionMatrix[k * 4 + j];
+				}
+			}
+		}
+	}
 }
 
 /*

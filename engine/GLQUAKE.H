@@ -111,11 +111,25 @@ extern	cvar_t	r_mirroralpha;
 extern	cvar_t	r_wadtextures;
 
 extern	cvar_t	gl_clear;
+extern	cvar_t	gl_cull;
+extern	cvar_t	gl_texsort;
+
+
 
 
 extern	cvar_t	gl_wateramp;
 extern	cvar_t	gl_dither;
 extern	cvar_t	gl_spriteblend;
+
+
+extern	cvar_t	gl_zmax;
+
+
+
+extern	cvar_t	gl_envmapsize;
+extern	cvar_t	gl_flipmatrix;
+
+
 
 extern	cvar_t	gl_ztrick;
 
@@ -133,7 +147,6 @@ extern	float	r_world_matrix[16];
 extern	float	r_base_world_matrix[16];
 extern	float	gProjectionMatrix[16];
 extern	float	gWorldToScreen[16];
-extern	float	gScreenToWorld[16];
 
 extern	const char* gl_vendor;
 extern	const char* gl_renderer;
