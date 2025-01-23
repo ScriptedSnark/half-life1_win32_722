@@ -2,6 +2,7 @@
 
 #include "wrect.h"
 #include "cdll_int.h"
+#include "cshift.h"
 
 // TODO: Implement
 

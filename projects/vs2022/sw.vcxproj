@@ -31,6 +31,7 @@
     <ClInclude Include="..\..\engine\common.h" />
     <ClInclude Include="..\..\engine\CONSOLE.H" />
     <ClInclude Include="..\..\engine\crc.h" />
+    <ClInclude Include="..\..\engine\cshift.h" />
     <ClInclude Include="..\..\engine\custom.h" />
     <ClInclude Include="..\..\engine\cvar.h" />
     <ClInclude Include="..\..\engine\cvardef.h" />

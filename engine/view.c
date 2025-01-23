@@ -22,6 +22,11 @@ cvar_t	scr_ofsz = { "scr_ofsz", "0", FALSE };
 
 byte		texgammatable[256];	// palette is sent through this to convert to screen gamma
 
+#ifdef	GLQUAKE
+byte		ramps[3][256];
+float		v_blend[4];		// rgba 0.0 - 1.0
+#endif	// GLQUAKE
+
 vec3_t		r_soundOrigin;
 vec3_t		r_playerViewportAngles;
 
@@ -56,6 +61,36 @@ void V_StartPitchDrift( void )
 void V_StopPitchDrift( void )
 {
 }
+
+
+
+
+
+/*
+=============
+V_CalcBlend
+=============
+*/
+#ifdef	GLQUAKE
+void V_CalcBlend( void )
+{
+	float	r, g, b, a;
+
+	r = 0;
+	g = 0;
+	b = 0;
+	a = 0;
+
+	v_blend[0] = r / 255.0;
+	v_blend[1] = g / 255.0;
+	v_blend[2] = b / 255.0;
+	v_blend[3] = a;
+	if (v_blend[3] > 1)
+		v_blend[3] = 1;
+	if (v_blend[3] < 0)
+		v_blend[3] = 0;
+}
+#endif
 
 /*
 =============

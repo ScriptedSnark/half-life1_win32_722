@@ -5,6 +5,17 @@
 
 
 /*
+==================
+R_AnimateLight
+==================
+*/
+void R_AnimateLight( void )
+{
+	// TODO: Implement
+}
+
+
+/*
 =============
 R_PushDlights
 =============

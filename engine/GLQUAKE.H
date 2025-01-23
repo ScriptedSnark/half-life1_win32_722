@@ -71,7 +71,15 @@ extern	int glx, gly, glwidth, glheight;
 #define TEX_IS_ALPHA(type)		((type) == TEX_TYPE_ALPHA || (type) == TEX_TYPE_ALPHA_GRADIENT || (type) == TEX_TYPE_RGBA)
 
 
+//====================================================
 
+extern cl_entity_t	r_worldentity;
+extern	qboolean	r_cache_thrash;		// compatability
+
+
+extern	int			r_visframecount;	// ??? what difs?
+extern	int			r_framecount;
+extern	mplane_t	frustum[4];
 extern	int		c_brush_polys, c_alias_polys;
 
 
@@ -147,6 +155,16 @@ extern qboolean gl_mtexable;
 
 void GL_DisableMultitexture( void );
 void GL_EnableMultitexture( void );
+
+//
+// gl_rmain.c
+//
+float CalcFov( float fov_x, float width, float height );
+
+//
+// gl_rlight.c
+//
+void R_AnimateLight( void );
 
 
 //

@@ -4,8 +4,16 @@
 
 cl_entity_t	r_worldentity;
 
+qboolean	r_cache_thrash;		// compatability
+
 // TODO: Implement
 
+cl_entity_t* currententity;
+
+int			r_visframecount;
+int			r_framecount;
+
+mplane_t	frustum[4];
 
 int			c_brush_polys, c_alias_polys;
 
@@ -22,7 +30,13 @@ mplane_t*	mirror_plane;
 
 
 
-
+//
+// view origin
+//
+vec3_t	vup;
+vec3_t	vpn;
+vec3_t	vright;
+vec3_t	r_origin;
 
 float	r_world_matrix[16];
 float	r_base_world_matrix[16];
@@ -43,6 +57,8 @@ int			d_lightstylevalue[256];	// 8.8 fraction of base light value
 
 
 void R_MarkLeaves( void );
+
+extern cshift_t	cshift_water;
 
 // TODO: Implement
 
@@ -89,7 +105,46 @@ R_SetupFrame
 */
 void R_SetupFrame( void )
 {
-	// TODO: Implement
+// don't allow cheats in multiplayer
+	if (cl.maxclients > 1)
+		Cvar_Set("r_fullbright", "0");
+
+	R_AnimateLight();
+
+	r_framecount++;
+
+// build the transformation matrix for the given view angles
+	VectorCopy(r_refdef.vieworg, r_origin);
+
+	AngleVectors(r_refdef.viewangles, vpn, vright, vup);
+
+// current viewleaf
+	r_oldviewleaf = r_viewleaf;
+	r_viewleaf = Mod_PointInLeaf(r_origin, cl.worldmodel);
+
+	if (cl.waterlevel > 2)
+	{
+		float fogColor[4];
+
+		// Calculate fog color
+		fogColor[0] = cshift_water.destcolor[0] / 255.0;
+		fogColor[1] = cshift_water.destcolor[1] / 255.0;
+		fogColor[2] = cshift_water.destcolor[2] / 255.0;
+		fogColor[3] = 1.0;
+
+		qglFogi(GL_FOG_MODE, GL_LINEAR);
+		qglFogfv(GL_FOG_COLOR, fogColor);
+		qglFogf(GL_FOG_START, GL_ZERO);
+		qglFogf(GL_FOG_END, 1536 - 4 * cshift_water.percent);
+		qglEnable(GL_FOG);
+	}
+
+	V_CalcBlend();
+
+	r_cache_thrash = FALSE;
+
+	c_brush_polys = 0;
+	c_alias_polys = 0;
 }
 
 

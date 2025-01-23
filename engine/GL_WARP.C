@@ -5,6 +5,8 @@
 
 extern model_t* loadmodel;
 
+cshift_t	cshift_water = { 130, 80, 50, 128 };
+
 //cshift_t	cshift_water; TODO: Implement
 
 int		skytexturenum;
