@@ -89,8 +89,9 @@ extern	refdef_t	r_refdef;
 
 extern vec3_t	r_origin, vpn, vright, vup;
 
-extern	struct texture_s* r_notexture_mip;
+extern struct texture_s* r_notexture_mip;
 
+extern cl_entity_t r_worldentity;
 
 
 void R_Init( void );
@@ -113,6 +114,15 @@ void R_PushDlights( void );
 void R_InitParticles( void );
 void R_ClearParticles( void );
 void R_DrawParticles( void );
+
+extern qboolean r_intentities;
+
+//
+// Skybox
+//
+
+void R_LoadSkys( void );
+void R_ClearSkyBox( void );
 
 
 

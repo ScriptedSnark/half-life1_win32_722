@@ -190,3 +190,15 @@ void V_Init( void )
 
 	// TODO: Implement
 }
+
+/*
+=================
+V_InitLevel
+
+Initialize sceen fade/shake data
+=================
+*/
+void V_InitLevel( void )
+{
+	// TODO: Implement
+}

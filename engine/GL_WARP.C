@@ -189,9 +189,13 @@ void GL_SubdivideSurface( msurface_t* fa )
 // TODO: Implement
 
 
+void R_LoadSkys( void )
+{
+	// TODO: Implement
+}
 
 
-
+// TODO: Implement
 
 
 //===============================================================

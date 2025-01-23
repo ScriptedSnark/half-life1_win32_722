@@ -71,15 +71,48 @@ extern	int glx, gly, glwidth, glheight;
 #define TEX_IS_ALPHA(type)		((type) == TEX_TYPE_ALPHA || (type) == TEX_TYPE_ALPHA_GRADIENT || (type) == TEX_TYPE_RGBA)
 
 
+
+//
+// screen size info
+//
+extern refdef_t	r_refdef;
+extern mleaf_t* r_viewleaf, * r_oldviewleaf;
+extern texture_t* r_notexture_mip;
+extern	int		d_lightstylevalue[256];	// 8.8 fraction of base light value
+
+
 extern	int	currenttexture;
 extern	int	cnttextures[2];
+
+extern	int	skytexturenum;		// index in cl.loadmodel, not gl texture object
+
+extern	cvar_t	r_norefresh;
+extern	cvar_t	r_speeds;
 
 
 extern	cvar_t	r_wadtextures;
 
 
+extern	cvar_t	gl_wateramp;
 extern	cvar_t	gl_dither;
 extern	cvar_t	gl_spriteblend;
+
+
+extern	int		mirrortexturenum;	// quake texturenum, not gltexturenum
+extern	qboolean mirror;
+extern	mplane_t* mirror_plane;
+
+extern	float	r_world_matrix[16];
+extern	float	r_base_world_matrix[16];
+extern	float	gProjectionMatrix[16];
+extern	float	gWorldToScreen[16];
+extern	float	gScreenToWorld[16];
+
+extern	const char* gl_vendor;
+extern	const char* gl_renderer;
+extern	const char* gl_version;
+extern	const char* gl_extensions;
+
 
 
 void GL_Bind( int texnum );
@@ -97,6 +130,12 @@ void GL_DisableMultitexture( void );
 void GL_EnableMultitexture( void );
 
 
-
+//
+// gl_rsurf.c
+//
+void R_DrawBrushModel( cl_entity_t* e );
+void R_DrawWorld( void );
+void GL_BuildLightmaps( void );
+void R_DecalInit( void );
 
 #endif // GLQUAKE_H

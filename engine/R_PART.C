@@ -2,6 +2,16 @@
 
 /*
 ===============
+R_ClearParticles
+===============
+*/
+void R_ClearParticles( void )
+{
+	// TODO: Implement
+}
+
+/*
+===============
 R_ParseParticleEffect
 
 Parse an effect out of the server message

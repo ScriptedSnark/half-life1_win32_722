@@ -13,6 +13,7 @@ extern vec3_t 		r_playerViewportAngles;
 
 
 void V_Init( void );
+void V_InitLevel( void );
 void V_RenderView( void );
 void V_UpdatePalette( void );
 

@@ -34,6 +34,31 @@ void GL_EnableMultitexture( void )
 	}
 }
 
+// TODO: Implement
+
+/*
+==================
+GL_BuildLightmaps
+
+Builds the lightmap texture
+with all the surfaces from all brush models
+==================
+*/
+void GL_BuildLightmaps( void )
+{
+	// TODO: Implement
+}
+
+// TODO: Implement
+
+
+// Init the decal pool
+void R_DecalInit( void )
+{
+	// TODO: Implement
+}
+
+
 
 
 
