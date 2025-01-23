@@ -121,6 +121,9 @@ extern	cvar_t	gl_texsort;
 
 
 
+extern	cvar_t	gl_keeptjunctions;
+
+
 
 extern	cvar_t	gl_wateramp;
 extern	cvar_t	gl_dither;

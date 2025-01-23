@@ -184,6 +184,13 @@ void GL_SubdivideSurface( msurface_t* fa )
 //=========================================================
 
 
+// TODO: Implement
+
+
+void EmitWaterPolys( msurface_t* fa, int direction )
+{
+	// TODO: Implement
+}
 
 
 // TODO: Implement

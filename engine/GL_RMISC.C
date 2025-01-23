@@ -28,6 +28,13 @@ cvar_t	gl_texsort = { "gl_texsort", "1" };
 
 
 
+
+cvar_t	gl_keeptjunctions = { "gl_keeptjunctions", "1" };
+
+
+
+
+
 cvar_t	gl_wateramp = { "gl_wateramp", "0.3" };
 cvar_t	gl_dither = { "gl_dither", "1", TRUE };
 cvar_t	gl_spriteblend = { "gl_spriteblend", "1" };
@@ -115,6 +122,8 @@ void R_Init( void )
 	
 	// TODO: Implement
 
+	Cvar_RegisterVariable(&gl_keeptjunctions);
+	// TODO: Implement
 	Cvar_RegisterVariable(&gl_wateramp);
 	Cvar_RegisterVariable(&gl_overbright);
 	Cvar_RegisterVariable(&gl_zmax);
