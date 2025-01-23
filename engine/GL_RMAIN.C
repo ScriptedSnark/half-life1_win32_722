@@ -566,7 +566,7 @@ void R_RenderView( void )
 	if (!r_worldentity.model || !cl.worldmodel)
 		Sys_Error("R_RenderView: NULL worldmodel");
 
-	if (r_speeds.value != 0.0)
+	if (r_speeds.value)
 	{
 		qglFinish();
 		time1 = Sys_FloatTime();

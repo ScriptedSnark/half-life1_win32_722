@@ -1,4 +1,5 @@
 #include "quakedef.h"
+#include "cmodel.h"
 
 
 
@@ -53,7 +54,42 @@ R_MarkLeaves
 */
 void R_MarkLeaves( void )
 {
-	// TODO: Implement
+	byte* vis;
+	mnode_t* node;
+	int		i;
+	byte	solid[4096];
+
+	if (r_oldviewleaf == r_viewleaf && !r_novis.value)
+		return;
+
+	if (mirror)
+		return;
+
+	r_visframecount++;
+	r_oldviewleaf = r_viewleaf;
+
+	if (r_novis.value)
+	{
+		vis = solid;
+		memset(solid, 0xff, (cl.worldmodel->numleafs + 7) >> 3);
+	}
+	else
+		vis = Mod_LeafPVS(r_viewleaf, cl.worldmodel);
+
+	for (i = 0; i < cl.worldmodel->numleafs; i++)
+	{
+		if (vis[i >> 3] & (1 << (i & 7)))
+		{
+			node = (mnode_t*)&cl.worldmodel->leafs[i + 1];
+			do
+			{
+				if (node->visframe == r_visframecount)
+					break;
+				node->visframe = r_visframecount;
+				node = node->parent;
+			} while (node);
+		}
+	}
 }
 
 // TODO: Implement

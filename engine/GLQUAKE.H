@@ -104,6 +104,9 @@ extern	cvar_t	r_speeds;
 
 
 
+extern	cvar_t	r_novis;
+
+
 
 extern	cvar_t	r_mirroralpha;
 

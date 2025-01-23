@@ -108,7 +108,7 @@ void CheckMultiTextureExtensions( void )
 	
 	if (strstr(gl_extensions, "GL_SGIS_multitexture "))
 	{
-		Con_Printf( "Multitexture extensions found.\n");
+		Con_Printf("Multitexture extensions found.\n");
 		qglMTexCoord2fSGIS = (void*)qwglGetProcAddress("glMTexCoord2fSGIS");
 		qglSelectTextureSGIS = (void*)qwglGetProcAddress("glSelectTextureSGIS");
 		gl_mtexable = TRUE;
