@@ -1614,6 +1614,33 @@ void GL_Upload16( unsigned char* data, int width, int height, qboolean mipmap, i
 	GL_Upload32(trans, width, height, mipmap, iType);
 }
 
+/*
+================
+GL_UnloadTextures
+
+Unload all loaded textures
+We do this every time we load the map
+================
+*/
+void GL_UnloadTextures( void )
+{
+	int i, texnum;
+	gltexture_t* glt;
+
+	for (i = 0, glt = gltextures; i < numgltextures; i++, glt++)
+	{
+		if (glt->servercount > 0 && glt->servercount != gHostSpawnCount)
+		{
+			texnum = glt->texnum;
+			qglDeleteTextures(1, (const GLuint*)glt);
+
+			memset(glt, 0, sizeof(gltexture_t));
+			glt->servercount = -1;
+			glt->texnum = texnum;
+		}
+	}
+}
+
 void GL_PaletteInit( void )
 {
 	int i;

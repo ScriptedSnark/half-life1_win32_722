@@ -69,7 +69,12 @@ typedef struct
 	vrect_t		vrect;								// subwindow in video for refresh
 													// FIXME: not need vrect next field here?
 
-	vec3_t vieworg;
+	// TODO: Implement
+
+	vec3_t		vieworg;
+	vec3_t		viewangles;
+
+	color24		ambientlight;
 } refdef_t;
 
 // TODO: Implement
@@ -90,8 +95,8 @@ extern	struct texture_s* r_notexture_mip;
 
 void R_Init( void );
 void R_InitTextures( void );
-
-
+void R_RenderView( void );		// must set r_refdef first
+void R_ViewChanged( vrect_t* pvrect, int lineadj, float aspect );
 
 void R_InitSky( void );
 
@@ -101,6 +106,13 @@ void R_NewMap( void );
 
 
 void R_ParseParticleEffect( void );
+
+
+
+void R_PushDlights( void );
+void R_InitParticles( void );
+void R_ClearParticles( void );
+void R_DrawParticles( void );
 
 
 

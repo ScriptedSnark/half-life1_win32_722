@@ -25,3 +25,15 @@ void R_SetStackBase( void )
 	// get stack position so we can guess if we are going to overflow
 	//r_stack_start = (byte*)&dummy;
 }
+
+/*
+================
+R_RenderView
+
+r_refdef must be set before the first call
+================
+*/
+void R_RenderView( void )
+{
+	// TODO: Implement
+}
