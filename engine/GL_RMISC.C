@@ -6,7 +6,7 @@ cvar_t	r_norefresh = { "r_norefresh", "0" };
 
 
 cvar_t	r_speeds = { "r_speeds", "0" };
-
+cvar_t	r_fullbright = { "r_fullbright", "0" };
 
 
 
@@ -36,7 +36,7 @@ cvar_t	gl_spriteblend = { "gl_spriteblend", "1" };
 cvar_t	gl_zmax = { "gl_zmax", "4096" };
 
 
-
+cvar_t	gl_overbright = { "gl_overbright", "1", TRUE };
 cvar_t	gl_envmapsize = { "gl_envmapsize", "256" };
 cvar_t	gl_flipmatrix = { "gl_flipmatrix", "0", TRUE };
 
@@ -88,6 +88,8 @@ void R_Init( void )
 	// TODO: Implement
 
 	Cvar_RegisterVariable(&r_norefresh);
+	// TODO: Implement
+	Cvar_RegisterVariable(&r_fullbright);
 
 	// TODO: Implement
 
@@ -113,7 +115,7 @@ void R_Init( void )
 	// TODO: Implement
 
 	Cvar_RegisterVariable(&gl_wateramp);
-	// TODO: Implement
+	Cvar_RegisterVariable(&gl_overbright);
 	Cvar_RegisterVariable(&gl_zmax);
 	// TODO: Implement
 	Cvar_RegisterVariable(&gl_flipmatrix);

@@ -7,8 +7,6 @@ extern model_t* loadmodel;
 
 cshift_t	cshift_water = { 130, 80, 50, 128 };
 
-//cshift_t	cshift_water; TODO: Implement
-
 int		skytexturenum;
 
 int		solidskytexture;
@@ -192,6 +190,29 @@ void GL_SubdivideSurface( msurface_t* fa )
 
 
 void R_LoadSkys( void )
+{
+	// TODO: Implement
+}
+
+
+// TODO: Implement
+
+
+/*
+==============
+R_ClearSkyBox
+==============
+*/
+void R_ClearSkyBox( void )
+{
+	// TODO: Implement
+}
+
+
+// TODO: Implement
+
+
+void R_DrawSkyBox( void )
 {
 	// TODO: Implement
 }

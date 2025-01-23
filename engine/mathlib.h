@@ -52,4 +52,7 @@ float VectorNormalize( vec_t* v );		// returns vector length
 
 void AngleVectors( const vec_t* angles, vec_t* forward, vec_t* right, vec_t* up );
 
+void BOPS_Error( void );
+int BoxOnPlaneSide( vec_t * emins, vec_t * emaxs, struct mplane_s* p );
+
 float	anglemod(float a);

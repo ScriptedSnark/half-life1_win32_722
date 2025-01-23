@@ -23,6 +23,18 @@ float anglemod( float a )
 	return a;
 }
 
+/*
+==================
+BOPS_Error
+
+Split out like this for ASM to call.
+==================
+*/
+void BOPS_Error( void )
+{
+	Sys_Error("BoxOnPlaneSide:  Bad signbits");
+}
+
 // TODO: Implement
 
 void AngleVectors( const vec_t* angles, vec_t* forward, vec_t* right, vec_t* up )

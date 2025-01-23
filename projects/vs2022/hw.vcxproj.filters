@@ -192,6 +192,9 @@
     <ClCompile Include="..\..\engine\gl_rlight.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\engine\gl_refrag.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\engine\anorm_dots.h">
@@ -410,6 +413,9 @@
   </ItemGroup>
   <ItemGroup>
     <MASM Include="..\..\engine\sys_wina.asm">
+      <Filter>Source Files</Filter>
+    </MASM>
+    <MASM Include="..\..\engine\math.asm">
       <Filter>Source Files</Filter>
     </MASM>
   </ItemGroup>

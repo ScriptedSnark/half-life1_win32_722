@@ -75,8 +75,8 @@ extern	int glx, gly, glwidth, glheight;
 
 extern cl_entity_t	r_worldentity;
 extern	qboolean	r_cache_thrash;		// compatability
-
-
+extern	vec3_t		modelorg, r_entorigin;
+extern cl_entity_t* currententity;
 extern	int			r_visframecount;	// ??? what difs?
 extern	int			r_framecount;
 extern	mplane_t	frustum[4];
@@ -101,6 +101,7 @@ extern	int	skytexturenum;		// index in cl.loadmodel, not gl texture object
 
 extern	cvar_t	r_norefresh;
 extern	cvar_t	r_speeds;
+extern	cvar_t	r_fullbright;
 
 
 
@@ -129,15 +130,13 @@ extern	cvar_t	gl_zmax;
 
 
 
+extern	cvar_t	gl_overbright;
 extern	cvar_t	gl_envmapsize;
 extern	cvar_t	gl_flipmatrix;
 
-
-
 extern	cvar_t	gl_ztrick;
 
-
-extern	cvar_t	gl_dither;
+extern	int		gl_lightmap_format;
 
 
 
@@ -175,12 +174,18 @@ void GL_EnableMultitexture( void );
 //
 // gl_rmain.c
 //
+qboolean R_CullBox( vec_t* mins, vec_t* maxs );
 float CalcFov( float fov_x, float width, float height );
 
 //
 // gl_rlight.c
 //
 void R_AnimateLight( void );
+
+//
+// gl_refrag.c
+//
+void R_StoreEfrags( efrag_t** ppefrag );
 
 
 //
@@ -190,5 +195,6 @@ void R_DrawBrushModel( cl_entity_t* e );
 void R_DrawWorld( void );
 void GL_BuildLightmaps( void );
 void R_DecalInit( void );
+void R_DrawDecals( void );
 
 #endif // GLQUAKE_H

@@ -6,8 +6,7 @@ cl_entity_t	r_worldentity;
 
 qboolean	r_cache_thrash;		// compatability
 
-// TODO: Implement
-
+vec3_t		modelorg, r_entorigin;
 cl_entity_t* currententity;
 
 int			r_visframecount;
@@ -21,14 +20,15 @@ qboolean	envmap;				// true during envmap command capture
 int			currenttexture = -1;	// to avoid unnecessary texture sets
 int			cnttextures[2] = { -1, -1 };     // cached
 
-
-
+int			particletexture;	// little dot for particles
+int			playertextures[16];	// up to 16 color translated skins
 
 int			mirrortexturenum;	// quake texturenum, not gltexturenum
 qboolean	mirror;
 mplane_t*	mirror_plane;
 
-
+alight_t	r_viewlighting;
+vec3_t		r_plightvec; // light vector in model reference frame
 
 //
 // view origin
@@ -171,6 +171,23 @@ void RotatePointAroundVector( vec_t* dst, const vec_t* dir, const vec_t* point, 
 	{
 		dst[i] = rot[i][0] * point[0] + rot[i][1] * point[1] + rot[i][2] * point[2];
 	}
+}
+
+/*
+=================
+R_CullBox
+
+Returns true if the box is completely outside the frustom
+=================
+*/
+qboolean R_CullBox( vec_t* mins, vec_t* maxs )
+{
+	int		i;
+
+	for (i = 0; i < 4; i++)
+		if (BoxOnPlaneSide(mins, maxs, &frustum[i]) == 2)
+			return TRUE;
+	return FALSE;
 }
 
 // TODO: Implement
