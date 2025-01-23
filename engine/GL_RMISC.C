@@ -9,7 +9,15 @@ cvar_t	r_speeds = { "r_speeds", "0" };
 
 
 
+
+cvar_t	r_mirroralpha = { "r_mirroralpha", "1" };
+
+
+
 cvar_t	r_wadtextures = { "r_wadtextures", "0" };
+
+cvar_t	gl_clear = { "gl_clear", "0" };
+
 
 cvar_t	gl_wateramp = { "gl_wateramp", "0.3" };
 cvar_t	gl_dither = { "gl_dither", "1", TRUE };
@@ -40,8 +48,16 @@ void R_Init( void )
 
 	// TODO: Implement
 
+	Cvar_RegisterVariable(&r_mirroralpha);
+
+	// TODO: Implement
+
 	Cvar_RegisterVariable(&r_speeds);
 	Cvar_RegisterVariable(&r_wadtextures);
+
+	// TODO: Implement
+
+	Cvar_RegisterVariable(&gl_clear);
 
 	// TODO: Implement
 

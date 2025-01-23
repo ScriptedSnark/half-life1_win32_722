@@ -95,12 +95,26 @@ extern	cvar_t	r_norefresh;
 extern	cvar_t	r_speeds;
 
 
+
+
+extern	cvar_t	r_mirroralpha;
+
+
 extern	cvar_t	r_wadtextures;
+
+extern	cvar_t	gl_clear;
 
 
 extern	cvar_t	gl_wateramp;
 extern	cvar_t	gl_dither;
 extern	cvar_t	gl_spriteblend;
+
+extern	cvar_t	gl_ztrick;
+
+
+extern	cvar_t	gl_dither;
+
+
 
 
 extern	int		mirrortexturenum;	// quake texturenum, not gltexturenum

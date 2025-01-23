@@ -17,6 +17,8 @@ const char* gl_renderer;
 const char* gl_version;
 const char* gl_extensions;
 
+cvar_t	gl_ztrick = { "gl_ztrick", "1" };
+
 cvar_t	vid_d3d = { "vid_d3d", "0" };
 
 
@@ -37,6 +39,7 @@ qboolean gl_mtexable = FALSE;
 
 //====================================
 
+float		gldepthmin, gldepthmax;
 
 int			window_center_x, window_center_y;
 RECT		window_rect;
@@ -374,6 +377,7 @@ int VID_Init( word* palette )
 {
 	// TODO: Implement
 
+	Cvar_RegisterVariable(&gl_ztrick);
 	Cvar_RegisterVariable(&vid_d3d);
 
 	// TODO: Implement

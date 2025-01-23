@@ -100,7 +100,49 @@ R_Clear
 */
 void R_Clear( void )
 {
-	// TODO: Implement
+	if (r_mirroralpha.value != 1.0)
+	{
+		if (gl_clear.value)
+			qglClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		else
+			qglClear(GL_DEPTH_BUFFER_BIT);
+		gldepthmin = 0.0;
+		gldepthmax = 0.5;
+		qglDepthFunc(GL_LEQUAL);
+	}
+	else if (gl_ztrick.value)
+	{
+		static int trickframe;
+
+		if (gl_clear.value)
+			qglClear(GL_COLOR_BUFFER_BIT);
+
+		trickframe++;
+		if (trickframe & 1)
+		{
+			gldepthmin = 0;
+			gldepthmax = 0.49999;
+			qglDepthFunc(GL_LEQUAL);
+		}
+		else
+		{
+			gldepthmin = 1;
+			gldepthmax = 0.5;
+			qglDepthFunc(GL_GEQUAL);
+		}
+	}
+	else
+	{
+		if (gl_clear.value)
+			qglClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		else
+			qglClear(GL_DEPTH_BUFFER_BIT);
+		gldepthmin = 0;
+		gldepthmax = 1;
+		qglDepthFunc(GL_LEQUAL);
+	}
+
+	qglDepthRange(gldepthmin, gldepthmax);
 }
 
 void R_SetStackBase( void )
