@@ -60,6 +60,120 @@ void R_MarkLeaves( void );
 
 extern cshift_t	cshift_water;
 
+/*-----------------------------------------------------------------*/
+
+#define DEG2RAD( a ) ( a * M_PI ) / 180.0F
+
+void ProjectPointOnPlane( vec_t* dst, const vec_t* p, const vec_t* normal )
+{
+	float d;
+	vec3_t n;
+	float inv_denom;
+
+	inv_denom = 1.0F / DotProduct(normal, normal);
+
+	d = DotProduct(normal, p) * inv_denom;
+
+	n[0] = normal[0] * inv_denom;
+	n[1] = normal[1] * inv_denom;
+	n[2] = normal[2] * inv_denom;
+
+	dst[0] = p[0] - d * n[0];
+	dst[1] = p[1] - d * n[1];
+	dst[2] = p[2] - d * n[2];
+}
+
+/*
+** assumes "src" is normalized
+*/
+void PerpendicularVector( vec_t* dst, const vec_t* src )
+{
+	int pos;
+	int i;
+	float minelem = 1.0F;
+	vec3_t tempvec;
+
+	/*
+	** find the smallest magnitude axially aligned vector
+	*/
+	for (pos = 0, i = 0; i < 3; i++)
+	{
+		if (fabs(src[i]) < minelem)
+		{
+			pos = i;
+			minelem = fabs(src[i]);
+		}
+	}
+	tempvec[0] = tempvec[1] = tempvec[2] = 0.0F;
+	tempvec[pos] = 1.0F;
+
+	/*
+	** project the point onto the plane defined by src
+	*/
+	ProjectPointOnPlane(dst, tempvec, src);
+
+	/*
+	** normalize the result
+	*/
+	VectorNormalize(dst);
+}
+
+
+void RotatePointAroundVector( vec_t* dst, const vec_t* dir, const vec_t* point, float degrees )
+{
+	float	m[3][3];
+	float	im[3][3];
+	float	zrot[3][3];
+	float	tmpmat[3][3];
+	float	rot[3][3];
+	int	i;
+	vec3_t vr, vup, vf;
+
+	vf[0] = dir[0];
+	vf[1] = dir[1];
+	vf[2] = dir[2];
+
+	PerpendicularVector(vr, dir);
+	CrossProduct(vr, vf, vup);
+
+	m[0][0] = vr[0];
+	m[1][0] = vr[1];
+	m[2][0] = vr[2];
+
+	m[0][1] = vup[0];
+	m[1][1] = vup[1];
+	m[2][1] = vup[2];
+
+	m[0][2] = vf[0];
+	m[1][2] = vf[1];
+	m[2][2] = vf[2];
+
+	memcpy(im, m, sizeof(im));
+
+	im[0][1] = m[1][0];
+	im[0][2] = m[2][0];
+	im[1][0] = m[0][1];
+	im[1][2] = m[2][1];
+	im[2][0] = m[0][2];
+	im[2][1] = m[1][2];
+
+	memset(zrot, 0, sizeof(zrot));
+	zrot[0][0] = zrot[1][1] = zrot[2][2] = 1.0F;
+
+	zrot[0][0] = cos(DEG2RAD(degrees));
+	zrot[0][1] = sin(DEG2RAD(degrees));
+	zrot[1][0] = -sin(DEG2RAD(degrees));
+	zrot[1][1] = cos(DEG2RAD(degrees));
+
+	R_ConcatRotations(m, zrot, tmpmat);
+	R_ConcatRotations(tmpmat, im, rot);
+
+	for (i = 0; i < 3; i++)
+	{
+		dst[i] = rot[i][0] * point[0] + rot[i][1] * point[1] + rot[i][2] * point[2];
+	}
+}
+
 // TODO: Implement
 
 /*
@@ -88,12 +202,47 @@ void R_PolyBlend( void )
 }
 
 
+int SignbitsForPlane( mplane_t* out )
+{
+	int bits, j;
 
-// TODO: Implement
+	// for fast box on planeside test
+
+	bits = 0;
+	for (j = 0; j < 3; j++)
+	{
+		if (out->normal[j] < 0)
+			bits |= 1 << j;
+	}
+	return bits;
+}
+
 
 void R_SetFrustum( void )
 {
-	// TODO: Implement
+	int		i;
+	
+	float	fovx, fovy;
+
+	fovx = scr_fov_value;
+
+	fovy = CalcFov(fovx, glwidth, glheight);
+
+	// rotate VPN right by FOV_X/2 degrees
+	RotatePointAroundVector(frustum[0].normal, vup, vpn, -(90 - fovx / 2));
+	// rotate VPN left by FOV_X/2 degrees
+	RotatePointAroundVector(frustum[1].normal, vup, vpn, 90 - fovx / 2);
+	// rotate VPN up by FOV_X/2 degrees
+	RotatePointAroundVector(frustum[2].normal, vright, vpn, 90 - fovy / 2);
+	// rotate VPN down by FOV_X/2 degrees
+	RotatePointAroundVector(frustum[3].normal, vright, vpn, -(90 - fovy / 2));
+
+	for (i = 0; i < 4; i++)
+	{
+		frustum[i].type = PLANE_ANYZ;
+		frustum[i].dist = DotProduct(r_origin, frustum[i].normal);
+		frustum[i].signbits = SignbitsForPlane(&frustum[i]);
+	}
 }
 
 
