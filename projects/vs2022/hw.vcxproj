@@ -130,6 +130,7 @@
     <ClInclude Include="..\..\engine\sbar.h" />
     <ClInclude Include="..\..\engine\screen.h" />
     <ClInclude Include="..\..\engine\server.h" />
+    <ClInclude Include="..\..\engine\shake.h" />
     <ClInclude Include="..\..\engine\sound.h" />
     <ClInclude Include="..\..\engine\spritegn.h" />
     <ClInclude Include="..\..\engine\studio.h" />

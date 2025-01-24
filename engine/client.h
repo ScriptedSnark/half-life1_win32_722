@@ -298,14 +298,10 @@ typedef struct
 
 	int			parsecount;		// server message counter
 
+	usercmd_t	cmd;			// last command sent to the server
 
-
-	// TODO: Implement
-
-
-	// information for local display
+// information for local display
 	int			stats[MAX_CL_STATS];	// health, etc
-
 	int			weapons;
 
 
@@ -329,15 +325,16 @@ typedef struct
 
 	float		maxspeed;
 
-	// TODO: Implement
-
+	vec3_t		simorg;
+	vec3_t		simvel;
+	vec3_t		simangles;
 
 // pitch drifting vars
 	float		idealpitch;
-
-
-	// TODO: Implement
-
+	float		pitchvel;
+	qboolean	nodrift;
+	float		driftmove;
+	double		laststop;
 
 	float		viewheight;
 

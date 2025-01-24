@@ -26,6 +26,8 @@ struct movevars_s
 	char	skyName[32];	   // Name of the sky map
 };
 
-extern movevars_t movevars;
+extern movevars_t	movevars;
+
+extern int			onground;
 
 #endif // PMOVE_H

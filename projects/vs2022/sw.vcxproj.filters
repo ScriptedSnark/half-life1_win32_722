@@ -192,6 +192,9 @@
     <ClInclude Include="..\..\engine\cshift.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\engine\shake.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\engine\sys_win.c">

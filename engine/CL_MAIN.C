@@ -848,6 +848,8 @@ void CL_SendCmd( void )
 		buf.data + checksumIndex + 1, buf.cursize - checksumIndex - 1,
 		seq_hash);
 
+	memcpy(&cl.cmd, cmd, sizeof(cl.cmd));
+
 	// request delta compression of entities
 	if (cls.netchan.outgoing_sequence - cl.validsequence >= UPDATE_BACKUP - 1)
 		cl.validsequence = 0;
