@@ -257,58 +257,46 @@ CL_ParseStartSoundPacket
 */
 void CL_ParseStartSoundPacket( void )
 {
-	int Byte; // ebp
-	int v1; // eax
-	int v2; // esi
-	int v3; // ebx
-	int *v4; // edi
-	float v6; // [esp+10h] [ebp-68h]
-	float v7; // [esp+10h] [ebp-68h]
-	int Short; // [esp+14h] [ebp-64h]
-	int channel; // [esp+14h] [ebp-64h]
-	int v10; // [esp+18h] [ebp-60h]
-	float v11; // [esp+1Ch] [ebp-5Ch]
-	float v12; // [esp+20h] [ebp-58h]
-	int v13[3]; // [esp+24h] [ebp-54h] BYREF
-	int Str[18]; // [esp+30h] [ebp-48h] BYREF
+	vec3_t	pos;
+	int		channel, ent;
+	int		sound_num;
+	float	volume;
+	int		field_mask;
+	float 	attenuation;
+	int		pitch;
+	int		i;
 
-	Byte = MSG_ReadByte();
-	if ((Byte & 1) != 0)
-	{
-		v6 = (double)MSG_ReadByte() / 255.0;
-		v12 = v6;
-	}
+	field_mask = MSG_ReadByte();
+
+	if (field_mask & SND_VOLUME)
+		volume = MSG_ReadByte() / 255.0;		// reduce back to 0.0 - 1.0 range
 	else
-	{
-		v12 = 1.0;
-	}
-	if ((Byte & 2) != 0)
-	{
-		v7 = (double)MSG_ReadByte() / 64.0;
-		v11 = v7;
-	}
+		volume = DEFAULT_SOUND_PACKET_VOLUME;
+
+	if (field_mask & SND_ATTENUATION)
+		attenuation = MSG_ReadByte() / 64.0;
 	else
-	{
-		v11 = 1.0;
-	}
-	Short = MSG_ReadShort();
-	if ((Byte & 4) != 0)
-		v1 = MSG_ReadShort();
+		attenuation = DEFAULT_SOUND_PACKET_ATTENUATION;
+
+	channel = MSG_ReadShort();
+	if (field_mask & SND_LARGE_INDEX)
+		sound_num = MSG_ReadShort();
 	else
-		v1 = MSG_ReadByte();
-	v2 = v1;
-	v3 = Short >> 3;
-	channel = Short & 7;
-	if (v3 >= cl.max_edicts)
-		Host_Error("CL_ParseStartSoundPacket: ent = %i", v3);
-	v4 = v13;
-	do
-		*((float *)++v4 - 1) = MSG_ReadCoord();
-	while (v4 < Str);
-	if ((Byte & 8) != 0)
-		v10 = MSG_ReadByte();
+		sound_num = MSG_ReadByte();
+
+	ent = channel >> 3;
+	channel &= 7;
+
+	if (ent >= cl.max_edicts)
+		Host_Error("CL_ParseStartSoundPacket: ent = %i", ent);
+
+	for (i = 0; i < 3; i++)
+		pos[i] = MSG_ReadCoord();
+
+	if (field_mask & SND_PITCH)
+		pitch = MSG_ReadByte();
 	else
-		v10 = 100;
+		pitch = PITCH_NORM;
 
 	// TODO: Implement
 }
@@ -1132,6 +1120,7 @@ void CL_ParseServerMessage( void )
 {
 	// Index of svc_ or user command to issue.
 	int	cmd;
+	static int lastcmds[3];
 	int	i, j;
 	// For determining data parse sizes
 	int bufStart, bufEnd;
@@ -1184,7 +1173,9 @@ void CL_ParseServerMessage( void )
 		
 		SHOWNET(svc_strings[cmd]);
 
-		// TODO: Implement
+		lastcmds[0] = lastcmds[1];
+		lastcmds[1] = lastcmds[2];
+		lastcmds[2] = cmd;
 
 		if (cmd <= 63)
 			msg_buckets[cmd]++;
@@ -1194,7 +1185,9 @@ void CL_ParseServerMessage( void )
 		{
 		default:
 			Con_DPrintf("Last 3 messages parsed.\n");
-			// TODO: Implement
+			Con_DPrintf("%s\n", svc_strings[lastcmds[0]]);
+			Con_DPrintf("%s\n", svc_strings[lastcmds[1]]);
+			Con_DPrintf("%s\n", svc_strings[lastcmds[2]]);
 			Con_DPrintf("BAD:  %3i:%s\n", msg_readcount - 1, svc_strings[cmd]);
 			Host_Error("CL_ParseServerMessage: Illegible server message\n");
 			break;

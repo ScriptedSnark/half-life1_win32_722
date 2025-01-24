@@ -219,6 +219,21 @@
 #define	U_CUSTOM	(1<<13)		// Custom entity data (beams)
 
 
+
+
+//==============================================
+
+// sound flags
+#define	SND_VOLUME		(1<<0)	// send volume
+#define	SND_ATTENUATION	(1<<1)	// send attenuation
+#define SND_LARGE_INDEX	(1<<2)	// send sound number as short instead of byte
+#define SND_PITCH		(1<<3)	// send pitch
+
+#define DEFAULT_SOUND_PACKET_VOLUME			1.0
+#define DEFAULT_SOUND_PACKET_ATTENUATION	1.0
+
+
+
 /*
 ==========================================================
 
