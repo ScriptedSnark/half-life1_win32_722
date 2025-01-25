@@ -17,6 +17,7 @@
     <ClInclude Include="..\..\common\exefuncs.h" />
     <ClInclude Include="..\..\common\platform.h" />
     <ClInclude Include="..\..\common\qfont.h" />
+    <ClInclude Include="..\..\engine\a3d.h" />
     <ClInclude Include="..\..\engine\anorms.h" />
     <ClInclude Include="..\..\engine\anorm_dots.h" />
     <ClInclude Include="..\..\engine\bothdefs.h" />

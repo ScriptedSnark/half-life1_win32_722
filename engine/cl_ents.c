@@ -536,7 +536,7 @@ void CL_ParsePacketEntities( qboolean delta )
 			if (flags & U_REMOVE)
 			{
 				oldindex++;
-//				sub_C71ACE0(oldnum); TODO: Implement
+//				R_BeamRemove(oldnum); TODO: Implement
 				continue;
 			}
 //Con_Printf("delta %i\n",newnum);
