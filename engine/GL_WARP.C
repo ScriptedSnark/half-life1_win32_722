@@ -263,6 +263,352 @@ void EmitWaterPolys( msurface_t* fa, int direction )
 	}
 }
 
+#if 0
+/*
+===============
+EmitBothSkyLayers
+
+Does a sky warp on the pre-fragmented glpoly_t chain
+This will be called for brushmodels, the world
+will have them chained together.
+===============
+*/
+void EmitBothSkyLayers( msurface_t* fa )
+{
+	GL_DisableMultitexture();
+
+	GL_Bind(solidskytexture);
+	speedscale = realtime * 8;
+	speedscale -= (int)speedscale & ~127;
+
+	EmitSkyPolys(fa);
+
+	glEnable(GL_BLEND);
+	GL_Bind(alphaskytexture);
+	speedscale = realtime * 16;
+	speedscale -= (int)speedscale & ~127;
+
+	EmitSkyPolys(fa);
+
+	glDisable(GL_BLEND);
+}
+
+
+#define	SKY_TEX		2000
+
+/*
+=================================================================
+
+  PCX Loading
+
+=================================================================
+*/
+
+typedef struct
+{
+	char	manufacturer;
+	char	version;
+	char	encoding;
+	char	bits_per_pixel;
+	unsigned short	xmin, ymin, xmax, ymax;
+	unsigned short	hres, vres;
+	unsigned char	palette[48];
+	char	reserved;
+	char	color_planes;
+	unsigned short	bytes_per_line;
+	unsigned short	palette_type;
+	char	filler[58];
+	unsigned 	data;			// unbounded
+} pcx_t;
+
+byte* pcx_rgb;
+
+/*
+============
+LoadPCX
+============
+*/
+void LoadPCX( FILE* f )
+{
+	pcx_t* pcx, pcxbuf;
+	byte	palette[768];
+	byte* pix;
+	int		x, y;
+	int		dataByte, runLength;
+	int		count;
+
+//
+// parse the PCX file
+//
+	fread(&pcxbuf, 1, sizeof(pcxbuf), f);
+
+	pcx = &pcxbuf;
+
+	if (pcx->manufacturer != 0x0a
+		|| pcx->version != 5
+		|| pcx->encoding != 1
+		|| pcx->bits_per_pixel != 8
+		|| pcx->xmax >= 320
+		|| pcx->ymax >= 256)
+	{
+		Con_Printf("Bad pcx file\n");
+		return;
+	}
+
+	// seek to palette
+	fseek(f, -768, SEEK_END);
+	fread(palette, 1, 768, f);
+
+	fseek(f, sizeof(pcxbuf) - 4, SEEK_SET);
+
+	count = (pcx->xmax + 1) * (pcx->ymax + 1);
+	pcx_rgb = malloc(count * 4);
+
+	for (y = 0; y <= pcx->ymax; y++)
+	{
+		pix = pcx_rgb + 4 * y * (pcx->xmax + 1);
+		for (x = 0; x <= pcx->ymax; )
+		{
+			dataByte = fgetc(f);
+
+			if ((dataByte & 0xC0) == 0xC0)
+			{
+				runLength = dataByte & 0x3F;
+				dataByte = fgetc(f);
+			}
+			else
+				runLength = 1;
+
+			while (runLength-- > 0)
+			{
+				pix[0] = palette[dataByte * 3];
+				pix[1] = palette[dataByte * 3 + 1];
+				pix[2] = palette[dataByte * 3 + 2];
+				pix[3] = 255;
+				pix += 4;
+				x++;
+			}
+		}
+	}
+}
+
+#endif
+
+/*
+=========================================================
+
+TARGA LOADING
+
+=========================================================
+*/
+
+typedef struct _TargaHeader {
+	unsigned char 	id_length, colormap_type, image_type;
+	unsigned short	colormap_index, colormap_length;
+	unsigned char	colormap_size;
+	unsigned short	x_origin, y_origin, width, height;
+	unsigned char	pixel_size, attributes;
+} TargaHeader;
+
+
+TargaHeader		targa_header;
+//byte*			targa_rgba;
+
+int fgetLittleShort( FILE* f )
+{
+	byte	b1, b2;
+
+	b1 = fgetc(f);
+	b2 = fgetc(f);
+
+	return (short)(b1 + (b2 << 8));
+}
+
+int fgetLittleLong( FILE* f )
+{
+	byte	b1, b2, b3, b4;
+
+	b1 = fgetc(f);
+	b2 = fgetc(f);
+	b3 = fgetc(f);
+	b4 = fgetc(f);
+
+	return b1 + (b2 << 8) + (b3 << 16) + (b4 << 24);
+}
+
+
+/*
+=============
+LoadTGA
+=============
+*/
+void LoadTGA( FILE* fin, byte* buffer )
+{
+	int				columns, rows, numPixels;
+	byte* pixbuf;
+	byte* targa_rgba;
+	int				row, column;
+
+	targa_header.id_length = fgetc(fin);
+	targa_header.colormap_type = fgetc(fin);
+	targa_header.image_type = fgetc(fin);
+
+	targa_header.colormap_index = fgetLittleShort(fin);
+	targa_header.colormap_length = fgetLittleShort(fin);
+	targa_header.colormap_size = fgetc(fin);
+	targa_header.x_origin = fgetLittleShort(fin);
+	targa_header.y_origin = fgetLittleShort(fin);
+	targa_header.width = fgetLittleShort(fin);
+	targa_header.height = fgetLittleShort(fin);
+	targa_header.pixel_size = fgetc(fin);
+	targa_header.attributes = fgetc(fin);
+
+	if (targa_header.image_type != 2 &&
+		targa_header.image_type != 10)
+		Sys_Error("LoadTGA: Only type 2 and 10 targa RGB images supported\n");
+
+	if (targa_header.colormap_type
+		|| (targa_header.pixel_size != 32 && targa_header.pixel_size != 24))
+		Sys_Error("Texture_LoadTGA: Only 32 or 24 bit images supported (no colormaps)\n");
+
+	columns = targa_header.width;
+	rows = targa_header.height;
+	numPixels = columns * rows;
+
+	if (numPixels != (256 * 256))
+		Sys_Error("Sky map is the wrong size!\n");
+
+	targa_rgba = buffer;
+
+	if (targa_header.id_length)
+		fseek(fin, targa_header.id_length, SEEK_CUR);  // skip TARGA image comment
+
+	if (targa_header.image_type == 2)
+	{	// Uncompressed, RGB images
+		for (row = rows - 1; row >= 0; row--)
+		{
+			pixbuf = targa_rgba + row * columns * 4;
+			for (column = 0; column < columns; column++)
+			{
+				unsigned char red, green, blue, alphabyte;
+				switch (targa_header.pixel_size)
+				{
+					case 24:
+
+						blue = getc(fin);
+						green = getc(fin);
+						red = getc(fin);
+						*pixbuf++ = red;
+						*pixbuf++ = green;
+						*pixbuf++ = blue;
+						*pixbuf++ = 255;
+						break;
+					case 32:
+						blue = getc(fin);
+						green = getc(fin);
+						red = getc(fin);
+						alphabyte = getc(fin);
+						*pixbuf++ = red;
+						*pixbuf++ = green;
+						*pixbuf++ = blue;
+						*pixbuf++ = alphabyte;
+						break;
+				}
+			}
+		}
+	}
+	else if (targa_header.image_type == 10)
+	{	// Runlength encoded RGB images
+		unsigned char red, green, blue, alphabyte, packetHeader, packetSize, j;
+		for (row = rows - 1; row >= 0; row--)
+		{
+			pixbuf = targa_rgba + row * columns * 4;
+			for (column = 0; column < columns; )
+			{
+				packetHeader = getc(fin);
+				packetSize = 1 + (packetHeader & 0x7f);
+				if (packetHeader & 0x80)
+				{	// run-length packet
+					switch (targa_header.pixel_size)
+					{
+						case 24:
+							blue = getc(fin);
+							green = getc(fin);
+							red = getc(fin);
+							alphabyte = 255;
+							break;
+						case 32:
+							blue = getc(fin);
+							green = getc(fin);
+							red = getc(fin);
+							alphabyte = getc(fin);
+							break;
+					}
+
+					for (j = 0; j < packetSize; j++)
+					{
+						*pixbuf++ = red;
+						*pixbuf++ = green;
+						*pixbuf++ = blue;
+						*pixbuf++ = alphabyte;
+						column++;
+						if (column == columns)
+						{	// run spans across rows
+							column = 0;
+							if (row > 0)
+								row--;
+							else
+								goto breakOut;
+							pixbuf = targa_rgba + row * columns * 4;
+						}
+					}
+				}
+				else
+				{	// non run-length packet
+					for (j = 0; j < packetSize; j++)
+					{
+						switch (targa_header.pixel_size)
+						{
+							case 24:
+								blue = getc(fin);
+								green = getc(fin);
+								red = getc(fin);
+								*pixbuf++ = red;
+								*pixbuf++ = green;
+								*pixbuf++ = blue;
+								*pixbuf++ = 255;
+								break;
+							case 32:
+								blue = getc(fin);
+								green = getc(fin);
+								red = getc(fin);
+								alphabyte = getc(fin);
+								*pixbuf++ = red;
+								*pixbuf++ = green;
+								*pixbuf++ = blue;
+								*pixbuf++ = alphabyte;
+								break;
+						}
+						column++;
+						if (column == columns)
+						{	// pixel packet run spans across rows
+							column = 0;
+							if (row > 0)
+								row--;
+							else
+								goto breakOut;
+							pixbuf = targa_rgba + row * columns * 4;
+						}
+					}
+				}
+			}
+		breakOut:;
+		}
+	}
+
+	fclose(fin);
+}
+
 
 // TODO: Implement
 
