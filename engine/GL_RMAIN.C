@@ -1,6 +1,7 @@
 // r_main.c
 
 #include "quakedef.h"
+#include "shake.h"
 
 cl_entity_t	r_worldentity;
 
@@ -214,7 +215,53 @@ R_PolyBlend
 */
 void R_PolyBlend( void )
 {
-	// TODO: Implement
+	unsigned char color[4];
+	int alpha;
+
+	alpha = V_FadeAlpha();
+	if (!alpha)
+		return;
+
+	GL_DisableMultitexture();
+	qglDisable(GL_ALPHA_TEST);
+	qglEnable(GL_BLEND);
+	qglDisable(GL_DEPTH_TEST);
+	qglDisable(GL_TEXTURE_2D);
+	if (cl.sf.fadeFlags & FFADE_MODULATE)
+	{
+		qglBlendFunc(GL_ZERO, GL_SRC_COLOR);
+		color[0] = (alpha * (cl.sf.fader - 255) - 511) >> 8;
+		color[1] = (alpha * (cl.sf.fadeg - 255) - 511) >> 8;
+		color[2] = (alpha * (cl.sf.fadeb - 255) - 511) >> 8;
+		color[3] = 255;
+	}
+	else
+	{
+		qglBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		color[0] = cl.sf.fader;
+		color[1] = cl.sf.fadeg;
+		color[2] = cl.sf.fadeb;
+		color[3] = alpha;
+	}
+
+	qglLoadIdentity();
+
+	qglRotatef(-90, 1, 0, 0);	    // put Z going up
+	qglRotatef(90, 0, 0, 1);	    // put Z going up
+
+	qglColor4ubv(color);
+
+	qglBegin(7);
+
+	qglVertex3f(10, 10, 10);
+	qglVertex3f(10, -10, 10);
+	qglVertex3f(10, -10, -10);
+	qglVertex3f(10, 10, -10);
+	qglEnd();
+
+	qglDisable(GL_BLEND);
+	qglEnable(GL_TEXTURE_2D);
+	qglEnable(GL_ALPHA_TEST);
 }
 
 

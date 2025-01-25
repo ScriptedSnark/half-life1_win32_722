@@ -8,7 +8,7 @@ cvar_t	r_norefresh = { "r_norefresh", "0" };
 cvar_t	r_speeds = { "r_speeds", "0" };
 cvar_t	r_fullbright = { "r_fullbright", "0" };
 
-
+cvar_t	r_lightmap = { "r_lightmap", "0" };
 
 cvar_t	r_novis = { "r_novis", "0" };
 
@@ -17,7 +17,7 @@ cvar_t	r_novis = { "r_novis", "0" };
 
 cvar_t	r_mirroralpha = { "r_mirroralpha", "1" };
 cvar_t	r_wateralpha = { "r_wateralpha", "1" };
-
+cvar_t	r_dynamic = { "r_dynamic", "1" };
 
 cvar_t	r_wadtextures = { "r_wadtextures", "0" };
 
@@ -95,16 +95,14 @@ void R_Init( void )
 	// TODO: Implement
 
 	Cvar_RegisterVariable(&r_norefresh);
-	// TODO: Implement
+	Cvar_RegisterVariable(&r_lightmap);
 	Cvar_RegisterVariable(&r_fullbright);
 
 	// TODO: Implement
 
 	Cvar_RegisterVariable(&r_mirroralpha);
 	Cvar_RegisterVariable(&r_wateralpha);
-
-	// TODO: Implement
-
+	Cvar_RegisterVariable(&r_dynamic);
 	Cvar_RegisterVariable(&r_novis);
 	Cvar_RegisterVariable(&r_speeds);
 	Cvar_RegisterVariable(&r_wadtextures);

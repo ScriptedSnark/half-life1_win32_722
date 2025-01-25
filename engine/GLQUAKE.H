@@ -103,6 +103,8 @@ extern	cvar_t	r_norefresh;
 extern	cvar_t	r_speeds;
 extern	cvar_t	r_fullbright;
 
+extern	cvar_t	r_lightmap;
+
 
 
 extern	cvar_t	r_novis;
@@ -111,7 +113,7 @@ extern	cvar_t	r_novis;
 
 extern	cvar_t	r_mirroralpha;
 extern	cvar_t	r_wateralpha;
-
+extern	cvar_t	r_dynamic;
 
 extern	cvar_t	r_wadtextures;
 
@@ -169,6 +171,10 @@ void GL_Bind( int texnum );
 
 
 extern qboolean gl_mtexable;
+
+extern int r_dlightframecount;
+extern int r_dlightchanged;
+extern int r_dlightactive;
 
 
 

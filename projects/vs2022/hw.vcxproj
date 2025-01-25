@@ -106,6 +106,7 @@
     <ClInclude Include="..\..\engine\GLQUAKE.H" />
     <ClInclude Include="..\..\engine\gl_hw.h" />
     <ClInclude Include="..\..\engine\GL_MODEL.H" />
+    <ClInclude Include="..\..\engine\gl_warp_sin.h" />
     <ClInclude Include="..\..\engine\gl_water.h" />
     <ClInclude Include="..\..\engine\hashpak.h" />
     <ClInclude Include="..\..\engine\host_cmd.h" />

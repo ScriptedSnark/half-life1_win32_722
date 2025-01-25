@@ -30,7 +30,18 @@ cvar_t	cl_bobup = { "cl_bobup", "0.5" };
 
 
 
+
+
+cvar_t	v_dark = { "v_dark", "0" };
+
+
+
+
+
 byte		texgammatable[256];	// palette is sent through this to convert to screen gamma
+int			lightgammatable[1024];
+int			lineargammatable[1024];
+int			screengammatable[1024];
 
 #ifdef	GLQUAKE
 byte		ramps[3][256];
@@ -201,8 +212,90 @@ void V_DriftPitch( void )
 	}	
 }
 
+cvar_t v_gamma = { "gamma", "2.5", TRUE };		// monitor gamma
+cvar_t v_brightness = { "brightness", "0.0", TRUE };	// low level light adjustment
+cvar_t v_lightgamma = { "lightgamma", "2.5" };
+cvar_t v_texgamma = { "texgamma", "2.0" };		// source gamma of textures
+cvar_t v_lambert = { "lambert", "1.5" };
+cvar_t v_direct = { "direct", "0.9" };
 
+void BuildGammaTable( float g )
+{
+	int		i, inf;
+	float	g1, g3;
 
+	if (g <= 0) // prevent division by zero
+	{
+		g3 = 0.0;
+		g1 = g;
+	}
+
+	if (g > 3.0)
+		g = 3.0;
+
+	g = 1.0 / g;
+
+	g1 = g * v_texgamma.value;
+
+	if (v_brightness.value <= 0.0)
+	{
+		g3 = 0.125;
+	}
+	else if (v_brightness.value > 1.0)
+	{
+		g3 = 0.05;
+	}
+	else
+	{
+		g3 = 0.125 - (v_brightness.value * v_brightness.value) * 0.075;
+	}
+
+	for (i = 0; i < 256; i++)
+	{
+		inf = 255 * pow(i / 255.0, g1);
+		if (inf < 0)
+			inf = 0;
+		if (inf > 255)
+			inf = 255;
+		texgammatable[i] = inf;
+	}
+
+	for (i = 0; i < 1024; i++)
+	{
+		float f;
+
+		f = pow(i / 1023.0, v_lightgamma.value);
+
+		// scale up
+		if (v_brightness.value > 1.0)
+			f = f * v_brightness.value;
+
+		// shift up
+		if (f <= g3)
+			f = (f / g3) * 0.125;
+		else
+			f = 0.125 + ((f - g3) / (1.0 - g3)) * 0.875;
+
+		// convert
+		inf = 1023 * pow(f, g);
+
+		if (inf < 0)
+			inf = 0;
+		if (inf > 1023)
+			inf = 1023;
+		lightgammatable[i] = inf;
+	}
+
+	for (i = 0; i < 1024; i++)
+	{
+		// convert from screen gamma space to linear space
+		lineargammatable[i] = 1023 * pow(i / 1023.0, v_gamma.value);
+		// convert from linear gamma space to screen space
+		screengammatable[i] = 1023 * pow(i / 1023.0, 1.0 / v_gamma.value);
+	}
+}
+
+// TODO: Implement
 
 
 /*
@@ -481,6 +574,86 @@ void V_ApplyShake( float* origin, float* angles, float factor )
 	// TODO: Implement
 }
 
+/*
+=================
+V_ScreenFade
+
+Message hook to parse ScreenFade messages
+=================
+*/
+int V_ScreenFade( const char* pszName, int iSize, void* pbuf )
+{
+	ScreenFade* pFade = (ScreenFade*)pbuf;
+
+	cl.sf.fadeEnd = pFade->duration * (1.0 / 4096.0);
+	cl.sf.fadeReset = pFade->holdTime * (1.0 / 4096.0);
+
+	cl.sf.fader = pFade->r;
+	cl.sf.fadeg = pFade->g;
+	cl.sf.fadeb = pFade->b;
+	cl.sf.fadealpha = pFade->a;
+
+	cl.sf.fadeFlags = pFade->fadeFlags;
+	cl.sf.fadeSpeed = 0.0;
+
+	// Calc fade speed
+	if (pFade->duration)
+	{
+		// Fade out (reversed fade in)
+		if (pFade->fadeFlags & FFADE_OUT)
+		{
+			if (cl.sf.fadeEnd)
+			{
+				cl.sf.fadeSpeed = -(cl.sf.fadealpha / cl.sf.fadeEnd);
+			}
+
+			cl.sf.fadeEnd += cl.time;
+			cl.sf.fadeReset += cl.sf.fadeEnd;
+		}
+		else
+		{
+			if (cl.sf.fadeEnd)
+			{
+				cl.sf.fadeSpeed = cl.sf.fadealpha / cl.sf.fadeEnd;
+			}
+
+			cl.sf.fadeReset += cl.time;
+			cl.sf.fadeEnd += cl.sf.fadeReset;
+		}
+	}
+
+	return 1;
+}
+
+/*
+=============
+V_FadeAlpha
+
+Compute the overall color & alpha of the fades
+=============
+*/
+int V_FadeAlpha( void )
+{
+	int alpha;
+
+	if (cl.sf.fadeReset < cl.time && cl.sf.fadeEnd < cl.time)
+	{
+		return 0;
+	}
+
+	alpha = (cl.sf.fadeEnd - cl.time) * cl.sf.fadeSpeed;
+
+	if (cl.sf.fadeFlags & FFADE_OUT)
+		alpha += cl.sf.fadealpha;
+
+	// clamp it
+	if (alpha > cl.sf.fadealpha)
+		alpha = cl.sf.fadealpha;
+	else if (alpha < 0)
+		alpha = 0;
+
+	return alpha;
+}
 
 //============================================================================
 
@@ -500,6 +673,10 @@ void V_Init( void )
 	Cvar_RegisterVariable(&v_centerspeed);
 
 	// TODO: Implement
+	
+	Cvar_RegisterVariable(&v_dark);
+
+	// TODO: Implement
 
 	Cvar_RegisterVariable(&scr_ofsx);
 	Cvar_RegisterVariable(&scr_ofsy);
@@ -509,6 +686,21 @@ void V_Init( void )
 	Cvar_RegisterVariable(&cl_bob);
 	Cvar_RegisterVariable(&cl_bobcycle);
 	Cvar_RegisterVariable(&cl_bobup);
+
+	// TODO: Implement
+	
+	BuildGammaTable(2.5);
+
+	Cvar_RegisterVariable(&v_gamma);
+	Cvar_RegisterVariable(&v_lightgamma);
+	Cvar_RegisterVariable(&v_texgamma);
+	Cvar_RegisterVariable(&v_brightness);
+	Cvar_RegisterVariable(&v_lambert);
+	Cvar_RegisterVariable(&v_direct);
+
+	// TODO: Implement
+	
+	HookServerMsg("ScreenFade", V_ScreenFade);
 
 	// TODO: Implement
 }
@@ -523,4 +715,25 @@ Initialize sceen fade/shake data
 void V_InitLevel( void )
 {
 	// TODO: Implement
+
+	cl.sf.fadeFlags = 0;
+	cl.sf.fader = 0;
+	cl.sf.fadeg = 0;
+	cl.sf.fadeb = 0;
+
+	if (v_dark.value)
+	{
+		cl.sf.fadealpha = 255;
+		cl.sf.fadeSpeed = 51.0;
+		cl.sf.fadeReset = cl.time + 5.0;
+		cl.sf.fadeEnd = cl.sf.fadeReset + 5.0;
+		v_dark.value = 0.0;
+	}
+	else
+	{
+		cl.sf.fadealpha = 0;
+		cl.sf.fadeSpeed = 0.0;
+		cl.sf.fadeReset = 0.0;
+		cl.sf.fadeEnd = 0.0;
+	}
 }
