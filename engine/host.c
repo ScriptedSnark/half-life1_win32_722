@@ -1722,7 +1722,7 @@ DLL_EXPORT int Host_Frame(float time, int iState, int* stateInfo)
 
 	if (cls.state == ca_active && g_bForceReloadOnCA_Active)
 	{
-		ReloadProfile(g_szProfileName);
+		ExecuteProfileSettings(g_szProfileName);
 		g_bForceReloadOnCA_Active = FALSE;
 		memset(g_szProfileName, 0, sizeof(g_szProfileName));
 	}

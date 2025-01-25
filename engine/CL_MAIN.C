@@ -790,21 +790,13 @@ void CL_SendCmd( void )
 	seq_hash = cls.netchan.outgoing_sequence;
 
 	// get basic movement from keyboard
-	if (!cls.demoplayback && cls.signon == 3)
+	if (!cls.demoplayback && cls.signon == SIGNONS)
 	{
 		CL_BaseMove(cmd);
 
 		// allow mice or other external controllers to add to the move
 		IN_Move(cmd);
 	}
-
-	// if we are spectator, try autocam
-//	if (cl.spectator)
-//		Cam_Track(cmd);
-
-//	CL_FinishMove(cmd);
-
-//	Cam_FinishMove(cmd);
 
 // send this and the previous cmds in the message, so
 // if the last packet was dropped, it can be recovered
@@ -821,11 +813,16 @@ void CL_SendCmd( void )
 	VectorCopy(cl.viewangles, cl.frames[i].cmd.angles);
 
 	cl.frames[i].cmd.msec = (int)(host_frametime * 1000.0);
+	if (cl.frames[i].cmd.msec > 250)
+		cl.frames[i].cmd.msec = 100;
+
 	cl.frames[i].cmd.buttons = CL_ButtonBits(1);
 	cl.frames[i].cmd.impulse = 0;//dword_10577E70;
 
-	if (cl.frames[i].cmd.msec > 250)
-		cl.frames[i].cmd.msec = 100;
+	if (cl.spectator)
+	{
+		// TODO: Implement
+	}
 
 	memset(&nullcmd, 0, sizeof(nullcmd));
 
@@ -1118,6 +1115,10 @@ void CL_Init( void )
 	// TODO: Implement
 
 	Cvar_RegisterVariable(&cl_spectator_password);
+
+	// TODO: Implement
+	
+	CL_InitPrediction();
 
 	// TODO: Implement
 

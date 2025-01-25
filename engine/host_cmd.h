@@ -7,4 +7,6 @@
 
 extern int  gHostSpawnCount;
 
+void Host_ClearSaveDirectory( void );
+
 #endif // HOST_CMD_H

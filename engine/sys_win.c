@@ -4,6 +4,7 @@
 #include "winquake.h"
 #include "exefuncs.h"
 #include "gameinfo.h"
+#include "profile.h"
 
 #include <io.h>
 
@@ -833,7 +834,7 @@ DLL_EXPORT int GetGameInfo( struct GameInfo_s* pGI, char* pszChannel )
 	}
 
 #if 0 // TODO: Implement
-	if (pszChannel && *pszChannel && sub_1007A250(pszChannel))
+	if (pszChannel && pszChannel[0] && sub_1007A250(pszChannel))
 	{
 		gi.channel = TRUE;
 	}
@@ -842,38 +843,36 @@ DLL_EXPORT int GetGameInfo( struct GameInfo_s* pGI, char* pszChannel )
 	gi.state = cls.state;
 	gi.signon = cls.signon;
 
-	memset(gi.state_description, 0, sizeof(gi.state_description));
+	memset(gi.szStatus, 0, sizeof(gi.szStatus));
 	switch (cls.state)
 	{
 		case ca_active:
-			sprintf(gi.state_description, "Currently in a game");
+			sprintf(gi.szStatus, "Currently in a game");
 			break;
 		case ca_disconnected:
-			sprintf(gi.state_description, "Disconnected");
+			sprintf(gi.szStatus, "Disconnected");
 			break;
 		case ca_uninitialized:
-#if 0 // TODO: Implement; this needs work on client_static_t
-			if (cls.dl.file)
+			if (cls.dl.download)
 			{
-				sprintf(gi.state_description, "Downloading %s, %i percent complete", &cls.dl.filename, cls.dl.percent);
+				sprintf(gi.szStatus, "Downloading %s, %i percent complete", cls.dl.filename, cls.dl.percent);
 			}
 			else
 			{
-				sprintf(gi.state_description, "Initializing and downloading");
+				sprintf(gi.szStatus, "Initializing and downloading");
 			}
-#endif
 			break;
 		case ca_connected:
-			sprintf(gi.state_description, "Connected to server");
+			sprintf(gi.szStatus, "Connected to server");
 			break;
 		case ca_connecting:
-			sprintf(gi.state_description, "Connecting");
+			sprintf(gi.szStatus, "Connecting");
 			break;
 		case ca_dedicated:
-			sprintf(gi.state_description, "Running dedicated server");
+			sprintf(gi.szStatus, "Running dedicated server");
 			break;
 		default:
-			sprintf(gi.state_description, "?");
+			sprintf(gi.szStatus, "?");
 			break;
 	}
 
@@ -881,18 +880,88 @@ DLL_EXPORT int GetGameInfo( struct GameInfo_s* pGI, char* pszChannel )
 	return TRUE;
 }
 
-void ReloadProfile( char* pszPlayerName )
+// Reload user profile and apply it's settings
+void ExecuteProfileSettings( char* pszName )
 {
-	// TODO: Implement
+	int i;
+	char* keyname, * binding;
+
+	profile_t profile;
+	memset(&profile, 0, sizeof(profile));
+
+	LoadProfile(pszName, &profile);
+
+	// Change the name
+	if (Q_strcmp(cl_name.string, pszName))
+	{
+		Cvar_Set("_cl_name", pszName);
+		Host_ClearSaveDirectory();
+	}
+
+	// Set key bindings
+	for (i = 0; i < 256; i++)
+	{
+		keyname = Key_KeynumToString(i);
+		if (!keyname)
+			continue;
+		if (!_strnicmp(keyname, "<UNK", 4))
+			continue;
+
+		binding = profile.keybindings[i].binding;
+		if (binding && binding[0])
+		{
+			Key_SetBinding(i, binding);
+
+			if (strlen(keyname) == 1)
+			{
+				if (keyname[0] >= 'A' && keyname[0] <= 'Z')
+					Key_SetBinding(keyname[0] + K_SPACE, binding);
+			}
+		}
+	}
+
+	Cvar_SetValue("lookstrafe", profile.keybindings[255].lookstrafe);
+	Cvar_SetValue("lookspring", profile.keybindings[255].lookspring);
+	Cvar_SetValue("crosshair", profile.keybindings[255].crosshair);
+	Cvar_SetValue("_windowed_mouse", profile.keybindings[255].windowed_mouse);
+	Cvar_SetValue("m_pitch", profile.keybindings[255].m_pitch);
+	Cvar_SetValue("m_filter", profile.keybindings[255].mfilter);
+	Cvar_SetValue("joystick", profile.keybindings[255].joystick);
+
+	if (profile.keybindings[255].mlook)
+	{
+		Cbuf_AddText("+mlook\n");
+		Cvar_SetValue("lookstrafe", 0.0);
+		Cvar_SetValue("lookspring", 0.0);
+	}
+	else
+	{
+		Cbuf_AddText("-mlook\n");
+	}
+
+	Cvar_SetValue("sensitivity", profile.keybindings[255].sensitivity);
+	Cvar_SetValue("viewsize", profile.viewsize);
+	Cvar_SetValue("brightness", profile.brightness);
+	Cvar_SetValue("gamma", profile.gamma);
+	Cvar_SetValue("bgmvolume", profile.bgmvolume);
+	Cvar_SetValue("suitvolume", profile.suitvolume);
+	Cvar_SetValue("hisound", profile.hisound);
+	Cvar_SetValue("volume", profile.volume);
+	Cvar_SetValue("a3d", profile.a3d);
+
+	ClearProfileKeyBindings(&profile);
+
+	Cbuf_AddText("exec autoexec.cfg\n");
+	Cbuf_Execute();
 }
 
-DLL_EXPORT void ForceReloadProfile( char* pszPlayerName )
+DLL_EXPORT void ForceReloadProfile( char* pszName )
 {
 	memset(g_szProfileName, 0, sizeof(g_szProfileName));
-	strcpy(g_szProfileName, pszPlayerName);
+	strcpy(g_szProfileName, pszName);
 
 	g_bForceReloadOnCA_Active = TRUE;
-	ReloadProfile(pszPlayerName);
+	ExecuteProfileSettings(pszName);
 }
 
 DLL_EXPORT void SetStartupMode( qboolean bMode )

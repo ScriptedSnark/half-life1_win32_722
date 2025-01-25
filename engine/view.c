@@ -43,8 +43,6 @@ vec3_t		r_playerViewportAngles;
 
 // TODO: Implement
 
-cl_entity_t view;
-
 /*
 ===============
 V_CalcRoll
@@ -52,7 +50,7 @@ V_CalcRoll
 Used by view and sv_user
 ===============
 */
-vec3_t	forward, right, up;
+vec3_t	v_forward, v_right, v_up;
 
 
 
@@ -290,7 +288,11 @@ V_CalcRefdef
 */
 void V_CalcRefdef( void )
 {
+	int				i;
+	vec3_t			angles;
+	vec3_t			forward, right, up;
 	float			bob, waterOffset;
+	static float oldz = 0;
 
 	V_DriftPitch();
 
@@ -329,6 +331,54 @@ void V_CalcRefdef( void )
 	V_AddIdle();
 
 	// TODO: Implement
+
+	// offsets
+	VectorCopy(cl.viewangles, angles);
+
+	AngleVectors(angles, forward, right, up);
+
+	for (i = 0; i < 3; i++)
+		r_refdef.vieworg[i] += scr_ofsx.value * forward[i]
+		+ scr_ofsy.value * right[i]
+		+ scr_ofsz.value * up[i];
+
+	// TODO: Implement
+	
+// set up the refresh position
+	VectorAdd(r_refdef.viewangles, cl.punchangle, r_refdef.viewangles);
+
+// smooth out stair step ups
+	if (cl.onground && (cl.simorg[2] - oldz) > 0)
+	{
+		float steptime;
+
+		steptime = cl.time - cl.oldtime;
+		if (steptime < 0)
+	//FIXME		I_Error ("steptime < 0");
+			steptime = 0;
+
+		oldz += steptime * 80;
+		if (oldz > cl.simorg[2])
+			oldz = cl.simorg[2];
+		if (cl.simorg[2] - oldz > 12)
+			oldz = cl.simorg[2] - 12;
+		r_refdef.vieworg[2] += oldz - cl.simorg[2];
+		// TODO: Implement
+	}
+	else
+		oldz = cl.simorg[2];
+
+	// TODO: Implement
+
+	// override all previous settings if the viewent isn't the client
+	if (cl.viewentity > cl.maxclients)
+	{
+		cl_entity_t* viewentity;
+
+		viewentity = &cl_entities[cl.viewentity];
+		VectorCopy(viewentity->origin, r_refdef.vieworg);
+		VectorCopy(viewentity->angles, r_refdef.viewangles);
+	}
 }
 
 /*
@@ -380,7 +430,7 @@ void V_RenderView( void )
 
 		r_refdef.viewangles[YAW] -= lcd_yaw.value;
 		for (i = 0; i < 3; i++)
-			r_refdef.vieworg[i] -= right[i] * lcd_x.value;
+			r_refdef.vieworg[i] -= v_right[i] * lcd_x.value;
 		R_RenderView();
 
 		vid.buffer += vid.rowbytes >> 1;
@@ -389,7 +439,7 @@ void V_RenderView( void )
 
 		r_refdef.viewangles[YAW] += lcd_yaw.value * 2;
 		for (i = 0; i < 3; i++)
-			r_refdef.vieworg[i] += 2 * right[i] * lcd_x.value;
+			r_refdef.vieworg[i] += 2 * v_right[i] * lcd_x.value;
 		R_RenderView();
 
 		vid.buffer -= vid.rowbytes >> 1;

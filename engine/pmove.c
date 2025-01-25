@@ -3,5 +3,6 @@
 
 movevars_t		movevars;
 
+playermove_t	pmove;
 
-int				onground;
+int			onground;

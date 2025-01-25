@@ -1,6 +1,10 @@
+#if !defined( GAMEINFO_H )
+#define GAMEINFO_H
+#ifdef _WIN32
 #pragma once
+#endif
 
-// Game info retreived by the launcher
+// Game info retrieved by the launcher
 typedef struct GameInfo_s
 {
 	int			build_number;
@@ -19,7 +23,9 @@ typedef struct GameInfo_s
 	qboolean	channel;
 
 	// client
-	char		state_description[64];
+	char		szStatus[64];
 	cactive_t	state; // cls.state
 	int			signon; // signon num
 } GameInfo_t;
+
+#endif // GAMEINFO_H

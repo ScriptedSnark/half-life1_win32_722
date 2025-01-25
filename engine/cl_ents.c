@@ -573,6 +573,7 @@ void CL_ParsePlayerinfo( void )
 	player_state_t* state;
 	int			num;
 	int			i;
+	cl_entity_t* ent;
 	qboolean	spectator = FALSE;
 
 	num = MSG_ReadByte();
@@ -629,23 +630,22 @@ void CL_ParsePlayerinfo( void )
 		usercmd_t nullcmd;
 		memset(&nullcmd, 0, sizeof(nullcmd));
 		MSG_ReadUsercmd(&state->command, &nullcmd);
-		// TODO: Implement
+		VectorCopy(state->command.angles, state->viewangles);
 	}
 	else
 	{
-		// TODO: Implement
+		VectorCopy(vec3_origin, state->viewangles);
 	}
 
 	for (i = 0; i < 3; i++)
 	{
 		if (flags & (4 << i))
 		{
-			MSG_ReadShort(); // TODO: Implement (= to ?)
-			// TODO: Implement
+			state->velocity[i] = MSG_ReadShort();
 		}
 		else
 		{
-			// TODO: Implement
+			state->velocity[i] = 0.0;
 		}
 	}
 
@@ -768,15 +768,53 @@ void CL_ParsePlayerinfo( void )
 		MSG_ReadShort(); // TODO: Implement (info->ping = ???)
 
 	// TODO: Implement
+
+	ent = &cl_entities[num + 1];
+
+	// TODO: Implement
+
+	VectorCopy(state->origin, ent->origin);
+	VectorCopy(state->viewangles, ent->angles);
+
+	// Player pitch is inverted
+	ent->angles[PITCH] /= -3.0;
+
+
+	// TODO: Implement
 }
 
 // TODO: Implement
 
+/*
+==================
+CL_SetUpPlayerPrediction
+
+Calculate the new position of players, without other player clipping
+We do this to set up real player prediction.
+Players are predicted twice, first without clipping other players,
+then with clipping against them.
+This sets up the first phase.
+==================
+*/
 void CL_SetUpPlayerPrediction( qboolean dopred )
 {
 	// TODO: Implement
 }
 
+/*
+=================
+CL_SetSolidPlayers
+
+Builds all the pmove physents for the current frame
+Note that CL_SetUpPlayerPrediction() must be called first!
+pmove must be setup with world and solid entity hulls before calling
+(via CL_PredictMove)
+=================
+*/
+void CL_SetSolidPlayers( int playernum )
+{
+	// TODO: Implement
+}
 
 void CL_EmitEntities( void )
 {

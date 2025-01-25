@@ -550,6 +550,7 @@ void CL_ParsePlayerinfo( void );
 //
 // cl_pred.c
 //
+void CL_InitPrediction( void );
 void CL_PredictMove( void );
 
 

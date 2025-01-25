@@ -54,6 +54,10 @@ DLL_EXPORT int LoadGame( char* pName )
 }
 
 
+void Host_ClearSaveDirectory( void )
+{
+	// TODO: Implement
+}
 
 void Profile_Init( void )
 {

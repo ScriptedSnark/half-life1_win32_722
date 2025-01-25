@@ -2,10 +2,14 @@
 #if !defined( PMOVE_H )
 #define PMOVE_H
 
-// movevars_t                  // Physics variables.
-typedef struct movevars_s movevars_t;
+typedef struct
+{
+	// world state
+	int		numphysent;
+} playermove_t;
 
-struct movevars_s
+// movevars_t                  // Physics variables.
+typedef struct movevars_s
 {
 	float	gravity;           // Gravity for map
 	float	stopspeed;         // Deceleration when not moving
@@ -24,10 +28,10 @@ struct movevars_s
 	float	zmax;			   // Max z-buffer range (for GL)
 	float	waveHeight;		   // Water wave height (for GL)
 	char	skyName[32];	   // Name of the sky map
-};
+} movevars_t;
 
-extern movevars_t	movevars;
-
-extern int			onground;
+extern	movevars_t		movevars;
+extern	playermove_t	pmove;
+extern	int		onground;
 
 #endif // PMOVE_H
