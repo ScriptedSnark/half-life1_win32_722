@@ -233,6 +233,9 @@ typedef struct
 
 	int			flags;			// dead, gib, etc
 
+	float		waterjumptime;
+	int			onground;		// -1 = in air, else pmove entity number
+	int			oldbuttons;
 
 	// Render information
 	int			rendermode;

@@ -13,8 +13,6 @@ CL_PredictUsercmd
 */
 void CL_PredictUsercmd( player_state_t* from, player_state_t* to, usercmd_t* u, qboolean spectator )
 {
-	return; // TODO: Remove
-
 	usercmd_t   cmd;
 
 	// chop up very long commands
@@ -31,7 +29,45 @@ void CL_PredictUsercmd( player_state_t* from, player_state_t* to, usercmd_t* u, 
 		return;
 	}
 
+	memcpy(&cmd, u, sizeof(usercmd_t));
+	memcpy(to, from, sizeof(player_state_t));
+
+	VectorCopy(from->origin, pmove.origin);
+	VectorCopy(from->velocity, pmove.velocity);
+	VectorCopy(from->basevelocity, pmove.basevelocity);
+
+	VectorCopy(cmd.angles, pmove.angles);
+	// Player pitch is inverted
+	pmove.angles[PITCH] /= -3.0;
+	// Normalize YAW
+	if (pmove.angles[YAW] > 180.0)
+		pmove.angles[YAW] -= 360.0;
+	
 	// TODO: Implement
+
+	pmove.friction = from->friction;
+	pmove.oldbuttons = from->oldbuttons;
+	pmove.waterjumptime = from->waterjumptime;
+	pmove.spectator = spectator;
+	pmove.dead = cl.stats[STAT_HEALTH] <= 0;
+	pmove.movetype = from->movetype;
+	pmove.gravity = 1.0;
+	pmove.flags = from->flags;
+
+
+	// TODO: Implement
+
+
+	VectorCopy(pmove.origin, to->origin);
+	VectorCopy(pmove.velocity, to->velocity);
+	VectorCopy(pmove.basevelocity, to->basevelocity);
+
+	to->waterjumptime = pmove.waterjumptime;
+//	to->oldbuttons = pmove.cmd.buttons; TODO: Implement
+	to->onground = onground;
+	to->friction = pmove.friction;
+	to->movetype = pmove.movetype;
+	to->flags = pmove.flags;
 }
 
 
@@ -125,6 +161,25 @@ void CL_PredictMove( void )
 
 		if (f < 0)
 			f = 0;
+	}
+
+	for (i = 0; i < 3; i++)
+	{
+		if (fabs(to->playerstate[cl.playernum].origin[i] - from->playerstate[cl.playernum].origin[i]) > 128)
+		{	// teleported, so don't lerp
+			VectorCopy(to->playerstate[cl.playernum].velocity, cl.simvel);
+			VectorCopy(to->playerstate[cl.playernum].origin, cl.simorg);
+			// TODO: Implement
+			return;
+		}
+	}
+
+	for (i = 0; i < 3; i++)
+	{
+		cl.simorg[i] = from->playerstate[cl.playernum].origin[i]
+			+ f * (to->playerstate[cl.playernum].origin[i] - from->playerstate[cl.playernum].origin[i]);
+		cl.simvel[i] = from->playerstate[cl.playernum].velocity[i]
+			+ f * (to->playerstate[cl.playernum].velocity[i] - from->playerstate[cl.playernum].velocity[i]);
 	}
 
 	// TODO: Implement
