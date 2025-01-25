@@ -50,7 +50,8 @@ void GL_UnloadTextures( void );
 
 void GL_SelectTexture( GLenum target );
 
-
+void GL_PaletteClearSky( void );
+short GL_PaletteAdd( unsigned char* pPal, qboolean isSky );
 
 void GLBeginHud( void );
 void GLFinishHud( void );
@@ -144,6 +145,8 @@ extern	cvar_t	gl_envmapsize;
 extern	cvar_t	gl_flipmatrix;
 
 extern	cvar_t	gl_ztrick;
+
+extern	cvar_t	gl_palette_tex;
 
 extern	int		gl_lightmap_format;
 

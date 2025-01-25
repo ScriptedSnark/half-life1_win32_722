@@ -1,6 +1,7 @@
 // gl_warp.c -- sky and water polygons
 
 #include "quakedef.h"
+#include "pr_cmds.h"
 #include "gl_water.h"
 
 extern model_t* loadmodel;
@@ -609,13 +610,126 @@ void LoadTGA( FILE* fin, byte* buffer )
 	fclose(fin);
 }
 
+/*
+==================
+R_LoadSkys
+==================
+*/
+char* suf[6] = { "rt", "bk", "lf", "ft", "up", "dn" };
 
-// TODO: Implement
-
-
+int gLoadSky = FALSE, gSkyTexNumber[6];
 void R_LoadSkys( void )
 {
-	// TODO: Implement
+	int			i, j, skipBMP;
+	char		name[MAX_QPATH];
+	byte* buffer;
+
+	if (!gLoadSky)
+	{
+		int skytexture;
+		for (i = 0; i < 6; i++)
+		{
+			skytexture = 2000 + i;
+			qglDeleteTextures(1, &skytexture);
+		}
+		return;
+	}
+
+	if (qglColorTableEXT && gl_palette_tex.value)
+	{
+		skipBMP = FALSE;
+		GL_PaletteClearSky();
+	}
+	else
+	{
+		skipBMP = TRUE;
+	}
+
+	buffer = (byte*)malloc((256 * 256) * 4);
+
+retry:
+	for (i = 0; i < 6; i++)
+	{
+		int loadedBMP = FALSE, palCount, paletteIndex;
+		byte* packPalette, * pImage;
+		int hFile[3];
+		FILE* phFile[2];
+
+		sprintf(name, "gfx/env/%s%s.bmp", cl_skyname.string, suf[i]);
+
+		if (!skipBMP && COM_OpenFile(name, hFile) > 0)
+		{
+			LoadBMP8(hFile, &packPalette, &palCount, &pImage);
+			if (phFile[1])
+			{
+				paletteIndex = GL_PaletteAdd(packPalette, TRUE);
+				if (paletteIndex >= 0)
+				{
+					GL_Bind(2000 + i);
+					loadedBMP = TRUE;
+					qglTexImage2D(GL_TEXTURE_2D, 0, GL_COLOR_INDEX8_EXT, 256, 256, 0, GL_COLOR_INDEX, GL_UNSIGNED_BYTE, pImage);
+					gSkyTexNumber[i] = 2000 + i + 65536 + (paletteIndex << 16);
+				}
+
+				free(pImage);
+				free(packPalette);
+			}
+		}
+
+		if (!loadedBMP)
+		{
+			skipBMP = TRUE;
+			sprintf(name, "gfx/env/%s%s.tga", cl_skyname.string, suf[i]);
+
+			COM_FOpenFile(name, phFile);
+			if (!phFile[0])
+			{
+				Con_Printf("Couldn't load %s\n", name);
+
+				if ((i * 4) == 0 && strcmp(cl_skyname.string, "desert"))
+				{
+					Cvar_Set("cl_skyname", "desert");
+					goto retry;
+				}
+				continue;
+			}
+
+			LoadTGA(phFile[0], buffer);
+
+			if (gl_dither.value)
+			{
+				for (j = 0; j < (256 * 256) * 4; j += 4)
+				{
+					if (buffer[j + 0] < 252)
+						buffer[j + 0] += RandomLong(0, 3);
+					if (buffer[j + 1] < 252)
+						buffer[j + 1] += RandomLong(0, 3);
+					if (buffer[j + 2] < 252)
+						buffer[j + 2] += RandomLong(0, 3);
+				}
+			}
+
+			GL_Bind(2000 + i);
+			qglTexImage2D(GL_TEXTURE_2D, 0, 3, 256, 256, 0, GL_RGBA, GL_UNSIGNED_BYTE, buffer);
+			gSkyTexNumber[i] = 2000 + i;
+		}
+
+		qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+		if (loadedBMP)
+		{
+			Con_DPrintf("Loading paletted sky %s\n", name);
+		}
+		else
+		{
+			Con_DPrintf("SKY: %s\n", name);
+		}
+	}
+
+	free(buffer);
+
+	gLoadSky = FALSE; // mark as loaded
 }
 
 
