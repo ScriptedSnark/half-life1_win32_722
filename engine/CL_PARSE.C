@@ -1084,7 +1084,14 @@ void CL_ParseMovevars( void )
 	if (strcmp(movevars.skyName, cl_skyname.string))
 		Cvar_Set("cl_skyname", movevars.skyName);
 
-	// TODO: Implement
+#if defined( GLQUAKE )
+	if (movevars.zmax != gl_zmax.value)
+		Cvar_SetValue("gl_zmax", movevars.zmax);
+	if (gl_wateramp.value != movevars.waveHeight)
+		Cvar_SetValue("gl_wateramp", movevars.waveHeight);
+
+	cl_entities->scale = gl_wateramp.value;
+#endif
 }
 
 

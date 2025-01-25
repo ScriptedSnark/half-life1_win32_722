@@ -192,13 +192,75 @@ float	turbsin[] =
 };
 #define TURBSCALE (256.0 / (2 * M_PI))
 
+/*
+=============
+D_SetFadeColor
 
-// TODO: Implement
+Set the color and fog parameters for a water surface
+=============
+*/
+void D_SetFadeColor( int r, int g, int b, int fog )
+{
+	gWaterColor.r = r;
+	gWaterColor.g = g;
+	gWaterColor.b = b;
 
+	cshift_water.destcolor[0] = r;
+	cshift_water.destcolor[1] = g;
+	cshift_water.destcolor[2] = b;
+	cshift_water.percent = fog;
+}
 
 void EmitWaterPolys( msurface_t* fa, int direction )
 {
-	// TODO: Implement
+	glpoly_t* p;
+	float* v;
+	int			i;
+	float		s, t, os, ot, scale;
+	float		tempVert[3];
+	byte* pSourcePalette;
+
+	pSourcePalette = fa->texinfo->texture->pPal;
+	D_SetFadeColor(pSourcePalette[9], pSourcePalette[10], pSourcePalette[11], pSourcePalette[12]);
+
+	if (fa->polys->verts[0][2] >= r_refdef.vieworg[2])
+		scale = -currententity->scale;
+	else
+		scale = currententity->scale;
+
+	for (p = fa->polys; p; p = p->next)
+	{
+		qglBegin(GL_POLYGON);
+		if (direction)
+			v = p->verts[p->numverts - 1];
+		else
+			v = p->verts[0];
+
+		for (i = 0; i < p->numverts; i++)
+		{
+			os = v[3];
+			ot = v[4];
+
+			VectorCopy(v, tempVert);
+			s = turbsin[(int)(cl.time * 160.0 + v[0] + v[1]) & 255] + 8.0;
+			s += (turbsin[(int)(cl.time * 171.0 + v[0] * 5.0 - v[1]) & 255] + 8.0) * 0.8;
+			tempVert[2] += s * scale;
+
+			s = os + turbsin[(int)((ot * 0.125 + cl.time) * TURBSCALE) & 255];
+			s *= (1.0 / 64);
+			t = ot + turbsin[(int)((os * 0.125 + cl.time) * TURBSCALE) & 255];
+			t *= (1.0 / 64);
+
+			qglTexCoord2f(s, t);
+			qglVertex3fv(tempVert);
+
+			if (direction)
+				v -= VERTEXSIZE;
+			else
+				v += VERTEXSIZE;
+		}
+		qglEnd();
+	}
 }
 
 
