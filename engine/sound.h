@@ -56,6 +56,16 @@ extern volatile dma_t sn;
 
 
 
+
+extern int snd_blocked;
+
+extern int sound_started;
+
+
+
+
+
+
 DLL_EXPORT void Snd_ReleaseBuffer( void );
 DLL_EXPORT void Snd_AcquireBuffer( void );
 
@@ -66,6 +76,7 @@ void S_LocalSound( char* s );
 #ifdef __USEA3D
 extern qboolean snd_isa3d;
 
+extern	cvar_t	a3d;
 
 #endif
 

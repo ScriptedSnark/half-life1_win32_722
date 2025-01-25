@@ -627,8 +627,247 @@ qboolean SNDDMA_InitWav( void )
 	return TRUE;
 }
 
+/*
+==================
+SNDDMA_Init
 
+Try to find a sound device to mix for.
+Returns false if nothing is found.
+==================
+*/
+qboolean SNDDMA_Init( void )
+{
+	sndinitstat	stat;
 
+	if (COM_CheckParm("-wavonly"))
+		wavonly = TRUE;
+
+	dsound_init = wav_init = FALSE;
+
+	stat = SIS_FAILURE;	// assume DirectSound won't initialize
+
+#if defined (__USEA3D)
+	if (!wavonly && a3d.value)
+	{
+		// MM - 7/2/98
+		stat = SNDDMA_InitA3D();
+	}
+
+	if (stat == SIS_SUCCESS)
+	{
+		Con_DPrintf("Aureal A3D initialized\n");
+
+		if (!snd_firsttime)
+			hA3D_PrecacheSources();
+
+		snd_isa3d = TRUE;
+		snd_isdirect = FALSE;
+	}
+	else if (stat == SIS_FAKEA3D)
+	{
+		// Preferably, this will have a GUI event associated with it to inform
+		// the user that they have an invalid A3D.dll
+		Con_DPrintf("Non-Aureal A3D.dll found.  This is an unsupported version of A3D.\nDropping to Direct Sound\n");
+		snd_isa3d = FALSE;
+}
+	else
+	{
+		Con_DPrintf("Aureal A3D initialization failed.  Dropping to Direct Sound\n");
+		snd_isa3d = FALSE;
+	}
+
+	// If A3D failed to initialize, drop to ds.
+	if (!snd_isa3d)
+	{
+		a3d.value = 0.0;
+#endif
+
+	/* Init DirectSound */
+	if (!wavonly && Win32AtLeastV4)
+	{
+		if (snd_firsttime || snd_isdirect)
+		{
+			stat = SNDDMA_InitDirect();
+
+			if (stat == SIS_SUCCESS)
+			{
+				snd_isdirect = TRUE;
+
+				if (snd_firsttime)
+					Con_DPrintf("DirectSound initialized\n");
+			}
+			else
+			{
+				snd_isdirect = FALSE;
+				Con_DPrintf("DirectSound failed to init\n");
+			}
+		}
+	}
+
+// if DirectSound didn't succeed in initializing, try to initialize
+// waveOut sound, unless DirectSound failed because the hardware is
+// already allocated (in which case the user has already chosen not
+// to have sound)
+	if (!dsound_init && (stat != SIS_NOTAVAIL))
+	{
+		if (snd_firsttime || snd_iswave)
+		{
+			snd_iswave = SNDDMA_InitWav();
+
+			if (snd_iswave)
+			{
+				if (snd_firsttime)
+					Con_DPrintf("Wave sound initialized\n");
+			}
+			else
+			{
+				Con_DPrintf("Wave sound failed to init\n");
+			}
+		}
+	}
+
+#if defined (__USEA3D)
+	}
+#endif
+
+	snd_firsttime = FALSE;
+	snd_buffer_count = 1;
+
+#if defined (__USEA3D)
+	if (!snd_isa3d && !dsound_init && !wav_init)
+#else
+	if (!dsound_init && !wav_init)
+#endif
+	{
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
+/*
+==============
+SNDDMA_GetDMAPos
+
+return the current sample position (in mono samples read)
+inside the recirculating dma buffer, so the mixing code will know
+how many sample are required to fill it up.
+===============
+*/
+int SNDDMA_GetDMAPos( void )
+{
+	MMTIME	mmtime;
+	int		s = 0;
+	DWORD	dwWrite = 0;
+
+#if defined (__USEA3D)
+	if (snd_isa3d)
+	{
+		// TODO: Implement
+	}
+	else
+	{
+#endif
+		if (dsound_init)
+		{
+			mmtime.wType = TIME_SAMPLES;
+			pDSBuf->lpVtbl->GetCurrentPosition(pDSBuf, &mmtime.u.sample, &dwWrite);
+			s = mmtime.u.sample - mmstarttime.u.sample;
+		}
+		else if (wav_init)
+		{
+			s = snd_sent * WAV_BUFFER_SIZE;
+		}
+#if defined (__USEA3D)
+	}
+#endif
+
+	s >>= sample16;
+
+	s &= (shm->samples - 1);
+
+	return s;
+}
+
+#if defined (__USEA3D)
+/*
+==============
+SNDDMA_BeginPainting
+
+Makes sure dma.buffer is valid
+===============
+*/
+void SNDDMA_BeginPainting( void )
+{
+	// TODO: Implement
+}
+#endif
+
+/*
+==============
+SNDDMA_Submit
+
+Send sound to device if buffer isn't really the dma buffer
+===============
+*/
+void SNDDMA_Submit( void )
+{
+	LPWAVEHDR	h;
+	int			wResult;
+
+#if defined (__USEA3D)
+	if (snd_isa3d)
+	{
+		// TODO: Implement
+		return;
+	}
+#endif
+
+	if (!wav_init)
+		return;
+
+	//
+	// find which sound blocks have completed
+	//
+	while (1)
+	{
+		if (snd_completed == snd_sent)
+		{
+			Con_DPrintf("Sound overrun\n");
+			break;
+		}
+
+		if (!(lpWaveHdr[snd_completed & WAV_MASK].dwFlags & WHDR_DONE))
+		{
+			break;
+		}
+
+		snd_completed++;	// this buffer has been played
+	}
+
+	//
+	// submit two new sound blocks
+	//
+	while (((snd_sent - snd_completed) >> sample16) < 8)
+	{
+		h = &lpWaveHdr[snd_sent & WAV_MASK];
+
+		snd_sent++;
+		/*
+		*	Now the data block can be sent to the output device. The
+		*	waveOutWrite function returns immediately and waveform
+		*	data is sent to the output device in the background.
+		*/
+		wResult = waveOutWrite(hWaveOut, h, sizeof(WAVEHDR));
+
+		if (wResult != MMSYSERR_NOERROR)
+		{
+			Con_SafePrintf("Failed to write block to device\n");
+			FreeSound();
+			return;
+		}
+	}
+}
 
 /*
 ==============
@@ -639,5 +878,190 @@ Reset the sound device for exiting
 */
 void SNDDMA_Shutdown( void )
 {
-	// TODO: Implement
+	FreeSound();
 }
+
+#if defined (__USEA3D)
+sndinitstat SNDDMA_InitA3D( void )
+{
+	HRESULT			hresult;
+
+	OutputDebugString("Initializing Aureal A3D...\n");
+
+	shm = &sn;
+
+	shm->channels = 2;
+	shm->samplebits = 16;
+	shm->speed = 11025;
+	shm->dmaspeed = SOUND_DMA_SPEED;
+
+	Con_Printf("Initializing Aureal A3D...\n");
+
+	gSndBufSize = SECONDARY_BUFFER_SIZE;
+
+	// TODO: Implement
+
+	hresult = hA3D_Init(*pmainwindow, 32, shm->dmaspeed, shm->samplebits);
+	if (SUCCEEDED(hresult))
+	{
+//		DWORD dwWrite;
+
+		Con_Printf("ok\n");
+
+		OutputDebugString("A3D Initialized successfully\n");
+
+		if (snd_firsttime)
+		{
+			Con_DPrintf(
+				"A3D Initialized successfully\n"
+				"   %d channel(s)\n"
+				"   %d bits/sample\n"
+				"   %d bytes/sec in software\n"
+				"   %d bytes/sec in hardware\n",
+				shm->channels, shm->samplebits, shm->speed, shm->dmaspeed);
+		}
+
+		gSndBufSize = SECONDARY_BUFFER_SIZE;
+		shm->samples = gSndBufSize / (shm->samplebits / 8);
+		shm->samplepos = 0;
+		shm->submission_chunk = 1;
+		shm->buffer = (unsigned char*)NULL;
+		sample16 = (shm->samplebits / 8) - 1;
+
+		// AGW - set mm start time
+//		hA3D_StartMixBuffer(); TODO: Implement
+//		A3D_GetMixBufferPos(&mmstarttime.u.sample, &dwWrite); TODO: Implement
+
+		return SIS_SUCCESS;
+	}
+	else if (hresult == A3D_FAKE)
+	{
+		// Found an imposter!!!
+		return SIS_FAKEA3D;
+	}
+
+	gSndBufSize = 0;
+
+	Con_Printf("failed\n");
+	return SIS_FAILURE;
+}
+
+// This is a console function to dynamically shutdown A3D and start up
+// directsound.
+void S_disableA3D( void )
+{
+	sndinitstat	stat;
+
+	// If A3D failed to initialize, drop to ds.
+	if (!snd_isa3d)
+	{
+		Con_Printf("A3D is not currently running.\n");
+		return;
+	}
+
+	sound_started = FALSE;
+	SNDDMA_Shutdown();
+
+	memset((void*)shm, 0, sizeof(dma_t));
+
+	snd_isa3d = dsound_init = wav_init = FALSE;
+	stat = SIS_FAILURE;	// assume DirectSound won't initialize
+
+
+	/* Init DirectSound */
+	if (!wavonly && Win32AtLeastV4)
+	{
+		stat = SNDDMA_InitDirect();
+
+		if (stat == SIS_SUCCESS)
+		{
+			snd_isdirect = TRUE;
+			sound_started = TRUE;
+
+			if (snd_firsttime)
+				Con_Printf("dsound init succeeded\n");
+		}
+		else
+		{
+			snd_isdirect = FALSE;
+			Con_Printf("*** dsound init failed ***\n");
+		}
+	}
+
+// if DirectSound didn't succeed in initializing, try to initialize
+// waveOut sound, unless DirectSound failed because the hardware is
+// already allocated (in which case the user has already chosen not
+// to have sound)
+	if (!dsound_init && (stat != SIS_NOTAVAIL))
+	{
+		if (snd_firsttime || snd_iswave)
+		{
+			snd_iswave = SNDDMA_InitWav();
+
+			if (snd_iswave)
+			{
+				sound_started = TRUE;
+				if (snd_firsttime)
+					Con_Printf("Wave sound init succeeded\n");
+			}
+			else
+			{
+				Con_Printf("Wave sound init failed\n");
+			}
+		}
+	}
+
+	snd_firsttime = FALSE;
+	snd_buffer_count = 1;
+}
+
+// This is a console function to dynamically shutdown directsound and start up
+// A3D.
+void S_enableA3D( void )
+{
+	sndinitstat	stat;
+
+	// Is A3D already enabled.
+	if (snd_isa3d)
+	{
+		Con_Printf("A3D already enabled\n");
+		return;
+	}
+
+	sound_started = FALSE;
+	SNDDMA_Shutdown();
+
+	memset((void*)shm, 0, sizeof(dma_t));
+
+	dsound_init = wav_init = FALSE;
+	stat = SIS_FAILURE;	// assume DirectSound won't initialize
+
+	stat = SNDDMA_InitA3D();
+
+	if (stat == SIS_SUCCESS)
+	{
+		Con_DPrintf("Aureal A3D initialized\n");
+
+		snd_isdirect = FALSE;
+		snd_isa3d = TRUE;		
+		sound_started = TRUE;
+	}
+	else if (stat == SIS_FAKEA3D)
+	{
+		// Preferably, this will have a GUI event associated with it to inform
+		// the user that they have an invalid A3D.dll
+		Con_DPrintf("Non-Aureal A3D.dll found.  This is an unsupported version A3D.\nDropping to Direct Sound\n");
+		snd_isa3d = FALSE;
+
+		S_disableA3D();
+	}
+	else
+	{
+		Con_DPrintf("Aureal A3D initialization failed.  Dropping to Direct Sound\n");
+		snd_isa3d = FALSE;
+
+		S_disableA3D();
+	}
+}
+
+#endif // __USEA3D

@@ -3,6 +3,18 @@
 #include "quakedef.h"
 
 
+#ifdef __USEA3D
+void S_enableA3D( void );
+void S_disableA3D( void );
+#endif
+
+// =======================================================================
+// Internal sound data & structures
+// =======================================================================
+
+
+
+
 int				snd_blocked = 0;
 
 
@@ -13,10 +25,29 @@ volatile dma_t sn;
 
 
 
+
+
+int			sound_started = 0;
+
+
+
+
+
+
+
+
 #ifdef __USEA3D
 qboolean snd_isa3d;
 
+cvar_t a3d = { "a3d", "0" };
+
 #endif
+
+
+
+qboolean fakedma = FALSE;
+
+
 
 
 /*
@@ -37,7 +68,30 @@ S_Init
 */
 void S_Init( void )
 {
-	Con_DPrintf("Sound Initialization\n");
+	Con_DPrintf("\nSound Initialization\n");
+
+	// TODO: Implement
+
+	if (COM_CheckParm("-nosound"))
+		return;
+
+	if (COM_CheckParm("-simsound"))
+		fakedma = TRUE;
+
+	// TODO: Implement
+
+#ifdef __USEA3D
+
+	Cmd_AddCommand("enable_a3d", S_enableA3D);
+	Cmd_AddCommand("disable_a3d", S_disableA3D);
+
+	// TODO: Implement
+
+
+
+	Cvar_RegisterVariable(&a3d);
+
+#endif
 
 	// TODO: Implement
 }

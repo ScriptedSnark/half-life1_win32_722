@@ -92,6 +92,7 @@
     <ClCompile Include="..\..\engine\CONSOLE.C" />
     <ClCompile Include="..\..\engine\crc.c" />
     <ClCompile Include="..\..\engine\cvar.c" />
+    <ClCompile Include="..\..\engine\ha3d.c" />
     <ClCompile Include="..\..\engine\hashpak.c" />
     <ClCompile Include="..\..\engine\host.c" />
     <ClCompile Include="..\..\engine\host_cmd.c" />

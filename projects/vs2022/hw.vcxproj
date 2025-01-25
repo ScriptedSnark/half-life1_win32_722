@@ -41,6 +41,7 @@
     <ClCompile Include="..\..\engine\gl_screen.c" />
     <ClCompile Include="..\..\engine\GL_VIDNT.C" />
     <ClCompile Include="..\..\engine\GL_WARP.C" />
+    <ClCompile Include="..\..\engine\ha3d.c" />
     <ClCompile Include="..\..\engine\hashpak.c" />
     <ClCompile Include="..\..\engine\host.c" />
     <ClCompile Include="..\..\engine\host_cmd.c" />
