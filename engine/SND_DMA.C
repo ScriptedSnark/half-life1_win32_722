@@ -3,6 +3,9 @@
 #include "quakedef.h"
 
 
+int				snd_blocked = 0;
+
+
 
 // pointer should go away
 volatile dma_t* shm = 0;
@@ -14,6 +17,18 @@ volatile dma_t sn;
 qboolean snd_isa3d;
 
 #endif
+
+
+/*
+================
+S_Startup
+================
+*/
+
+void S_Startup( void )
+{
+	// TODO: Implement
+}
 
 /*
 ================

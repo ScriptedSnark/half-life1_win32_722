@@ -327,8 +327,7 @@ sndinitstat SNDDMA_InitDirect( void )
 		}
 
 		if (MessageBox(NULL,
-			"The sound hardware is in use by another app.\n"
-			"\n"
+			"The sound hardware is in use by another app.\n\n"
 			"Select Retry to try to start sound again or Cancel to run Half-Life with no sound.",
 			"Sound not available",
 			MB_RETRYCANCEL | MB_SETFOREGROUND | MB_ICONEXCLAMATION) != IDRETRY)
@@ -499,6 +498,135 @@ sndinitstat SNDDMA_InitDirect( void )
 
 	return SIS_SUCCESS;
 }
+
+/*
+==================
+SNDDM_InitWav
+
+Crappy windows multimedia base
+==================
+*/
+qboolean SNDDMA_InitWav( void )
+{
+	WAVEFORMATEX  format;
+	int				i;
+	HRESULT			hr;
+
+	snd_sent = 0;
+	snd_completed = 0;
+
+	shm = &sn;
+
+	shm->channels = 2;
+	shm->samplebits = 16;
+	shm->speed = 11025;
+	shm->dmaspeed = SOUND_DMA_SPEED;
+
+	memset(&format, 0, sizeof(format));
+	format.wFormatTag = WAVE_FORMAT_PCM;
+	format.nChannels = shm->channels;
+	format.wBitsPerSample = shm->samplebits;
+	format.nSamplesPerSec = shm->dmaspeed;
+	format.nBlockAlign = format.nChannels * format.wBitsPerSample / 8;
+	format.cbSize = 0;
+	format.nAvgBytesPerSec = format.nSamplesPerSec * format.nBlockAlign;
+
+	/* Open a waveform device for output using window callback. */
+	while (hr = waveOutOpen(&hWaveOut, WAVE_MAPPER, &format, 0, 0, CALLBACK_NULL) != MMSYSERR_NOERROR)
+	{
+		if (hr != MMSYSERR_ALLOCATED)
+		{
+			Con_DPrintf("waveOutOpen failed\n");
+			return FALSE;
+		}
+
+		if (MessageBox(NULL,
+			"The sound hardware is in use by another app.\n\n"
+			"Select Retry to try to start sound again or Cancel to run Half-Life with no sound.",
+			"Sound not available",
+			MB_RETRYCANCEL | MB_SETFOREGROUND | MB_ICONEXCLAMATION) != IDRETRY)
+		{
+			Con_SafePrintf("waveOutOpen failure;\n  hardware already in use\n");
+			return FALSE;
+		}		
+	}
+
+	/*
+	*	Allocate and lock memory for the waveform data. The memory
+	*	for waveform data must be globally allocated with
+	*	GMEM_MOVEABLE and GMEM_SHARE flags.
+	*/
+	gSndBufSize = WAV_BUFFERS * WAV_BUFFER_SIZE;
+	hData = GlobalAlloc(GMEM_MOVEABLE | GMEM_SHARE, gSndBufSize);	
+	if (!hData)
+	{
+		Con_SafePrintf("Sound: Out of memory.\n");
+		FreeSound();
+		return FALSE;
+	}
+	lpData = (HPSTR)GlobalLock(hData);
+	if (!lpData)
+	{
+		Con_SafePrintf("Sound: Failed to lock.\n");
+		FreeSound();
+		return FALSE;
+	}
+	memset(lpData, 0, gSndBufSize);
+
+	/*
+	*	Allocate and lock memory for the header. This memory must
+	*	also be globally allocated with GMEM_MOVEABLE and
+	*	GMEM_SHARE flags.
+	*/
+	hWaveHdr = GlobalAlloc(GMEM_MOVEABLE | GMEM_SHARE,
+		(DWORD)sizeof(WAVEHDR) * WAV_BUFFERS);
+
+	if (hWaveHdr == NULL)
+	{
+		Con_SafePrintf("Sound: Failed to Alloc header.\n");
+		FreeSound();
+		return FALSE;
+	}
+
+	lpWaveHdr = (LPWAVEHDR)GlobalLock(hWaveHdr);
+
+	if (lpWaveHdr == NULL)
+	{
+		Con_SafePrintf("Sound: Failed to lock header.\n");
+		FreeSound();
+		return FALSE;
+	}
+
+	memset(lpWaveHdr, 0, sizeof(WAVEHDR) * WAV_BUFFERS);
+
+	/* After allocation, set up and prepare headers. */
+	for (i = 0; i < WAV_BUFFERS; i++)
+	{
+		lpWaveHdr[i].dwBufferLength = WAV_BUFFER_SIZE;
+		lpWaveHdr[i].lpData = lpData + i * WAV_BUFFER_SIZE;
+
+		if (waveOutPrepareHeader(hWaveOut, lpWaveHdr + i, sizeof(WAVEHDR)) !=
+			MMSYSERR_NOERROR)
+		{
+			Con_SafePrintf("Sound: failed to prepare wave headers\n");
+			FreeSound();
+			return FALSE;
+		}
+	}
+
+	shm->soundalive = TRUE;
+	shm->splitbuffer = FALSE;
+	shm->samples = gSndBufSize / (shm->samplebits / 8);
+	shm->samplepos = 0;
+	shm->submission_chunk = 1;
+	shm->buffer = (unsigned char*)lpData;
+	sample16 = (shm->samplebits / 8) - 1;
+
+	wav_init = TRUE;
+
+	return TRUE;
+}
+
 
 
 
