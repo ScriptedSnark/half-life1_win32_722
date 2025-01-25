@@ -741,7 +741,7 @@ void SCR_UpdateScreen( void )
 	}
 	else
 	{
-//		GL_Bind(r_notexture_mip->gl_texturenum); TODO: Implement
+		GL_Bind(r_notexture_mip->gl_texturenum);
 
 		if (vid.height > scr_con_current)
 			Sbar_Draw();

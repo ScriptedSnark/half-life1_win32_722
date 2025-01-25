@@ -83,6 +83,59 @@ void R_InitTextures( void )
 	}
 }
 
+void R_UploadEmptyTex( void )
+{
+	byte pPal[768];
+	memset(pPal, 0, sizeof(pPal));
+	pPal[765] = 255;	// r
+	pPal[766] = 0;		// g
+	pPal[767] = 255;	// b
+
+	r_notexture_mip->gl_texturenum = GL_LoadTexture("**empty**", GLT_SYSTEM, r_notexture_mip->width, r_notexture_mip->height, (byte*)(r_notexture_mip + 1), TRUE, TEX_TYPE_NONE, pPal);
+}
+
+byte	dottexture[8][8] =
+{
+	{0,1,1,0,0,0,0,0},
+	{1,1,1,1,0,0,0,0},
+	{1,1,1,1,0,0,0,0},
+	{0,1,1,0,0,0,0,0},
+	{0,0,0,0,0,0,0,0},
+	{0,0,0,0,0,0,0,0},
+	{0,0,0,0,0,0,0,0},
+	{0,0,0,0,0,0,0,0},
+};
+void R_InitParticleTexture( void )
+{
+	int		x, y;
+	byte	data[8][8][4];
+
+	//
+	// particle texture
+	//
+	particletexture = texture_extension_number++;
+	GL_Bind(particletexture);
+
+	for (x = 0; x < 8; x++)
+	{
+		for (y = 0; y < 8; y++)
+		{
+			data[y][x][0] = 255;
+			data[y][x][1] = 255;
+			data[y][x][2] = 255;
+			data[y][x][3] = dottexture[x][y] * 255;
+		}
+	}
+	qglTexImage2D(GL_TEXTURE_2D, 0, 4, 8, 8, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+
+	qglTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+
+	qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+}
+
+// TODO: Implement
+
 /*
 ====================
 R_Init
@@ -135,7 +188,8 @@ void R_Init( void )
 
 	// TODO: Implement
 	
-//	R_InitParticleTexture(); TODO: Implement
+	R_InitParticleTexture();
+	R_UploadEmptyTex();
 
 	// TODO: Implement
 
