@@ -126,6 +126,14 @@ void R_ClearSkyBox( void );
 
 
 
+//
+// surface cache related
+//
+
+extern qboolean	r_cache_thrash;	// set if thrashing the surface cache
+
+void D_FlushCaches( void );
+
 void R_SetStackBase( void );
 
 // TODO: Implement

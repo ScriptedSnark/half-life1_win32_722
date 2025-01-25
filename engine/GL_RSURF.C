@@ -3,11 +3,6 @@
 #include "cmodel.h"
 #include "gl_water.h"
 
-#define	BLOCK_WIDTH		128
-#define	BLOCK_HEIGHT	128
-
-#define	MAX_LIGHTMAPS	64
-
 #define MAX_DECALSURFS		500
 
 int		lightmap_bytes;		// 1, 2, or 4
@@ -17,6 +12,10 @@ int		lightmap_textures;
 #define MAX_BLOCK_LIGHTS	(18 * 18)
 colorVec blocklights[MAX_BLOCK_LIGHTS];
 
+#define	BLOCK_WIDTH		128
+#define	BLOCK_HEIGHT	128
+
+#define	MAX_LIGHTMAPS	64
 int			active_lightmaps;
 
 typedef struct
@@ -37,6 +36,7 @@ int gDecalSurfCount;
 // the lightmap texture data needs to be kept in
 // main memory so texsubimage can update properly
 byte		lightmaps[4 * MAX_LIGHTMAPS * BLOCK_WIDTH * BLOCK_HEIGHT];
+
 // For gl_texsort 0
 msurface_t* skychain;
 msurface_t* waterchain;
@@ -300,12 +300,40 @@ Warp the vertex coordinates
 */
 void DrawGLWaterPoly( glpoly_t* p )
 {
-	// TODO: Implement
+	int		i;
+	float*	v;
+	vec3_t	nv;
+
+	qglBegin(GL_TRIANGLE_FAN);
+	v = p->verts[0];
+	for (i = 0; i < p->numverts; i++, v += VERTEXSIZE)
+	{
+		qglTexCoord2f(v[3], v[4]);
+		nv[0] = v[0] + 8 * sin(v[1] * 0.05 + realtime) * sin(v[2] * 0.05 + realtime);
+		nv[1] = v[1] + 8 * sin(v[0] * 0.05 + realtime) * sin(v[2] * 0.05 + realtime);
+		nv[2] = v[2];
+		qglVertex3fv(nv);
+	}
+	qglEnd();
 }
 
 void DrawGLWaterPolyLightmap( glpoly_t* p )
 {
-	// TODO: Implement
+	int		i;
+	float*	v;
+	vec3_t	nv;
+
+	qglBegin(GL_TRIANGLE_FAN);
+	v = p->verts[0];
+	for (i = 0; i < p->numverts; i++, v += VERTEXSIZE)
+	{
+		qglTexCoord2f(v[5], v[6]);
+		nv[0] = v[0] + 8 * sin(v[1] * 0.05 + realtime) * sin(v[2] * 0.05 + realtime);
+		nv[1] = v[1] + 8 * sin(v[0] * 0.05 + realtime) * sin(v[2] * 0.05 + realtime);
+		nv[2] = v[2];
+		qglVertex3fv(nv);
+	}
+	qglEnd();
 }
 
 /*

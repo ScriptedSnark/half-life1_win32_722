@@ -382,6 +382,8 @@ int VID_Init( word* palette )
 
 	// TODO: Implement
 
+	Cmd_AddCommand("gl_log", GLimp_EnableLogging);
+
 	VID_GetVID(&vid);
 
 	return 1;

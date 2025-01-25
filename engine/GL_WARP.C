@@ -222,6 +222,8 @@ R_DrawSkyChain
 void R_DrawSkyChain( msurface_t* s )
 {
 	// TODO: Implement
+
+	R_DrawSkyBox();
 }
 
 
@@ -241,6 +243,8 @@ void R_ClearSkyBox( void )
 
 void R_DrawSkyBox( void )
 {
+	GL_DisableMultitexture();
+
 	// TODO: Implement
 }
 

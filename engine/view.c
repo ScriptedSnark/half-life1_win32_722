@@ -295,8 +295,63 @@ void BuildGammaTable( float g )
 	}
 }
 
-// TODO: Implement
+/*
+=================
+V_CheckGamma
 
+FIXME:  Define this as a change function to the cvar's below rather than polling it
+ every frame.  Note, still need to make sure it gets called very first time through frame loop.
+=================
+*/
+qboolean V_CheckGamma( void )
+{
+	static float oldgammavalue, oldlightgamma, oldtexgamma, oldbrightness;
+#if !defined ( GLQUAKE )
+	static float ambientr, ambientg, ambientb;
+#endif
+
+	if ((v_gamma.value == oldgammavalue) &&
+		(v_lightgamma.value == oldlightgamma) &&
+		(v_texgamma.value == oldtexgamma) &&
+		(v_brightness.value == oldbrightness)
+#if !defined ( GLQUAKE )
+		&& (r_ambient_r.value == ambientr) &&
+		(r_ambient_g.value == ambientg) &&
+		(r_ambient_b.value == ambientb)
+#endif
+		)
+	{
+		return FALSE;
+	}
+
+	oldgammavalue = v_gamma.value;
+	oldlightgamma = v_lightgamma.value;
+	oldtexgamma = v_texgamma.value;
+	oldbrightness = v_brightness.value;
+
+#if !defined ( GLQUAKE )
+	ambientr = r_ambient_r.value;
+	ambientg = r_ambient_g.value;
+	ambientb = r_ambient_b.value;
+#endif
+
+	BuildGammaTable(v_gamma.value);
+
+	D_FlushCaches();
+	vid.recalc_refdef = 1;				// force a surface cache flush
+
+	return TRUE;
+}
+
+/*
+=============
+V_CalcPowerupCshift
+=============
+*/
+void V_CalcPowerupCshift( void )
+{
+	// TODO: Implement
+}
 
 /*
 =============
@@ -332,6 +387,19 @@ V_UpdatePalette
 #ifdef	GLQUAKE
 void V_UpdatePalette( void )
 {
+	qboolean	newFlag;
+	qboolean force;
+
+	V_CalcPowerupCshift();
+
+	newFlag = FALSE;
+
+	force = V_CheckGamma();
+	if (!newFlag && !force)
+		return;
+
+	V_CalcBlend();
+
 	// TODO: Implement
 }
 #endif
@@ -637,9 +705,7 @@ int V_FadeAlpha( void )
 	int alpha;
 
 	if (cl.sf.fadeReset < cl.time && cl.sf.fadeEnd < cl.time)
-	{
 		return 0;
-	}
 
 	alpha = (cl.sf.fadeEnd - cl.time) * cl.sf.fadeSpeed;
 

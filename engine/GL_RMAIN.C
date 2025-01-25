@@ -22,7 +22,7 @@ int			currenttexture = -1;	// to avoid unnecessary texture sets
 int			cnttextures[2] = { -1, -1 };     // cached
 
 int			particletexture;	// little dot for particles
-int			playertextures[16];	// up to 16 color translated skins
+int			playertextures;		// up to 16 color translated skins
 
 int			mirrortexturenum;	// quake texturenum, not gltexturenum
 qboolean	mirror;
@@ -251,7 +251,7 @@ void R_PolyBlend( void )
 
 	qglColor4ubv(color);
 
-	qglBegin(7);
+	qglBegin(GL_QUADS);
 
 	qglVertex3f(10, 10, 10);
 	qglVertex3f(10, -10, 10);

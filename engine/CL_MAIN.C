@@ -748,7 +748,56 @@ CL_DecayLights
 */
 void CL_DecayLights( void )
 {
-	// TODO: Implement
+	int			i;
+	dlight_t* dl;
+	float		time;
+
+	r_dlightchanged = 0;
+	r_dlightactive = 0;
+
+	time = cl.time - cl.oldtime;
+
+	dl = cl_dlights;
+
+	for (i = 0; i < MAX_DLIGHTS; i++, dl++)
+	{
+		if (dl->radius != 0)
+		{
+			if (dl->die < cl.time)
+			{
+				r_dlightchanged |= (1 << i);
+				dl->radius = 0;
+			}
+			else if (dl->decay)
+			{
+				r_dlightchanged |= (1 << i);
+
+				dl->radius -= time * dl->decay;
+				if (dl->radius < 0)
+					dl->radius = 0;
+			}
+			if (dl->radius != 0)
+			{
+				r_dlightactive |= (1 << i);
+			}
+		}
+	}
+
+	dl = cl_elights;
+	for (i = 0; i < MAX_ELIGHTS; i++, dl++)
+	{
+		if (!dl->radius)
+			continue;
+		if (dl->die < cl.time)
+		{
+			dl->radius = 0;
+			continue;
+		}
+
+		dl->radius -= time * dl->decay;
+		if (dl->radius < 0)
+			dl->radius = 0;
+	}
 }
 
 // TODO: cl_input.c

@@ -134,6 +134,13 @@ void R_Init( void )
 		Cvar_SetValue("gl_texsort", 0.0);
 
 	// TODO: Implement
+	
+//	R_InitParticleTexture(); TODO: Implement
+
+	// TODO: Implement
+
+	playertextures = texture_extension_number;
+	texture_extension_number += 16;
 }
 
 /*
@@ -181,4 +188,10 @@ void R_NewMap( void )
 
 	// Unload textures from the previous map
 	GL_UnloadTextures();
+}
+
+// TODO: Implement
+
+void D_FlushCaches( void )
+{
 }
