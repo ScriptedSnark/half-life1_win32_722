@@ -42,6 +42,7 @@ DLL_EXPORT void SNDDMA_Shutdown( void );
 // ====================================================================
 
 
+extern int			total_channels;
 
 //
 // Fake dma is a synchronous faking of the DMA progress used for

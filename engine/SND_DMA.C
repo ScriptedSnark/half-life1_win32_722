@@ -3,6 +3,11 @@
 #include "quakedef.h"
 
 
+#if defined (__USEA3D)
+#include "a3d.h"
+//#include "../a3dwrapper/a3dwrapperDP.h"
+#endif
+
 #ifdef __USEA3D
 void S_enableA3D( void );
 void S_disableA3D( void );
@@ -13,10 +18,10 @@ void S_disableA3D( void );
 // =======================================================================
 
 
-
+int			total_channels;
 
 int				snd_blocked = 0;
-
+static qboolean	snd_ambient = TRUE;
 
 
 // pointer should go away
@@ -45,7 +50,50 @@ cvar_t a3d = { "a3d", "0" };
 
 
 
+// ====================================================================
+// User-setable variables
+// ====================================================================
+
+
+//
+// Fake dma is a synchronous faking of the DMA progress used for
+// isolating performance in the renderer.  The fakedma_updates is
+// number of times S_Update() is called per second.
+//
+
 qboolean fakedma = FALSE;
+int fakedma_updates = 15;
+
+
+void S_AmbientOff( void )
+{
+	snd_ambient = FALSE;
+}
+
+
+void S_AmbientOn( void )
+{
+	snd_ambient = TRUE;
+}
+
+
+void S_SoundInfo_f( void )
+{
+	if (!sound_started || !shm)
+	{
+		Con_Printf("sound system not started\n");
+		return;
+	}
+
+	Con_Printf("%5d stereo\n", shm->channels - 1);
+	Con_Printf("%5d samples\n", shm->samples);
+	Con_Printf("%5d samplepos\n", shm->samplepos);
+	Con_Printf("%5d samplebits\n", shm->samplebits);
+	Con_Printf("%5d submission_chunk\n", shm->submission_chunk);
+	Con_Printf("%5d speed\n", shm->speed);
+	Con_Printf("0x%x dma buffer\n", shm->buffer);
+	Con_Printf("%5d total_channels\n", total_channels);
+}
 
 
 
