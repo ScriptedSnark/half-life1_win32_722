@@ -48,6 +48,28 @@ int ModelFrameCount( model_t* model )
 
 /*
 =================
+CL_ParseTEnt
+=================
+*/
+void CL_ParseTEnt( void )
+{
+	int		type;
+
+	type = MSG_ReadByte();
+	switch (type)
+	{
+		// TODO: Implement
+
+	default:
+		Sys_Error("CL_ParseTEnt: bad type");
+		break;
+	}
+}
+
+// TODO: Implement
+
+/*
+=================
 CL_TempEntInit
 
 Initialize temp entities

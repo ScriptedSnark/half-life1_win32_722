@@ -866,7 +866,7 @@ void CL_SendCmd( void )
 		cl.frames[i].cmd.msec = 100;
 
 	cl.frames[i].cmd.buttons = CL_ButtonBits(1);
-	cl.frames[i].cmd.impulse = 0;//dword_10577E70;
+	cl.frames[i].cmd.impulse = in_impulse;
 
 	if (cl.spectator)
 	{
@@ -895,6 +895,8 @@ void CL_SendCmd( void )
 		seq_hash);
 
 	memcpy(&cl.cmd, cmd, sizeof(cl.cmd));
+
+	in_impulse = 0;
 
 	// request delta compression of entities
 	if (cls.netchan.outgoing_sequence - cl.validsequence >= UPDATE_BACKUP - 1)
@@ -1128,7 +1130,9 @@ void CL_Init( void )
 	Cvar_RegisterVariable(&cl_name);
 
 	// TODO: Implement
-
+	
+	Cvar_RegisterVariable(&cl_forwardspeed);
+	Cvar_RegisterVariable(&cl_backspeed);
 	Cvar_RegisterVariable(&cl_sidespeed);
 	Cvar_RegisterVariable(&cl_movespeedkey);
 

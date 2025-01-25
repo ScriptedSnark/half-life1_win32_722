@@ -523,6 +523,8 @@ extern	kbutton_t	in_mlook, in_klook;
 extern 	kbutton_t 	in_strafe;
 extern 	kbutton_t 	in_speed;
 
+extern	int			in_impulse;
+
 void CL_InitInput( void );
 void CL_SendCmd( void );
 
@@ -582,6 +584,6 @@ void V_StopPitchDrift( void );
 // CL_TENT.C
 //
 void CL_InitTEnts( void );
-
+void CL_ParseTEnt( void );
 int ModelFrameCount( struct model_s* model );
 struct mspriteframe_s* R_GetSpriteFrame( struct msprite_s* pSprite, int frame );

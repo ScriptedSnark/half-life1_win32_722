@@ -1310,6 +1310,10 @@ void CL_ParseServerMessage( void )
 			CL_ParseBaseline(CL_EntityNum(i));
 			break;
 
+		case svc_tempentity:
+			CL_ParseTEnt();
+			break;
+
 		// TODO: Implement
 
 		case svc_signonnum:

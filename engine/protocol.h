@@ -95,7 +95,7 @@
 
 
 #define svc_spawnbaseline		22
-
+#define svc_tempentity			23
 
 #define svc_signonnum			25		// [byte]  used for the signon sequence
 
