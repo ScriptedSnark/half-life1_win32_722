@@ -486,6 +486,63 @@ void S_FlushSoundData( int fDumpLores, int fDumpHires )
 }
 
 
+/*
+==================
+S_TouchSound
+
+==================
+*/
+void S_TouchSound( char* name )
+{
+	sfx_t* sfx;
+
+	if (!sound_started)
+		return;
+	
+	sfx = S_FindName(name, NULL);
+	Cache_Check(&sfx->cache);
+}
+
+/*
+==================
+S_PrecacheSound
+
+Reserve space for the name of the sound in a global array.
+Load the data for the sound and assign a valid pointer,
+unless the sound is a streaming or sentence type.  These
+defer loading of data until just before playback.
+==================
+*/
+sfx_t* S_PrecacheSound( char* name )
+{
+	sfx_t* sfx;
+
+	if (!sound_started || nosound.value)
+		return NULL;
+
+	if (name[0] == CHAR_STREAM || name[0] == CHAR_SENTENCE)
+	{
+		// This is a streaming sound or a sentence name.
+		// don't actually precache data, just store name
+
+		sfx = S_FindName(name, NULL);
+		return sfx;
+	}
+
+	// Entity sound.
+	sfx = S_FindName(name, NULL);
+
+// cache it in
+	if (precache.value)
+		S_LoadSound(sfx, NULL);
+
+	return sfx;
+}
+
+
+
+
+
 
 
 

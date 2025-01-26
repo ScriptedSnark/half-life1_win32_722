@@ -9,6 +9,18 @@
 #define SOUND_DMA_SPEED		22050		// hardware playback rate
 
 
+
+
+
+#define CHAR_STREAM			'*'		// as one of 1st 2 chars in name, indicates streaming wav data
+#define CHAR_USERVOX		'?'		// as one of 1st 2 chars in name, indicates user realtime voice data
+#define CHAR_SENTENCE		'!'		// as one of 1st 2 chars in name, indicates sentence wav
+#define CHAR_DRYMIX			'#'		// as one of 1st 2 chars in name, indicates wav bypasses dsp fx
+
+
+
+
+
 // !!! if this is changed, it much be changed in asm_i386.h too !!!
 typedef struct
 {
@@ -136,7 +148,7 @@ extern int sound_started;
 
 
 
-
+sfxcache_t* S_LoadSound( sfx_t* s, channel_t* channel );
 sfx_t* S_FindName( char* name, int* pfInCache );
 
 void SND_InitScaletable( void );
