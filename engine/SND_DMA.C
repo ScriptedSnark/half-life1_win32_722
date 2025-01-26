@@ -27,7 +27,7 @@ void S_disableA3D( void );
 // =======================================================================
 
 channel_t   channels[MAX_CHANNELS];
-
+wavstream_t wavstreams[MAX_CHANNELS];
 
 int			total_channels;
 
@@ -39,8 +39,14 @@ qboolean		snd_initialized = FALSE;
 volatile dma_t* shm = 0;
 volatile dma_t sn;
 
+vec3_t		listener_origin;
+vec3_t		listener_forward;
+vec3_t		listener_right;
+vec3_t		listener_up;
+vec_t		sound_nominal_clip_dist = 1000.0;
 
-
+int			soundtime;		// sample PAIRS
+int   		paintedtime; 	// sample PAIRS
 
 sfx_t*		known_sfx;		// hunk allocated [MAX_SFX]
 int			num_sfx;
@@ -538,6 +544,275 @@ sfx_t* S_PrecacheSound( char* name )
 
 	return sfx;
 }
+
+int SND_FStreamIsPlaying( sfx_t* sfx )
+{
+	int ch_idx;
+
+	ch_idx = NUM_AMBIENTS;
+
+	for (; ch_idx < total_channels; ch_idx++)
+	{
+		if (channels[ch_idx].sfx == sfx)
+			return TRUE;
+	}
+
+	return FALSE;
+}
+
+/*
+=================
+SND_PickDynamicChannel
+Select a channel from the dynamic channel allocation area.  For the given entity,
+override any other sound playing on the same channel (see code comments below for
+exceptions).
+=================
+*/
+channel_t* SND_PickDynamicChannel( int entnum, int entchannel,
+#if defined (__USEA3D)
+	qboolean bUseAutoSettings,
+#endif
+	sfx_t* sfx )
+{
+	int ch_idx;
+	int first_to_die;
+	int life_left;
+
+	if (entchannel == CHAN_STREAM && SND_FStreamIsPlaying(sfx))
+		return NULL;
+
+	// Check for replacement sound, or find the best one to replace
+	first_to_die = -1;
+	life_left = 0x7fffffff;
+
+#if defined (__USEA3D)
+	int ch_first_3d;
+
+	ch_first_3d = -1;
+#endif
+
+	ch_idx = NUM_AMBIENTS;
+
+	for (; ch_idx < NUM_AMBIENTS + MAX_DYNAMIC_CHANNELS; ch_idx++)
+	{
+		// Never override a streaming sound that is currently playing or
+		// voice over IP data that is playing or any sound on CHAN_VOICE( acting )
+		if (channels[ch_idx].entchannel == CHAN_STREAM &&
+			wavstreams[ch_idx].hFile)
+		{
+			if (entchannel == CHAN_VOICE)
+				return NULL;
+
+			continue;
+		}
+
+		if (entchannel != CHAN_AUTO		// channel 0 never overrides
+			&& channels[ch_idx].entnum == entnum
+			&& (channels[ch_idx].entchannel == entchannel || entchannel == -1))
+		{
+#if defined (__USEA3D)
+			// Want to override same entity sounds also.
+			// Aggressively move 2D sounds into 3D.
+			if (snd_isa3d)
+				ch_first_3d = ch_idx;
+			else
+				ch_first_3d = -1;
+#endif
+			// always override sound from same entity
+			first_to_die = ch_idx;
+			break;
+		}
+
+#if defined (__USEA3D)
+		// don't let monster sounds override player sounds
+		if (channels[ch_idx].entnum == cl.playernum + 1 && entnum != cl.playernum + 1 && channels[ch_idx].sfx)
+			continue;
+#else
+		// don't let monster sounds override player sounds
+		if (channels[ch_idx].entnum == cl.viewentity && entnum != cl.viewentity && channels[ch_idx].sfx)
+			continue;
+#endif
+
+		if (channels[ch_idx].end - paintedtime < life_left)
+		{
+			life_left = channels[ch_idx].end - paintedtime;
+			first_to_die = ch_idx;
+
+#if defined (__USEA3D)
+			if (channels[ch_idx].sfx == NULL)
+				ch_first_3d = ch_idx;
+#endif
+		}
+	}
+	
+	if (first_to_die == -1)
+		return NULL;
+
+#if defined (__USEA3D)
+	if (snd_isa3d && ch_first_3d >= 0)
+	{
+		first_to_die = ch_first_3d;
+		// TODO: Implement
+	}
+#endif
+
+	if (channels[first_to_die].sfx)
+	{
+		// be sure and release previous channel
+		// if sentence.
+		//Con_DPrintf("Stealing channel from %s\n", channels[first_to_die].sfx->name);
+		S_FreeChannel(&channels[first_to_die]);
+		channels[first_to_die].sfx = NULL;
+	}
+
+	return &channels[first_to_die];
+}
+
+
+
+/*
+=====================
+SND_PickStaticChannel
+=====================
+Pick an empty channel from the static sound area, or allocate a new
+channel.  Only fails if we're at max_channels (128!!!) or if
+we're trying to allocate a channel for a stream sound that is
+already playing.
+
+*/
+channel_t* SND_PickStaticChannel( int entnum, int entchannel,
+#if defined (__USEA3D)
+	qboolean bUseAutoSettings,
+#endif								  
+	sfx_t* sfx )
+{
+	int i;
+	channel_t* ch = NULL;
+
+	if (sfx->name[0] == CHAR_STREAM && SND_FStreamIsPlaying(sfx))
+		return NULL;
+
+	// Check for replacement sound, or find the best one to replace
+	for (i = NUM_AMBIENTS + MAX_DYNAMIC_CHANNELS; i < total_channels; i++)
+		if (channels[i].sfx == NULL)
+			break;
+
+
+	if (i < total_channels)
+	{
+		// reuse an empty static sound channel
+		ch = &channels[i];
+	}
+	else
+	{
+		// no empty slots, alloc a new static sound channel
+		if (total_channels == MAX_CHANNELS)
+		{
+			Con_DPrintf("total_channels == MAX_CHANNELS\n");
+			return NULL;
+		}
+
+
+		// get a channel for the static sound
+
+		ch = &channels[total_channels];
+		total_channels++;
+	}
+
+#if defined (__USEA3D)
+	if (snd_isa3d)
+	{
+		// TODO: Implement
+	}
+#endif
+
+	return ch;
+}
+
+/*
+=================
+SND_Spatialize
+=================
+*/
+void SND_Spatialize( channel_t* ch )
+{
+	vec_t dot;
+	vec_t dist;
+	vec_t lscale, rscale, scale;
+	vec3_t source_vec;
+	sfx_t* snd;
+	cl_entity_t* pent;
+
+// anything coming from the view entity will always be full volume
+	if (ch->entnum == cl.viewentity)
+	{
+		ch->leftvol = ch->master_vol;
+		ch->rightvol = ch->master_vol;
+
+		// set volume for the current word being spoken
+		VOX_SetChanVol(ch);
+		return;
+	}
+
+	// Make sure index is valid
+	if (ch->entnum > 0 && ch->entnum < sv.num_edicts)
+	{
+		pent = &cl_entities[ch->entnum];
+
+		if (pent && pent->model)
+		{
+			VectorCopy(pent->origin, ch->origin);
+
+			if (pent->model->type == mod_brush)
+			{
+				ch->origin[0] += (pent->model->mins[0] + pent->model->maxs[0]) * 0.5;
+				ch->origin[1] += (pent->model->mins[1] + pent->model->maxs[1]) * 0.5;
+				ch->origin[2] += (pent->model->mins[2] + pent->model->maxs[2]) * 0.5;
+			}
+		}
+	}
+
+// calculate stereo seperation and distance attenuation
+
+	snd = ch->sfx;
+	VectorSubtract(ch->origin, listener_origin, source_vec);
+
+#if defined (__USEA3D)
+	if (snd_isa3d)
+		dist = VectorNormalize(source_vec) * ch->dist_mult * 0.5;
+	else
+#endif
+		dist = VectorNormalize(source_vec) * ch->dist_mult;
+
+	dot = DotProduct(source_vec, listener_right);
+
+	if (shm->channels == 1)
+	{
+		rscale = 1.0;
+		lscale = 1.0;
+	}
+	else
+	{
+		rscale = 1.0 + dot;
+		lscale = 1.0 - dot;
+	}
+
+	// add in distance effect
+	scale = (1.0 - dist) * rscale;
+	ch->rightvol = (int)(ch->master_vol * scale);
+
+	scale = (1.0 - dist) * lscale;
+	ch->leftvol = (int)(ch->master_vol * scale);
+
+	// set the volume if playing a word
+	VOX_SetChanVol(ch);
+
+	if (ch->rightvol < 0)
+		ch->rightvol = 0;
+	if (ch->leftvol < 0)
+		ch->leftvol = 0;
+}
+
 
 
 

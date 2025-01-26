@@ -80,6 +80,38 @@ typedef struct channel_s
 	int		pitch;
 } channel_t;
 
+typedef struct
+{
+	int		rate;
+	int		width;
+	int		channels;
+	int		loopstart;
+	int		samples;
+	int		dataofs;		// chunk starts this many bytes from file start
+} wavinfo_t;
+
+typedef struct
+{
+	int		csamplesplayed;
+	int		csamplesinmem;
+	FILE* hFile;
+	wavinfo_t info;
+	int		lastposloaded;
+} wavstream_t;
+
+typedef struct
+{
+	int		volume;					// increase percent, ie: 125 = 125% increase
+	int		pitch;					// pitch shift up percent
+	int		start;					// offset start of wave percent
+	int		end;					// offset end of wave percent
+	int		cbtrim;					// end of wave after being trimmed to 'end'
+	int		fKeepCached;			// 1 if this word was already in cache before sentence referenced it
+	int		samplefrac;				// if pitch shifting, this is position into wav * 256
+	int		timecompress;			// % of wave to skip during playback (causes no pitch shift)
+	sfx_t*	sfx;					// name and cache pointer
+} voxword_t;
+
 
 
 void S_Init( void );
@@ -95,6 +127,8 @@ void S_BeginPrecaching( void );
 void S_EndPrecaching( void );
 
 
+// spatializes a channel
+void SND_Spatialize( channel_t* ch );
 
 // initializes cycling through a DMA buffer and returns information on it
 qboolean SNDDMA_Init( void );
@@ -128,13 +162,14 @@ extern int			total_channels;
 //
 
 extern qboolean 		fakedma;
-
-
-
+extern int		paintedtime;
+extern vec3_t listener_origin;
+extern vec3_t listener_forward;
+extern vec3_t listener_right;
+extern vec3_t listener_up;
 extern volatile dma_t* shm;
 extern volatile dma_t sn;
-
-
+extern vec_t sound_nominal_clip_dist;
 
 extern cvar_t snd_show;
 extern cvar_t loadas8bit;
@@ -151,13 +186,16 @@ extern int sound_started;
 
 
 
+void S_LocalSound( char* sound );
 sfxcache_t* S_LoadSound( sfx_t* s, channel_t* channel );
 sfx_t* S_FindName( char* name, int* pfInCache );
 
 void SND_InitScaletable( void );
 void SNDDMA_Submit( void );
 
-
+void S_AmbientOff( void );
+void S_AmbientOn( void );
+void S_FreeChannel( channel_t* ch );
 
 
 
@@ -179,9 +217,15 @@ DLL_EXPORT void Snd_AcquireBuffer( void );
 extern void				VOX_Init( void );
 
 
+extern void				VOX_SetChanVol( channel_t* ch );
 
 
-void S_LocalSound( char* s );
+
+
+
+
+extern portable_samplepair_t paintbuffer[];
+extern portable_samplepair_t drybuffer[];
 
 #ifdef __USEA3D
 extern qboolean snd_isa3d;

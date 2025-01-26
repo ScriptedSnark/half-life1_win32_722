@@ -387,7 +387,7 @@ typedef struct
 // information that is static for the entire time connected to a server
 //
 	struct model_s*	model_precache[MAX_MODELS];
-	struct sfx_s* sound_precache[MAX_SOUNDS];
+	sfx_t* sound_precache[MAX_SOUNDS];
 
 	// TODO: Implement
 
