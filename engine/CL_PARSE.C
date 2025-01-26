@@ -394,7 +394,21 @@ void CL_MoveToOnHandList( resource_t* pResource )
 	switch (pResource->type)
 	{
 	case t_sound:
-		// TODO: Implement
+		if (pResource->ucFlags & RES_WASMISSING)
+		{
+			cl.sound_precache[pResource->nIndex] = NULL;
+		}
+		else
+		{
+			S_BeginPrecaching();
+			cl.sound_precache[pResource->nIndex] = S_PrecacheSound(pResource->szFileName);
+			S_EndPrecaching();
+			if (!cl.sound_precache[pResource->nIndex] && (pResource->ucFlags & RES_FATALIFMISSING))
+			{
+				Con_Printf("Cannot continue without sound %s, disconnecting\n", pResource->szFileName);
+				CL_Disconnect();
+			}
+		}
 		break;
 	case t_skin:
 		break;
