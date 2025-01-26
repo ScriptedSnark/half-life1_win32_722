@@ -26,6 +26,8 @@ void S_disableA3D( void );
 // Internal sound data & structures
 // =======================================================================
 
+channel_t   channels[MAX_CHANNELS];
+
 
 int			total_channels;
 
@@ -421,6 +423,70 @@ sfx_t* S_FindName( char* name, int* pfInCache )
 	sfx->servercount = cl.servercount;
 	return sfx;
 }
+
+// Used when switching from/to hires sound mode.
+// discard sound's data from cache so that
+// data will be reloaded (and resampled)
+// 'rate' is sound_11k,22k or 44k
+
+void S_FlushSoundData( int fDumpLores, int fDumpHires )
+{
+	int i, j;
+	sfxcache_t* sc;
+	channel_t* ch = channels;
+	int fNoDiscard = FALSE;
+
+	// scan precache, looking for sounds in memory
+	// if a sound is in memory, make sure it's not
+	// a block from a streaming sound
+	// if not a streaming sound, then discard
+	// according to speed
+
+	for (i = 0; i < num_sfx; i++)
+	{
+		sc = (sfxcache_t*)Cache_Check(&known_sfx[i].cache);
+		if (!sc)
+			continue;
+
+		// make sure this data is not part of streaming sound
+		for (j = 0; j < total_channels; j++, ch++)
+		{
+			// skip innactive channels
+			if (!ch->sfx)
+				continue;
+
+			if (ch->entchannel != CHAN_STREAM)
+				continue;
+
+			if (ch->sfx == &known_sfx[i])
+			{
+				fNoDiscard = TRUE;
+				break;
+			}
+		}
+
+		if (fNoDiscard)
+		{
+			fNoDiscard = FALSE;
+			continue;
+		}
+		// discard all sound data at this 'rate' from cache
+		if (fDumpLores)
+		{
+			if (sc->speed <= shm->speed)
+				Cache_Free(&known_sfx[i].cache);
+		}
+
+		if (fDumpHires)
+		{
+			if (sc->speed > shm->speed)
+				Cache_Free(&known_sfx[i].cache);
+		}
+	}
+}
+
+
+
 
 
 // TODO: Implement

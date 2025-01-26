@@ -23,6 +23,16 @@ typedef struct
 	int		servercount;
 } sfx_t;
 
+// !!! if this is changed, it much be changed in asm_i386.h too !!!
+typedef struct
+{
+	int 	length;
+	int 	loopstart;
+	int 	speed;
+	int 	width;
+	int 	stereo;
+	byte	data[1];		// variable sized
+} sfxcache_t;
 
 typedef struct
 {
@@ -39,6 +49,25 @@ typedef struct
 	unsigned char*	buffer;
 } dma_t;
 
+// !!! if this is changed, it much be changed in asm_i386.h too !!!
+typedef struct channel_s
+{
+	sfx_t*	sfx;			// sfx number
+	int		leftvol;		// 0-255 volume
+	int		rightvol;		// 0-255 volume
+	int		end;			// end time in global paintsamples
+	int		pos;			// sample position in sfx
+	int		looping;		// where to loop, -1 = no looping
+	int		entnum;			// to allow overriding a specific sound
+	int		entchannel;		// 
+	vec3_t	origin;			// origin of sound effect
+	vec_t	dist_mult;		// distance multiplier (attenuation/clipK)
+	int		master_vol;		// 0-255 master volume
+	int		isentence;		// true if playing linked sentence
+	int		iword;
+	int		pitch;
+} channel_t;
+
 
 
 void S_Init( void );
@@ -50,15 +79,30 @@ void S_Update( vec_t* origin, vec_t* forward, vec_t* right, vec_t* up );
 void S_ExtraUpdate( void );
 
 
+
+
+// initializes cycling through a DMA buffer and returns information on it
+qboolean SNDDMA_Init( void );
+
+// gets the current DMA position
+int SNDDMA_GetDMAPos( void );
+
 // shutdown the DMA xfer.
 DLL_EXPORT void SNDDMA_Shutdown( void );
 
-
+void SNDDMA_BeginPainting( void );
 
 // ====================================================================
 // User-setable variables
 // ====================================================================
 
+#define	MAX_CHANNELS			128
+#define	MAX_DYNAMIC_CHANNELS	8
+
+extern channel_t    channels[MAX_CHANNELS];
+// 0 to MAX_DYNAMIC_CHANNELS-1	= normal entity sounds
+// MAX_DYNAMIC_CHANNELS to MAX_DYNAMIC_CHANNELS + NUM_AMBIENTS -1 = water, etc
+// MAX_DYNAMIC_CHANNELS + NUM_AMBIENTS to total_channels = static sounds
 
 extern int			total_channels;
 
