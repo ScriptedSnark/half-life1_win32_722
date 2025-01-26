@@ -1326,6 +1326,16 @@ void Host_ClearMemory( qboolean bQuiet )
 	if (!bQuiet)
 		Con_DPrintf("Clearing memory\n");
 
+	D_FlushCaches();
+	Mod_ClearAll();
+
+	if (host_hunklevel)
+		Hunk_FreeToLowMark(host_hunklevel);
+
+	cls.signon = 0;
+	memset(&sv, 0, sizeof(server_t));
+	CL_ClearClientState();
+
 	// TODO: Implement
 }
 
