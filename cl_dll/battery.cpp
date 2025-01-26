@@ -31,8 +31,8 @@ int CHudBattery::VidInit(void)
 {
 	m_hSprite1 = gHUD.m_rghSprites[HUD_suit_empty];
 	m_hSprite2 = gHUD.m_rghSprites[HUD_suit_full];
-	m_prc1 = &gHUD.m_rgrcRects[ gHUD.m_rghSprites[HUD_suit_empty] ];
-	m_prc2 = &gHUD.m_rgrcRects[ gHUD.m_rghSprites[HUD_suit_full] ];
+	m_prc1 = &gHUD.m_rgrcRects[HUD_suit_empty];
+	m_prc2 = &gHUD.m_rgrcRects[HUD_suit_full];
 	m_iHeight = m_prc2->bottom - m_prc1->top;
 	m_fFade = 0;
 	return 1;

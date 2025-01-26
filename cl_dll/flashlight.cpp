@@ -107,7 +107,7 @@ int CHudFlashlight::Draw(float flTime)
 		x = ScreenWidth - m_iWidth/2;
 
 		SPR_Set( gHUD.m_rghSprites[ HUD_flash_beam ], r, g, b );
-		SPR_DrawAdditive( 0, x, y, &gHUD.m_rgrcRects[ gHUD.m_rghSprites[HUD_flash_beam] ] );
+		SPR_DrawAdditive( 0, x, y, &gHUD.m_rgrcRects[HUD_flash_beam] );
 	}
 
 	// draw the flashlight energy level
