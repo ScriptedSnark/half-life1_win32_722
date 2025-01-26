@@ -343,6 +343,86 @@ void S_Shutdown( void )
 	}
 }
 
+
+// =======================================================================
+// Load a sound
+// =======================================================================
+
+/*
+==================
+S_FindName
+
+==================
+*/
+// Return sfx and set pfInCache to 1 if 
+// name is in name cache. Otherwise, alloc
+// a new spot in name cache and return 0 
+// in pfInCache.
+sfx_t* S_FindName( char* name, int* pfInCache )
+{
+	int		i;
+	sfx_t* sfx = NULL;
+
+	if (!name)
+		Sys_Error("S_FindName: NULL\n");
+
+	if (Q_strlen(name) >= MAX_QPATH)
+		Sys_Error("Sound name too long: %s", name);
+
+// see if already loaded
+	for (i = 0; i < num_sfx; i++)
+	{
+		if (!Q_strcmp(known_sfx[i].name, name))
+		{
+			sfx = &known_sfx[i];
+			if (pfInCache)
+			{
+				// indicate whether or not sound is currently in the cache.
+				*pfInCache = Cache_Check(&sfx->cache) ? 1 : 0;
+			}
+
+			if (sfx->servercount > 0)
+				sfx->servercount = cl.servercount;
+
+			return sfx;
+		}
+
+		if (!sfx)
+		{
+			if (known_sfx[i].servercount > 0)
+			{
+				if (known_sfx[i].servercount != cl.servercount)
+					sfx = &known_sfx[i];
+			}
+		}
+	}
+
+	if (!sfx)
+	{
+		if (num_sfx == MAX_SFX)
+			Sys_Error("S_FindName: out of sfx_t");
+
+		sfx = &known_sfx[i];
+		num_sfx++;
+	}
+	else
+	{
+		if (Cache_Check(&sfx->cache))
+			Cache_Free(&sfx->cache);
+	}
+
+	strcpy(sfx->name, name);
+
+	if (pfInCache)
+	{
+		*pfInCache = 0;
+	}
+
+	sfx->servercount = cl.servercount;
+	return sfx;
+}
+
+
 // TODO: Implement
 
 void S_StopAllSounds( qboolean clear )

@@ -93,6 +93,8 @@ extern int sound_started;
 
 
 
+sfx_t* S_FindName( char* name, int* pfInCache );
+
 void SND_InitScaletable( void );
 void SNDDMA_Submit( void );
 
