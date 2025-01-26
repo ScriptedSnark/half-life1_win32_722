@@ -161,28 +161,25 @@ void CHud :: VidInit( void )
 	else
 		iRes = 640;
 
-	if (!m_pSpriteList)
+	m_pSpriteList = gEngfuncs.pfnSPR_GetList("sprites/hud.txt", &m_iSpriteCount);
+
+	if (m_pSpriteList)
 	{
-		m_pSpriteList = gEngfuncs.pfnSPR_GetList("sprites/hud.txt", &m_iSpriteCount);
-
-		if (m_pSpriteList)
+		for (int i = 0; i < HUD_SPRITE_COUNT; i++)
 		{
-			for (int i = 0; i < HUD_SPRITE_COUNT; i++)
+			client_sprite_s* p = GetSpriteList(m_pSpriteList, g_rgszSpriteNames[i], iRes, m_iSpriteCount);
+
+			if (p)
 			{
-				client_sprite_s* p = GetSpriteList(m_pSpriteList, g_rgszSpriteNames[i], iRes, m_iSpriteCount);
+				char buffer[256];
+				sprintf(buffer, "sprites/%s.spr", p->szSprite);
 
-				if (p)
-				{
-					char buffer[256];
-					sprintf(buffer, "sprites/%s.spr", p->szSprite);
-
-					m_rghSprites[i] = SPR_Load(buffer);
-					m_rgrcRects[i] = p->rc;
-				}
-				else
-				{
-					m_rghSprites[i] = NULL;
-				}
+				m_rghSprites[i] = SPR_Load(buffer);
+				m_rgrcRects[i] = p->rc;
+			}
+			else
+			{
+				m_rghSprites[i] = NULL;
 			}
 		}
 	}
