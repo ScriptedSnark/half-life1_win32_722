@@ -56,6 +56,12 @@ void CL_PredictUsercmd( player_state_t* from, player_state_t* to, usercmd_t* u, 
 
 
 	// TODO: Implement
+	
+
+	memcpy(&pmove.cmd, &cmd, sizeof(pmove.cmd));
+
+
+	// TODO: Implement
 
 
 	VectorCopy(pmove.origin, to->origin);
@@ -63,7 +69,7 @@ void CL_PredictUsercmd( player_state_t* from, player_state_t* to, usercmd_t* u, 
 	VectorCopy(pmove.basevelocity, to->basevelocity);
 
 	to->waterjumptime = pmove.waterjumptime;
-//	to->oldbuttons = pmove.cmd.buttons; TODO: Implement
+	to->oldbuttons = pmove.cmd.buttons;
 	to->onground = onground;
 	to->friction = pmove.friction;
 	to->movetype = pmove.movetype;

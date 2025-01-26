@@ -38,6 +38,12 @@ typedef struct
 	int			numphysent;
 
 	// TODO: Implement
+	
+
+	usercmd_t	cmd;
+
+
+	// TODO: Implement
 
 } playermove_t;
 
