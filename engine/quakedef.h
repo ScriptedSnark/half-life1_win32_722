@@ -91,6 +91,8 @@
 
 #define MAX_USERMSGS		128
 
+#define MAX_TEMP_ENTITIES 350
+
 // Client dispatch function for usermessages
 typedef int (*pfnUserMsgHook)( const char* pszName, int iSize, void* pbuf );
 pfnUserMsgHook HookServerMsg( const char* pszName, pfnUserMsgHook pfn );

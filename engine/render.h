@@ -63,6 +63,22 @@ typedef struct cl_entity_s
 	colorVec		cvFloorColor;
 } cl_entity_t;
 
+typedef struct tempent_s
+{
+	int flags;
+	float die;
+	float frameMax;
+	float x;
+	float y;
+	float z;
+	float fadeSpeed;
+	int hitSound;
+	struct tempent_s *next;
+	//FF: there must be another field (4 bytes)
+	// TODO: Implement
+	cl_entity_t entity;
+} TEMPENTITY;
+
 // TODO: Implement
 
 
