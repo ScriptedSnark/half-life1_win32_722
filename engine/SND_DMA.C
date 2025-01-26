@@ -22,7 +22,7 @@ int			total_channels;
 
 int				snd_blocked = 0;
 static qboolean	snd_ambient = TRUE;
-
+qboolean		snd_initialized = FALSE;
 
 // pointer should go away
 volatile dma_t* shm = 0;
@@ -96,8 +96,6 @@ void S_SoundInfo_f( void )
 }
 
 
-
-
 /*
 ================
 S_Startup
@@ -106,8 +104,28 @@ S_Startup
 
 void S_Startup( void )
 {
-	// TODO: Implement
+	int		rc;
+
+	if (!snd_initialized)
+		return;
+
+	if (!fakedma)
+	{
+		rc = SNDDMA_Init();
+
+		if (!rc)
+		{
+#ifndef	_WIN32
+			Con_Printf("S_Startup: SNDDMA_Init failed.\n");
+#endif
+			sound_started = FALSE;
+			return;
+		}
+	}
+
+	sound_started = TRUE;
 }
+
 
 /*
 ================
@@ -127,6 +145,8 @@ void S_Init( void )
 		fakedma = TRUE;
 
 	// TODO: Implement
+
+	Cmd_AddCommand("soundinfo", S_SoundInfo_f);
 
 #ifdef __USEA3D
 
