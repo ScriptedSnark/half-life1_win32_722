@@ -10,7 +10,10 @@
 
 
 
-
+// sentence groups
+#define CBSENTENCENAME_MAX		16
+#define CVOXFILESENTENCEMAX		1536		// max number of sentences in game. NOTE: this must match
+											// CVOXFILESENTENCEMAX in dlls\util.h!!!
 
 #define CHAR_STREAM			'*'		// as one of 1st 2 chars in name, indicates streaming wav data
 #define CHAR_USERVOX		'?'		// as one of 1st 2 chars in name, indicates user realtime voice data
@@ -117,6 +120,8 @@ typedef struct
 void S_Init( void );
 void S_Startup( void );
 void S_Shutdown( void );
+void S_StartDynamicSound( int entnum, int entchannel, sfx_t* sfx, vec_t* origin, float fvol, float attenuation, int flags, int pitch );
+void S_StartStaticSound( int entnum, int entchannel, sfx_t* sfxin, vec_t* origin, float fvol, float attenuation, int flags, int pitch );
 void S_StopAllSounds( qboolean clear );
 DLL_EXPORT void S_ClearBuffer( void );
 void S_Update( vec_t* origin, vec_t* forward, vec_t* right, vec_t* up );
@@ -184,7 +189,8 @@ extern int snd_blocked;
 
 extern int sound_started;
 
-
+extern char* rgpszrawsentence[CVOXFILESENTENCEMAX];
+extern int cszrawsentences;
 
 void S_LocalSound( char* sound );
 sfxcache_t* S_LoadSound( sfx_t* s, channel_t* channel );

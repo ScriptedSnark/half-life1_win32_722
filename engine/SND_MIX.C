@@ -93,3 +93,10 @@ void VOX_SetChanVol( channel_t* ch )
 
 
 // TODO: Implement
+
+
+char* rgpszrawsentence[CVOXFILESENTENCEMAX];
+int cszrawsentences;
+
+
+// TODO: Implement

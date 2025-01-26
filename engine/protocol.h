@@ -224,10 +224,15 @@
 //==============================================
 
 // sound flags
-#define	SND_VOLUME		(1<<0)	// send volume
-#define	SND_ATTENUATION	(1<<1)	// send attenuation
-#define SND_LARGE_INDEX	(1<<2)	// send sound number as short instead of byte
-#define SND_PITCH		(1<<3)	// send pitch
+#define	SND_VOLUME			(1<<0)		// send volume
+#define	SND_ATTENUATION		(1<<1)		// send attenuation
+#define SND_LARGE_INDEX		(1<<2)		// send sound number as short instead of byte
+#define SND_PITCH			(1<<3)		// send pitch
+#define SND_SENTENCE		(1<<4)		// set if sound num is actually a sentence num
+#define SND_STOP			(1<<5)		// duplicated in dlls/util.h stop sound
+#define SND_CHANGE_VOL		(1<<6)		// duplicated in dlls/util.h change sound vol
+#define SND_CHANGE_PITCH	(1<<7)		// duplicated in dlls/util.h change sound pitch
+#define SND_SPAWNING		(1<<8)		// duplicated in dlls/util.h we're spawing, used in some cases for ambients 
 
 #define DEFAULT_SOUND_PACKET_VOLUME			1.0
 #define DEFAULT_SOUND_PACKET_ATTENUATION	1.0

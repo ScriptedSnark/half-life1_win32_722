@@ -814,12 +814,115 @@ void SND_Spatialize( channel_t* ch )
 }
 
 
+// search through all channels for a channel that matches this
+// entnum, entchannel and sfx, and perform alteration on channel
+// as indicated by 'flags' parameter. If shut down request and
+// sfx contains a sentence name, shut off the sentence.
+// returns TRUE if sound was altered,
+// returns FALSE if sound was not found (sound is not playing)
+
+int S_AlterChannel( int entnum, int entchannel, sfx_t* sfx, int vol, int pitch, int flags )
+{
+	int ch_idx;
+
+	if (sfx->name[0] == CHAR_SENTENCE)
+	{
+		// This is a sentence name.
+		// For sentences: assume that the entity is only playing one sentence
+		// at a time, so we can just shut off
+		// any channel that has ch->isentence >= 0 and matches the
+		// entnum.
+
+		for (ch_idx = NUM_AMBIENTS; ch_idx < total_channels; ch_idx++)
+		{
+			if (channels[ch_idx].entnum == entnum
+				&& channels[ch_idx].entchannel == entchannel
+				&& channels[ch_idx].sfx != NULL
+				&& channels[ch_idx].isentence >= 0)
+			{
+
+				if (flags & SND_CHANGE_PITCH)
+					channels[ch_idx].pitch = pitch;
+
+				if (flags & SND_CHANGE_VOL)
+					channels[ch_idx].master_vol = vol;
+
+				if (flags & SND_STOP)
+				{
+					S_FreeChannel(&channels[ch_idx]);
+				}
+
+				return TRUE;
+			}
+		}
+		// channel not found
+		return FALSE;
+	}
+
+	// regular sound or streaming sound
+
+	for (ch_idx = NUM_AMBIENTS; ch_idx < total_channels; ch_idx++)
+	{
+		if (channels[ch_idx].entnum == entnum
+			&& channels[ch_idx].entchannel == entchannel
+			&& channels[ch_idx].sfx == sfx)
+		{
+			if (flags & SND_CHANGE_PITCH)
+				channels[ch_idx].pitch = pitch;
+
+			if (flags & SND_CHANGE_VOL)
+				channels[ch_idx].master_vol = vol;
+
+			if (flags & SND_STOP)
+			{
+				S_FreeChannel(&channels[ch_idx]);
+			}
+
+			return TRUE;
+		}
+	}
+
+	return FALSE;
+}
+
+// =======================================================================
+// S_StartDynamicSound
+// =======================================================================
+// Start a sound effect for the given entity on the given channel (ie; voice, weapon etc).  
+// Try to grab a channel out of the 8 dynamic spots available.
+// Currently used for looping sounds, streaming sounds, sentences, and regular entity sounds.
+// NOTE: volume is 0.0 - 1.0 and attenuation is 0.0 - 1.0 when passed in.
+// Pitch changes playback pitch of wave by % above or below 100.  Ignored if pitch == 100
+
+// NOTE: it's not a good idea to play looping sounds through StartDynamicSound, because
+// if the looping sound starts out of range, or is bumped from the buffer by another sound
+// it will never be restarted.  Use S_StartStaticSound (pass CHAN_STATIC to EMIT_SOUND or
+// SV_StartSound.
 
 
+void S_StartDynamicSound( int entnum, int entchannel, sfx_t* sfx, vec_t* origin, float fvol, float attenuation, int flags, int pitch )
+{
+	// TODO: Implement
+}
 
 
+/*
+=================
+S_StartStaticSound
+=================
+Start playback of a sound, loaded into the static portion of the channel array.
+Currently, this should be used for looping ambient sounds, looping sounds
+that should not be interrupted until complete, non-creature sentences,
+and one-shot ambient streaming sounds.  Can also play 'regular' sounds one-shot,
+in case designers want to trigger regular game sounds.
+Pitch changes playback pitch of wave by % above or below 100.  Ignored if pitch == 100
 
-
+  NOTE: volume is 0.0 - 1.0 and attenuation is 0.0 - 1.0 when passed in.
+*/
+void S_StartStaticSound( int entnum, int entchannel, sfx_t* sfxin, vec_t* origin, float fvol, float attenuation, int flags, int pitch )
+{
+	// TODO: Implement
+}
 
 // TODO: Implement
 

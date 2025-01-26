@@ -265,6 +265,8 @@ void CL_ParseStartSoundPacket( void )
 	float 	attenuation;
 	int		pitch;
 	int		i;
+	sfx_t* sfx;
+	sfx_t sfxsentence;
 
 	field_mask = MSG_ReadByte();
 
@@ -298,7 +300,25 @@ void CL_ParseStartSoundPacket( void )
 	else
 		pitch = PITCH_NORM;
 
-	// TODO: Implement
+	if (field_mask & SND_SENTENCE)
+	{
+		sfx = &sfxsentence;
+		strcpy(sfx->name, "!");
+		strcat(sfx->name, rgpszrawsentence[sound_num]);
+	}
+	else
+	{
+		sfx = cl.sound_precache[sound_num];
+	}
+
+	if (channel == CHAN_STATIC)
+	{
+		S_StartStaticSound(ent, channel, sfx, pos, volume, attenuation, field_mask, pitch);
+	}
+	else
+	{
+		S_StartDynamicSound(ent, channel, sfx, pos, volume, attenuation, field_mask, pitch);
+	}
 }
 
 // TODO: Implement
@@ -1057,6 +1077,8 @@ void CL_ParseStaticSound( void )
 	int			ent;
 	int			pitch;
 	int			flags;
+	sfx_t* sfx;
+	sfx_t sfxsentence;
 
 	for (i = 0; i < 3; i++)
 		org[i] = MSG_ReadCoord();
@@ -1067,7 +1089,18 @@ void CL_ParseStaticSound( void )
 	pitch = MSG_ReadByte();
 	flags = MSG_ReadByte();
 
-	// TODO: Implement
+	if (flags & SND_SENTENCE)
+	{
+		sfx = &sfxsentence;
+		strcpy(sfx->name, "!");
+		strcat(sfx->name, rgpszrawsentence[sound_num]);
+	}
+	else
+	{
+		sfx = cl.sound_precache[sound_num];
+	}
+
+	S_StartStaticSound(ent, CHAN_STATIC, sfx, org, vol, atten, flags, pitch);
 }
 
 
