@@ -18,6 +18,8 @@ typedef struct efrag_s
 
 typedef struct cl_entity_s
 {
+	int				index;      // Index into cl_entities
+
 	// TODO: Implement
 
 	entity_state_t	baseline;		// to fill in defaults in updates

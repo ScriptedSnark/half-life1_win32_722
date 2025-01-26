@@ -404,6 +404,36 @@ void V_UpdatePalette( void )
 }
 #endif
 
+
+/*
+==============================================================================
+
+						VIEW RENDERING
+
+==============================================================================
+*/
+
+float angledelta( float a )
+{
+	a = anglemod(a);
+	if (a > 180)
+		a -= 360;
+	return a;
+}
+
+
+/*
+==================
+V_CalcGunAngle
+==================
+*/
+void V_CalcGunAngle( void )
+{
+	// TODO: Implement
+}
+
+// TODO: Implement
+
 /*
 ==============
 V_AddIdle
@@ -503,8 +533,64 @@ void V_CalcRefdef( void )
 		+ scr_ofsy.value * right[i]
 		+ scr_ofsz.value * up[i];
 
+
 	// TODO: Implement
+
+
+
+	// Give gun our viewangles
+	VectorCopy(cl.viewangles, cl.viewent.angles);
+
+	// set up gun position
+	V_CalcGunAngle();
+
+	// Use predicted origin as view origin.
+	VectorCopy(cl.simorg, cl.viewent.origin);
+	cl.viewent.origin[2] += (waterOffset + cl.viewheight);
+
+	// Let the viewmodel shake at about 10% of the amplitude
+	V_ApplyShake(cl.viewent.origin, cl.viewent.angles, 0.9);
+
+	for (i = 0; i < 3; i++)
+	{
+		cl.viewent.origin[i] += bob * 0.4 * forward[i];
+	}
+	cl.viewent.origin[2] += bob;
+
+	// throw in a little tilt.
+	cl.viewent.angles[YAW] -= bob * 0.5;
+	cl.viewent.angles[ROLL] -= bob * 1;
+	cl.viewent.angles[PITCH] -= bob * 0.3;
+
+	// pushing the view origin down off of the same X/Z plane as the ent's origin will give the
+	// gun a very nice 'shifting' effect when the player looks up/down. If there is a problem
+	// with view model distortion, this may be a cause. (SJB). 
+	cl.viewent.origin[2] -= 1;
+
+	// fudge position around to keep amount of weapon visible
+	// roughly equal with different FOV
+	if (scr_viewsize.value == 110)
+	{
+		cl.viewent.origin[2] += 1;
+	}
+	else if (scr_viewsize.value == 100)
+	{
+		cl.viewent.origin[2] += 2;
+	}
+	else if (scr_viewsize.value == 90)
+	{
+		cl.viewent.origin[2] += 1;
+	}
+	else if (scr_viewsize.value == 80)
+	{
+		cl.viewent.origin[2] += 0.5;
+	}
 	
+	cl.viewent.model = cl.model_precache[cl.stats[STAT_WEAPON]];
+	cl.viewent.frame = 0.0;
+	cl.viewent.colormap = (byte*)vid.colormap;
+	cl.viewent.index = cl.playernum + 1;
+
 // set up the refresh position
 	VectorAdd(r_refdef.viewangles, cl.punchangle, r_refdef.viewangles);
 
@@ -515,7 +601,7 @@ void V_CalcRefdef( void )
 
 		steptime = cl.time - cl.oldtime;
 		if (steptime < 0)
-	//FIXME		I_Error ("steptime < 0");
+//FIXME		I_Error ("steptime < 0");
 			steptime = 0;
 
 		oldz += steptime * 80;
@@ -524,7 +610,7 @@ void V_CalcRefdef( void )
 		if (cl.simorg[2] - oldz > 12)
 			oldz = cl.simorg[2] - 12;
 		r_refdef.vieworg[2] += oldz - cl.simorg[2];
-		// TODO: Implement
+		cl.viewent.origin[2] += oldz - cl.simorg[2];
 	}
 	else
 		oldz = cl.simorg[2];

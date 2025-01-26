@@ -13,7 +13,7 @@
 int hA3D_Init( HWND hWnd, int nChannels, int nSamplesPerSec, int wBitsPerSample )
 {
 	// TODO: Implement
-	return 0;
+	return -1;
 }
 
 void hA3D_PrecacheSources( void )
