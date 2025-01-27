@@ -1616,17 +1616,28 @@ void S_SoundList( void )
 	Con_Printf("Total resident: %i\n", total);
 }
 
-// TODO: Implement
+void S_LocalSound( char* sound )
+{
+	sfx_t* sfx;
+
+	if (nosound.value)
+		return;
+	if (!sound_started)
+		return;
+
+	sfx = S_PrecacheSound(sound);
+	if (!sfx)
+	{
+		Con_Printf("S_LocalSound: can't cache %s\n", sound);
+		return;
+	}
+	S_StartDynamicSound(cl.viewentity, -1, sfx, vec3_origin, VOL_NORM, 1.0, 0, PITCH_NORM);
+}
 
 // speak a sentence from console; works by passing in "!sentencename"
 // or "sentence"
 
 void S_Say( void )
-{
-	// TODO: Implement
-}
-
-void S_LocalSound( char* sound )
 {
 	// TODO: Implement
 }
