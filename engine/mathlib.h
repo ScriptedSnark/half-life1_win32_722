@@ -40,6 +40,10 @@ extern	int nanmask;
 
 // TODO: Implement
 
+int VectorCompare(const vec3_t v1, const vec3_t v2);
+
+// TODO: Implement
+
 void R_ConcatRotations( float in1[3][3], float in2[3][3], float out[3][3] );
 
 // TODO: Implement

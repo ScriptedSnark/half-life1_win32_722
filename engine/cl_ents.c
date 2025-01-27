@@ -7,6 +7,7 @@ int cl_playerindex; // player index
 int				cl_numvisedicts, cl_oldnumvisedicts, cl_numbeamentities;
 cl_entity_t*	cl_visedicts, * cl_oldvisedicts, *cl_newvisedicts;
 cl_entity_t		cl_visedicts_list[2][MAX_VISEDICTS];
+cl_entity_t		cl_beamentities[MAX_BEAMS];
 float			frame_lerp;
 
 /*
@@ -569,7 +570,187 @@ CL_LinkPacketEntities
 */
 void CL_LinkPacketEntities( void )
 {
-	// TODO: Implement
+	cl_entity_t			*ent, *ent2;
+	packet_entities_t	*pack;
+	entity_state_t		*s1, *s2;
+	float				f;
+	model_t				*model;
+	vec3_t				old_origin;
+	float				autorotate;
+	int					i;
+	int					pnum;
+	dlight_t			*dl;
+	cl_entity_t			nullent;
+
+	pack = &cl.frames[cls.netchan.incoming_sequence & UPDATE_MASK].packet_entities;
+
+	autorotate = anglemod(100 * cl.time);
+
+	f = 0;		// FIXME: no interpolation right now
+
+	for (pnum = 0; pnum < pack->num_entities; pnum++)
+	{
+		s1 = &pack->entities[pnum];
+		s2 = s1;	// FIXME: no interpolation right now
+
+		// if set to invisible, skip
+		if (!s1->modelindex || (s1->effects & EF_NODRAW) != 0)
+			continue;
+
+		// create a new entity
+		if (cl_numvisedicts == MAX_VISEDICTS)
+			break;		// object list is full
+
+		ent = &cl_visedicts[cl_numvisedicts];
+		ent2 = &cl_entities[s1->number];
+		cl_numvisedicts++;
+
+		memcpy(ent, ent2, sizeof(cl_entity_t));
+		memcpy(&nullent, ent, sizeof(nullent));
+
+		// set index
+		ent->index = s1->number;
+
+		// set model
+		model = ent->model;
+
+		if (s1->entityType)
+		{
+			ent->movetype = s1->modelindex;
+			if (model && model->type != mod_sprite)
+			{
+				Sys_Error("Bad model on beam");
+			}
+			ent->prevsequence = ent->sequence;
+			VectorCopy(ent->origin, ent->prevorigin);
+			VectorCopy(ent->angles, ent->prevangles);
+			memcpy(&cl_entities[ent->index], ent, sizeof(cl_entity_t));
+			--cl_numvisedicts;
+			
+			//FF: buffer overrun here
+			if (cl_numbeamentities >= MAX_BEAMS)
+			{
+				Con_DPrintf("Overflow beam entity list!\n");
+			}
+			else
+			{
+				cl_beamentities[cl_numbeamentities + 1] = cl_entities[ent->index];
+				cl_numbeamentities++;
+			}
+
+			continue;
+		}
+
+		if (ent->animtime != nullent.animtime)
+			break;
+
+		if (!VectorCompare(ent->origin, nullent.origin))
+		{
+			ent->lastmove = cl.time + 0.2;
+			VectorCopy(ent->origin, ent->prevorigin);
+			VectorCopy(ent->angles, ent->prevangles);
+		}
+
+		// TODO: Implement
+		// what is that flag
+		if ((s1->flags & 0x200000) != 0 && ent->lastmove < cl.time)
+		{
+			ent->movetype = MOVETYPE_STEP;
+		}
+		else
+		{
+			ent->movetype = MOVETYPE_NONE;
+		}
+		if (FALSE)
+		{
+			// TODO: Implement
+		}
+		else
+		{
+			ent->resetlatched = TRUE;
+		}
+		
+		// copy vars
+		ent->prevsequence = ent->sequence;
+		ent->animtime = cl.time;
+		ent->prevanimtime = cl.time;
+		VectorCopy(ent->origin, ent->prevorigin);
+		VectorCopy(ent->angles, ent->prevangles);
+
+		if (ent->index != 1)
+		{
+			if ((ent->effects & EF_BRIGHTLIGHT) != 0)
+			{
+				dl = NULL; //shut up the compiler at least for now
+
+				//dl = CL_AllocDlight(ent->index);
+				// TODO: Implement (CL_AllocDlight needed)
+
+				VectorCopy(ent->origin, dl->origin);
+				dl->origin[2] += 16.0;
+				dl->color.r = 250;
+				dl->color.g = 250;
+				dl->color.b = 250;
+				dl->radius = RandomFloat(400.0, 431.0);
+
+				// die on next frame
+				dl->die = cl.time + 0.001;
+			}
+
+			if ((ent->effects & EF_DIMLIGHT) != 0)
+			{
+				dl = NULL; //shut up the compiler at least for now
+
+				//dl = CL_AllocDlight(ent->index);
+				// TODO: Implement (CL_AllocDlight needed)
+
+				VectorCopy(ent->origin, dl->origin);
+				dl->color.r = 100;
+				dl->color.g = 100;
+				dl->color.b = 100;
+				dl->radius = RandomFloat(200.0, 231.0);
+
+				// die on next frame
+				dl->die = cl.time + 0.001;
+			}
+		}
+
+		if ((ent->effects & EF_LIGHT) != 0)
+		{
+			// TODO: Implement
+			//R_RocketFlare(ent->origin);
+			dl = NULL; //shut up the compiler at least for now
+
+			//dl = CL_AllocDlight(ent->index);
+			// TODO: Implement (CL_AllocDlight needed)
+
+			VectorCopy(ent->origin, dl->origin);
+			dl->color.r = 100;
+			dl->color.g = 100;
+			dl->color.b = 100;
+			dl->radius = 200.0;
+
+			// die on next frame
+			dl->die = cl.time + 0.001;
+		}
+
+		if (!model)
+		{
+			memcpy(&cl_entities[ent->index], ent, sizeof(cl_entity_t));
+			continue;
+		}
+		if (ent->sequence != nullent.sequence)
+		{
+			ent->sequencetime = ent->animtime;
+			ent->prevsequence = nullent.sequence;
+			memcpy(ent->prevseqblending, nullent.blending, 2);
+		}
+		ent->prevanimtime = nullent.animtime;
+		memcpy(ent->prevcontroller, nullent.controller, 4);
+		memcpy(ent->prevblending, nullent.blending, 2);
+		VectorCopy(nullent.origin, ent->origin);
+		VectorCopy(nullent.angles, ent->angles);
+	}
 }
 
 //========================================
