@@ -1639,10 +1639,110 @@ void S_LocalSound( char* sound )
 
 void S_Say( void )
 {
-	// TODO: Implement
+	sfx_t* sfx;
+	char sound[256];
+
+	if (nosound.value)
+		return;
+
+	if (!sound_started)
+		return;
+
+	Q_strcpy(sound, Cmd_Argv(1));
+
+	// DEBUG - test performance of dsp code
+	if (!Q_strcmp(sound, "dsp"))
+	{
+		unsigned time;
+		int i;
+		int count = 10000;
+
+		for (i = 0; i < PAINTBUFFER_SIZE; i++)
+		{
+			paintbuffer[i].left = RandomLong(0, 2999);
+			paintbuffer[i].right = RandomLong(0, 2999);
+		}
+
+		Con_Printf("Start profiling 10,000 calls to DSP\n");
+
+		// get system time
+
+		time = timeGetTime();
+
+		for (i = 0; i < count; i++)
+		{
+			SX_RoomFX(PAINTBUFFER_SIZE, TRUE, TRUE);
+		}
+		// display system time delta 
+		Con_Printf("%d milliseconds \n", timeGetTime() - time);
+		return;
+	}
+	else if (!Q_strcmp(sound, "paint"))
+	{
+		unsigned time;
+		int count = 10000;
+		static int hash = 543;
+		sfx_t* sfx;
+		int psav = paintedtime;
+
+		Con_Printf("Start profiling S_PaintChannels\n");
+
+		sfx = S_PrecacheSound("ambience/labdrone1.wav");
+		S_StartDynamicSound(hash++, CHAN_AUTO, sfx, listener_origin, VOL_NORM, 1.0, 0, PITCH_NORM);
+
+		// get system time
+		time = timeGetTime();
+
+		// paint a boatload of sound
+
+		S_PaintChannels(paintedtime + 512 * count);
+
+		// display system time delta 
+		Con_Printf("%d milliseconds \n", timeGetTime() - time);
+		paintedtime = psav;
+		return;
+	}
+	// DEBUG
+
+	if (sound[0] != CHAR_SENTENCE)
+	{
+		// build a fake sentence name, then play the sentence text
+
+		Q_strcpy(sound, "xxtestxx ");
+		Q_strcat(sound, Cmd_Argv(1));
+
+		// insert null terminator after sentence name
+		sound[8] = 0;
+
+		rgpszrawsentence[cszrawsentences] = sound;
+		cszrawsentences++;
+
+		sfx = S_PrecacheSound("!xxtestxx");
+		if (!sfx)
+		{
+			Con_Printf("S_Say: can't cache %s\n", sound);
+			return;
+		}
+
+		S_StartStaticSound(-2, CHAN_STATIC, sfx, vec3_origin, VOL_NORM, 1.0, 0, PITCH_NORM);
+
+		// remove last
+		rgpszrawsentence[--cszrawsentences] = NULL;
+	}
+	else
+	{
+		sfx = S_FindName(sound, NULL);
+		if (!sfx)
+		{
+			Con_Printf("S_Say: can't find sentence name %s\n", sound);
+			return;
+		}
+
+		S_StartStaticSound(-2, CHAN_STATIC, sfx, vec3_origin, VOL_NORM, 1.0, 0, PITCH_NORM);
+	}
 }
 
-void S_ClearPrecache(void)
+void S_ClearPrecache( void )
 {
 }
 

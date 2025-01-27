@@ -1,7 +1,25 @@
 // snd_mix.c -- portable code to mix sounds for snd_dma.c
 
 #include "quakedef.h"
+#include "winquake.h"
+#include "pr_cmds.h"
 
+extern LPDIRECTSOUND pDS;
+extern LPDIRECTSOUNDBUFFER pDSBuf, pDSPBuf;
+
+extern DWORD gSndBufSize;
+
+
+portable_samplepair_t paintbuffer[(PAINTBUFFER_SIZE + 1) * 2];
+
+#if defined (__USEA3D)
+#include "a3d.h"
+//#include "../a3dwrapper/a3dwrapperDP.h"
+#endif
+
+#if defined (__USEA3D) || defined (_ADD_EAX_)
+portable_samplepair_t drybuffer[(PAINTBUFFER_SIZE + 1) * 2];
+#endif
 
 int			snd_scaletable[32][256];
 
@@ -58,6 +76,20 @@ void SND_InitScaletable( void )
 //=====================================================================
 
 void SX_Init( void )
+{
+	// TODO: Implement
+}
+
+
+// TODO: Implement
+
+
+// main routine for processing room sound fx
+// if fFilter is TRUE, then run in-line filter (for underwater fx)
+// if fTimefx is TRUE, then run reverb and delay fx
+// NOTE: only processes preset room_types from 0-29 (CSXROOM)
+
+void SX_RoomFX( int count, int fFilter, int fTimefx )
 {
 	// TODO: Implement
 }
