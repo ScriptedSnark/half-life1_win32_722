@@ -227,6 +227,11 @@ void CL_TempEntInit( void )
 
 // TODO: Implement
 
+void CL_TempEntUpdate( void )
+{
+	// TODO: Implement
+}
+
 /*
 =============================================================
 

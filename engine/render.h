@@ -20,6 +20,12 @@ typedef struct cl_entity_s
 {
 	int				index;      // Index into cl_entities
 
+	//FF: player_info_t* scoreboard;
+
+	// TODO: Implement
+
+	qboolean		resetlatched; //FF: maybe "nointerp"?
+
 	// TODO: Implement
 
 	entity_state_t	baseline;		// to fill in defaults in updates
@@ -33,16 +39,17 @@ typedef struct cl_entity_s
 	color24			rendercolor;
 	int				renderfx;
 
-	struct model_s* model;			// cl.model_precache[ curstate.modelindes ];  all visible entities have a model
+	struct model_s* model;			// cl.model_precache[ baseline.modelindex ];  all visible entities have a model
 	struct efrag_s* efrags;			// linked list of efrags
 
 	float			frame;
 
-	// TODO: Implement
+	float			syncbase;
 
-	byte* colormap;
+	byte*			colormap;
 	int				effects;
 	int				skin;
+	int				visframe;
 
 	// TODO: Implement
 
@@ -50,13 +57,22 @@ typedef struct cl_entity_s
 	float			animtime;
 	float			framerate;
 	int				body;
-
-	// TODO: Implement
+	int				sequence;
 
 	byte			controller[4];
-	byte			blending[4];
+	byte			blending[2];
 
 	float			scale;
+	float			lastmove;
+	float			prevanimtime;
+	vec3_t			prevorigin;
+	vec3_t			prevangles;
+	float			prevframe;
+	float			sequencetime;
+	int				prevsequence;
+	byte			prevseqblending[2];
+	byte			prevcontroller[4];
+	byte			prevblending[2];
 
 	// TODO: Implement
 

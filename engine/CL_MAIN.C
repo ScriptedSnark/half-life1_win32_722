@@ -19,6 +19,7 @@ cvar_t	cl_color = { "_cl_color", "0", TRUE };
 
 cvar_t	cl_timeout = { "cl_timeout", "305", TRUE };
 cvar_t	cl_shownet = { "cl_shownet", "0" };
+cvar_t	cl_nolerp = { "cl_nolerp","0" };
 
 
 
@@ -808,6 +809,104 @@ int CL_ButtonBits( int bResetState );
 byte COM_BlockSequenceCRCByte( byte* base, int length, int sequence );
 
 /*
+===============
+SetPal
+
+Debugging tool, just flashes the screen
+===============
+*/
+void SetPal(int i)
+{
+#if 0
+	static int old;
+	byte	pal[768];
+	int		c;
+
+	if (i == old)
+		return;
+	old = i;
+
+	if (i == 0)
+		VID_SetPalette(host_basepal);
+	else if (i == 1)
+	{
+		for (c = 0; c < 768; c += 3)
+		{
+			pal[c] = 0;
+			pal[c + 1] = 255;
+			pal[c + 2] = 0;
+		}
+		VID_SetPalette(pal);
+	}
+	else
+	{
+		for (c = 0; c < 768; c += 3)
+		{
+			pal[c] = 0;
+			pal[c + 1] = 0;
+			pal[c + 2] = 255;
+		}
+		VID_SetPalette(pal);
+	}
+#endif
+}
+
+// TODO: Implement
+
+/*
+===============
+CL_LerpPoint
+
+Determines the fraction between the last two messages that the objects
+should be put at.
+===============
+*/
+float	CL_LerpPoint(void)
+{
+	float	f, frac;
+
+	f = cl.mtime[0] - cl.mtime[1];
+
+	if (!f || cl_nolerp.value || cls.timedemo || sv.active)
+	{
+		cl.time = cl.mtime[0];
+		return 1;
+	}
+
+	if (f > 0.1)
+	{	// dropped packet, or start of demo
+		cl.mtime[1] = cl.mtime[0] - 0.1;
+		f = 0.1;
+	}
+	frac = (cl.time - cl.mtime[1]) / f;
+//Con_Printf ("frac: %f\n",frac);
+	if (frac < 0)
+	{
+		if (frac < -0.01)
+		{
+			SetPal(1);
+			cl.time = cl.mtime[1];
+//				Con_Printf ("low frac\n");
+		}
+		frac = 0;
+	}
+	else if (frac > 1)
+	{
+		if (frac > 1.01)
+		{
+			SetPal(2);
+			cl.time = cl.mtime[0];
+//				Con_Printf ("high frac\n");
+		}
+		frac = 1;
+	}
+	else
+		SetPal(0);
+
+	return frac;
+}
+
+/*
 =================
 CL_SendCmd
 =================
@@ -1141,6 +1240,8 @@ void CL_Init( void )
 	Cvar_RegisterVariable(&cl_pitchspeed);
 
 	// TODO: Implement
+
+	Cvar_RegisterVariable(&cl_nolerp);
 
 	Cvar_RegisterVariable(&cl_skyname);
 

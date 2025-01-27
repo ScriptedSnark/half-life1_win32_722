@@ -193,6 +193,10 @@ typedef struct
 
 	// TODO: Implement
 
+	qboolean skipdemomessage;
+
+	// TODO: Implement
+
 	int			td_lastframe;		// to meter out one message a frame
 	int			td_startframe;		// host_framecount at start
 	float		td_starttime;		// realtime at second frame of timedemo
@@ -514,6 +518,14 @@ qboolean CL_RequestMissingResources( void );
 void CL_ClearResourceLists( void );
 
 
+#define			MAX_VISEDICTS	512
+extern	int				cl_numvisedicts, cl_oldnumvisedicts, cl_numbeamentities;
+extern	cl_entity_t*	cl_visedicts, *cl_oldvisedicts, *cl_newvisedicts;
+extern	cl_entity_t		cl_visedicts_list[2][MAX_VISEDICTS];
+extern	float			frame_lerp;
+
+// TODO: Implement
+
 //
 // cl_input
 //
@@ -530,6 +542,7 @@ extern 	kbutton_t 	in_speed;
 extern	int			in_impulse;
 
 void CL_InitInput( void );
+float CL_LerpPoint( void );
 void CL_SendCmd( void );
 
 void CAM_Think( void );
@@ -591,3 +604,4 @@ void CL_InitTEnts( void );
 void CL_ParseTEnt( void );
 int ModelFrameCount( struct model_s* model );
 struct mspriteframe_s* R_GetSpriteFrame( struct msprite_s* pSprite, int frame );
+void CL_TempEntUpdate( void );
