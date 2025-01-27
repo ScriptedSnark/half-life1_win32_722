@@ -16,13 +16,21 @@
 #include <mmeapi.h>
 #include <dsound.h>
 
+extern LPDIRECTSOUND pDS;
+extern LPDIRECTSOUNDBUFFER pDSBuf, pDSPBuf;
+
+extern DWORD gSndBufSize;
+//#define SNDBUFSIZE 65536
+
+void	(*VID_LockBuffer)( void );
+void	(*VID_UnlockBuffer)( void );
 
 extern HWND* pmainwindow;
 extern qboolean	Win32AtLeastV4;
 extern int gHasMMXTechnology;
 
-extern int (*VID_ForceUnlockedAndReturnState)( void );
-extern int (*VID_ForceLockState)( int lk );
+int (*VID_ForceUnlockedAndReturnState)( void );
+int (*VID_ForceLockState)( int lk );
 
 DLL_EXPORT void IN_ShowMouse( void );
 DLL_EXPORT void IN_DeactivateMouse( void );

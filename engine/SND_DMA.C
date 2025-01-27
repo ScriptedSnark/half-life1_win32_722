@@ -1,6 +1,7 @@
 // snd_dma.c - Main control for any streaming sound output device.
 
 #include "quakedef.h"
+#include "winquake.h"
 #include "pr_cmds.h"
 #include "profile.h"
 
@@ -1220,8 +1221,138 @@ void S_StopAllSoundsC( void )
 
 void S_ClearBuffer( void )
 {
-	// TODO: Implement
+	int		clear;
+
+	if (!sound_started || !shm)
+		return;
+
+#if defined (__USEA3D)
+	if (snd_isa3d)
+	{
+		// Can't lock if we have no buffer.  This occurs while the
+		// main window is deactivated.
+		// TODO: Implement
+	}
+	else
+#endif
+
+#ifdef _WIN32
+	if ((!shm->buffer && !pDSBuf))
+#else
+	if (!shm->buffer)
+#endif
+		return;
+
+	if (shm->samplebits == 8)
+		clear = 0x80;
+	else
+		clear = 0;
+
+#if defined (__USEA3D)
+	if (snd_isa3d)
+	{
+		// TODO: Implement
+	}
+#endif
+
+#ifdef _WIN32
+	if (pDSBuf)
+	{
+		DWORD	dwSize;
+		PVOID	pData;
+		int		reps;
+		HRESULT	hresult;
+
+		reps = 0;
+
+		while ((hresult = pDSBuf->lpVtbl->Lock(pDSBuf, 0, gSndBufSize, &pData, &dwSize, NULL, NULL, 0)) != DS_OK)
+		{
+			if (hresult != DSERR_BUFFERLOST)
+			{
+				Con_Printf("S_ClearBuffer: DS::Lock Sound Buffer Failed\n");
+				S_Shutdown();
+				return;
+			}
+
+			if (++reps > 10000)
+			{
+				Con_Printf("S_ClearBuffer: DS: couldn't restore buffer\n");
+				S_Shutdown();
+				return;
+			}
+		}
+
+		Q_memset(pData, clear, shm->samples * shm->samplebits / 8);
+
+		pDSBuf->lpVtbl->Unlock(pDSBuf, pData, dwSize, NULL, 0);
+
+	}
+	else
+#endif
+	{
+		Q_memset(shm->buffer, clear, shm->samples * shm->samplebits / 8);
+	}
 }
+
+//=============================================================================
+
+/*
+===================
+S_UpdateAmbientSounds
+===================
+*/
+void S_UpdateAmbientSounds( void )
+{
+	mleaf_t* l;
+	float		vol;
+	int			ambient_channel;
+	channel_t* chan;
+
+	if (!snd_ambient)
+		return;
+
+	// calc ambient sound levels
+	if (!cl.worldmodel)
+		return;
+
+	l = Mod_PointInLeaf(listener_origin, cl.worldmodel);
+	if (!l || !ambient_level.value)
+	{
+		for (ambient_channel = 0; ambient_channel < NUM_AMBIENTS; ambient_channel++)
+			channels[ambient_channel].sfx = NULL;
+		return;
+	}
+
+	for (ambient_channel = 0; ambient_channel < NUM_AMBIENTS; ambient_channel++)
+	{
+		chan = &channels[ambient_channel];
+		chan->sfx = ambient_sfx[ambient_channel];
+
+		vol = ambient_level.value * l->ambient_sound_level[ambient_channel];
+		if (vol < 8)
+			vol = 0;
+
+	// don't adjust volume too fast
+		if (chan->master_vol < vol)
+		{
+			chan->master_vol += host_frametime * ambient_fade.value;
+			if (chan->master_vol > vol)
+				chan->master_vol = vol;
+		}
+		else if (chan->master_vol > vol)
+		{
+			chan->master_vol -= host_frametime * ambient_fade.value;
+			if (chan->master_vol < vol)
+				chan->master_vol = vol;
+		}
+
+		chan->leftvol = chan->rightvol = chan->master_vol;
+	}
+}
+
+
+
+// TODO: Implement
 
 /*
 ============
