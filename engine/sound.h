@@ -122,6 +122,7 @@ void S_Startup( void );
 void S_Shutdown( void );
 void S_StartDynamicSound( int entnum, int entchannel, sfx_t* sfx, vec_t* origin, float fvol, float attenuation, int flags, int pitch );
 void S_StartStaticSound( int entnum, int entchannel, sfx_t* sfxin, vec_t* origin, float fvol, float attenuation, int flags, int pitch );
+void S_StopSound( int entnum, int entchannel );
 void S_StopAllSounds( qboolean clear );
 DLL_EXPORT void S_ClearBuffer( void );
 void S_Update( vec_t* origin, vec_t* forward, vec_t* right, vec_t* up );
