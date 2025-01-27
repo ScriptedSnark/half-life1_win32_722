@@ -4,6 +4,11 @@
 
 int cl_playerindex; // player index
 
+int				cl_numvisedicts, cl_oldnumvisedicts, cl_numbeamentities;
+cl_entity_t*	cl_visedicts, *cl_oldvisedicts;
+cl_entity_t		cl_visedicts_list[2][MAX_VISEDICTS];
+float			frame_lerp;
+
 /*
 =========================================================================
 
@@ -556,6 +561,17 @@ void CL_ParsePacketEntities( qboolean delta )
 	newp->num_entities = newindex;
 }
 
+/*
+===============
+CL_LinkPacketEntities
+
+===============
+*/
+void CL_LinkPacketEntities( void )
+{
+	// TODO: Implement
+}
+
 //========================================
 
 /*
@@ -786,6 +802,19 @@ void CL_ParsePlayerinfo( void )
 // TODO: Implement
 
 /*
+=============
+CL_LinkPlayers
+
+Create visible entities in the correct position
+for all current players
+=============
+*/
+void CL_LinkPlayers( void )
+{
+	// TODO: Implement
+}
+
+/*
 ==================
 CL_SetUpPlayerPrediction
 
@@ -818,5 +847,70 @@ void CL_SetSolidPlayers( int playernum )
 
 void CL_EmitEntities( void )
 {
+	int numvisedict;
+	cl_entity_t* visedict;
+	cl_entity_t* lerp;
+
+	if (cls.state != ca_active)
+	{
+		cl_oldnumvisedicts = 0;
+		cl_numvisedicts = 0;
+		cl_numbeamentities = 0;
+		// TODO: Implement
+		//memset(dword_E06C5B8, 0, sizeof(dword_E06C5B8));
+		//FF: this thing is probably used for interpolation and/or latchedvars
+		return;
+	}
+
+	if (!cl.validsequence)
+		return;
+
+	if (cls.demoplayback)
+	{
+		if (!cls.skipdemomessage)
+			return;
+
+		cls.skipdemomessage = FALSE;
+	}
+
 	// TODO: Implement
+	//if (cls.demorecording)
+		// sub_E012F00( ); // <-- this is probably CL_WriteDLLUpdate but without client data
+
+	cl_oldnumvisedicts = cl_numvisedicts;
+	cl_newvisedicts = visedict = cl_visedicts_list[(cls.netchan.incoming_sequence + 1) & 1];
+
+	if (cl_numvisedicts > 0)
+	{
+		cl_newvisedicts = cl_visedicts_list[(cls.netchan.incoming_sequence + 1) & 1];
+
+		for (visedict, numvisedict = cl_numvisedicts; numvisedict != 0; --numvisedict, ++visedict)
+		{
+			lerp = &cl_entities[visedict->index];
+
+			// TODO: Implement
+
+			lerp->prevframe = visedict->prevframe;
+
+			if (visedict->index > cl.maxclients)
+			{
+				lerp->frame = visedict->frame;
+			}
+
+			// TODO: Implement
+			//FF: cl_entity_s' pad5 was used here, need to know what's that
+		}
+	}
+
+	cl_numvisedicts = 0;
+	cl_numbeamentities = 0;
+	cl_visedicts = cl_visedicts_list[cls.netchan.incoming_sequence & 1];
+	frame_lerp = CL_LerpPoint();
+	CL_LinkPlayers();
+	CL_LinkPacketEntities();
+	CL_TempEntUpdate();
+	if (cl.spectator)
+	{
+		//FF: sub_10020190 ~ CL_Disconnect ~ 33 C0 A3 38 15 05 0E A3 34 15 05 0E C3
+	}
 }
