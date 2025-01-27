@@ -1594,7 +1594,26 @@ void S_PlayVol( void )
 
 void S_SoundList( void )
 {
-	// TODO: Implement
+	int		i;
+	sfx_t* sfx;
+	sfxcache_t* sc;
+	int		size, total;
+
+	total = 0;
+	for (sfx = known_sfx, i = 0; i < num_sfx; i++, sfx++)
+	{
+		sc = (sfxcache_t*)Cache_Check(&sfx->cache);
+		if (!sc)
+			continue;
+		size = sc->length * sc->width * (sc->stereo + 1);
+		total += size;
+		if (sc->loopstart >= 0)
+			Con_Printf("L");
+		else
+			Con_Printf(" ");
+		Con_Printf("(%2db) %6i : %s\n", sc->width * 8, size, sfx->name);
+	}
+	Con_Printf("Total resident: %i\n", total);
 }
 
 // TODO: Implement
