@@ -5,7 +5,7 @@
 int cl_playerindex; // player index
 
 int				cl_numvisedicts, cl_oldnumvisedicts, cl_numbeamentities;
-cl_entity_t*	cl_visedicts, *cl_oldvisedicts;
+cl_entity_t*	cl_visedicts, * cl_oldvisedicts, *cl_newvisedicts;
 cl_entity_t		cl_visedicts_list[2][MAX_VISEDICTS];
 float			frame_lerp;
 
@@ -54,13 +54,13 @@ int CL_ReadDeltaFlags( int* flags, int* bboxflags )
 
 /*
 ==================
-CL_ParseCustomEntityDelta
+CL_ParseCustomEntity
 
 Can go from either a baseline or a previous packet_entity
 ==================
 */
 int	custombitcounts[32];	/// just for protocol profiling
-void CL_ParseCustomEntityDelta( entity_state_t* from, entity_state_t* to, int bits, int custombits, int number )
+void CL_ParseCustomEntity( entity_state_t* from, entity_state_t* to, int bits, int custombits, int number )
 {
 	// TODO: Refactor
 
@@ -337,7 +337,7 @@ void CL_FlushEntityPacket( void )
 
 		if (flags & U_CUSTOM)
 		{
-			CL_ParseCustomEntityDelta(&olde, &newe, flags, bboxflags, num);
+			CL_ParseCustomEntity(&olde, &newe, flags, bboxflags, num);
 		}
 		else
 		{
@@ -521,7 +521,7 @@ void CL_ParsePacketEntities( qboolean delta )
 
 			if (flags & U_CUSTOM)
 			{
-				CL_ParseCustomEntityDelta(&cl_entities[newnum].baseline, &newp->entities[newindex], flags, bboxflags, newnum);
+				CL_ParseCustomEntity(&cl_entities[newnum].baseline, &newp->entities[newindex], flags, bboxflags, newnum);
 			}
 			else
 			{
@@ -547,7 +547,7 @@ void CL_ParsePacketEntities( qboolean delta )
 //Con_Printf("delta %i\n",newnum);
 			if (flags & U_CUSTOM)
 			{
-				CL_ParseCustomEntityDelta(&oldp->entities[oldindex], &newp->entities[newindex], flags, bboxflags, newnum);
+				CL_ParseCustomEntity(&oldp->entities[oldindex], &newp->entities[newindex], flags, bboxflags, newnum);
 			}
 			else
 			{

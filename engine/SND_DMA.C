@@ -1074,7 +1074,103 @@ Pitch changes playback pitch of wave by % above or below 100.  Ignored if pitch 
 */
 void S_StartStaticSound( int entnum, int entchannel, sfx_t* sfxin, vec_t* origin, float fvol, float attenuation, int flags, int pitch )
 {
-	// TODO: Implement
+	channel_t* ch;
+	sfxcache_t* sc;
+	int fvox = 0;
+	sfx_t* sfx = sfxin;
+	int vol;
+
+	if (!sfx)
+		return;
+
+	// override the entchannel to CHAN_STREAM if this is a stream sound
+	if (sfx->name[0] == CHAR_STREAM)
+		entchannel = CHAN_STREAM;
+
+	strstr(sfx->name, "tride/");
+
+	if (entchannel == CHAN_STREAM && pitch != PITCH_NORM)
+	{
+		Con_DPrintf("Warning: pitch shift ignored on stream sound %s\n", sfx->name);
+		pitch = PITCH_NORM;
+	}
+
+//	Con_Printf("Start static sound %s\n", sfx->name);
+	vol = fvol * 255;
+
+	if (vol > 255)
+	{
+		Con_DPrintf("S_StartStaticSound: %s volume > 255", sfx->name);
+		vol = 255;
+	}
+
+	if ((flags & SND_STOP) || (flags & SND_CHANGE_VOL) || (flags & SND_CHANGE_PITCH))
+	{
+		if (S_AlterChannel(entnum, entchannel, sfx, vol, pitch, flags) || (flags & SND_STOP))
+			return;
+	}
+
+	if (pitch == 0)
+	{
+		Con_DPrintf("Warning: S_StartStaticSound Ignored, called with pitch 0");
+		return;
+	}
+
+	ch = SND_PickStaticChannel(entnum, entchannel, TRUE, sfx); // Autolooping sounds are always fixed origin(?)
+
+	if (!ch)
+		return;
+
+	if (sfx->name[0] == CHAR_SENTENCE)
+	{
+		// this is a sentence. link words to play in sequence.
+
+		// NOTE: sentence names stored in the cache lookup are
+		// prepended with a '!'.  Sentence names stored in the
+		// sentence file do not have a leading '!'. 
+
+		char name[MAX_QPATH];
+		Q_strcpy(name, sfx->name + 1); // skip sentence char
+
+		// link all words and load the first word
+		sc = VOX_LoadSound(ch, name);
+		fvox = 1;
+	}
+	else
+	{
+		// load regular or stream sound
+
+		sc = S_LoadSound(sfx, ch);
+		ch->sfx = sfx;
+		ch->isentence = -1;
+	}
+
+	if (!sc)
+	{
+		ch->sfx = NULL;
+		return;
+	}
+
+// spatialize
+
+	VectorCopy(origin, ch->origin);
+
+	ch->pos = 0;
+
+	ch->master_vol = vol;
+	ch->dist_mult = attenuation / sound_nominal_clip_dist;
+
+	ch->end = sc->length + paintedtime;
+	ch->entnum = entnum;
+	ch->pitch = pitch;
+	ch->entchannel = entchannel;
+
+	if (!fvox && ch->pitch != PITCH_NORM)
+		VOX_MakeSingleWordSentence(ch, ch->pitch);
+
+	VOX_TrimStartEndTimes(ch, sc);
+
+	SND_Spatialize(ch);
 }
 
 // TODO: Implement
