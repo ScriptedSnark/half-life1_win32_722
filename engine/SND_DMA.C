@@ -1350,10 +1350,6 @@ void S_UpdateAmbientSounds( void )
 	}
 }
 
-
-
-// TODO: Implement
-
 /*
 ============
 S_Update
@@ -1363,26 +1359,113 @@ Called once each time through the main loop
 */
 void S_Update( vec_t* origin, vec_t* forward, vec_t* right, vec_t* up )
 {
-	// TODO: Implement
+	int			i;
+	int			total;
+	channel_t* ch;
+	channel_t* combine;
+
+	if (!sound_started || (snd_blocked > 0))
+		return;
+
+	VectorCopy(origin, listener_origin);
+	VectorCopy(forward, listener_forward);
+	VectorCopy(right, listener_right);
+	VectorCopy(up, listener_up);
+
+// update general area ambient sound sources
+#if defined (__USEA3D)
+	if (snd_isa3d)
+	{
+		// TODO: Implement
+	}
+	
+	if (!snd_isa3d)
+	{
+		S_UpdateAmbientSounds();
+	}
+#else
+	S_UpdateAmbientSounds();
+#endif
+
+	combine = NULL;
+
+// update spatialization for static and dynamic sounds	
+	ch = channels + NUM_AMBIENTS;
+	for (i = NUM_AMBIENTS; i < total_channels; i++, ch++)
+	{
+		if (!ch->sfx)
+			continue;
+		SND_Spatialize(ch);         // respatialize channel
+	}
+	
+//
+// debugging output
+//
+	if (snd_show.value)
+	{
+		total = 0;
+		ch = channels;
+		for (i = 0; i < total_channels; i++, ch++)
+		{
+			if (ch->sfx && (ch->leftvol || ch->rightvol))
+			{
+				Con_Printf("%3i %3i %s\n", ch->leftvol, ch->rightvol, ch->sfx->name);
+				total++;
+			}
+		}
+
+		Con_Printf("----(%i)----\n", total);
+	}
+
+// mix some sound
+	S_Update_();
+}
+
+void GetSoundtime( void )
+{
+	int		samplepos;
+	static	int		buffers;
+	static	int		oldsamplepos;
+	int		fullsamples;
+
+	fullsamples = shm->samples / shm->channels;
+	
+// it is possible to miscount buffers if it has wrapped twice between
+// calls to S_Update.  Oh well.
+	samplepos = SNDDMA_GetDMAPos();
+
+
+	if (samplepos < oldsamplepos)
+	{
+		buffers++;					// buffer wrapped
+
+		if (paintedtime > 0x40000000)
+		{	// time to chop things off to avoid 32 bit limits
+			buffers = 0;
+			paintedtime = fullsamples;
+			S_StopAllSounds(TRUE);
+		}
+	}
+	oldsamplepos = samplepos;
+
+	soundtime = buffers * fullsamples + samplepos / shm->channels;
 }
 
 void S_ExtraUpdate( void )
 {
-	// TODO: Implement
+#ifdef _WIN32
+	IN_Accumulate();
+#endif
+
+	if (snd_noextraupdate.value)
+		return;		// don't pollute timings
+	S_Update_();
 }
 
-void S_LocalSound( char* sound )
+void S_Update_( void )
 {
 	// TODO: Implement
 }
-
-
-
-
-// TODO: Implement
-
-
-
 
 /*
 ===============================================================================
@@ -1413,6 +1496,11 @@ void S_SoundList( void )
 // or "sentence"
 
 void S_Say( void )
+{
+	// TODO: Implement
+}
+
+void S_LocalSound( char* sound )
 {
 	// TODO: Implement
 }
