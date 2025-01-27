@@ -123,13 +123,32 @@ void hudGetPlayerInfo( int ent_num, hud_player_info_t* pinfo )
 // Plays a sound by name
 void hudPlaySoundByName( char* szSound, float volume )
 {
-	// TODO: Implement
+	sfx_t* sfx;
+
+	volume = clamp(volume, 0.0, 1.0);
+
+	sfx = S_PrecacheSound(szSound);
+	if (!sfx)
+	{
+		Con_DPrintf("invalid sound %s\n", szSound);
+		return;
+	}
+
+	S_StartDynamicSound(cl.viewentity, -1, sfx, r_origin, volume, 1.0, 0, PITCH_NORM);
 }
 
 // Plays a sound by index
 void hudPlaySoundByIndex( int iSound, float volume )
 {
-	// TODO: Implement
+	volume = clamp(volume, 0.0, 1.0);
+
+	if (iSound > MAX_SOUNDS)
+	{
+		Con_DPrintf("invalid sound %i\n", iSound);
+		return;
+	}
+
+	S_StartDynamicSound(cl.viewentity, -1, cl.sound_precache[iSound], r_origin, volume, 1.0, 0, PITCH_NORM);
 }
 
 // Gets the length in pixels of a string if it were drawn onscreen
