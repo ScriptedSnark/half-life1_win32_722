@@ -75,6 +75,15 @@ qboolean Wavstream_Init( void )
 // TODO: Implement
 
 
+void SND_InitMouth( int entnum, int entchannel )
+{
+	// TODO: Implement
+}
+
+
+// TODO: Implement
+
+
 void VOX_Init( void )
 {
 	// TODO: Implement
@@ -95,8 +104,37 @@ void VOX_SetChanVol( channel_t* ch )
 // TODO: Implement
 
 
+void VOX_MakeSingleWordSentence( channel_t* ch, int pitch )
+{
+	// TODO: Implement
+}
+
+// link all sounds in sentence, start playing first word.
+
+sfxcache_t* VOX_LoadSound( channel_t* pchan, char* pszin )
+{
+	// TODO: Implement
+	return NULL;
+}
+
+
+// TODO: Implement
+
+
 char* rgpszrawsentence[CVOXFILESENTENCEMAX];
 int cszrawsentences;
+
+
+// TODO: Implement
+
+
+// trim the start and end times of a voice channel's audio data
+// based on specified start and end points
+
+void VOX_TrimStartEndTimes( channel_t* ch, sfxcache_t* sc )
+{
+	// TODO: Implement
+}
 
 
 // TODO: Implement

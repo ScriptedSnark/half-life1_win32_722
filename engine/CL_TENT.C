@@ -71,7 +71,7 @@ CL_TentModel
 Force precache of a model used by temporary entities
 =================
 */
-model_t* CL_TentModel( const char *name )
+model_t* CL_TentModel( char *name )
 {
 	model_t *pModel;
 

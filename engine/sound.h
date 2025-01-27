@@ -205,6 +205,11 @@ void S_FreeChannel( channel_t* ch );
 
 
 
+
+extern void SND_InitMouth( int entnum, int entchannel );
+
+
+
 // DSP Routines
 
 void SX_Init( void );
@@ -225,6 +230,12 @@ extern void				VOX_Init( void );
 
 extern void				VOX_SetChanVol( channel_t* ch );
 
+
+
+extern sfxcache_t*		VOX_LoadSound( channel_t* pchan, char* pszin );
+
+extern void				VOX_MakeSingleWordSentence( channel_t* ch, int pitch );
+extern void				VOX_TrimStartEndTimes( channel_t* ch, sfxcache_t* sc );
 
 
 

@@ -1,6 +1,7 @@
 // snd_dma.c - Main control for any streaming sound output device.
 
 #include "quakedef.h"
+#include "pr_cmds.h"
 #include "profile.h"
 
 
@@ -902,7 +903,159 @@ int S_AlterChannel( int entnum, int entchannel, sfx_t* sfx, int vol, int pitch, 
 
 void S_StartDynamicSound( int entnum, int entchannel, sfx_t* sfx, vec_t* origin, float fvol, float attenuation, int flags, int pitch )
 {
-	// TODO: Implement
+	channel_t* target_chan, * check;
+	sfxcache_t* sc;
+	int		vol;
+	int		ch_idx;
+	int		skip;
+	int		fsentence = 0;
+	
+	if (!sound_started)
+		return;
+
+	if (!sfx)
+		return;
+
+	if (nosound.value)
+		return;
+
+	//Con_Printf("Start sound %s\n", sfx->name);
+	// override the entchannel to CHAN_STREAM if this is a 
+	// stream sound.
+	if (sfx->name[0] == CHAR_STREAM)
+		entchannel = CHAN_STREAM;
+
+	strstr(sfx->name, "tride/");
+
+	if (entchannel == CHAN_STREAM && pitch != PITCH_NORM)
+	{
+		Con_DPrintf("Warning: pitch shift ignored on stream sound %s\n", sfx->name);
+		pitch = PITCH_NORM;
+	}
+
+	vol = fvol * 255;
+
+	if (vol > 255)
+	{
+		Con_DPrintf("S_StartDynamicSound: %s volume > 255", sfx->name);
+		vol = 255;
+	}
+
+	if (flags & (SND_STOP | SND_CHANGE_VOL | SND_CHANGE_PITCH))
+	{
+		if (S_AlterChannel(entnum, entchannel, sfx, vol, pitch, flags))
+			return;
+		if (flags & SND_STOP)
+			return;
+		// fall through - if we're not trying to stop the sound, 
+		// and we didn't find it (it's not playing), go ahead and start it up
+	}
+
+	if (pitch == 0)
+	{
+		Con_DPrintf("Warning: S_StartDynamicSound Ignored, called with pitch 0");
+		return;
+	}
+
+	target_chan = SND_PickDynamicChannel(entnum, entchannel, FALSE, sfx);
+
+	if (!target_chan)
+		return;
+
+	if (sfx->name[0] == CHAR_SENTENCE)
+		fsentence = 1;
+
+// spatialize
+	memset(target_chan, 0, sizeof(*target_chan));
+	VectorCopy(origin, target_chan->origin);
+
+	// reference_dist / (reference_power_level / actual_power_level)
+	target_chan->dist_mult = attenuation / sound_nominal_clip_dist;
+	target_chan->master_vol = vol;
+	target_chan->entnum = entnum;
+	target_chan->entchannel = entchannel;
+	target_chan->pitch = pitch;
+	target_chan->isentence = -1;
+	SND_Spatialize(target_chan);
+
+	// If a client can't hear a sound when they FIRST receive the StartSound message,
+	// the client will never be able to hear that sound. This is so that out of 
+	// range sounds don't fill the playback buffer.  For streaming sounds, we bypass this optimization.
+
+	if (!target_chan->leftvol && !target_chan->rightvol)
+	{
+		// if this is a streaming sound, play
+		// the whole thing.
+
+		if (entchannel != CHAN_STREAM)
+		{
+			target_chan->sfx = NULL;
+			return;		// not audible at all
+		}
+	}
+
+	if (fsentence)
+	{
+		// this is a sentence
+		// link all words and load the first word
+
+		// NOTE: sentence names stored in the cache lookup are
+		// prepended with a '!'.  Sentence names stored in the
+		// sentence file do not have a leading '!'. 
+
+		char name[MAX_QPATH];
+		Q_strcpy(name, sfx->name + 1); // skip sentence char
+
+		sc = VOX_LoadSound(target_chan, name);
+	}
+	else
+	{
+		// regular or streamed sound fx
+		sc = S_LoadSound(sfx, target_chan);
+		target_chan->sfx = sfx;
+	}
+
+	if (!sc)
+	{
+		target_chan->sfx = NULL;
+		return;		// couldn't load the sound's data
+	}
+
+	target_chan->pos = 0;
+	target_chan->end = sc->length + paintedtime;
+
+	if (!fsentence && target_chan->pitch != PITCH_NORM)
+		VOX_MakeSingleWordSentence(target_chan, target_chan->pitch);
+
+	VOX_TrimStartEndTimes(target_chan, sc);
+
+	// Init client entity mouth movement vars
+	SND_InitMouth(entnum, entchannel);
+
+// if an identical sound has also been started this frame, offset the pos
+// a bit to keep it from just making the first one louder
+
+// UNDONE: this should be implemented using a start delay timer in the 
+// mixer, instead of skipping forward in the wave.  Either method also cause
+// phasing problems for skip times of < 10 milliseconds. KB
+
+
+	check = &channels[NUM_AMBIENTS];
+	for (ch_idx = NUM_AMBIENTS; ch_idx < NUM_AMBIENTS + MAX_DYNAMIC_CHANNELS; ch_idx++, check++)
+	{
+		if (check == target_chan)
+			continue;
+		if (check->sfx == sfx && !check->pos)
+		{
+			skip = RandomLong(0, (long)(0.1 * shm->speed));		// skip up to 0.1 seconds of audio
+			if (skip >= target_chan->end)
+				skip = target_chan->end - 1;
+			target_chan->pos += skip;
+			target_chan->end -= skip;
+			break;
+		}
+
+	}
 }
 
 
