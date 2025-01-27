@@ -31,6 +31,15 @@ void S_FreeChannel( channel_t* ch )
 // TODO: Implement
 
 
+void S_PaintChannels( int endtime )
+{
+	// TODO: Implement
+}
+
+
+// TODO: Implement
+
+
 void SND_InitScaletable( void )
 {
 	int i, j;

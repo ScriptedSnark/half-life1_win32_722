@@ -1464,7 +1464,70 @@ void S_ExtraUpdate( void )
 
 void S_Update_( void )
 {
-	// TODO: Implement
+	unsigned        endtime;
+	int				samps;
+
+	if (!sound_started || (snd_blocked > 0))
+		return;
+
+// Get soundtime, which tells how many samples have
+// been played out of the dma buffer since sound system startup.
+
+	GetSoundtime();
+
+// paintedtime indicates how many samples we've actually mixed
+// and sent to the dma buffer since sound system startup.
+
+	if (paintedtime < soundtime)
+	{
+		// if soundtime > paintedtime, then the dma buffer
+		// has played out more sound than we've actually
+		// mixed.  We need to call S_Update_ more often.
+
+		// Con_DPrintf("S_Update_ : overflow\n"); 
+		// paintedtime = soundtime;		
+
+		// (kdb) above code doesn't work - should actually
+		// zero out the paintbuffer to advance to the new
+		// time.
+	}
+
+	// mix ahead of current position
+	endtime = soundtime + _snd_mixahead.value * shm->dmaspeed;
+	samps = shm->samples >> ((char)shm->channels - 1 & 0x1F);
+
+	if ((int)(endtime - soundtime) > samps)
+		endtime = soundtime + samps;
+
+#ifdef __USEA3D
+	if (snd_isa3d)
+	{
+		SNDDMA_BeginPainting();
+	}
+	else
+#endif
+	{
+#ifdef _WIN32
+		DWORD	dwStatus;
+
+		// if the buffer was lost or stopped, restore it and/or restart it
+		if (pDSBuf)
+		{
+			if (pDSBuf->lpVtbl->GetStatus(pDSBuf, &dwStatus) != DS_OK)
+				Con_Printf("Couldn't get sound buffer status\n");
+
+			if (dwStatus & DSBSTATUS_BUFFERLOST)
+				pDSBuf->lpVtbl->Restore(pDSBuf);
+
+			if (!(dwStatus & DSBSTATUS_PLAYING))
+				pDSBuf->lpVtbl->Play(pDSBuf, 0, 0, DSBPLAY_LOOPING);
+		}
+#endif
+	}
+
+	S_PaintChannels(endtime >> 1);
+
+	SNDDMA_Submit();
 }
 
 /*

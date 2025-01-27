@@ -115,7 +115,10 @@ typedef struct
 	sfx_t*	sfx;					// name and cache pointer
 } voxword_t;
 
+#define CVOXWORDMAX		32
 
+extern char* rgpparseword[CVOXWORDMAX];
+extern voxword_t rgrgvoxword[CBSENTENCENAME_MAX][CVOXWORDMAX];
 
 void S_Init( void );
 void S_Startup( void );
@@ -131,7 +134,7 @@ void S_ExtraUpdate( void );
 sfx_t* S_PrecacheSound( char* name );
 void S_BeginPrecaching( void );
 void S_EndPrecaching( void );
-
+void S_PaintChannels( int endtime );
 
 // spatializes a channel
 void SND_Spatialize( channel_t* ch );

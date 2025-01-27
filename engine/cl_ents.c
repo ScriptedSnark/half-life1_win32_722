@@ -1,6 +1,7 @@
 // cl_ents.c -- entity parsing and management
 
 #include "quakedef.h"
+#include "pr_cmds.h"
 
 int cl_playerindex; // player index
 
