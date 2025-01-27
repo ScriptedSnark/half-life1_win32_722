@@ -1566,7 +1566,30 @@ void S_Play( void )
 
 void S_PlayVol( void )
 {
-	// TODO: Implement
+	static int hash = 543;
+	int i;
+	float vol;
+	char name[256];
+	sfx_t* sfx;
+
+	i = 1;
+	while (i < Cmd_Argc())
+	{
+		if (Q_strrchr(Cmd_Argv(i), '.'))
+		{
+			Q_strcpy(name, Cmd_Argv(i));
+		}
+		else
+		{
+			Q_strcpy(name, Cmd_Argv(i));
+			Q_strcat(name, ".wav");
+		}
+
+		sfx = S_PrecacheSound(name);
+		vol = Q_atof(Cmd_Argv(i + 1));
+		S_StartDynamicSound(hash++, CHAN_AUTO, sfx, listener_origin, vol, 1.0, 0, PITCH_NORM);
+		i += 2;
+	}
 }
 
 void S_SoundList( void )
