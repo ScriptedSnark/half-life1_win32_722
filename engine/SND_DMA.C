@@ -1173,11 +1173,44 @@ void S_StartStaticSound( int entnum, int entchannel, sfx_t* sfxin, vec_t* origin
 	SND_Spatialize(ch);
 }
 
-// TODO: Implement
+// Stop all sounds for entity on a channel.
+void S_StopSound( int entnum, int entchannel )
+{
+	int i;
+
+	for (i = NUM_AMBIENTS; i < total_channels; i++)
+	{
+		if (channels[i].entnum == entnum && channels[i].entchannel == entchannel)
+		{
+			S_FreeChannel(&channels[i]);
+		}
+	}
+}
 
 void S_StopAllSounds( qboolean clear )
 {
+	int		i;
+
+	if (!sound_started)
+		return;
+
+	total_channels = MAX_DYNAMIC_CHANNELS + NUM_AMBIENTS;	// no statics
+
+	for (i = 0; i < MAX_CHANNELS; i++)
+	{
+		if (channels[i].sfx)
+			S_FreeChannel(&channels[i]);
+	}
+
+	Q_memset(channels, 0, sizeof(channels));
+	Wavstream_Init();
+
+	if (clear)
+		S_ClearBuffer();
+
+#if defined (__USEA3D)
 	// TODO: Implement
+#endif
 }
 
 void S_StopAllSoundsC( void )

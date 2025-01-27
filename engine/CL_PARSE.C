@@ -1332,7 +1332,7 @@ void CL_ParseServerMessage( void )
 
 		case svc_stopsound:
 			i = MSG_ReadShort();
-			// TODO: Implement
+			S_StopSound(i >> 3, i & 7);
 			break;
 
 		case svc_updatecolors:
@@ -1371,7 +1371,9 @@ void CL_ParseServerMessage( void )
 			CL_SignonReply();
 			break;
 
-		// TODO: Implement
+		case svc_centerprint:
+			SCR_CenterPrint(MSG_ReadString());
+			break;
 
 		case svc_killedmonster:
 			break;
