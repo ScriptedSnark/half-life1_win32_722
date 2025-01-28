@@ -655,12 +655,139 @@ void S_MixChannelsToPaintbuffer( int end, int fPaintHiresSounds )
 
 void S_PaintChannels( int endtime )
 {
-	// TODO: Implement
+	int		end;
+	int		count;
+	static portable_samplepair_t paintprev = { 0, 0 };
+#if defined (__USEA3D)
+	static portable_samplepair_t drypaintprev = { 0, 0 };
+#endif
+
+#if defined (__USEA3D)
+	if (snd_isa3d)
+	{
+//		if (paintedtime >= endtime) TODO: Implement
+//			hA3D_StopAllSounds(paintedtime); TODO: Implement
+	}
+#endif
+
+	while (paintedtime < endtime)
+	{
+		// mix a full 'paintbuffer' of sound
+
+		// clamp at paintbuffer size
+
+		end = endtime;
+		if (end - paintedtime > PAINTBUFFER_SIZE)
+			end = paintedtime + PAINTBUFFER_SIZE;
+
+		// number of 11khz samples to mix into paintbuffer, up to paintbuffer size
+
+		count = end - paintedtime;
+
+		// clear all mix buffers
+
+		Q_memset(paintbuffer, 0, sizeof(portable_samplepair_t) * count);
+
+#if defined (__USEA3D)
+		if (s_verbwet.value >= S_VERBWET_EPS)
+		{
+			Q_memset(drybuffer, 0, sizeof(portable_samplepair_t) * count);
+		}
+#endif
+
+		// upsample all mix buffers
+		// results in 11khz versions of:
+
+		S_MixChannelsToPaintbuffer(end, FALSE);
+
+		// upsample by 2x, optionally using interpolation
+
+		int i, j;
+		int count2x = count << 1;
+
+		if (!hisound.value)
+			SX_RoomFX(count, TRUE, TRUE);
+
+#if defined (__USEA3D)
+		if (snd_isa3d && s_verbwet.value >= S_VERBWET_EPS)
+		{
+			// reverse through buffer, duplicating contents for 'count' samples
+
+			for (i = count2x - 1, j = count - 1; j > 0; i -= 2, j--)
+			{
+				// use linear interpolation for upsampling
+
+				paintbuffer[i].left = paintbuffer[j].left;
+				paintbuffer[i].right = paintbuffer[j].right;
+
+				paintbuffer[i - 1].left = AVG(paintbuffer[j].left, paintbuffer[j - 1].left);
+				paintbuffer[i - 1].right = AVG(paintbuffer[j].right, paintbuffer[j - 1].right);
+
+				drybuffer[i].left = drybuffer[j].left;
+				drybuffer[i].right = drybuffer[j].right;
+
+				drybuffer[i - 1].left = AVG(drybuffer[j].left, drybuffer[j - 1].left);
+				drybuffer[i - 1].right = AVG(drybuffer[j].right, drybuffer[j - 1].right);
+			}
+
+			paintbuffer[1].left = paintbuffer[0].left;
+			paintbuffer[1].right = paintbuffer[0].right;
+
+			drybuffer[1].left = drybuffer[0].left;
+			drybuffer[1].right = drybuffer[0].right;
+
+			// use interpolation value from previous mix
+
+			paintbuffer[0].left = AVG(paintbuffer[0].left, paintprev.left);
+			paintbuffer[0].right = AVG(paintbuffer[0].right, paintprev.right);
+
+			drybuffer[0].left = AVG(drybuffer[0].left, drypaintprev.left);
+			drybuffer[0].right = AVG(drybuffer[0].right, drypaintprev.right);
+
+			// save last value to be played out in buffer
+			drypaintprev.left = drybuffer[count2x - 1].left;
+			drypaintprev.right = drybuffer[count2x - 1].right;
+		}
+		else
+#endif
+		{
+			// reverse through buffer, duplicating contents for 'count' samples
+
+			for (i = count2x - 1, j = count - 1; j > 0; i -= 2, j--)
+			{
+				// use linear interpolation for upsampling
+
+				paintbuffer[i].left = paintbuffer[j].left;
+				paintbuffer[i].right = paintbuffer[j].right;
+
+				paintbuffer[i - 1].left = AVG(paintbuffer[j].left, paintbuffer[j - 1].left);
+				paintbuffer[i - 1].right = AVG(paintbuffer[j].right, paintbuffer[j - 1].right);
+			}
+
+			paintbuffer[1].left = paintbuffer[0].left;
+			paintbuffer[1].right = paintbuffer[0].right;
+
+			// use interpolation value from previous mix
+
+			paintbuffer[0].left = AVG(paintbuffer[0].left, paintprev.left);
+			paintbuffer[0].right = AVG(paintbuffer[0].right, paintprev.right);
+		}
+
+		// save last value to be played out in buffer
+		paintprev.left = paintbuffer[count2x - 1].left;
+		paintprev.right = paintbuffer[count2x - 1].right;
+
+		if (hisound.value > 0.0)
+		{
+			S_MixChannelsToPaintbuffer(end, TRUE); // mix hires
+			SX_RoomFX(count2x, TRUE, TRUE);
+		}
+
+		// transfer out according to DMA format
+		S_TransferPaintBuffer(end);
+		paintedtime = end;
+	}
 }
-
-
-// TODO: Implement
-
 
 void SND_InitScaletable( void )
 {
@@ -670,6 +797,67 @@ void SND_InitScaletable( void )
 		for (j = 0; j < 256; j++)
 			snd_scaletable[i][j] = ((signed char)j) * i * 8;
 }
+
+
+#if	!id386
+
+// 8-bit sound-mixing code
+void SND_PaintChannelFrom8( channel_t* ch, sfxcache_t* sc, int count )
+{
+	int		data;
+	int* lscale, * rscale;
+	unsigned char* sfx;
+	int		i;
+
+	if (ch->leftvol > 255)
+		ch->leftvol = 255;
+	if (ch->rightvol > 255)
+		ch->rightvol = 255;
+
+	lscale = snd_scaletable[ch->leftvol >> 3];
+	rscale = snd_scaletable[ch->rightvol >> 3];
+	sfx = sc->data + ch->pos;
+
+	for (i = 0; i < count; i++)
+	{
+		data = sfx[i];
+		paintbuffer[i].left += lscale[data];
+		paintbuffer[i].right += rscale[data];
+	}
+
+	ch->pos += count;
+}
+
+#if	defined (__USEA3D)
+void SND_PaintChannelFrom8toDry( channel_t* ch, sfxcache_t* sc, int count )
+{
+	int 	data;
+	int* lscale, * rscale;
+	unsigned char* sfx;
+	int		i;
+
+	if (ch->leftvol > 255)
+		ch->leftvol = 255;
+	if (ch->rightvol > 255)
+		ch->rightvol = 255;
+
+	lscale = snd_scaletable[ch->leftvol >> 3];
+	rscale = snd_scaletable[ch->rightvol >> 3];
+	sfx = sc->data + ch->pos;
+
+	for (i = 0; i < count; i++)
+	{
+		data = sfx[i];
+		drybuffer[i].left += lscale[data];
+		drybuffer[i].right += rscale[data];
+	}
+
+	ch->pos += count;
+}
+
+#endif	// __USEA3D
+
+#endif	// !id386
 
 void SND_PaintChannelFrom8Offs( portable_samplepair_t* paintbuffer, channel_t* ch, sfxcache_t* sc, int count, int offset )
 {
