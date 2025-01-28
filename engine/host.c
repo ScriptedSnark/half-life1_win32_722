@@ -1654,10 +1654,7 @@ void _Host_Frame(float time)
 	{
 		if (cls.signon == SIGNONS)
 		{
-			vec3_t vSoundForward, vSoundRight, vSoundUp;
-			AngleVectors(r_playerViewportAngles, vSoundForward, vSoundRight, vSoundUp);
-
-			S_Update(r_soundOrigin, vSoundForward, vSoundRight, vSoundUp);
+			S_Update(r_origin, vpn, vright, vup);
 			CL_DecayLights();
 		}
 		else
