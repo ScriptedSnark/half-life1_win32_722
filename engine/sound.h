@@ -252,7 +252,7 @@ void S_FreeChannel( channel_t* ch );
 
 
 
-
+extern void SND_CloseMouth( channel_t* ch );
 extern void SND_InitMouth( int entnum, int entchannel );
 
 
@@ -269,7 +269,7 @@ void SX_RoomFX( int count, int fFilter, int fTimefx );
 extern wavstream_t wavstreams[MAX_CHANNELS];
 
 qboolean Wavstream_Init( void );
-
+void Wavstream_Close( int i );
 
 
 DLL_EXPORT void Snd_ReleaseBuffer( void );

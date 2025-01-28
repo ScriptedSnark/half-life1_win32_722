@@ -159,6 +159,9 @@ void S_TransferStereo16( int end )
 #endif
 }
 
+// Transfer contents of main paintbuffer out to 
+// device.  Perform volume multiply on each sample.
+
 void S_TransferPaintBuffer( int endtime )
 {
 	int 	out_idx;
@@ -287,11 +290,6 @@ void S_TransferPaintBuffer( int endtime )
 }
 
 
-
-
-// TODO: Implement
-
-
 /*
 ===============================================================================
 
@@ -307,7 +305,29 @@ CHANNEL MIXING
 
 void S_FreeChannel( channel_t* ch )
 {
-	// TODO: Implement
+	if (ch->entchannel == CHAN_STREAM)
+	{
+		int i;
+
+		i = ch - channels;
+
+		Wavstream_Close(i);
+
+		// Release the cache
+		Cache_Free(&ch->sfx->cache);
+	}
+
+	if (ch->isentence >= 0)
+	{
+		rgrgvoxword[ch->isentence][0].sfx = NULL;
+	}
+
+	ch->isentence = -1;
+//	Con_Printf("End sound %s\n", ch->sfx->name);
+
+	ch->sfx = NULL;
+
+	SND_CloseMouth(ch);
 }
 
 
@@ -377,6 +397,12 @@ qboolean Wavstream_Init( void )
 	return TRUE;
 }
 
+// Close wavestream files
+void Wavstream_Close( int i )
+{
+	// TODO: Implement
+}
+
 
 // TODO: Implement
 
@@ -386,9 +412,58 @@ void SND_InitMouth( int entnum, int entchannel )
 	// TODO: Implement
 }
 
+void SND_CloseMouth( channel_t* ch )
+{
+	// TODO: Implement
+}
+
 
 // TODO: Implement
 
+//===============================================================================
+// VOX. Algorithms to load and play spoken text sentences from a file:
+//
+// In ambient sounds or entity sounds, precache the 
+// name of the sentence instead of the wave name, ie: !C1A2S4
+//
+// During sound system init, the 'sentences.txt' is read.
+// This file has the format:
+//
+//		HG_ALERT0 hgrunt/(t30) squad!, we!(e80) got!(e80) freeman!(t20 p105), clik(p110)
+//      HG_ALERT1 hgrunt/clik(p110) target! clik
+//		...
+//
+//		There must be at least one space between the sentence name and the sentence.
+//		Sentences may be separated by one or more lines
+//		There may be tabs or spaces preceding the sentence name
+//		The sentence must end in a /n or /r
+//		Lines beginning with // are ignored as comments
+//
+//		Period or comma will insert a pause in the wave unless
+//		the period or comma is the last character in the string.
+//
+//		If first 2 chars of a word are upper case, word volume increased by 25%
+// 
+//		If last char of a word is a number from 0 to 9
+//		then word will be pitch-shifted up by 0 to 9, where 0 is a small shift
+//		and 9 is a very high pitch shift.
+//
+// We alloc heap space to contain this data, and track total 
+// sentences read.  A pointer to each sentence is maintained in rgpszrawsentence.
+//
+// When sound is played back in S_StartDynamicSound or s_startstaticsound, we detect the !name
+// format and lookup the actual sentence in the sentences array
+//
+// To play, we parse each word in the sentence, chain the words, and play the sentence
+// each word's data is loaded directy from disk and freed right after playback.
+//===============================================================================
+
+// Module Locals
+static char*	rgpparseword[CVOXWORDMAX];	// array of pointers to parsed words
+static char		voxperiod[] = "_period";				// vocal pause
+static char		voxcomma[] = "_comma";				// vocal pause
+
+voxword_t rgrgvoxword[CBSENTENCENAME_MAX][CVOXWORDMAX];
 
 void VOX_Init( void )
 {
