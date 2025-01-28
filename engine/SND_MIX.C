@@ -420,14 +420,238 @@ qboolean S_CheckWavEnd( channel_t* ch, sfxcache_t** psc, int ltime, int ichan )
 //		if the game isn't paused
 void S_MixChannelsToPaintbuffer( int end, int fPaintHiresSounds )
 {
-	// TODO: Implement
+	int			i;
+	channel_t* ch;
+	sfxcache_t* sc = NULL;
+	int			ltime, count;
+	int			pitch;
+	float		timecompress;
+	int			fhitend = FALSE;
+	int			hires = FALSE;
+	int			offset;
+	int			chend;
+	portable_samplepair_t* pout;
+
+	// mix each channel into paintbuffer
+	ch = channels;
+
+	for (i = 0; i < total_channels; i++, ch++)
+	{
+#if defined (__USEA3D)
+		int A3D_good = FALSE;
+		static int A3D_painted;
+
+		if (snd_isa3d)
+		{		
+			A3D_painted = FALSE;
+			pitch = -PITCH_NORM;
+
+			if (ch->sfx)
+			{
+				sc = S_LoadSound(ch->sfx, ch);
+				if (sc)
+				{
+					if (fPaintHiresSounds)
+					{
+						if (sc->speed <= shm->speed)
+							continue;
+					}
+					else
+					{
+						if (sc->speed != shm->speed)
+							continue;
+					}
+
+					// get playback pitch
+					pitch = ch->pitch;
+
+					if (ch->isentence >= 0)
+					{
+						if (rgrgvoxword[ch->isentence][ch->iword].pitch > 0)
+						{
+							pitch += rgrgvoxword[ch->isentence][ch->iword].pitch - PITCH_NORM;
+						}
+					}
+				}
+			}
+
+			// If we can get this channel into 3D hardware, do it.
+			if (PaintToA3D(i, ch, sc, 0, 0, pitch / 100.0))
+				A3D_good = TRUE;
+		}
+#endif
+
+		if (!ch->sfx)
+		{
+			continue;
+		}
+
+		// UNDONE: Can get away with not filling the cache until
+		// we decide it should be mixed
+
+		sc = S_LoadSound(ch->sfx, ch);
+
+		// Don't mix sound data for sounds with zero volume. If it's a non-looping sound, 
+		// just remove the sound when its volume goes to zero.
+
+		if (!ch->leftvol && !ch->rightvol)
+		{
+			// NOTE: Since we've loaded the sound, check to see if it's a sentence.  Play them at zero anyway
+			// to keep the character's lips moving and the captions happening.
+			if (sc->loopstart < 0) // non-looped sound, we can free it.
+			{
+				S_FreeChannel(ch);
+			}
+
+			continue; // don't mix it
+		}
+
+		if (!sc)
+			continue;
+
+		if (fPaintHiresSounds)
+		{
+			if (sc->speed <= shm->speed)
+				continue;
+		}
+		else
+		{
+			if (sc->speed != shm->speed)
+				continue;
+		}
+
+		ltime = paintedtime;
+
+		// get playback pitch
+		pitch = ch->pitch;
+
+		if (ch->isentence < 0)
+		{
+			timecompress = 0;
+		}
+		else
+		{
+			if (rgrgvoxword[ch->isentence][ch->iword].pitch > 0)
+			{
+				pitch += rgrgvoxword[ch->isentence][ch->iword].pitch - PITCH_NORM;
+			}
+
+			timecompress = rgrgvoxword[ch->isentence][ch->iword].timecompress;
+		}
+
+		// do this until we reach the end 
+		fhitend = FALSE;
+		while (ltime < end)
+		{
+			// See if painting highres sounds
+			if (hires)
+				chend = (sc->length >> 1) + ch->end - sc->length;
+			else
+				chend = ch->end;
+
+			if (chend < end)
+				count = chend - ltime;
+			else
+				count = end - ltime;
+
+			if (hires)
+				count <<= 1;
+
+			offset = (ltime - paintedtime);
+
+			if (hires)
+				offset <<= 1;
+
+			if (count > 0)
+			{
+				if (sc->width == 1 && ch->entnum > 0)
+				{
+					if (ch->entchannel == CHAN_VOICE || ch->entchannel == CHAN_STREAM)
+					{
+						SND_MoveMouth(ch, sc, count);
+					}
+				}
+
+#if defined (__USEA3D)
+				// No good, gotta use 100% software...
+				if (A3D_good)
+				{
+					pout = drybuffer;
+
+					if (s_verbwet.value < S_VERBWET_EPS)
+					{
+						ch->pos += count;
+						goto A3D_SkipPainting;
+					}
+				}
+				else
+#endif
+				{
+					pout = paintbuffer;
+				}
+
+				if (sc->width == 1)
+				{
+					if ((pitch == PITCH_NORM && !timecompress) || ch->isentence < 0)
+					{
+						if (paintedtime == ltime)
+						{
+							if (pout == paintbuffer)
+							{
+								SND_PaintChannelFrom8(ch, sc, count);
+							}
+							else
+							{
+#if defined(__USEA3D)
+								SND_PaintChannelFrom8toDry(ch, sc, count);
+#else
+								SND_PaintChannelFrom8(ch, sc, count);
+#endif
+							}
+						}
+						else
+						{
+							SND_PaintChannelFrom8Offs(pout, ch, sc, count, offset);
+						}
+					}
+					else
+					{
+						fhitend = VOX_FPaintPitchChannelFrom8Offs(pout, ch, sc, count, pitch, timecompress, offset);
+					}
+				}
+				else
+				{
+					SND_PaintChannelFrom16Offs(pout, ch, sc, count, offset);
+				}
+
+#if defined (__USEA3D)
+				// No need to paint dry buffer
+				A3D_SkipPainting:
+#endif
+				if (hires)
+					ltime += count >> 1;
+				else
+					ltime += count;
+
+				if (ch->entchannel == CHAN_STREAM)
+				{
+					wavstreams[i].csamplesplayed += count;
+				}
+			}
+
+			if (fhitend || ltime >= chend)
+			{
+				fhitend = FALSE;
+				if (S_CheckWavEnd(ch, &sc, ltime, i))
+				{
+					break;
+				}
+			}
+		}
+	}
 }
 
-
-
-
-// TODO: Implement
-
+#define AVG(a,b) (((a) + (b)) >> 1)
 
 void S_PaintChannels( int endtime )
 {
@@ -445,6 +669,62 @@ void SND_InitScaletable( void )
 	for (i = 0; i < 32; i++)
 		for (j = 0; j < 256; j++)
 			snd_scaletable[i][j] = ((signed char)j) * i * 8;
+}
+
+void SND_PaintChannelFrom8Offs( portable_samplepair_t* paintbuffer, channel_t* ch, sfxcache_t* sc, int count, int offset )
+{
+	int		data;
+	int* lscale, * rscale;
+	unsigned char* sfx;
+	int		i;
+	portable_samplepair_t* pbuffer;
+
+	pbuffer = &paintbuffer[offset];
+
+	if (ch->leftvol > 255)
+		ch->leftvol = 255;
+	if (ch->rightvol > 255)
+		ch->rightvol = 255;
+
+	lscale = snd_scaletable[ch->leftvol >> 3];
+	rscale = snd_scaletable[ch->rightvol >> 3];
+	sfx = sc->data + ch->pos;
+
+	for (i = 0; i < count; i++)
+	{
+		data = sfx[i];
+		pbuffer[i].left += lscale[data];
+		pbuffer[i].right += rscale[data];
+	}
+
+	ch->pos += count;
+}
+
+void SND_PaintChannelFrom16Offs( portable_samplepair_t* paintbuffer, channel_t* ch, sfxcache_t* sc, int count, int offset )
+{
+	int		data;
+	int		left, right;
+	int		leftvol, rightvol;
+	short* sfx;
+	int		i;
+	portable_samplepair_t* pbuffer;
+
+	pbuffer = &paintbuffer[offset];
+
+	leftvol = ch->leftvol;
+	rightvol = ch->rightvol;
+	sfx = (short*)&sc->data[ch->pos * 2];
+
+	for (i = 0; i < count; i++)
+	{
+		data = sfx[i];
+		left = leftvol * data;
+		right = rightvol * data;
+		pbuffer[i].left += left >> 8;
+		pbuffer[i].right += right >> 8;
+	}
+
+	ch->pos += count;
 }
 
 
@@ -514,6 +794,13 @@ void SND_InitMouth( int entnum, int entchannel )
 }
 
 void SND_CloseMouth( channel_t* ch )
+{
+	// TODO: Implement
+}
+
+#define CAVGSAMPLES 10
+
+void SND_MoveMouth( channel_t* ch, sfxcache_t* sc, int count )
 {
 	// TODO: Implement
 }
@@ -599,6 +886,11 @@ sfxcache_t* VOX_LoadSound( channel_t* pchan, char* pszin )
 	return NULL;
 }
 
+int	VOX_FPaintPitchChannelFrom8Offs( portable_samplepair_t* paintbuffer, channel_t* ch, sfxcache_t* sc, int count, int pitch, int timecompress, int offset )
+{
+	// TODO: Implement
+	return 0;
+}
 
 // TODO: Implement
 
@@ -618,5 +910,16 @@ void VOX_TrimStartEndTimes( channel_t* ch, sfxcache_t* sc )
 	// TODO: Implement
 }
 
+
+// TODO: Implement
+
+
+#if defined (__USEA3D)
+int PaintToA3D( int iChannel, channel_t* ch, sfxcache_t* sc, int count, int feedStart, float flPitch )
+{
+	// TODO: Implement
+	return FALSE;
+}
+#endif
 
 // TODO: Implement

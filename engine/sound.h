@@ -252,6 +252,18 @@ void S_FreeChannel( channel_t* ch );
 
 
 
+void SND_PaintChannelFrom8Offs( portable_samplepair_t* paintbuffer, channel_t* ch, sfxcache_t* sc, int count, int offset );
+void SND_PaintChannelFrom16Offs( portable_samplepair_t* paintbuffer, channel_t* ch, sfxcache_t* sc, int count, int offset );
+
+//=============================================================================
+
+void S_TransferStereo16( int end );
+void S_TransferPaintBuffer( int endtime );
+void S_MixChannelsToPaintbuffer( int end, int fPaintHiresSounds );
+qboolean S_CheckWavEnd( channel_t* ch, sfxcache_t** psc, int ltime, int ichan );
+
+extern void SND_MoveMouth( channel_t* ch, sfxcache_t* sc, int count );
+
 extern void SND_CloseMouth( channel_t* ch );
 extern void SND_InitMouth( int entnum, int entchannel );
 
@@ -287,7 +299,7 @@ extern sfxcache_t*		VOX_LoadSound( channel_t* pchan, char* pszin );
 
 extern void				VOX_MakeSingleWordSentence( channel_t* ch, int pitch );
 extern void				VOX_TrimStartEndTimes( channel_t* ch, sfxcache_t* sc );
-
+extern int				VOX_FPaintPitchChannelFrom8Offs( portable_samplepair_t* paintbuffer, channel_t* ch, sfxcache_t* sc, int count, int pitch, int timecompress, int offset );
 
 
 
