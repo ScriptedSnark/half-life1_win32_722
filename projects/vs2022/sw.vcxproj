@@ -103,6 +103,7 @@
     <ClCompile Include="..\..\engine\in_win.c" />
     <ClCompile Include="..\..\engine\KEYS.C" />
     <ClCompile Include="..\..\engine\l_studio.c" />
+    <ClCompile Include="..\..\engine\mathlib.c" />
     <ClCompile Include="..\..\engine\net_chan.c" />
     <ClCompile Include="..\..\engine\net_ws.c" />
     <ClCompile Include="..\..\engine\pe_export.c" />
@@ -126,6 +127,8 @@
     <ClCompile Include="..\..\engine\zone.c" />
   </ItemGroup>
   <ItemGroup>
+    <MASM Include="..\..\engine\math.asm" />
+    <MASM Include="..\..\engine\snd_mixa.asm" />
     <MASM Include="..\..\engine\sys_wina.asm">
       <FileType>Document</FileType>
     </MASM>

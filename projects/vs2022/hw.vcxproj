@@ -155,6 +155,7 @@
   </ItemGroup>
   <ItemGroup>
     <MASM Include="..\..\engine\math.asm" />
+    <MASM Include="..\..\engine\snd_mixa.asm" />
     <MASM Include="..\..\engine\sys_wina.asm">
       <FileType>Document</FileType>
     </MASM>

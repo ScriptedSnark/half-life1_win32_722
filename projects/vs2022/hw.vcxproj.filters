@@ -445,6 +445,9 @@
     <MASM Include="..\..\engine\math.asm">
       <Filter>Source Files</Filter>
     </MASM>
+    <MASM Include="..\..\engine\snd_mixa.asm">
+      <Filter>Source Files</Filter>
+    </MASM>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\.editorconfig" />

@@ -31,6 +31,10 @@
 #define DECLTYPE(func) (void*)
 #endif
 
+#if defined(_M_IX86)
+#define __i386__	1
+#endif
+
 #if defined( _WIN32 )
 
 // Used for dll exporting and importing
@@ -39,7 +43,11 @@
 
 #endif
 
-
+#if defined __i386__ // && !defined __sun__
+#define id386	1
+#else
+#define id386	0
+#endif
 
 #define	MINIMUM_MEMORY			0x550000
 #define	MINIMUM_MEMORY_LEVELPAK	(MINIMUM_MEMORY + 0x100000)
