@@ -2,7 +2,7 @@
 
 #include "quakedef.h"
 
-qboolean GetWavinfo( char* name, byte* wav, int wavlength, wavinfo_t* info );
+wavinfo_t GetWavinfo( char* name, byte* wav, int wavlength );
 
 int			cache_full_cycle;
 
@@ -13,7 +13,7 @@ byte* S_Alloc( int size );
 ResampleSfx
 ================
 */
-void ResampleSfx( sfx_t* sfx, int inrate, int inwidth, byte* data, int datasize )
+void ResampleSfx( sfx_t* sfx, int inrate, int inwidth, byte* data )
 {
 	int		outcount;
 	int		srcsample;
@@ -93,6 +93,80 @@ S_LoadSound
 */
 sfxcache_t* S_LoadSound( sfx_t* s, channel_t* ch )
 {
-	// TODO: Implement
-	return NULL;
+	char	namebuffer[256];
+	byte* data;
+	wavinfo_t	info;
+	int		len;
+	float	stepscale;
+	sfxcache_t* sc;
+	byte	stackbuf[1 * 1024];		// avoid dirtying the cache heap
+
+	if (s->name[0] == CHAR_STREAM)
+		return S_LoadStreamSound(s, ch);
+
+// see if still in memory
+	sc = (sfxcache_t*)Cache_Check(&s->cache);
+	if (sc)
+	{
+		if (hisound.value || sc->speed <= shm->speed)
+			return sc;
+		Cache_Free(&s->cache);
+	}
+
+//	Con_Printf("S_LoadSound: %x\n", (int)stackbuf);
+// load it in
+	Q_strcpy(namebuffer, "sound");
+
+	if (s->name[0] != '/')
+		strcat(namebuffer, "/");
+	Q_strcat(namebuffer, s->name);
+
+//	Con_Printf("loading %s\n",namebuffer);
+
+	data = COM_LoadStackFile(namebuffer, stackbuf, sizeof(stackbuf));
+	if (!data)
+	{
+		Con_DPrintf("Couldn't load %s\n", namebuffer);
+		return NULL;
+	}
+
+	info = GetWavinfo(s->name, data, com_filesize);
+	if (info.channels != 1)
+	{
+		Con_DPrintf("%s is a stereo sample\n", s->name);
+		return NULL;
+	}
+
+	if (info.width != 1)
+	{
+		Con_DPrintf("%s is a 16 bit sample\n", s->name);
+		return NULL;
+	}
+
+	if (info.rate == shm->speed || (info.rate == 2 * shm->speed && hisound.value > 0.0))
+	{
+		stepscale = 1;
+	}
+	else
+	{
+		stepscale = (float)info.rate / (float)shm->speed;
+	}
+
+	len = info.samples / stepscale;
+
+	len = len * info.width * info.channels;
+
+	sc = (sfxcache_t*)Cache_Alloc(&s->cache, len + sizeof(sfxcache_t), s->name);
+	if (!sc)
+		return NULL;
+
+	sc->length = info.samples;
+	sc->loopstart = info.loopstart;
+	sc->speed = info.rate;
+	sc->width = info.width;
+	sc->stereo = info.channels;
+
+	ResampleSfx(s, sc->speed, sc->width, data + info.dataofs);
+
+	return sc;
 }
