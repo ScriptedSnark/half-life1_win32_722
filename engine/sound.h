@@ -240,6 +240,7 @@ extern int cszrawsentences;
 
 void S_LocalSound( char* sound );
 sfxcache_t* S_LoadSound( sfx_t* s, channel_t* channel );
+sfxcache_t* S_LoadStreamSound( sfx_t* s, channel_t* ch );
 sfx_t* S_FindName( char* name, int* pfInCache );
 
 void SND_InitScaletable( void );
@@ -264,6 +265,8 @@ void SX_Init( void );
 void SX_RoomFX( int count, int fFilter, int fTimefx );
 
 // WAVE Stream
+
+extern wavstream_t wavstreams[MAX_CHANNELS];
 
 qboolean Wavstream_Init( void );
 
