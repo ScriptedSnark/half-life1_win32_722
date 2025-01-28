@@ -270,6 +270,7 @@ extern wavstream_t wavstreams[MAX_CHANNELS];
 
 qboolean Wavstream_Init( void );
 void Wavstream_Close( int i );
+void Wavstream_GetNextChunk( channel_t* ch, sfx_t* s );
 
 
 DLL_EXPORT void Snd_ReleaseBuffer( void );

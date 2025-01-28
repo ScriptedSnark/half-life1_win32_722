@@ -330,6 +330,101 @@ void S_FreeChannel( channel_t* ch )
 	SND_CloseMouth(ch);
 }
 
+// S_CheckWavEnd() - check the status of a sound channel.
+// Determine if we need to update the positions
+// for stream sounds, release the VOX sfx cache
+// if needed and reload the sentence sound itself
+
+qboolean S_CheckWavEnd( channel_t* ch, sfxcache_t** psc, int ltime, int ichan )
+{
+	sfxcache_t* sc;
+
+	sc = (*psc);
+
+	// Check if the sound is looped and set the position and end accordingly
+	if (sc->loopstart >= 0)
+	{
+		ch->pos = sc->loopstart;
+		ch->end = sc->length + ltime - ch->pos;
+
+		if (ch->isentence >= 0)
+		{
+			rgrgvoxword[ch->isentence][ch->iword].samplefrac = 0;
+		}
+
+		return FALSE;
+	}
+
+	if (ch->entchannel == CHAN_STREAM)
+	{
+		if (wavstreams[ichan].csamplesplayed < wavstreams[ichan].info.samples)
+		{
+			Wavstream_GetNextChunk(ch, ch->sfx);
+			ch->pos = 0;
+			ch->end = sc->length + ltime;
+			return FALSE;
+		}
+
+		S_FreeChannel(ch);
+
+#if defined (__USEA3D)
+		if (snd_isa3d)
+		{
+			// TODO: Implement
+		}
+#endif
+		return TRUE;
+	}
+
+	if (ch->isentence >= 0)
+	{
+		sfx_t* sfx;
+
+		sfx = rgrgvoxword[ch->isentence][ch->iword].sfx;
+		if (!rgrgvoxword[ch->isentence][ch->iword].fKeepCached)
+		{
+			Cache_Free(&sfx->cache);
+		}
+
+		ch->sfx = rgrgvoxword[ch->isentence][ch->iword + 1].sfx;
+		if (ch->sfx)
+		{
+			sc = S_LoadSound(ch->sfx, ch);
+			(*psc) = sc;
+
+			if (sc && ch->sfx)
+			{
+#if defined (__USEA3D)
+				if (snd_isa3d)
+				{
+					// TODO: Implement
+				}
+#endif
+				ch->pos = 0;
+				ch->end = ltime + sc->length;
+				ch->iword++;
+				VOX_TrimStartEndTimes(ch, sc);
+				return FALSE;
+			}
+		}
+	}
+
+	S_FreeChannel(ch);
+	return TRUE;
+}
+
+// Mix all channels into active paintbuffers until paintbuffer is full or 'end' is reached.
+// end: time in 22khz samples to mix
+// fPaintHiresSounds: set to true if we are operating with highres sounds
+// voiceOnly: true if we are doing voice processings, this sets in S_PaintChannels
+//		if the game isn't paused
+void S_MixChannelsToPaintbuffer( int end, int fPaintHiresSounds )
+{
+	// TODO: Implement
+}
+
+
+
 
 // TODO: Implement
 
@@ -399,6 +494,12 @@ qboolean Wavstream_Init( void )
 
 // Close wavestream files
 void Wavstream_Close( int i )
+{
+	// TODO: Implement
+}
+
+// Move to the next wave chunk
+void Wavstream_GetNextChunk( channel_t* ch, sfx_t* s )
 {
 	// TODO: Implement
 }
