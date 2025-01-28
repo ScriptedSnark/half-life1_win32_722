@@ -113,7 +113,7 @@ sfxcache_t* S_LoadSound( sfx_t* s, channel_t* ch )
 		Cache_Free(&s->cache);
 	}
 
-//	Con_Printf("S_LoadSound: %x\n", (int)stackbuf);
+//Con_Printf("S_LoadSound: %x\n", (int)stackbuf);
 // load it in
 	Q_strcpy(namebuffer, "sound");
 
@@ -170,3 +170,114 @@ sfxcache_t* S_LoadSound( sfx_t* s, channel_t* ch )
 
 	return sc;
 }
+
+/*
+==============
+S_LoadStreamSound
+==============
+*/
+sfxcache_t* S_LoadStreamSound( sfx_t* s, channel_t* ch )
+{
+	char	namebuffer[256];
+	char	wavname[MAX_QPATH];
+	byte* data;
+	wavinfo_t	info;
+	sfxcache_t* sc;
+	int		cbread = 0;
+	int		i;
+	int		ffirstload = FALSE;
+
+	if (cl.fPrecaching)
+		return NULL;
+
+	Q_strcpy(wavname, s->name + 1);
+
+	// channel index
+	i = (ch - channels);
+
+// see if still in memory
+	sc = (sfxcache_t*)Cache_Check(&s->cache);
+	if (sc)
+	{
+		if (wavstreams[i].hFile[2] != -1)
+			return sc;
+	}
+
+//Con_Printf("S_LoadSound: %x\n", (int)stackbuf);
+// load it in
+	Q_strcpy(namebuffer, "sound");
+
+	if (wavname[0] != '/')
+		strcat(namebuffer, "/");
+	Q_strcat(namebuffer, wavname);
+
+	if (wavstreams[i].hFile[2] == -1)
+		ffirstload = TRUE;
+
+	data = COM_LoadFileLimit(namebuffer, wavstreams[i].lastposloaded, 0x8000, &cbread, wavstreams[i].hFile);
+	if (!data)
+	{
+		Con_DPrintf("Couldn't load %s\n", namebuffer);
+		return NULL;
+	}
+
+	if (ffirstload)
+	{
+		info = GetWavinfo(s->name, data, cbread);
+		if (info.channels != 1)
+		{
+			Con_DPrintf("%s is a stereo sample\n", wavname);
+			return NULL;
+		}
+
+		if (info.width != 1)
+		{
+			Con_DPrintf("%s is a 16 bit sample\n", wavname);
+			return NULL;
+		}
+
+		if (shm->speed != info.rate)
+		{
+			Con_DPrintf("%s ignored, not stored at playback sample rate!\n", wavname);
+			return NULL;
+		}
+	}
+	else
+	{
+		info = wavstreams[i].info;
+	}
+
+	wavstreams[i].csamplesinmem = min(info.samples - wavstreams[i].csamplesplayed, wavstreams[i].csamplesinmem);
+	wavstreams[i].info = info;
+
+	if (!sc)
+	{
+		sc = (sfxcache_t*)Cache_Alloc(&s->cache, min(cbread, 0x8000) + sizeof(sfxcache_t), wavname);
+		if (!sc)
+			return sc;
+	}
+
+	sc->length = wavstreams[i].csamplesinmem;
+	sc->loopstart = info.loopstart;
+	sc->speed = info.rate;
+	sc->width = info.width;
+	sc->stereo = info.channels;
+
+	if (ffirstload)
+		ResampleSfx(s, sc->speed, sc->width, data + info.dataofs);
+	else
+		ResampleSfx(s, sc->speed, sc->width, data);
+
+	return sc;
+}
+
+
+/*
+===============================================================================
+
+WAV loading
+
+===============================================================================
+*/
+
+

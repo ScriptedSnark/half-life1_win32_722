@@ -139,7 +139,7 @@ typedef struct
 {
 	int		csamplesplayed;
 	int		csamplesinmem;
-	FILE* hFile;
+	int		hFile[3];
 	wavinfo_t info;
 	int		lastposloaded;
 } wavstream_t;

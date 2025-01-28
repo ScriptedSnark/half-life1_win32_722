@@ -600,7 +600,7 @@ channel_t* SND_PickDynamicChannel( int entnum, int entchannel,
 		// Never override a streaming sound that is currently playing or
 		// voice over IP data that is playing or any sound on CHAN_VOICE( acting )
 		if (channels[ch_idx].entchannel == CHAN_STREAM &&
-			wavstreams[ch_idx].hFile)
+			wavstreams[ch_idx].hFile[2])
 		{
 			if (entchannel == CHAN_VOICE)
 				return NULL;
