@@ -1326,6 +1326,61 @@ void SXDLY_DoStereoDelay( int count ) {
 	}
 }
 
+// If sxdly_delay or sxdly_feedback have changed, update delaysamples
+// and delayfeed values.  This applies only to delay 0, the main echo line.
+
+void SXDLY_CheckNewDelayVal() {
+	dlyline_t* pdly = &(rgsxdly[ISXMONODLY]);
+
+	if (sxdly_delay.value != sxdly_delayprev) {
+		
+		if (sxdly_delay.value == 0.0) {
+			
+			// deactivate delay line
+
+			SXDLY_Free(ISXMONODLY);
+			sxdly_delayprev = sxdly_delay.value;
+
+		} else {
+			// init delay line if not active
+
+			pdly->delaysamples = (int)(min(sxdly_delay.value, SXDLY_MAX) * shm->speed)
+				<< sxhires; // << 1 for hires
+			
+			if (pdly->lpdelayline == NULL)
+				SXDLY_Init(ISXMONODLY, SXDLY_MAX);
+
+			// flush delay line and filters
+
+			if (pdly->lpdelayline) {
+				Q_memset(pdly->lpdelayline, 0, pdly->cdelaysamplesmax * sizeof(sample_t));
+				pdly->lp0 = 0;
+				pdly->lp1 = 0;
+				pdly->lp2 = 0;
+			}
+
+			// init delay loop input and output counters
+
+			pdly->idelayinput = 0;
+			pdly->idelayoutput = pdly->cdelaysamplesmax - pdly->delaysamples;
+
+			sxdly_delayprev = sxdly_delay.value;
+
+			// deactivate line if rounded down to 0 delay
+
+			if (pdly->delaysamples == 0)
+				SXDLY_Free(ISXMONODLY);
+
+		}
+	}
+
+	pdly->lp = (int)(sxdly_lp.value);
+	pdly->delayfeed = sxdly_feedback.value * 255;
+}
+
+
+
+
 
 
 // TODO: Implement
