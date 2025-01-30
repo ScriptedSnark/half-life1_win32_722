@@ -1809,6 +1809,102 @@ void SXRVB_DoReverb( int count ) {
 	}
 }
 
+// amplitude modulator, low pass filter for underwater weirdness
+
+void SXRVB_DoAMod( int count ) {
+	
+	int valtl, valtr;
+	int left;
+	int right;
+	portable_samplepair_t* pbuf;
+	int countr;
+	int fLowpass;
+	int fmod;
+
+	// process reverb lines if active
+
+	if (sxmod_lowpass.value != 0.0 || sxmod_mod.value != 0.0)
+	{
+		pbuf = paintbuffer;
+		countr = count;
+
+		fLowpass = (sxmod_lowpass.value != 0.0);
+		fmod = (sxmod_mod.value != 0.0);
+
+		// process each sample in the paintbuffer...
+
+		while (countr--) {
+			
+			left = pbuf->left;
+			right = pbuf->right;
+
+			// only process if non-zero
+
+			if (fLowpass) {
+				
+				valtl = left;
+				valtr = right;
+
+				left = (rgsxlp[0] + rgsxlp[1] + rgsxlp[2] + rgsxlp[3] + rgsxlp[4] + left);
+				right = (rgsxlp[5] + rgsxlp[6] + rgsxlp[7] + rgsxlp[8] + rgsxlp[9] + right);
+
+				left = left >> 2;
+				right = right >> 2;
+
+				rgsxlp[4] = valtl;
+				rgsxlp[9] = valtr;
+
+				rgsxlp[0] = rgsxlp[1];
+				rgsxlp[1] = rgsxlp[2];
+				rgsxlp[2] = rgsxlp[3];
+				rgsxlp[3] = rgsxlp[4];
+				rgsxlp[4] = rgsxlp[5];
+				rgsxlp[5] = rgsxlp[6];
+				rgsxlp[6] = rgsxlp[7];
+				rgsxlp[7] = rgsxlp[8];
+				rgsxlp[8] = rgsxlp[9];
+
+			}
+
+
+			if (fmod) {
+				if (--sxmod1cur < 0)
+					sxmod1cur = sxmod1;
+
+				if (!sxmod1)
+					sxamodlt = RandomLong(32, 255);
+
+				if (--sxmod2cur < 0)
+					sxmod2cur = sxmod2;
+
+				if (!sxmod2)
+					sxamodlt = RandomLong(32, 255);
+
+				left = (left * sxamodl) >> 8;
+				right = (right * sxamodr) >> 8;
+
+				if (sxamodl < sxamodlt)
+					sxamodl++;
+				else if (sxamodl > sxamodlt)
+					sxamodl--;
+
+				if (sxamodr < sxamodrt)
+					sxamodr++;
+				else if (sxamodr > sxamodrt)
+					sxamodr--;
+			}
+
+			left = CLIP(left);
+			right = CLIP(right);
+
+			pbuf->left = left;
+			pbuf->right = right;
+
+			pbuf++;
+		}
+	}
+}
+
 
 
 
