@@ -917,9 +917,107 @@ void SND_PaintChannelFrom16Offs( portable_samplepair_t* paintbuffer, channel_t* 
 	ch->pos += count;
 }
 
+//===============================================================================
+//
+// Digital Signal Processing algorithms for audio FX.
+//
+// KellyB 1/24/97
+//===============================================================================
 
-// TODO: Implement
 
+#define SXDLY_MAX		0.400							// max delay in seconds
+#define SXRVB_MAX		0.100							// max reverb reflection time
+#define SXSTE_MAX		0.100							// max stereo delay line time
+
+typedef short sample_t;									// delay lines must be 32 bit, now that we have 16 bit samples
+
+typedef struct dlyline_s {
+	int cdelaysamplesmax;								// size of delay line in samples
+	int lp;												// lowpass flag 0 = off, 1 = on
+
+	int idelayinput;									// i/o indices into circular delay line
+	int idelayoutput;
+
+	int idelayoutputxf;									// crossfade output pointer
+	int xfade;											// crossfade value
+
+	int delaysamples;									// current delay setting
+	int delayfeed;										// current feedback setting
+
+	int lp0, lp1, lp2;									// lowpass filter buffer
+
+	int mod;											// sample modulation count
+	int modcur;
+
+	HANDLE hdelayline;									// handle to delay line buffer
+	sample_t* lpdelayline;								// buffer
+} dlyline_t;
+
+#define CSXDLYMAX		4
+
+#define ISXMONODLY		0								// mono delay line
+#define ISXRVB			1								// first of the reverb delay lines
+#define CSXRVBMAX		2
+#define ISXSTEREODLY	3								// 50ms left side delay
+
+dlyline_t rgsxdly[CSXDLYMAX];							// array of delay lines
+
+#define gdly0 (rgsxdly[ISXMONODLY])
+#define gdly1 (rgsxdly[ISXRVB])
+#define gdly2 (rgsxdly[ISXRVB + 1])
+#define gdly3 (rgsxdly[ISXSTEREODLY])
+
+#define CSXLPMAX		10								// lowpass filter memory
+
+int rgsxlp[CSXLPMAX];
+
+int sxamodl, sxamodr;									// amplitude modulation values
+int sxamodlt, sxamodrt;									// modulation targets
+int sxmod1, sxmod2;
+int sxmod1cur, sxmod2cur;
+
+// Mono Delay parameters
+cvar_t sxdly_delay = { "room_delay", "0" };				// current delay in seconds
+cvar_t sxdly_feedback = { "room_feedback", "0.2" };		// cyles
+cvar_t sxdly_lp = { "room_dlylp", "1.0" };				// lowpass filter
+
+float sxdly_delayprev;									// previous delay setting value
+
+// Mono Reverb parameters
+
+cvar_t sxrvb_size = { "room_size", "0" };				// room size 0 (off) 0.1 small - 0.35 huge
+cvar_t sxrvb_feedback = { "room_refl", "0.7" };			// reverb decay 0.1 short - 0.9 long
+cvar_t sxrvb_lp = { "room_rvblp", "1.0" };				// lowpass filter
+
+float sxrvb_sizeprev;
+
+// Stereo delay (no feedback)
+
+cvar_t sxste_delay = { "room_left", "0" };				// straight left delay
+float sxste_delayprev;
+
+// Underwater/special fx modulations
+
+cvar_t sxmod_lowpass = { "room_lp", "0" };
+cvar_t sxmod_mod = { "room_mod", "0" };
+
+// Main interface
+
+cvar_t sxroom_type = { "room_type", "0" };
+cvar_t sxroomwater_type = { "waterroom_type", "14" };
+float sxroom_typeprev;
+
+cvar_t sxroom_off = { "room_off", "0" };
+
+int sxhires = 0;
+int sxhiresprev = 0;
+
+qboolean SXDLY_Init( int idelay, float delay );
+void SXDLY_Free( int idelay );
+void SXDLY_DoDelay( int count );
+void SXRVB_DoReverb( int count );
+void SXDLY_DoStereoDelay( int count );
+void SXRVB_DoAMod( int count );
 
 //=====================================================================
 // Init/release all structures for sound effects
@@ -927,7 +1025,46 @@ void SND_PaintChannelFrom16Offs( portable_samplepair_t* paintbuffer, channel_t* 
 
 void SX_Init( void )
 {
-	// TODO: Implement
+	Q_memset(rgsxdly, 0, sizeof(dlyline_t) * CSXDLYMAX);
+	Q_memset(rgsxlp, 0, sizeof(int) * CSXLPMAX);
+
+	sxdly_delayprev = -1.0;
+	sxrvb_sizeprev = -1.0;
+	sxste_delayprev = -1.0;
+	sxroom_typeprev = -1.0;
+
+	// flag hires sound mode
+	sxhires = (hisound.value == 0 ? 0 : 1);
+	sxhiresprev = sxhires;
+
+	// init amplitude modulation params
+
+	sxamodl = sxamodr = 255;
+	sxamodlt = sxamodrt = 255;
+
+	sxmod1 = 350 * (shm->speed / SOUND_11k);	// 11k was the original sample rate all dsp was tuned at
+	sxmod2 = 450 * (shm->speed / SOUND_11k);
+	sxmod1cur = sxmod1;
+	sxmod2cur = sxmod2;
+
+	Con_DPrintf("\nFX Processor Initialization\n");
+
+	Cvar_RegisterVariable(&sxdly_delay);
+	Cvar_RegisterVariable(&sxdly_feedback);
+	Cvar_RegisterVariable(&sxdly_lp);
+
+	Cvar_RegisterVariable(&sxrvb_size);
+	Cvar_RegisterVariable(&sxrvb_feedback);
+	Cvar_RegisterVariable(&sxrvb_lp);
+
+	Cvar_RegisterVariable(&sxste_delay);
+
+	Cvar_RegisterVariable(&sxmod_lowpass);
+	Cvar_RegisterVariable(&sxmod_mod);
+
+	Cvar_RegisterVariable(&sxroom_type);
+	Cvar_RegisterVariable(&sxroomwater_type);
+	Cvar_RegisterVariable(&sxroom_off);
 }
 
 

@@ -9,6 +9,9 @@
 
 // sound engine rate defines
 #define SOUND_DMA_SPEED		22050		// hardware playback rate
+#define SOUND_11k			11025		// 11khz sample rate
+#define SOUND_22k			22050		// 22khz sample rate
+#define SOUND_44k			44100		// 44khz sample rate
 
 // sentence groups
 #define CBSENTENCENAME_MAX		16
