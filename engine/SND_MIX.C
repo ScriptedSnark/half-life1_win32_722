@@ -1475,6 +1475,92 @@ void SXDLY_DoDelay( int count ) {
 	}
 }
 
+// Check for a parameter change on the reverb processor
+
+void SXRVB_CheckNewReverbVal() {
+	dlyline_t* pdly;
+	int delaysamples;
+	int i;
+	int mod;	
+
+	if (sxrvb_size.value != sxrvb_sizeprev)
+	{
+		sxrvb_sizeprev = sxrvb_size.value;
+
+		if (sxrvb_size.value == 0.0)
+		{
+			// deactivate all delay lines
+
+			SXDLY_Free(ISXRVB);
+			SXDLY_Free(ISXRVB + 1);
+
+		}
+		else
+		{
+
+			for (i = ISXRVB; i < ISXRVB + CSXRVBMAX; i++)
+			{
+				// init delay line if not active
+
+				pdly = &(rgsxdly[i]);
+
+				switch (i) {
+					case ISXRVB:
+						delaysamples = (int)(min(sxrvb_size.value, SXRVB_MAX) * shm->speed) << sxhires; // << 1 for hires
+						pdly->mod = RVB_MODRATE1 << sxhires; // << 1 for hires
+						break;
+					case ISXRVB + 1:
+						delaysamples = (int)(min(sxrvb_size.value * 0.71, SXRVB_MAX) * shm->speed) << sxhires; // << 1 for hires
+						pdly->mod = RVB_MODRATE2 << sxhires; // << 1 for hires
+						break;
+					default:
+						delaysamples = 0;
+						break;
+				}
+
+				mod = pdly->mod;				// KB: bug, SXDLY_Init clears mod, modcur, xfade and lp - save mod before call
+
+				if (!pdly->lpdelayline)
+				{
+					pdly->delaysamples = delaysamples;
+
+					SXDLY_Init(i, SXRVB_MAX);
+				}
+
+				pdly->modcur = pdly->mod = mod;	// KB: bug, SXDLY_Init clears mod, modcur, xfade and lp - restore mod after call
+
+				// do crossfade to new delay if delay has changed
+
+				if (delaysamples != pdly->delaysamples)
+				{
+					// set up crossfade from old pdly->delaysamples to new delaysamples
+
+					pdly->idelayoutputxf = pdly->idelayinput - delaysamples;
+
+					if (pdly->idelayoutputxf < 0)
+						pdly->idelayoutputxf += pdly->cdelaysamplesmax;
+
+					pdly->xfade = RVB_XFADE;
+				}
+
+				// deactivate line if rounded down to 0 delay
+
+				if (pdly->delaysamples == 0)
+					SXDLY_Free(i);
+			}
+		}
+	}
+
+	rgsxdly[ISXRVB].delayfeed = (sxrvb_feedback.value) * 255;
+	rgsxdly[ISXRVB].lp = sxrvb_lp.value;
+
+	rgsxdly[ISXRVB + 1].delayfeed = (sxrvb_feedback.value) * 255;
+	rgsxdly[ISXRVB + 1].lp = sxrvb_lp.value;
+
+}
+
+
+
 
 
 // TODO: Implement
