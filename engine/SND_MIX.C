@@ -1067,6 +1067,109 @@ void SX_Init( void )
 	Cvar_RegisterVariable(&sxroom_off);
 }
 
+void SX_Free( void ) {
+	int i;
+
+	// release mono delay line
+
+	SXDLY_Free(ISXMONODLY);
+
+	// release reverb lines
+
+	for (i = 0; i < CSXRVBMAX; i++)
+		SXDLY_Free(i + ISXRVB);
+
+	SXDLY_Free(ISXSTEREODLY);
+}
+
+// Set up a delay line buffer allowing a max delay of 'delay' seconds 
+// Frees current buffer if it already exists. idelay indicates which of 
+// the available delay lines to init.
+
+typedef char* HPSTR;
+
+
+qboolean SXDLY_Init( int idelay, float delay ) {
+	int cbsamples;
+	HANDLE		hData;
+	HPSTR		lpData;
+	dlyline_t* pdly;
+
+	pdly = &(rgsxdly[idelay]);
+
+	if (delay > SXDLY_MAX)
+		delay = SXDLY_MAX;
+
+	if (pdly->lpdelayline) {
+		GlobalUnlock(pdly->hdelayline);
+		GlobalFree(pdly->hdelayline);
+		pdly->hdelayline = NULL;
+		pdly->lpdelayline = NULL;
+	}
+
+	if (delay == 0.0)
+		return TRUE;
+
+	pdly->cdelaysamplesmax = (int)(shm->speed * delay)
+		<< sxhires; // << 1 for hires
+	pdly->cdelaysamplesmax += 1;
+
+	cbsamples = pdly->cdelaysamplesmax * sizeof(sample_t);
+	hData = GlobalAlloc(GMEM_MOVEABLE | GMEM_SHARE, cbsamples);
+	if (!hData)
+	{
+		Con_SafePrintf("Sound FX: Out of memory.\n");
+		return FALSE;
+	}
+
+	lpData = (HPSTR)GlobalLock(hData);
+	if (!lpData)
+	{
+		Con_SafePrintf("Sound FX: Failed to lock.\n");
+		GlobalFree(hData);
+		return FALSE;
+	}
+
+	memset(lpData, 0, cbsamples);
+
+	pdly->hdelayline = hData;
+	pdly->lpdelayline = (sample_t*)lpData;
+
+	// init delay loop input and output counters.
+
+	// NOTE: init of idelayoutput only valid if pdly->delaysamples is set
+	// NOTE: before this call!
+
+	pdly->idelayinput = 0;
+	pdly->idelayoutput = pdly->cdelaysamplesmax - pdly->delaysamples;
+	pdly->xfade = 0;
+	pdly->lp = 1;
+	pdly->mod = 0;
+	pdly->modcur = 0;
+
+	// init lowpass filter memory
+
+	pdly->lp0 = pdly->lp1 = pdly->lp2 = 0;
+
+	return TRUE;
+}
+
+// release delay buffer and deactivate delay
+
+void SXDLY_Free( int idelay ) {
+	dlyline_t* pdly = &(rgsxdly[idelay]);
+
+	if (pdly->lpdelayline) {
+		GlobalUnlock(pdly->hdelayline);
+		GlobalFree(pdly->hdelayline);
+		pdly->hdelayline = NULL;
+		pdly->lpdelayline = NULL;				// this deactivates the delay
+	}
+}
+
+
+
+
 
 // TODO: Implement
 

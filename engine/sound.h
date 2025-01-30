@@ -275,8 +275,8 @@ extern void SND_InitMouth( int entnum, int entchannel );
 // DSP Routines
 
 void SX_Init( void );
-
-
+void SX_Free( void );
+void SX_ReloadRoomFX( void );
 void SX_RoomFX( int count, int fFilter, int fTimefx );
 
 // WAVE Stream
