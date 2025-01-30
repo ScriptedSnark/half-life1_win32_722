@@ -1168,6 +1168,67 @@ void SXDLY_Free( int idelay ) {
 }
 
 
+// check for new stereo delay param
+
+void SXDLY_CheckNewStereoDelayVal() {
+	dlyline_t* pdly = &(rgsxdly[ISXSTEREODLY]);
+	int delaysamples;
+
+	// set up stereo delay
+
+	if (sxste_delay.value != sxste_delayprev) {
+		if (sxste_delay.value == 0.0) {
+			
+			// deactivate delay line
+
+			SXDLY_Free(ISXSTEREODLY);
+			sxste_delayprev = 0.0;
+
+		} else {
+
+			delaysamples = (int)(min(sxste_delay.value, SXSTE_MAX) * shm->speed)
+				<< sxhires; // << 1 for hires
+
+			// init delay line if not active
+
+			if (pdly->lpdelayline == NULL) {
+
+				pdly->delaysamples = delaysamples;
+
+				SXDLY_Init(ISXSTEREODLY, SXSTE_MAX);
+			}
+
+			// do crossfade to new delay if delay has changed
+
+			if (delaysamples != pdly->delaysamples) {
+
+				// set up crossfade from old pdly->delaysamples to new delaysamples
+
+				pdly->idelayoutputxf = pdly->idelayinput - delaysamples;
+
+				if (pdly->idelayoutputxf < 0)
+					pdly->idelayoutputxf += pdly->cdelaysamplesmax;
+
+				pdly->xfade = 128;
+			}
+
+			sxste_delayprev = sxste_delay.value;
+
+			// UNDONE: modulation disabled
+			//pdly->mod = 500 * (shm->speed / SOUND_11k);		// change delay every n samples
+			pdly->mod = 0;
+			pdly->modcur = pdly->mod;
+
+			// deactivate line if rounded down to 0 delay
+
+			if (pdly->delaysamples == 0)
+				SXDLY_Free(ISXSTEREODLY);
+
+		}
+	}
+}
+
+
 
 
 
