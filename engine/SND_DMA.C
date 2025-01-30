@@ -55,8 +55,8 @@ int			num_sfx;
 
 sfx_t* ambient_sfx[NUM_AMBIENTS];
 
-
-
+int 		desired_speed = 11025;
+int 		desired_bits = 16;
 
 int			sound_started = 0;
 
@@ -114,19 +114,6 @@ cvar_t s_materials = { "s_materials", "0" };
 cvar_t s_occfactor = { "s_occfactor", "0.3" };
 cvar_t s_occ_epsilon = { "s_occ_epsilon", "1.0" };
 #endif
-
-
-
-// initializes cycling through a DMA buffer and returns information on it
-qboolean SNDDMA_Init( void );
-
-// gets the current DMA position
-int SNDDMA_GetDMAPos( void );
-
-// shutdown the DMA xfer.
-void SNDDMA_Shutdown( void );
-
-void SNDDMA_BeginPainting( void );
 
 // ====================================================================
 // User-setable variables

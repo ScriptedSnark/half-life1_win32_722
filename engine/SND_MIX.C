@@ -425,7 +425,7 @@ void S_MixChannelsToPaintbuffer( int end, int fPaintHiresSounds )
 	sfxcache_t* sc = NULL;
 	int			ltime, count;
 	int			pitch;
-	float		timecompress;
+	int			timecompress;
 	int			fhitend = FALSE;
 	int			hires = FALSE;
 	int			offset;
@@ -434,6 +434,8 @@ void S_MixChannelsToPaintbuffer( int end, int fPaintHiresSounds )
 
 	// mix each channel into paintbuffer
 	ch = channels;
+
+	hires = fPaintHiresSounds != 0 ? TRUE : FALSE;
 
 	for (i = 0; i < total_channels; i++, ch++)
 	{
