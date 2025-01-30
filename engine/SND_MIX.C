@@ -1906,11 +1906,134 @@ void SXRVB_DoAMod( int count ) {
 }
 
 
+typedef struct sx_preset_s {
+	float room_lp;					// for water fx, lowpass for entire room
+	float room_mod;					// stereo amplitude modulation for room
+
+	float room_size;				// reverb: initial reflection size
+	float room_refl;				// reverb: decay time
+	float room_rvblp;				// reverb: low pass filtering level
+
+	float room_delay;				// mono delay: delay time
+	float room_feedback;			// mono delay: decay time
+	float room_dlylp;				// mono delay: low pass filtering level
+
+	float room_left;				// left channel delay time
+} sx_preset_t;
+
+sx_preset_t rgsxpre[CSXROOM] = {
+
+// SXROOM_OFF					0
+
+//	lp		mod		size	refl	rvblp	delay	feedbk	dlylp	left  
+	{0.0,	0.0,	0.0,	0.0,	1.0,	0.0,	0.0,	2.0,	0.0},
+
+// SXROOM_GENERIC				1		// general, low reflective, diffuse room
+
+//	lp		mod		size	refl	rvblp	delay	feedbk	dlylp	left  
+	{0.0,	0.0,	0.0,	0.0,	1.0,	0.065,	0.1,	0.0,	0.01},
+
+// SXROOM_METALIC_S				2		// highly reflective, parallel surfaces
+// SXROOM_METALIC_M				3
+// SXROOM_METALIC_L				4
+
+//	lp		mod		size	refl	rvblp	delay	feedbk	dlylp	left  
+	{0.0,	0.0,	0.0,	0.0,	1.0,	0.02,	0.75,	0.0,	0.01}, // 0.001
+	{0.0,	0.0,	0.0,	0.0,	1.0,	0.03,	0.78,	0.0,	0.02}, // 0.002
+	{0.0,	0.0,	0.0,	0.0,	1.0,	0.06,	0.77,	0.0,	0.03}, // 0.003
 
 
+// SXROOM_TUNNEL_S				5		// resonant reflective, long surfaces
+// SXROOM_TUNNEL_M				6
+// SXROOM_TUNNEL_L				7
 
+//	lp		mod		size	refl	rvblp	delay	feedbk	dlylp	left  
+	{0.0,	0.0,	0.05,	0.85,	1.0,	0.008,	0.96,	2.0,	0.01}, // 0.01
+	{0.0,	0.0,	0.05,	0.88,	1.0,	0.010,	0.98,	2.0,	0.02}, // 0.02
+	{0.0,	0.0,	0.05,	0.92,	1.0,	0.015,	0.995,	2.0,	0.04}, // 0.04
 
-// TODO: Implement
+// SXROOM_CHAMBER_S				8		// diffuse, moderately reflective surfaces
+// SXROOM_CHAMBER_M				9
+// SXROOM_CHAMBER_L				10
+
+//	lp		mod		size	refl	rvblp	delay	feedbk	dlylp	left  
+	{0.0,	0.0,	0.05,	0.84,	1.0,	0.0,	0.0,	2.0,	0.012}, // 0.003
+	{0.0,	0.0,	0.05,	0.90,	1.0,	0.0,	0.0,	2.0,	0.008}, // 0.002
+	{0.0,	0.0,	0.05,	0.95,	1.0,	0.0,	0.0,	2.0,	0.004}, // 0.001
+
+// SXROOM_BRITE_S				11		// diffuse, highly reflective
+// SXROOM_BRITE_M				12
+// SXROOM_BRITE_L				13
+
+//	lp		mod		size	refl	rvblp	delay	feedbk	dlylp	left  
+	{0.0,	0.0,	0.05,	0.7,	0.0,	0.0,	0.0,	2.0,	0.012}, // 0.003
+	{0.0,	0.0,	0.055,	0.78,	0.0,	0.0,	0.0,	2.0,	0.008}, // 0.002
+	{0.0,	0.0,	0.05,	0.86,	0.0,	0.0,	0.0,	2.0,	0.002}, // 0.001
+
+// SXROOM_WATER1				14		// underwater fx
+// SXROOM_WATER2				15
+// SXROOM_WATER3				16
+
+//	lp		mod		size	refl	rvblp	delay	feedbk	dlylp	left  
+	{1.0,	0.0,	0.0,	0.0,	1.0,	0.0,	0.0,	2.0,	0.01},
+	{1.0,	0.0,	0.0,	0.0,	1.0,	0.06,	0.85,	2.0,	0.02},
+	{1.0,	0.0,	0.0,	0.0,	1.0,	0.2,	0.6,	2.0,	0.05},
+
+// SXROOM_CONCRETE_S			17		// bare, reflective, parallel surfaces
+// SXROOM_CONCRETE_M			18
+// SXROOM_CONCRETE_L			19
+
+//	lp		mod		size	refl	rvblp	delay	feedbk	dlylp	left  
+	{0.0,	0.0,	0.05,	0.8,	1.0,	0.0,	0.48,	2.0,	0.016}, // 0.15 delay, 0.008 left
+	{0.0,	0.0,	0.06,	0.9,	1.0,	0.0,	0.52,	2.0,	0.01 }, // 0.22 delay, 0.005 left
+	{0.0,	0.0,	0.07,	0.94,	1.0,	0.3,	0.6,	2.0,	0.008}, // 0.001
+
+// SXROOM_OUTSIDE1				20		// echoing, moderately reflective
+// SXROOM_OUTSIDE2				21		// echoing, dull
+// SXROOM_OUTSIDE3				22		// echoing, very dull
+
+//	lp		mod		size	refl	rvblp	delay	feedbk	dlylp	left  
+	{0.0,	0.0,	0.0,	0.0,	1.0,	0.3,	0.42,	2.0,	0.0},
+	{0.0,	0.0,	0.0,	0.0,	1.0,	0.35,	0.48,	2.0,	0.0},
+	{0.0,	0.0,	0.0,	0.0,	1.0,	0.38,	0.6,	2.0,	0.0},
+
+// SXROOM_CAVERN_S				23		// large, echoing area
+// SXROOM_CAVERN_M				24
+// SXROOM_CAVERN_L				25
+
+//	lp		mod		size	refl	rvblp	delay	feedbk	dlylp	left  
+	{0.0,	0.0,	0.05,	0.9,	1.0,	0.2,	0.28,	0.0,	0.0},
+	{0.0,	0.0,	0.07,	0.9,	1.0,	0.3,	0.4,	0.0,	0.0},
+	{0.0,	0.0,	0.09,	0.9,	1.0,	0.35,	0.5,	0.0,	0.0},
+
+// SXROOM_WEIRDO1				26	
+// SXROOM_WEIRDO2				27
+// SXROOM_WEIRDO3				28
+// SXROOM_WEIRDO3				29
+
+//	lp		mod		size	refl	rvblp	delay	feedbk	dlylp	left  
+	{0.0,	1.0,	0.01,	0.9,	0.0,	0.0,	0.0,	2.0,	0.05},
+	{0.0,	0.0,	0.0,	0.0,	1.0,	0.009,	0.999,	2.0,	0.04},
+	{0.0,	0.0,	0.001,	0.999,	0.0,	0.2,	0.8,	2.0,	0.05}
+
+};
+
+// force next call to sx_roomfx to reload all room parameters.
+// used when switching to/from hires sound mode.
+
+void SX_ReloadRoomFX()
+{
+	// reset all roomtype parms
+
+	sxroom_typeprev = -1.0;
+
+	sxdly_delayprev = -1.0;
+	sxrvb_sizeprev = -1.0;
+	sxste_delayprev = -1.0;
+	sxroom_typeprev = -1.0;
+
+	// UNDONE: handle sxmod and mod parms?
+}
 
 
 // main routine for processing room sound fx
@@ -1920,12 +2043,111 @@ void SXRVB_DoAMod( int count ) {
 
 void SX_RoomFX( int count, int fFilter, int fTimefx )
 {
-	// TODO: Implement
+	int fReset;
+	int i;
+	float roomType;
+
+	// return right away if fx processing is turned off
+
+	if (sxroom_off.value != 0.0)
+		return;
+
+	// detect changes in hires sound param
+
+	sxhires = (hisound.value == 0 ? 0 : 1);
+
+	if (sxhires != sxhiresprev)
+	{
+		SX_ReloadRoomFX();
+		sxhiresprev = sxhires;
+	}
+
+	fReset = FALSE;
+	if (cl.waterlevel > 2)
+		roomType = sxroomwater_type.value;
+	else
+		roomType = sxroom_type.value;
+
+	if (roomType != sxroom_typeprev)
+	{
+
+		//Con_Printf("Room_type: %2.1f\n", roomType);
+
+		sxroom_typeprev = roomType;
+
+		i = (int)(roomType);
+
+		if (i < CSXROOM && i >= 0)
+		{
+			// Set hardcoded values from rgsxpre table
+			Cvar_SetValue("room_lp", rgsxpre[i].room_lp);
+			Cvar_SetValue("room_mod", rgsxpre[i].room_mod);
+			Cvar_SetValue("room_size", rgsxpre[i].room_size);
+			Cvar_SetValue("room_refl", rgsxpre[i].room_refl);
+			Cvar_SetValue("room_rvblp", rgsxpre[i].room_rvblp);
+			Cvar_SetValue("room_delay", rgsxpre[i].room_delay);
+			Cvar_SetValue("room_feedback", rgsxpre[i].room_feedback);
+			Cvar_SetValue("room_dlylp", rgsxpre[i].room_dlylp);
+			Cvar_SetValue("room_left", rgsxpre[i].room_left);
+		}
+
+		SXRVB_CheckNewReverbVal();
+		SXDLY_CheckNewDelayVal();
+		SXDLY_CheckNewStereoDelayVal();
+
+		fReset = TRUE;
+	}
+
+	if (fReset || roomType != 0.0)
+	{
+		// debug code
+		SXRVB_CheckNewReverbVal();
+		SXDLY_CheckNewDelayVal();
+		SXDLY_CheckNewStereoDelayVal();
+		// debug code
+
+		if (fFilter)
+			SXRVB_DoAMod(count);
+
+		if (fTimefx)
+		{
+#if defined (__USEA3D)
+			if (snd_isa3d)
+			{
+				// Add the reverb value in
+				if (s_verbwet.value >= S_VERBWET_EPS)
+				{
+					for (i = 0; i < count; i++)
+					{
+						paintbuffer[i].left += drybuffer[i].left * s_verbwet.value;
+						paintbuffer[i].right += drybuffer[i].right * s_verbwet.value;
+					}
+				}
+			}
+#endif
+
+			SXRVB_DoReverb(count);
+			SXDLY_DoDelay(count);
+
+#if defined (__USEA3D)
+			if (snd_isa3d)
+			{
+				// Restore it back to original
+				if (s_verbwet.value >= S_VERBWET_EPS)
+				{
+					for (i = 0; i < count; i++)
+					{
+						paintbuffer[i].left -= drybuffer[i].left * s_verbwet.value;
+						paintbuffer[i].right -= drybuffer[i].right * s_verbwet.value;
+					}
+				}
+			}
+#endif
+
+			SXDLY_DoStereoDelay(count);
+		}
+	}
 }
-
-
-// TODO: Implement
-
 
 //===============================================================================
 //
