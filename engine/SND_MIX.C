@@ -1379,7 +1379,101 @@ void SXDLY_CheckNewDelayVal() {
 }
 
 
+// This routine updates both left and right output with 
+// the mono delayed signal.  Delay is set through console vars room_delay
+// and room_feedback.
 
+#define RVB_XFADE	 32	// xfade time between new delays
+#define RVB_MODRATE1 (500 * (shm->speed / SOUND_11k))	// how often, in samples, to change delay (1st rvb)
+#define RVB_MODRATE2 (700 * (shm->speed / SOUND_11k))	// how often, in samples, to change delay (2nd rvb)
+
+void SXDLY_DoDelay( int count ) {
+	int val;
+	int valt;
+	int left;
+	int right;
+	sample_t sampledly;
+	portable_samplepair_t* pbuf;
+	int countr;
+
+
+	// process mono delay line if active
+
+	if (rgsxdly[ISXMONODLY].lpdelayline)
+	{
+		pbuf = paintbuffer;
+		countr = count;
+
+		// process each sample in the paintbuffer...
+
+		while (countr--)
+		{
+
+			// get delay line sample
+
+			sampledly = *(gdly0.lpdelayline + gdly0.idelayoutput);
+
+			left = pbuf->left;
+			right = pbuf->right;
+
+			// only process if delay line and paintbuffer samples are non zero
+
+			if (sampledly || left || right)
+			{
+				// get current sample from delay buffer
+
+				// calculate delayed value from avg of left and right channels
+
+				val = ((left + right) >> 1) + ((gdly0.delayfeed * sampledly) >> 8);
+
+				// limit val to short
+				val = CLIP(val);
+
+				// lowpass
+
+				if (gdly0.lp)
+				{
+					//valt = (gdly0.lp0 + gdly0.lp1 + val) / 3;  // performance
+					valt = (gdly0.lp0 + gdly0.lp1 + (val << 1)) >> 2;
+
+					gdly0.lp0 = gdly0.lp1;
+					gdly0.lp1 = val;
+				}
+				else
+				{
+					valt = val;
+				}
+
+				// store delay output value into output buffer
+
+				*(gdly0.lpdelayline + gdly0.idelayinput) = valt;
+
+				// mono delay in left and right channels
+
+				pbuf->left = CLIP((valt >> 2) + left);
+				pbuf->right = CLIP((valt >> 2) + right);
+			}
+			else
+			{
+				// not playing samples, but must still flush lowpass buffer and delay line
+				valt = gdly0.lp0 = gdly0.lp1 = 0;
+
+				*(gdly0.lpdelayline + gdly0.idelayinput) = valt;
+
+			}
+
+			// update delay buffer pointers
+
+			if (++gdly0.idelayinput >= gdly0.cdelaysamplesmax)
+				gdly0.idelayinput = 0;
+
+			if (++gdly0.idelayoutput >= gdly0.cdelaysamplesmax)
+				gdly0.idelayoutput = 0;
+
+			pbuf++;
+		}
+	}
+}
 
 
 
