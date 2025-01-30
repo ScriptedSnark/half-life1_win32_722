@@ -1560,6 +1560,257 @@ void SXRVB_CheckNewReverbVal() {
 }
 
 
+// main routine for updating the paintbuffer with new reverb values.
+// This routine updates both left and right lines with 
+// the mono reverb signal.  Delay is set through console vars room_reverb
+// and room_feedback.  2 reverbs operating in parallel.
+
+void SXRVB_DoReverb( int count ) {
+	int val;
+	int valt;
+	int left;
+	int right;
+	sample_t sampledly;
+	sample_t samplexf;
+	portable_samplepair_t* pbuf;
+	int countr;
+	int voutm;
+	int vlr;
+
+	// process reverb lines if active
+
+	if (rgsxdly[ISXRVB].lpdelayline)
+	{
+		pbuf = paintbuffer;
+		countr = count;
+
+		// process each sample in the paintbuffer...
+
+		while (countr--)
+		{
+
+			left = pbuf->left;
+			right = pbuf->right;
+			voutm = 0;
+			vlr = (left + right) >> 1;
+
+			// UNDONE: ignored
+			if (--gdly1.modcur < 0)
+				gdly1.modcur = gdly1.mod;
+
+			// ========================== ISXRVB============================	
+
+			// get sample from delay line
+
+			sampledly = *(gdly1.lpdelayline + gdly1.idelayoutput);
+
+			// only process if something is non-zero
+
+			if (gdly1.xfade || sampledly || left || right)
+			{
+				// modulate delay rate
+				if (!gdly1.xfade && !gdly1.mod)
+				{
+					// set up crossfade to new delay value, if we're not already doing an xfade
+
+					//gdly1.idelayoutputxf = gdly1.idelayoutput + 
+					//		((RandomLong(0, 0x7FFF) * gdly1.delaysamples) / (RAND_MAX * 2)); // performance
+
+					gdly1.idelayoutputxf = gdly1.idelayoutput +
+						((RandomLong(0, 0xFF) * gdly1.delaysamples) >> 9); // 100 = ~ 9ms
+
+					if (gdly1.idelayoutputxf >= gdly1.cdelaysamplesmax)
+						gdly1.idelayoutputxf -= gdly1.cdelaysamplesmax;
+
+					gdly1.xfade = RVB_XFADE;
+				}
+
+				// modify sampledly if crossfading to new delay value
+
+				if (gdly1.xfade)
+				{
+					samplexf = (*(gdly1.lpdelayline + gdly1.idelayoutputxf) * (RVB_XFADE - gdly1.xfade)) / RVB_XFADE;
+					sampledly = ((sampledly * gdly1.xfade) / RVB_XFADE) + samplexf;
+
+					if (++gdly1.idelayoutputxf >= gdly1.cdelaysamplesmax)
+						gdly1.idelayoutputxf = 0;
+
+					if (--gdly1.xfade == 0)
+						gdly1.idelayoutput = gdly1.idelayoutputxf;
+				}
+
+				if (sampledly)
+				{
+					// get current sample from delay buffer
+
+					// calculate delayed value from avg of left and right channels
+
+					val = vlr + ((gdly1.delayfeed * sampledly) >> 8);
+
+					// limit to short
+					val = CLIP(val);
+
+				}
+				else
+				{
+					val = vlr;
+				}
+
+				// lowpass
+
+				if (gdly1.lp)
+				{
+					valt = (val + gdly1.lp0) >> 1;
+					gdly1.lp0 = val;
+				}
+				else
+				{
+					valt = val;
+				}
+
+				// store delay output value into output buffer
+
+				*(gdly1.lpdelayline + gdly1.idelayinput) = valt;
+
+				voutm = valt;
+			}
+			else
+			{
+				// not playing samples, but still must flush lowpass buffer & delay line
+
+				gdly1.lp0 = gdly1.lp1 = 0;
+				*(gdly1.lpdelayline + gdly1.idelayinput) = 0;
+
+				voutm = 0;
+			}
+
+			// update delay buffer pointers
+
+			if (++gdly1.idelayinput >= gdly1.cdelaysamplesmax)
+				gdly1.idelayinput = 0;
+
+			if (++gdly1.idelayoutput >= gdly1.cdelaysamplesmax)
+				gdly1.idelayoutput = 0;
+
+			// ========================== ISXRVB + 1========================
+
+			// UNDONE: ignored
+			if (--gdly2.modcur < 0)
+				gdly2.modcur = gdly2.mod;
+
+			if (gdly2.lpdelayline)
+			{
+				// get sample from delay line
+
+				sampledly = *(gdly2.lpdelayline + gdly2.idelayoutput);
+
+				// only process if something is non-zero
+
+				if (gdly2.xfade || sampledly || left || right)
+				{
+					// modulate delay rate
+					if (!gdly2.xfade && !gdly2.mod)
+					{
+						// set up crossfade to new delay value, if we're not already doing an xfade
+
+						//gdly2.idelayoutputxf = gdly2.idelayoutput + 
+						//		((RandomLong(0, RAND_MAX) * gdly2.delaysamples) / (RAND_MAX * 2)); // performance
+
+						gdly2.idelayoutputxf = gdly2.idelayoutput +
+							((RandomLong(0, 0xFF) * gdly2.delaysamples) >> 9); // 100 = ~ 9ms
+
+
+						if (gdly2.idelayoutputxf >= gdly2.cdelaysamplesmax)
+							gdly2.idelayoutputxf -= gdly2.cdelaysamplesmax;
+
+						gdly2.xfade = RVB_XFADE;
+					}
+
+					// modify sampledly if crossfading to new delay value
+
+					if (gdly2.xfade)
+					{
+						samplexf = (*(gdly2.lpdelayline + gdly2.idelayoutputxf) * (RVB_XFADE - gdly2.xfade)) / RVB_XFADE;
+						sampledly = ((sampledly * gdly2.xfade) / RVB_XFADE) + samplexf;
+
+						if (++gdly2.idelayoutputxf >= gdly2.cdelaysamplesmax)
+							gdly2.idelayoutputxf = 0;
+
+						if (--gdly2.xfade == 0)
+							gdly2.idelayoutput = gdly2.idelayoutputxf;
+					}
+
+					if (sampledly)
+					{
+						// get current sample from delay buffer
+
+						// calculate delayed value from avg of left and right channels
+
+						val = vlr + ((gdly2.delayfeed * sampledly) >> 8);
+
+						// limit to short
+						val = CLIP(val);	
+					}
+					else
+					{
+						val = vlr;
+					}
+
+					// lowpass
+
+					if (gdly2.lp)
+					{
+						valt = (val + gdly2.lp0) >> 1;
+						gdly2.lp0 = val;
+					}
+					else
+					{
+						valt = val;
+					}
+
+					// store delay output value into output buffer
+
+					*(gdly2.lpdelayline + gdly2.idelayinput) = valt;
+
+					voutm += valt;
+				}
+				else
+				{
+					// not playing samples, but still must flush lowpass buffer
+
+					gdly2.lp0 = gdly2.lp1 = 0;
+					*(gdly2.lpdelayline + gdly2.idelayinput) = 0;
+				}
+
+				// update delay buffer pointers
+
+				if (++gdly2.idelayinput >= gdly2.cdelaysamplesmax)
+					gdly2.idelayinput = 0;
+
+				if (++gdly2.idelayoutput >= gdly2.cdelaysamplesmax)
+					gdly2.idelayoutput = 0;
+			}
+
+			// ============================ Mix================================
+
+			// add mono delay to left and right channels
+
+			// drop output by inverse of cascaded gain for both reverbs
+			voutm = (11 * voutm) >> 6;
+
+			left += voutm;
+			right += voutm;
+
+			pbuf->left = CLIP(left);
+			pbuf->right = CLIP(right);
+
+			pbuf++;
+		}
+	}
+}
+
+
+
 
 
 
