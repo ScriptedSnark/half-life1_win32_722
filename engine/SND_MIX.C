@@ -13,6 +13,9 @@ extern void Snd_WriteLinearBlastStereo16( void );
 extern void SND_PaintChannelFrom8( channel_t* ch, sfxcache_t* sc, int count );
 extern void SND_PaintChannelFrom8toDry( channel_t* ch, sfxcache_t* sc, int count );
 
+// hard clip input value to -32767 <= y <= 32767
+#define CLIP(x) ((x) > 32767 ? 32767 : ((x) < -32767 ? -32767 : (x)))
+
 portable_samplepair_t paintbuffer[(PAINTBUFFER_SIZE + 1) * 2];
 
 #if defined (__USEA3D)
@@ -1228,7 +1231,100 @@ void SXDLY_CheckNewStereoDelayVal() {
 	}
 }
 
+// stereo delay, left channel only, no feedback
 
+void SXDLY_DoStereoDelay( int count ) {
+	int left;
+	sample_t sampledly;
+	sample_t samplexf;
+	portable_samplepair_t* pbuf;
+	int countr;
+
+	// process delay line if active
+
+	if (rgsxdly[ISXSTEREODLY].lpdelayline) {
+		
+		pbuf = paintbuffer;
+		countr = count;
+
+		// process each sample in the paintbuffer...
+
+		while (countr--) {
+			
+			if (gdly3.mod && (--gdly3.modcur < 0))
+				gdly3.modcur = gdly3.mod;
+
+			// get delay line sample from left line
+
+			sampledly = *(gdly3.lpdelayline + gdly3.idelayoutput);
+			left = pbuf->left;
+
+			// only process if left value or delayline value are non-zero or xfading
+
+			if (gdly3.xfade || sampledly || left) {
+				
+				// if we're not crossfading, and we're not modulating, but we'd like to be modulating,
+				// then setup a new crossfade.
+
+				if (!gdly3.xfade && !gdly3.modcur && gdly3.mod) {
+					
+					// set up crossfade to new delay value, if we're not already doing an xfade
+
+					//gdly3.idelayoutputxf = gdly3.idelayoutput + 
+					//		((RandomLong(0,0x7FFF) * gdly3.delaysamples) / (RAND_MAX * 2)); // 100 = ~ 9ms
+
+					gdly3.idelayoutputxf = gdly3.idelayoutput +
+						((RandomLong(0, 0xFF) * gdly3.delaysamples) >> 9); // 100 = ~ 9ms
+
+					if (gdly3.idelayoutputxf >= gdly3.cdelaysamplesmax)
+						gdly3.idelayoutputxf -= gdly3.cdelaysamplesmax;
+
+					gdly3.xfade = 128;
+				}
+
+				// modify sampledly if crossfading to new delay value
+
+				if (gdly3.xfade) {
+					samplexf = (*(gdly3.lpdelayline + gdly3.idelayoutputxf) * (128 - gdly3.xfade)) >> 7;
+					sampledly = ((sampledly * gdly3.xfade) >> 7) + samplexf;
+
+					if (++gdly3.idelayoutputxf >= gdly3.cdelaysamplesmax)
+						gdly3.idelayoutputxf = 0;
+
+					if (--gdly3.xfade == 0)
+						gdly3.idelayoutput = gdly3.idelayoutputxf;
+				}
+
+				// save output value into delay line
+
+				left = CLIP(left);
+
+				*(gdly3.lpdelayline + gdly3.idelayinput) = left;
+
+				// save delay line sample into output buffer
+				pbuf->left = sampledly;
+
+			}
+			else
+			{
+				// keep clearing out delay line, even if no signal in or out
+
+				*(gdly3.lpdelayline + gdly3.idelayinput) = 0;
+			}
+
+			// update delay buffer pointers
+
+			if (++gdly3.idelayinput >= gdly3.cdelaysamplesmax)
+				gdly3.idelayinput = 0;
+
+			if (++gdly3.idelayoutput >= gdly3.cdelaysamplesmax)
+				gdly3.idelayoutput = 0;
+
+			pbuf++;
+		}
+
+	}
+}
 
 
 
