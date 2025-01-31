@@ -2159,26 +2159,58 @@ void SX_RoomFX( int count, int fFilter, int fTimefx )
 // Initialize wavestreams
 qboolean Wavstream_Init( void )
 {
-	// TODO: Implement
+	int i;
+	for (i = 0; i < MAX_CHANNELS; i++)
+	{
+		Q_memset(&wavstreams[i], 0, sizeof(wavstreams[i]));
+		wavstreams[i].hFile[2] = -1;
+	}
+
 	return TRUE;
 }
 
 // Close wavestream files
 void Wavstream_Close( int i )
 {
-	// TODO: Implement
+	// Close the file
+	if (wavstreams[i].hFile[2] != -1)
+		COM_CloseFile(wavstreams[i].hFile[0], wavstreams[i].hFile[1], wavstreams[i].hFile[2]);
+
+	Q_memset(&wavstreams[i], 0, sizeof(wavstreams[i]));
+	wavstreams[i].hFile[2] = -1;
 }
 
 // Move to the next wave chunk
 void Wavstream_GetNextChunk( channel_t* ch, sfx_t* s )
 {
-	// TODO: Implement
+	byte* data;
+	sfxcache_t* sc;
+	int cbread;
+	int i = ch - channels;
+
+	sc = (sfxcache_t*)Cache_Check(&s->cache);
+
+	wavstreams[i].lastposloaded = wavstreams[i].info.dataofs + wavstreams[i].csamplesplayed;
+
+	data = COM_LoadFileLimit(NULL, wavstreams[i].lastposloaded, 0x8000, &cbread, wavstreams[i].hFile);
+
+	wavstreams[i].csamplesinmem = cbread;
+	if (wavstreams[i].csamplesinmem > wavstreams[i].info.samples - wavstreams[i].csamplesplayed)
+		wavstreams[i].csamplesinmem = wavstreams[i].info.samples - wavstreams[i].csamplesplayed;
+
+	sc->length = wavstreams[i].csamplesinmem;
+
+	ResampleSfx(s, sc->speed, sc->width, data);
 }
 
+//===============================================================================
+// Client entity mouth movement code.  Set entity mouthopen variable, based
+// on the sound envelope of the voice channel playing.
+// KellyB 10/22/97
+//===============================================================================
 
-// TODO: Implement
 
-
+// called when voice channel is first opened on this entity
 void SND_InitMouth( int entnum, int entchannel )
 {
 	// TODO: Implement
