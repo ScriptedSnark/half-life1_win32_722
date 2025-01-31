@@ -15,6 +15,13 @@ typedef struct efrag_s
 	struct efrag_s* entnext;
 } efrag_t;
 
+typedef struct
+{
+	byte					mouthopen;		// 0 = mouth closed, 255 = mouth agape
+	byte					sndcount;		// counter for running average
+	int						sndavg;			// running average
+} mouth_t;
+
 
 typedef struct cl_entity_s
 {
@@ -77,6 +84,11 @@ typedef struct cl_entity_s
 	// TODO: Implement
 
 	colorVec		cvFloorColor;
+
+	mouth_t			mouth;			// For synchronizing mouth movements.
+
+	// TODO: Implement
+
 } cl_entity_t;
 
 typedef struct tempent_s

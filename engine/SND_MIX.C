@@ -2213,23 +2213,68 @@ void Wavstream_GetNextChunk( channel_t* ch, sfx_t* s )
 // called when voice channel is first opened on this entity
 void SND_InitMouth( int entnum, int entchannel )
 {
-	// TODO: Implement
+	if ((entchannel == CHAN_VOICE || entchannel == CHAN_STREAM) && entnum > 0)
+	{
+		// init mouth movement vars
+		cl_entity_t* pent = &cl_entities[entnum];
+		pent->mouth.mouthopen = 0;
+		pent->mouth.sndavg = 0;
+		pent->mouth.sndcount = 0;
+	}
 }
+
+// called when channel stops
 
 void SND_CloseMouth( channel_t* ch )
 {
-	// TODO: Implement
+	if (ch->entnum > 0)
+	{
+		if (ch->entchannel == CHAN_VOICE || ch->entchannel == CHAN_STREAM)
+		{
+			// shut mouth
+			cl_entities[ch->entnum].mouth.mouthopen = 0;
+		}
+	}
 }
 
 #define CAVGSAMPLES 10
 
 void SND_MoveMouth( channel_t* ch, sfxcache_t* sc, int count )
 {
-	// TODO: Implement
+	int		data;
+	char* pdata = NULL;
+	int		i;
+	int		savg;
+	int		scount;
+	cl_entity_t* pent;
+
+	pent = &cl_entities[ch->entnum];
+
+	i = 0;
+	scount = pent->mouth.sndcount;
+	savg = 0;
+
+	pdata = (char*)&sc->data[ch->pos];
+
+	while (i < count && scount < CAVGSAMPLES)
+	{
+		data = pdata[i];
+		savg += abs(data);
+
+		i += 80 + ((byte)data & 0x1F);
+		scount++;
+	}
+
+	pent->mouth.sndavg += savg;
+	pent->mouth.sndcount = (byte)scount;
+
+	if (pent->mouth.sndcount >= CAVGSAMPLES)
+	{
+		pent->mouth.mouthopen = pent->mouth.sndavg / CAVGSAMPLES;
+		pent->mouth.sndavg = 0;
+		pent->mouth.sndcount = 0;
+	}
 }
-
-
-// TODO: Implement
 
 //===============================================================================
 // VOX. Algorithms to load and play spoken text sentences from a file:
