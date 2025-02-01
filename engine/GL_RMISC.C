@@ -188,12 +188,9 @@ void R_Init( void )
 	if (gl_mtexable)
 		Cvar_SetValue("gl_texsort", 0.0);
 
-	// TODO: Implement
-	
+	R_InitParticles();	
 	R_InitParticleTexture();
 	R_UploadEmptyTex();
-
-	// TODO: Implement
 
 	playertextures = texture_extension_number;
 	texture_extension_number += 16;

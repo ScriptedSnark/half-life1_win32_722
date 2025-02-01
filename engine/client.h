@@ -522,9 +522,9 @@ void CL_ClearResourceLists( void );
 
 #define			MAX_VISEDICTS	512
 extern	int				cl_numvisedicts, cl_oldnumvisedicts, cl_numbeamentities;
-extern	cl_entity_t*	cl_visedicts, *cl_oldvisedicts, *cl_newvisedicts;
+extern	cl_entity_t*	cl_visedicts, * cl_oldvisedicts, * cl_newvisedicts;
 extern	cl_entity_t		cl_visedicts_list[2][MAX_VISEDICTS];
-extern	cl_entity_t		cl_beamentities[MAX_BEAMS];
+extern	cl_entity_t		cl_beamentities[MAX_BEAMENTS];
 extern	float			frame_lerp;
 
 // TODO: Implement

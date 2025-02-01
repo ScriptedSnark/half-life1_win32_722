@@ -93,19 +93,49 @@ typedef struct cl_entity_s
 
 typedef struct tempent_s
 {
-	int flags;
-	float die;
-	float frameMax;
-	float x;
-	float y;
-	float z;
-	float fadeSpeed;
-	int hitSound;
-	struct tempent_s *next;
+	int			flags;
+	float		die;
+	float		frameMax;
+	float		x;
+	float		y;
+	float		z;
+	float		fadeSpeed;
+	int			hitSound;
+	struct tempent_s* next;
 	//FF: there must be another field (4 bytes)
 	// TODO: Implement
-	cl_entity_t entity;
+	cl_entity_t	entity;
 } TEMPENTITY;
+
+typedef enum {
+	pt_static,
+	pt_grav,
+	pt_slowgrav,
+	pt_fire,
+	pt_explode,
+	pt_explode2,
+	pt_blob,
+	pt_blob2,
+	pt_vox_slowgrav,
+	pt_vox_grav
+} ptype_t;
+
+// !!! if this is changed, it must be changed in d_ifacea.h too !!!
+typedef struct particle_s
+{
+// driver-usable fields
+	vec3_t		org;
+	short		color;
+	short		packedColor;
+// drivers never touch the following fields
+	struct particle_s	*next;
+	vec3_t		vel;
+	float		ramp;
+	float		die;
+	ptype_t		type;
+} particle_t;
+
+//====================================================
 
 // TODO: Implement
 
@@ -157,9 +187,24 @@ void R_ParseParticleEffect( void );
 
 
 void R_PushDlights( void );
+
+// R_PART.C
+
+extern cvar_t tracerSpeed;
+extern cvar_t tracerOffset;
+extern cvar_t tracerLength;
+extern cvar_t tracerRed;
+extern cvar_t tracerGreen;
+extern cvar_t tracerBlue;
+extern cvar_t tracerAlpha;
+
+extern cvar_t egon_amplitude;
+
 void R_InitParticles( void );
 void R_ClearParticles( void );
 void R_DrawParticles( void );
+
+particle_t* R_TracerParticles( vec_t* org, vec_t* vel, float life );
 
 extern qboolean r_intentities;
 

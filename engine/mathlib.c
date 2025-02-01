@@ -129,6 +129,15 @@ float VectorNormalize( vec_t* v )
 
 // TODO: Implement
 
+void VectorScale( const vec_t* in, vec_t scale, vec_t* out )
+{
+	out[0] = in[0] * scale;
+	out[1] = in[1] * scale;
+	out[2] = in[2] * scale;
+}
+
+// TODO: Implement
+
 
 /*
 ================

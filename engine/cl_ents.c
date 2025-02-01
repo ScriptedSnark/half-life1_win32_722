@@ -8,7 +8,7 @@ int cl_playerindex; // player index
 int				cl_numvisedicts, cl_oldnumvisedicts, cl_numbeamentities;
 cl_entity_t*	cl_visedicts, * cl_oldvisedicts, *cl_newvisedicts;
 cl_entity_t		cl_visedicts_list[2][MAX_VISEDICTS];
-cl_entity_t		cl_beamentities[MAX_BEAMS];
+cl_entity_t		cl_beamentities[MAX_BEAMENTS];
 float			frame_lerp;
 
 /*
@@ -629,7 +629,7 @@ void CL_LinkPacketEntities( void )
 			--cl_numvisedicts;
 			
 			//FF: buffer overrun here
-			if (cl_numbeamentities >= MAX_BEAMS)
+			if (cl_numbeamentities >= MAX_BEAMENTS)
 			{
 				Con_DPrintf("Overflow beam entity list!\n");
 			}

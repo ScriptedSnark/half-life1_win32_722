@@ -52,6 +52,8 @@ float Length( const vec_t* v );
 void CrossProduct( const vec_t* v1, const vec_t* v2, vec_t* cross );
 float VectorNormalize( vec_t* v );		// returns vector length
 
+void VectorScale( const vec_t* in, vec_t scale, vec_t* out );
+
 // TODO: Implement
 
 void AngleVectors( const vec_t* angles, vec_t* forward, vec_t* right, vec_t* up );
