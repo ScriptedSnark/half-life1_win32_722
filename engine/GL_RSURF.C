@@ -1809,6 +1809,84 @@ int DecalListCreate( DECALLIST* pList )
 
 	return total;
 }
+// ---------------------------------------------------------
+
+int R_DecalUnProject( decal_t* pdecal, vec_t* position )
+{
+	float s, t;
+	float scale;
+	float inverseScale;
+	mtexinfo_t* pTexinfo;
+	texture_t* ptexture;
+	int entityIndex = 0;
+
+	if (!pdecal || !pdecal->psurface)
+		return -1;
+
+	pTexinfo = pdecal->psurface->texinfo;
+
+	s = (float)pTexinfo->texture->width * pdecal->dx - (float)pdecal->psurface->texturemins[0];
+	t = (float)pTexinfo->texture->height * pdecal->dy - (float)pdecal->psurface->texturemins[1];
+
+	scale = Length(pTexinfo->vecs[0]) * 0.5;
+	ptexture = Draw_DecalTexture(pdecal->texture);
+
+	s = (float)ptexture->width * scale + s + (float)pdecal->psurface->texturemins[0] - pTexinfo->vecs[0][3];
+	t = (float)ptexture->height * scale + t + (float)pdecal->psurface->texturemins[1] - pTexinfo->vecs[1][3];
+
+	inverseScale = fabs(Length(pTexinfo->vecs[0]));
+
+	if (inverseScale != 0.0)
+		inverseScale = (1.0 / inverseScale) * (1.0 / inverseScale);
+
+	VectorScale(pTexinfo->vecs[0], s * inverseScale, position);
+
+	VectorMA(position, t * inverseScale, pTexinfo->vecs[1], position);
+	VectorMA(position, pdecal->psurface->plane->dist, pdecal->psurface->plane->normal, position);
+
+	entityIndex = pdecal->entityIndex;
+
+	if (pdecal->entityIndex)
+	{
+		hull_t* phull;
+		vec3_t temp;
+		edict_t* pEdict;
+		model_t* pModel = NULL;
+
+		pEdict = &sv.edicts[entityIndex];
+		if (pEdict->v.modelindex)
+			pModel = sv.models[pEdict->v.modelindex];
+
+		// Make sure it's a brush model
+		if (!pModel || pModel->type != mod_brush)
+			return 0;
+
+		if (pEdict->v.angles[0] || pEdict->v.angles[1] || pEdict->v.angles[2])
+		{
+			vec3_t forward, right, up;
+			AngleVectorsTranspose(pEdict->v.angles, forward, right, up);
+
+			position[0] = DotProduct(position, forward);
+			position[1] = DotProduct(position, right);
+			position[2] = DotProduct(position, up);
+		}
+
+		if (pModel->firstmodelsurface)
+		{
+			phull = &pModel->hulls[0]; // always use #0 hull
+			VectorAdd(pEdict->v.origin, phull->clip_mins, temp);
+			VectorAdd(temp, position, position);
+		}
+	}
+
+	return entityIndex;
+}
+
+
+
+
+
+
 
 
 

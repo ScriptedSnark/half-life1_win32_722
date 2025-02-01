@@ -72,6 +72,41 @@ void AngleVectors( const vec_t* angles, vec_t* forward, vec_t* right, vec_t* up 
 	}
 }
 
+void AngleVectorsTranspose( const vec_t* angles, vec_t* forward, vec_t* right, vec_t* up )
+{
+	float		angle;
+	float		sr, sp, sy, cr, cp, cy;
+
+	angle = angles[YAW] * (M_PI * 2 / 360.0);
+	sy = sin(angle);
+	cy = cos(angle);
+	angle = angles[PITCH] * (M_PI * 2 / 360.0);
+	sp = sin(angle);
+	cp = cos(angle);
+	angle = angles[ROLL] * (M_PI * 2 / 360.0);
+	sr = sin(angle);
+	cr = cos(angle);
+
+	if (forward)
+	{
+		forward[0] = cp * cy;
+		forward[1] = (sr * sp * cy + cr * -sy);
+		forward[2] = (cr * sp * cy + -sr * -sy);
+	}
+	if (right)
+	{
+		right[0] = cp * sy;
+		right[1] = (sr * sp * sy + cr * cy);
+		right[2] = (cr * sp * sy + -sr * cy);
+	}
+	if (up)
+	{
+		up[0] = -sp;
+		up[1] = sr * cp;
+		up[2] = cr * cp;
+	}
+}
+
 int VectorCompare( const vec_t* v1, const vec_t* v2 )
 {
 	int i;

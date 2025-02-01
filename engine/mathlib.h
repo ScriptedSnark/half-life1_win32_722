@@ -57,6 +57,7 @@ void VectorScale( const vec_t* in, vec_t scale, vec_t* out );
 // TODO: Implement
 
 void AngleVectors( const vec_t* angles, vec_t* forward, vec_t* right, vec_t* up );
+void AngleVectorsTranspose( const vec_t* angles, vec_t* forward, vec_t* right, vec_t* up );
 
 void BOPS_Error( void );
 int BoxOnPlaneSide( vec_t * emins, vec_t * emaxs, struct mplane_s* p );

@@ -47,6 +47,10 @@ typedef struct
 
 
 	// TODO: Implement
+	
+	struct model_s*	models[MAX_MODELS];
+
+	// TODO: Implement
 
 
 	int			num_edicts;
@@ -56,6 +60,7 @@ typedef struct
 									// be used to reference the world ent
 
 	// TODO: Implement
+
 } server_t;
 
 // client_t
