@@ -410,7 +410,20 @@ DrawGLSolidPoly
 */
 void DrawGLSolidPoly( glpoly_t* p )
 {
-	// TODO: Implement
+	int		i;
+	float*	v;
+
+	qglColor4f(currententity->rendercolor.r / 256.0,
+		currententity->rendercolor.g / 256.0,
+		currententity->rendercolor.b / 256.0, r_blend);
+
+	qglBegin(GL_POLYGON);
+	v = p->verts[0];
+	for (i = 0; i < p->numverts; i++, v += VERTEXSIZE)
+	{
+		qglVertex3fv(v);
+	}
+	qglEnd();
 }
 
 /*
