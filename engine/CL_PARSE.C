@@ -939,7 +939,7 @@ void CL_ParseBaseline( cl_entity_t* ent )
 	ent->baseline.sequence = MSG_ReadByte();
 	ent->baseline.frame = MSG_ReadByte();
 
-	if (ent->baseline.entityType != 0)
+	if (ent->baseline.entityType != ENTITY_NORMAL)
 		ent->baseline.scale = MSG_ReadByte() * (1.0 / 10.0);
 	else
 		ent->baseline.scale = MSG_ReadWord() * (1.0 / 256.0);

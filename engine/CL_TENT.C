@@ -256,23 +256,79 @@ CL_ParseTEnt
 */
 void CL_ParseTEnt( void )
 {
+	char	c;
 	int		type;
 	int		soundtype;
 	int		iRand;
 	int		entnumber;
 	int		modelindex;
 	vec3_t	pos;
+	vec3_t	size;
 	vec3_t	dir;
 	vec3_t	endpos;
 	dlight_t* dl;
+	int		startEnt, endEnt;
+	int		startFrame;
+	int		count;
 	float	life;
 	float	scale;
+	float	r, g, b, a;
 	float	frameRate;
 	int		flags;
 
 	type = MSG_ReadByte();
 	switch (type)
 	{
+	case TE_BEAMPOINTS:
+	case TE_BEAMENTPOINT:
+	case TE_BEAMENTS:
+	{
+		float width;
+		float amplitude;
+		float flSpeed;
+
+		if (type == TE_BEAMENTS)
+		{
+			startEnt = MSG_ReadShort();
+			endEnt = MSG_ReadShort();
+		}
+		else if (type == TE_BEAMENTPOINT)
+		{
+			startEnt = MSG_ReadShort();
+			endpos[0] = MSG_ReadCoord();
+			endpos[1] = MSG_ReadCoord();
+			endpos[2] = MSG_ReadCoord();
+		}
+		else
+		{
+			pos[0] = MSG_ReadCoord();
+			pos[1] = MSG_ReadCoord();
+			pos[2] = MSG_ReadCoord();
+			endpos[0] = MSG_ReadCoord();
+			endpos[1] = MSG_ReadCoord();
+			endpos[2] = MSG_ReadCoord();
+		}
+
+		modelindex = MSG_ReadShort();
+
+		startFrame = MSG_ReadByte();
+		frameRate = MSG_ReadByte() * 0.1;
+
+		life = MSG_ReadByte() * 0.1;
+		width = MSG_ReadByte() * 0.1;
+		amplitude = MSG_ReadByte() * 0.01;
+
+		r = MSG_ReadByte() / 255.0;
+		g = MSG_ReadByte() / 255.0;
+		b = MSG_ReadByte() / 255.0;
+		a = MSG_ReadByte() / 255.0;
+
+		flSpeed = MSG_ReadByte() * 0.1;
+
+		// TODO: Implement
+		break;
+	}
+
 		// TODO: Implement
 
 	case TE_EXPLOSION:			// rocket explosion
@@ -455,6 +511,32 @@ void CL_ParseTEnt( void )
 
 		// TODO: Implement
 		
+	case TE_BREAKMODEL:
+	{
+		float frandom;
+
+		pos[0] = MSG_ReadCoord();
+		pos[1] = MSG_ReadCoord();
+		pos[2] = MSG_ReadCoord();
+
+		size[0] = MSG_ReadCoord();
+		size[1] = MSG_ReadCoord();
+		size[2] = MSG_ReadCoord();
+
+		dir[0] = MSG_ReadCoord();
+		dir[1] = MSG_ReadCoord();
+		dir[2] = MSG_ReadCoord();
+
+		frandom = MSG_ReadByte() * 10.0;
+		modelindex = MSG_ReadShort();
+		count = MSG_ReadByte();
+		life = MSG_ReadByte() * 0.1;
+		c = MSG_ReadByte();
+
+		// TODO: Implement
+		break;
+	}
+
 	case TE_GUNSHOTDECAL:
 	{
 		int decalTextureIndex;

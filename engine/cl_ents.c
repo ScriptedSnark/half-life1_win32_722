@@ -562,6 +562,62 @@ void CL_ParsePacketEntities( qboolean delta )
 	newp->num_entities = newindex;
 }
 
+// TODO: Implement
+
+/*
+===============
+CL_UpdateEntity
+
+===============
+*/
+void CL_UpdateEntity( cl_entity_t* ent, entity_state_t* state, qboolean sync )
+{
+	ent->index = state->number;
+
+	ent->model = cl.model_precache[state->modelindex];
+	if (ent->model && sync)
+	{
+		if (ent->model->synctype == ST_RAND)
+			ent->syncbase = RandomFloat(0.0, 1.0);
+		else
+			ent->syncbase = 0.0;
+	}
+
+	ent->colormap = (byte*)vid.colormap;
+	ent->scoreboard = NULL;
+	ent->effects = state->effects;
+	ent->skin = state->skin;
+
+	ent->frame = state->frame;
+	ent->framerate = state->framerate;
+
+	ent->rendermode = state->rendermode;
+	ent->renderamt = state->renderamt;
+	ent->rendercolor.r = state->rendercolor.r;
+	ent->rendercolor.g = state->rendercolor.g;
+	ent->rendercolor.b = state->rendercolor.b;
+	ent->renderfx = state->renderfx;
+
+	ent->controller[0] = state->controller[0];
+	ent->controller[1] = state->controller[1];
+	ent->controller[2] = state->controller[2];
+	ent->controller[3] = state->controller[3];
+
+	ent->blending[0] = state->blending[0];
+	ent->blending[1] = state->blending[1];
+
+	VectorCopy(state->origin, ent->origin);
+	VectorCopy(state->angles, ent->angles);
+
+	ent->scale = state->scale;
+	ent->sequence = state->sequence;
+	ent->animtime = state->animtime;
+	ent->movetype = state->movetype;
+	ent->body = state->body;
+}
+
+// TODO: Implement
+
 /*
 ===============
 CL_LinkPacketEntities
@@ -594,7 +650,7 @@ void CL_LinkPacketEntities( void )
 		s2 = s1;	// FIXME: no interpolation right now
 
 		// if set to invisible, skip
-		if (!s1->modelindex || (s1->effects & EF_NODRAW) != 0)
+		if (!s1->modelindex || (s1->effects & EF_NODRAW))
 			continue;
 
 		// create a new entity
@@ -614,30 +670,32 @@ void CL_LinkPacketEntities( void )
 		// set model
 		model = ent->model;
 
-		if (s1->entityType)
+		CL_UpdateEntity(ent, s1, TRUE);
+
+		if (s1->entityType != ENTITY_NORMAL)
 		{
 			ent->movetype = s1->modelindex;
 			if (model && model->type != mod_sprite)
 			{
 				Sys_Error("Bad model on beam");
 			}
+
 			ent->prevsequence = ent->sequence;
+
 			VectorCopy(ent->origin, ent->prevorigin);
 			VectorCopy(ent->angles, ent->prevangles);
+
 			memcpy(&cl_entities[ent->index], ent, sizeof(cl_entity_t));
-			--cl_numvisedicts;
+			cl_numvisedicts--;
 			
-			//FF: buffer overrun here
 			if (cl_numbeamentities >= MAX_BEAMENTS)
 			{
 				Con_DPrintf("Overflow beam entity list!\n");
-			}
-			else
-			{
-				cl_beamentities[cl_numbeamentities + 1] = cl_entities[ent->index];
-				cl_numbeamentities++;
+				continue;
 			}
 
+			cl_beamentities[cl_numbeamentities + 1] = cl_entities[ent->index];
+			cl_numbeamentities++;
 			continue;
 		}
 
@@ -661,6 +719,7 @@ void CL_LinkPacketEntities( void )
 		{
 			ent->movetype = MOVETYPE_NONE;
 		}
+
 		if (FALSE)
 		{
 			// TODO: Implement
@@ -679,13 +738,9 @@ void CL_LinkPacketEntities( void )
 
 		if (ent->index != 1)
 		{
-			if ((ent->effects & EF_BRIGHTLIGHT) != 0)
+			if (ent->effects & EF_BRIGHTLIGHT)
 			{
-				dl = NULL; //shut up the compiler at least for now
-
-				//dl = CL_AllocDlight(ent->index);
-				// TODO: Implement (CL_AllocDlight needed)
-
+				dl = CL_AllocDlight(ent->index);
 				VectorCopy(ent->origin, dl->origin);
 				dl->origin[2] += 16.0;
 				dl->color.r = 250;
@@ -697,13 +752,9 @@ void CL_LinkPacketEntities( void )
 				dl->die = cl.time + 0.001;
 			}
 
-			if ((ent->effects & EF_DIMLIGHT) != 0)
+			if (ent->effects & EF_DIMLIGHT)
 			{
-				dl = NULL; //shut up the compiler at least for now
-
-				//dl = CL_AllocDlight(ent->index);
-				// TODO: Implement (CL_AllocDlight needed)
-
+				dl = CL_AllocDlight(ent->index);
 				VectorCopy(ent->origin, dl->origin);
 				dl->color.r = 100;
 				dl->color.g = 100;
@@ -715,15 +766,12 @@ void CL_LinkPacketEntities( void )
 			}
 		}
 
-		if ((ent->effects & EF_LIGHT) != 0)
+		if (ent->effects & EF_LIGHT)
 		{
 			// TODO: Implement
 			//R_RocketFlare(ent->origin);
-			dl = NULL; //shut up the compiler at least for now
 
-			//dl = CL_AllocDlight(ent->index);
-			// TODO: Implement (CL_AllocDlight needed)
-
+			dl = CL_AllocDlight(ent->index);
 			VectorCopy(ent->origin, dl->origin);
 			dl->color.r = 100;
 			dl->color.g = 100;
@@ -739,15 +787,19 @@ void CL_LinkPacketEntities( void )
 			memcpy(&cl_entities[ent->index], ent, sizeof(cl_entity_t));
 			continue;
 		}
+
 		if (ent->sequence != nullent.sequence)
 		{
 			ent->sequencetime = ent->animtime;
 			ent->prevsequence = nullent.sequence;
 			memcpy(ent->prevseqblending, nullent.blending, 2);
 		}
+
 		ent->prevanimtime = nullent.animtime;
+
 		memcpy(ent->prevcontroller, nullent.controller, 4);
 		memcpy(ent->prevblending, nullent.blending, 2);
+
 		VectorCopy(nullent.origin, ent->origin);
 		VectorCopy(nullent.angles, ent->angles);
 	}
@@ -1026,6 +1078,15 @@ void CL_SetSolidPlayers( int playernum )
 	// TODO: Implement
 }
 
+/*
+===============
+CL_EmitEntities
+
+Builds the visedicts array for cl.time
+
+Made up of: clients, packet_entities, nails, and tents
+===============
+*/
 void CL_EmitEntities( void )
 {
 	int numvisedict;
@@ -1086,10 +1147,16 @@ void CL_EmitEntities( void )
 	cl_numvisedicts = 0;
 	cl_numbeamentities = 0;
 	cl_visedicts = cl_visedicts_list[cls.netchan.incoming_sequence & 1];
+
+	// Compute last interpolation amount
 	cl.frame_lerp = CL_LerpPoint();
+
 	CL_LinkPlayers();
+
 	CL_LinkPacketEntities();
+
 	CL_TempEntUpdate();
+
 	if (cl.spectator)
 	{
 		//FF: sub_10020190 ~ CL_Disconnect ~ 33 C0 A3 38 15 05 0E A3 34 15 05 0E C3

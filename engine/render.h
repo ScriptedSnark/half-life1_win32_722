@@ -22,12 +22,14 @@ typedef struct
 	int						sndavg;			// running average
 } mouth_t;
 
+#define ENTITY_NORMAL		0
+#define ENTITY_BEAM			1
 
 typedef struct cl_entity_s
 {
 	int				index;      // Index into cl_entities
 
-	//FF: player_info_t* scoreboard;
+	struct player_info_s* scoreboard;	// identify player
 
 	// TODO: Implement
 
