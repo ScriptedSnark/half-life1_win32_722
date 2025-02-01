@@ -141,11 +141,11 @@ extern	cvar_t	gl_wateramp;
 extern	cvar_t	gl_dither;
 extern	cvar_t	gl_spriteblend;
 
-
+extern	cvar_t	gl_lightholes;
 extern	cvar_t	gl_zmax;
 extern	cvar_t	gl_alphamin;
-
-
+extern	cvar_t	gl_overdraw;
+extern	cvar_t	gl_watersides;
 extern	cvar_t	gl_overbright;
 extern	cvar_t	gl_envmapsize;
 extern	cvar_t	gl_flipmatrix;
@@ -197,6 +197,7 @@ void GL_EnableMultitexture( void );
 // gl_rmain.c
 //
 qboolean R_CullBox( vec_t* mins, vec_t* maxs );
+void R_RotateForEntity( cl_entity_t* e );
 float CalcFov( float fov_x, float width, float height );
 
 //

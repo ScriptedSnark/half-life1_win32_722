@@ -192,6 +192,55 @@ qboolean R_CullBox( vec_t* mins, vec_t* maxs )
 	return FALSE;
 }
 
+
+void R_RotateForEntity( cl_entity_t* e )
+{
+	int		i;
+	vec3_t	angles;
+	vec3_t	modelpos;
+
+	VectorCopy(e->origin, modelpos);
+	VectorCopy(e->angles, angles);
+
+	if (e->movetype != MOVETYPE_NONE)
+	{
+		float f = 0.0;
+		float d;
+		if (e->animtime + 0.2 > cl.time && e->animtime != e->prevanimtime)
+			f = (cl.time - e->animtime) / (e->animtime - e->prevanimtime);
+
+		for (i = 0; i < 3; i++)
+		{
+			d = e->prevorigin[i] - e->origin[i];
+			modelpos[i] -= d * f;
+		}
+
+		if (f > 0.0 && f < 1.5)
+		{
+			f = 1.0 - f;
+
+			for (i = 0; i < 3; i++)
+			{
+				d = e->prevangles[i] - e->angles[i];
+				if (d > 180.0)
+					d -= 360.0;
+				else if (d < -180.0)
+					d += 360.0;
+
+				angles[i] += d * f;
+			}
+		}
+	}
+
+	qglTranslatef(modelpos[0], modelpos[1], modelpos[2]);
+
+	qglRotatef(angles[1], 0, 0, 1);
+	qglRotatef(angles[0], 0, 1, 0);
+
+	//ZOID: fixed z angle
+	qglRotatef(angles[2], 1, 0, 0);
+}
+
 // TODO: Implement
 
 //==================================================================================
@@ -224,11 +273,16 @@ void R_DrawEntitiesOnList( void )
 			case mod_brush:
 				R_DrawBrushModel(currententity);
 				break;
+
 			case mod_alias:
 				// TODO: Implement
 				break;
+
 			case mod_studio:
 				// TODO: Implement
+				break;
+
+			default:
 				break;
 		}
 	}

@@ -626,17 +626,16 @@ CL_LinkPacketEntities
 */
 void CL_LinkPacketEntities( void )
 {
-	cl_entity_t			*ent, *ent2;
-	packet_entities_t	*pack;
-	entity_state_t		*s1, *s2;
+	cl_entity_t* ent, * ent2, nullent;
+	packet_entities_t* pack;
+	entity_state_t* s1, * s2;
 	float				f;
-	model_t				*model;
+	model_t* model;
 	vec3_t				old_origin;
 	float				autorotate;
 	int					i;
 	int					pnum;
-	dlight_t			*dl;
-	cl_entity_t			nullent;
+	dlight_t* dl;
 
 	pack = &cl.frames[cls.netchan.incoming_sequence & UPDATE_MASK].packet_entities;
 
@@ -650,19 +649,23 @@ void CL_LinkPacketEntities( void )
 		s2 = s1;	// FIXME: no interpolation right now
 
 		// if set to invisible, skip
-		if (!s1->modelindex || (s1->effects & EF_NODRAW))
+		if (!s1->modelindex)
 			continue;
 
 		// create a new entity
 		if (cl_numvisedicts == MAX_VISEDICTS)
 			break;		// object list is full
 
+		if (s1->effects & EF_NODRAW)
+			continue;
+
 		ent = &cl_visedicts[cl_numvisedicts];
-		ent2 = &cl_entities[s1->number];
 		cl_numvisedicts++;
 
+		ent2 = &cl_entities[s1->number];
+
 		memcpy(ent, ent2, sizeof(cl_entity_t));
-		memcpy(&nullent, ent, sizeof(nullent));
+		memcpy(&nullent, ent2, sizeof(nullent));
 
 		// set index
 		ent->index = s1->number;
@@ -700,18 +703,35 @@ void CL_LinkPacketEntities( void )
 		}
 
 		if (ent->animtime != nullent.animtime)
-			break;
-
-		if (!VectorCompare(ent->origin, nullent.origin))
 		{
-			ent->lastmove = cl.time + 0.2;
-			VectorCopy(ent->origin, ent->prevorigin);
-			VectorCopy(ent->angles, ent->prevangles);
+			if (ent->sequence != nullent.sequence)
+			{
+				ent->sequencetime = ent->animtime;
+				ent->prevsequence = nullent.sequence;
+				memcpy(ent->prevseqblending, nullent.blending, 2);
+			}
+
+			ent->prevanimtime = nullent.animtime;
+
+			memcpy(ent->prevcontroller, nullent.controller, 4);
+			memcpy(ent->prevblending, nullent.blending, 2);
+
+			VectorCopy(nullent.origin, ent->prevorigin);
+			VectorCopy(nullent.angles, ent->prevangles);
+		}
+		else
+		{
+			if (!VectorCompare(ent->origin, nullent.origin))
+			{
+				ent->lastmove = cl.time + 0.2;
+				VectorCopy(ent->origin, ent->prevorigin);
+				VectorCopy(ent->angles, ent->prevangles);
+			}
 		}
 
 		// TODO: Implement
 		// what is that flag
-		if ((s1->flags & 0x200000) != 0 && ent->lastmove < cl.time)
+		if ((s1->flags & 0x200000) && ent->lastmove < cl.time)
 		{
 			ent->movetype = MOVETYPE_STEP;
 		}
@@ -727,15 +747,15 @@ void CL_LinkPacketEntities( void )
 		else
 		{
 			ent->resetlatched = TRUE;
+
+			ent->prevsequence = ent->sequence;
+			ent->animtime = cl.time;
+			ent->prevanimtime = cl.time;
+
+			VectorCopy(ent->origin, ent->prevorigin);
+			VectorCopy(ent->angles, ent->prevangles);
 		}
 		
-		// copy vars
-		ent->prevsequence = ent->sequence;
-		ent->animtime = cl.time;
-		ent->prevanimtime = cl.time;
-		VectorCopy(ent->origin, ent->prevorigin);
-		VectorCopy(ent->angles, ent->prevangles);
-
 		if (ent->index != 1)
 		{
 			if (ent->effects & EF_BRIGHTLIGHT)
@@ -782,26 +802,12 @@ void CL_LinkPacketEntities( void )
 			dl->die = cl.time + 0.001;
 		}
 
-		if (!model)
+		if (model)
 		{
-			memcpy(&cl_entities[ent->index], ent, sizeof(cl_entity_t));
-			continue;
+			// TODO: Implement
 		}
 
-		if (ent->sequence != nullent.sequence)
-		{
-			ent->sequencetime = ent->animtime;
-			ent->prevsequence = nullent.sequence;
-			memcpy(ent->prevseqblending, nullent.blending, 2);
-		}
-
-		ent->prevanimtime = nullent.animtime;
-
-		memcpy(ent->prevcontroller, nullent.controller, 4);
-		memcpy(ent->prevblending, nullent.blending, 2);
-
-		VectorCopy(nullent.origin, ent->origin);
-		VectorCopy(nullent.angles, ent->angles);
+		memcpy(&cl_entities[ent->index], ent, sizeof(cl_entity_t));
 	}
 }
 
@@ -1126,7 +1132,7 @@ void CL_EmitEntities( void )
 	{
 		cl_newvisedicts = cl_visedicts_list[(cls.netchan.incoming_sequence + 1) & 1];
 
-		for (visedict, numvisedict = cl_numvisedicts; numvisedict != 0; --numvisedict, ++visedict)
+		for (numvisedict = cl_numvisedicts; numvisedict != 0; --numvisedict, ++visedict)
 		{
 			lerp = &cl_entities[visedict->index];
 

@@ -723,7 +723,171 @@ void R_SetRenderMode( cl_entity_t* pEntity )
 	}
 }
 
-// TODO: Implement
+/*
+=================
+R_DrawBrushModel
+=================
+*/
+void R_DrawBrushModel( cl_entity_t* e )
+{
+	int			i;
+	int			k;
+	vec3_t		mins, maxs;
+	msurface_t* psurf;
+	float		dot;
+	mplane_t*	pplane;
+	model_t*	clmodel;
+	qboolean	rotated;
+
+	currententity = e;
+	currenttexture = -1;
+
+	clmodel = e->model;
+
+	if (e->angles[0] || e->angles[1] || e->angles[2])
+	{
+		rotated = TRUE;
+		for (i = 0; i < 3; i++)
+		{
+			mins[i] = e->origin[i] - clmodel->radius;
+			maxs[i] = e->origin[i] + clmodel->radius;
+		}
+	}
+	else
+	{
+		rotated = FALSE;
+		VectorAdd(e->origin, clmodel->mins, mins);
+		VectorAdd(e->origin, clmodel->maxs, maxs);
+	}
+
+	if (R_CullBox(mins, maxs))
+		return;
+
+	qglColor3f(1, 1, 1);
+	memset(lightmap_polys, 0, sizeof(lightmap_polys));
+
+	VectorSubtract(r_refdef.vieworg, e->origin, modelorg);
+	if (rotated)
+	{
+		vec3_t	temp;
+		vec3_t	forward, right, up;
+
+		VectorCopy(modelorg, temp);
+		AngleVectors(e->angles, forward, right, up);
+		modelorg[0] = DotProduct(temp, forward);
+		modelorg[1] = -DotProduct(temp, right);
+		modelorg[2] = DotProduct(temp, up);
+	}
+
+	psurf = &clmodel->surfaces[clmodel->firstmodelsurface];
+
+// calculate dynamic lighting for bmodel if it's not an
+// instanced model
+	if (clmodel->firstmodelsurface != 0 && !gl_flashblend.value)
+	{
+		for (k = 0; k < MAX_DLIGHTS; k++)
+		{
+			if ((cl_dlights[k].die < cl.time) ||
+				(!cl_dlights[k].radius))
+				continue;
+
+			vec3_t saveOrigin;
+			VectorCopy(cl_dlights[k].origin, saveOrigin);
+			VectorSubtract(cl_dlights[k].origin, e->origin, cl_dlights[k].origin);
+
+			R_MarkLights(&cl_dlights[k], 1 << k,
+				clmodel->nodes + clmodel->hulls[0].firstclipnode);
+
+			VectorCopy(saveOrigin, cl_dlights[k].origin);
+		}
+	}
+
+	qglPushMatrix();
+
+	R_RotateForEntity(e);
+	R_SetRenderMode(e);
+	
+	//
+	// draw texture
+	//
+	for (i = 0; i < clmodel->nummodelsurfaces; i++, psurf++)
+	{	
+		// find which side of the node we are on
+		pplane = psurf->plane;
+
+		if (psurf->flags & SURF_DRAWTURB)
+		{
+			if (pplane->type != PLANE_Z && !gl_watersides.value)
+				continue;
+			if ((mins[2] + 1.0) >= pplane->dist)
+				continue;
+		}
+
+		dot = DotProduct(modelorg, pplane->normal) - pplane->dist;
+
+		// draw the polygon
+		if (((psurf->flags & SURF_PLANEBACK) && (dot < -BACKFACE_EPSILON)) ||
+			(!(psurf->flags & SURF_PLANEBACK) && (dot > BACKFACE_EPSILON)))
+		{
+			if (gl_texsort.value)
+			{
+				R_RenderBrushPoly(psurf);
+			}
+			else
+			{
+				R_SetRenderMode(e);
+				R_DrawSequentialPoly(psurf, SIDE_FRONT);
+			}
+		}
+		else
+		{
+			if (psurf->flags & SURF_DRAWTURB)
+			{
+				R_SetRenderMode(e);
+				R_DrawSequentialPoly(psurf, SIDE_BACK);
+			}
+		}
+	}
+
+	if (currententity->rendermode != kRenderNormal)
+	{
+		qglTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+		qglDisable(GL_BLEND);
+	}
+
+	if (gl_texsort.value || currententity->rendermode == kRenderTransColor)
+	{
+		if (currententity->rendermode == kRenderTransAlpha)
+		{
+			if (gl_lightholes.value)
+			{
+				qglDepthFunc(GL_EQUAL);
+				R_BlendLightmaps();
+
+				if (!gl_ztrick.value || gldepthmin < 0.5)
+					qglDepthFunc(GL_LEQUAL);
+				else
+					qglDepthFunc(GL_GEQUAL);
+			}
+		}
+		else
+		{
+			R_DrawDecals();
+
+			if (currententity->rendermode == kRenderNormal)
+			{
+				R_BlendLightmaps();
+			}
+		}
+	}
+
+	qglPopMatrix();
+
+	qglDepthMask(GL_TRUE);
+	qglDisable(GL_ALPHA_TEST);
+	qglAlphaFunc(GL_NOTEQUAL, 0);
+	qglDisable(GL_BLEND);
+}
 
 /*
 =============================================================

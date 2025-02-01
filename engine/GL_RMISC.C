@@ -41,10 +41,11 @@ cvar_t	gl_wateramp = { "gl_wateramp", "0.3" };
 cvar_t	gl_dither = { "gl_dither", "1", TRUE };
 cvar_t	gl_spriteblend = { "gl_spriteblend", "1" };
 
-
+cvar_t	gl_lightholes = { "gl_lightholes", "1" };
 cvar_t	gl_zmax = { "gl_zmax", "4096" };
 cvar_t	gl_alphamin = { "gl_alphamin", "0.25" };
-
+cvar_t	gl_overdraw = { "gl_overdraw", "0" };
+cvar_t	gl_watersides = { "gl_watersides", "0" };
 cvar_t	gl_overbright = { "gl_overbright", "1", TRUE };
 cvar_t	gl_envmapsize = { "gl_envmapsize", "256" };
 cvar_t	gl_flipmatrix = { "gl_flipmatrix", "0", TRUE };
@@ -177,6 +178,7 @@ void R_Init( void )
 	
 	// TODO: Implement
 
+	Cvar_RegisterVariable(&gl_lightholes);
 	Cvar_RegisterVariable(&gl_keeptjunctions);
 	// TODO: Implement
 	Cvar_RegisterVariable(&gl_wateramp);

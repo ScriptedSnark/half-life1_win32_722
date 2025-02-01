@@ -72,7 +72,7 @@ void AngleVectors( const vec_t* angles, vec_t* forward, vec_t* right, vec_t* up 
 	}
 }
 
-int VectorCompare(vec3_t v1, vec3_t v2)
+int VectorCompare( const vec_t* v1, const vec_t* v2 )
 {
 	int i;
 

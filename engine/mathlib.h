@@ -40,7 +40,7 @@ extern	int nanmask;
 
 // TODO: Implement
 
-int VectorCompare(const vec3_t v1, const vec3_t v2);
+int VectorCompare( const vec_t* v1, const vec_t* v2 );
 
 // TODO: Implement
 
