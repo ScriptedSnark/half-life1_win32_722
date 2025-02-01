@@ -127,6 +127,10 @@ extern	cvar_t	gl_texsort;
 
 
 
+extern	cvar_t	gl_flashblend;
+
+
+
 extern	cvar_t	gl_keeptjunctions;
 
 
@@ -196,6 +200,7 @@ float CalcFov( float fov_x, float width, float height );
 //
 // gl_rlight.c
 //
+void R_MarkLights( dlight_t* light, int bit, mnode_t* node );
 void R_AnimateLight( void );
 void R_RenderDlights( void );
 

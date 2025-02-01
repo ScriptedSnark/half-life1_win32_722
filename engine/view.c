@@ -48,9 +48,6 @@ byte		ramps[3][256];
 float		v_blend[4];		// rgba 0.0 - 1.0
 #endif	// GLQUAKE
 
-vec3_t		r_soundOrigin;
-vec3_t		r_playerViewportAngles;
-
 
 // TODO: Implement
 

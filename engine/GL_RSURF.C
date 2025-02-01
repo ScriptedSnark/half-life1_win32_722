@@ -603,7 +603,13 @@ R_DrawWaterChain
 */
 void R_DrawWaterChain( msurface_t* pChain )
 {
-	// TODO: Implement
+	msurface_t* s;
+
+	for (s = pChain; s; s = s->texturechain)
+	{
+		GL_Bind(s->texinfo->texture->gl_texturenum);
+		EmitWaterPolys(s, 0);
+	}
 }
 
 /*

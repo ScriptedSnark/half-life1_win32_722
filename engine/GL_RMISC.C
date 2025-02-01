@@ -27,6 +27,8 @@ cvar_t	gl_texsort = { "gl_texsort", "1" };
 
 
 
+cvar_t	gl_flashblend = { "gl_flashblend", "0" };
+
 
 
 cvar_t	gl_keeptjunctions = { "gl_keeptjunctions", "1" };
