@@ -19,6 +19,8 @@
 
 // Decal flags
 #define FDECAL_PERMANENT	0x01		// This decal should not be removed in favor of any new decals
+#define FDECAL_REFERENCE	0x02		// This is a decal that's been moved from another level
+#define FDECAL_CUSTOM		0x04        // This is a custom clan logo and should not be saved/restored
 
 typedef struct
 {

@@ -1733,6 +1733,84 @@ void R_DecalNode( mnode_t* node )
 	}
 }
 
+int DecalListAdd( DECALLIST* pList, int count )
+{
+	int			i;
+	vec3_t		tmp;
+	DECALLIST* pdecal;
+
+	pdecal = pList + count;
+	for (i = 0; i < count; i++)
+	{
+		if (pdecal->name == pList[i].name &&
+			pdecal->entityIndex == pList[i].entityIndex)
+		{
+			VectorSubtract(pdecal->position, pList[i].position, tmp);	// Merge
+			if (Length(tmp) < 2)	// UNDONE: Tune this '2' constant
+				return count;
+		}
+	}
+
+	// This is a new decal
+	return count + 1;
+}
+
+
+typedef int (*qsortFunc_t)( const void *, const void * );
+
+int DecalDepthCompare( const DECALLIST* elem1, const DECALLIST* elem2 )
+{
+	if (elem1->depth > elem2->depth)
+		return -1;
+	if (elem1->depth < elem2->depth)
+		return 1;
+
+	return 0;
+}
+
+int DecalListCreate( DECALLIST* pList )
+{
+	int total = 0;
+	int i, depth;
+
+	for (i = 0; i < MAX_DECALS; i++)
+	{
+		decal_t* decal = &gDecalPool[i];
+
+		// Decal is in use and is not a custom decal
+		if (!decal->psurface || (decal->flags & FDECAL_CUSTOM))
+			continue;
+
+		decal_t* pdecals;
+		texture_t* ptexture;
+
+		// compute depth
+		pdecals = decal->psurface->pdecals;
+		depth = 0;
+		while (pdecals && pdecals != decal)
+		{
+			depth++;
+			pdecals = pdecals->pnext;
+		}
+		pList[total].depth = depth;
+		pList[total].flags = decal->flags;
+
+		pList[total].entityIndex = R_DecalUnProject(decal, pList[total].position);
+
+		ptexture = Draw_DecalTexture(decal->texture);
+		pList[total].name = ptexture->name;
+
+		// Check to see if the decal should be addedo
+		total = DecalListAdd(pList, total);
+	}
+
+	// Sort the decals lowest depth first, so they can be re-applied in order
+	qsort(pList, total, sizeof(DECALLIST), (qsortFunc_t)DecalDepthCompare);
+
+	return total;
+}
+
+
 
 
 
