@@ -101,8 +101,8 @@
 
 #define MAX_TEMP_ENTITIES	350
 
-#define MAX_MAX_BEAMENTS_INDEX_BITS	6
-#define MAX_BEAMENTS			(1<<MAX_MAX_BEAMENTS_INDEX_BITS)
+#define MAX_BEAMENTS_INDEX_BITS	6
+#define MAX_BEAMENTS			(1<<MAX_BEAMENTS_INDEX_BITS)
 
 // Client dispatch function for usermessages
 typedef int (*pfnUserMsgHook)( const char* pszName, int iSize, void* pbuf );
