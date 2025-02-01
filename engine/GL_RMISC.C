@@ -3,8 +3,8 @@
 #include "quakedef.h"
 
 cvar_t	r_norefresh = { "r_norefresh", "0" };
-
-
+cvar_t	r_drawentities = { "r_drawentities", "1" };
+cvar_t	r_drawviewmodel = { "r_drawviewmodel", "1" };
 cvar_t	r_speeds = { "r_speeds", "0" };
 cvar_t	r_fullbright = { "r_fullbright", "0" };
 
@@ -43,7 +43,7 @@ cvar_t	gl_spriteblend = { "gl_spriteblend", "1" };
 
 
 cvar_t	gl_zmax = { "gl_zmax", "4096" };
-
+cvar_t	gl_alphamin = { "gl_alphamin", "0.25" };
 
 cvar_t	gl_overbright = { "gl_overbright", "1", TRUE };
 cvar_t	gl_envmapsize = { "gl_envmapsize", "256" };
@@ -155,6 +155,8 @@ void R_Init( void )
 
 	// TODO: Implement
 
+	Cvar_RegisterVariable(&r_drawentities);
+	Cvar_RegisterVariable(&r_drawviewmodel);
 	Cvar_RegisterVariable(&r_mirroralpha);
 	Cvar_RegisterVariable(&r_wateralpha);
 	Cvar_RegisterVariable(&r_dynamic);
@@ -180,7 +182,7 @@ void R_Init( void )
 	Cvar_RegisterVariable(&gl_wateramp);
 	Cvar_RegisterVariable(&gl_overbright);
 	Cvar_RegisterVariable(&gl_zmax);
-	// TODO: Implement
+	Cvar_RegisterVariable(&gl_alphamin);
 	Cvar_RegisterVariable(&gl_flipmatrix);
 
 	// TODO: Implement

@@ -104,6 +104,8 @@ extern	int	playertextures;
 extern	int	skytexturenum;		// index in cl.loadmodel, not gl texture object
 
 extern	cvar_t	r_norefresh;
+extern	cvar_t	r_drawentities;
+extern	cvar_t	r_drawviewmodel;
 extern	cvar_t	r_speeds;
 extern	cvar_t	r_fullbright;
 
@@ -141,7 +143,7 @@ extern	cvar_t	gl_spriteblend;
 
 
 extern	cvar_t	gl_zmax;
-
+extern	cvar_t	gl_alphamin;
 
 
 extern	cvar_t	gl_overbright;

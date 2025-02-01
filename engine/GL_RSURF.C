@@ -682,6 +682,47 @@ void DrawTextureChains( void )
 	}
 }
 
+/*
+=================
+R_SetRenderMode
+=================
+*/
+void R_SetRenderMode( cl_entity_t* pEntity )
+{
+	switch (pEntity->rendermode)
+	{
+	case kRenderNormal:
+		qglColor4f(1, 1, 1, 1);
+		break;
+	case kRenderTransColor:
+		qglBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		qglTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_ALPHA);
+		qglEnable(GL_BLEND);
+		break;
+	case kRenderTransAlpha:
+		qglEnable(GL_ALPHA_TEST);
+		qglTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+		qglColor4f(1, 1, 1, 1);
+		qglDisable(GL_BLEND);
+		qglAlphaFunc(GL_GREATER, gl_alphamin.value);
+		break;
+	case kRenderTransAdd:
+		qglTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+		qglBlendFunc(GL_ONE, GL_ONE);
+		qglColor4f(r_blend, r_blend, r_blend, 1);
+		qglDepthMask(GL_FALSE);
+		qglEnable(GL_BLEND);
+		break;
+	default:
+		qglTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+		qglBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		qglColor4f(1, 1, 1, r_blend);
+		qglDepthMask(GL_FALSE);
+		qglEnable(GL_BLEND);
+		break;
+	}
+}
+
 // TODO: Implement
 
 /*

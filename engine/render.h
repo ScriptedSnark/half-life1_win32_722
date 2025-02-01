@@ -159,6 +159,12 @@ typedef struct
 
 extern	refdef_t	r_refdef;
 
+#if defined ( GLQUAKE )
+extern float r_blend; // Global blending factor for the current entity
+#else
+extern int r_blend;
+#endif
+
 
 
 //

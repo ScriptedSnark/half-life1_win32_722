@@ -203,6 +203,38 @@ R_DrawEntitiesOnList
 */
 void R_DrawEntitiesOnList( void )
 {
+	int		i, j;
+
+	if (!r_drawentities.value)
+		return;
+
+	// draw sprites seperately, because of alpha blending
+	for (i = 0; i < cl_numvisedicts; i++)
+	{
+		currententity = &cl_visedicts[i];
+
+		if (currententity->rendermode)
+		{
+			AddTEntity(currententity);
+			continue;
+		}
+
+		switch (currententity->model->type)
+		{
+			case mod_brush:
+				R_DrawBrushModel(currententity);
+				break;
+			case mod_alias:
+				// TODO: Implement
+				break;
+			case mod_studio:
+				// TODO: Implement
+				break;
+		}
+	}
+
+	r_blend = 1.0;
+
 	// TODO: Implement
 }
 

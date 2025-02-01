@@ -3,6 +3,7 @@
 #include "quakedef.h"
 #include "pmove.h"
 #include "decal.h"
+#include "r_trans.h"
 #include "cl_demo.h"
 #include "cl_draw.h"
 
@@ -808,7 +809,7 @@ void CL_DeallocateDynamicData( void )
 		cl_entities = NULL;
 	}
 
-	// TODO: Implement
+	R_DestroyObjects();
 }
 
 /*
@@ -830,7 +831,7 @@ void CL_ReallocateDynamicData( int nMaxClients )
 	cl_entities = (cl_entity_t*)malloc(sizeof(cl_entity_t) * cl.max_edicts);
 	memset(cl_entities, 0, (sizeof(cl_entity_t) * cl.max_edicts));
 
-	// TODO: Implement
+	R_AllocObjects(cl.max_edicts);
 }
 
 /*
