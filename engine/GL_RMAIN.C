@@ -252,7 +252,7 @@ R_DrawEntitiesOnList
 */
 void R_DrawEntitiesOnList( void )
 {
-	int		i, j;
+	int		i;
 
 	if (!r_drawentities.value)
 		return;

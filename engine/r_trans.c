@@ -66,7 +66,42 @@ Add a transparent entity to a list of transparent objects
 */
 void AddTEntity( cl_entity_t* pEnt )
 {
-	// TODO: Implement
+	int     i;
+	float   dist;
+	vec3_t  v;
+
+	if (numTransObjs >= maxTransObjs)
+		Sys_Error("AddTentity: Too many objects");
+
+	if (!pEnt->model || pEnt->model->type != mod_brush || pEnt->rendermode != kRenderTransAlpha)
+	{
+		VectorAdd(pEnt->model->maxs, pEnt->model->mins, v);
+		VectorScale(v, 0.5, v);
+		VectorAdd(v, pEnt->origin, v);
+		VectorSubtract(r_origin, v, v);
+
+		dist = DotProduct(v, v);
+	}
+	else
+	{
+		// max distance
+		dist = 1E9F;
+	}
+
+	i = numTransObjs;
+	while (i > 0)
+	{
+		if (transObjects[i - 1].distance >= dist)
+			break;
+
+		transObjects[i].pEnt = transObjects[i - 1].pEnt;
+		transObjects[i].distance = transObjects[i - 1].distance;
+		i--;
+	}
+
+	transObjects[i].pEnt = pEnt;
+	transObjects[i].distance = dist;
+	numTransObjs++;
 }
 
 // TODO: Implement
@@ -81,7 +116,38 @@ R_DrawTEntitiesOnList
 */
 void R_DrawTEntitiesOnList( void )
 {
-	// TODO: Implement
+	int     i;
+
+	if (!r_drawentities.value)
+		return;
+
+	// Handle all trans objects in the list
+	for (i = 0; i < numTransObjs; i++)
+	{
+		currententity = transObjects[i].pEnt;
+
+		r_blend = CL_FxBlend(currententity);
+		if (r_blend <= 0.0)
+			continue;
+
+		r_blend /= 255.0;
+
+		// Glow is only for sprite models
+		if (currententity->rendermode == kRenderGlow && currententity->model->type != mod_sprite)
+			Con_Printf("Non-sprite set to glow!\n");
+
+		switch (currententity->model->type)
+		{
+		case mod_brush:
+			R_DrawBrushModel(currententity);
+			break;
+
+		// TODO: Implement
+		}
+	}
+
+	numTransObjs = 0;
+	r_blend = 1.0;
 }
 #else
 int r_blend;	// blending amount in [0..255] range

@@ -638,6 +638,146 @@ void CL_TempEntUpdate( void )
 }
 
 /*
+================
+CL_FxBlend
+
+================
+*/
+int CL_FxBlend( cl_entity_t* ent )
+{
+	int blend = 0;
+	float offset;
+
+	offset = (int)ent * 363.0;
+
+	switch (ent->renderfx)
+	{
+	case kRenderFxPulseSlow:
+		blend = ent->renderamt + sin(cl.time * 2.0 + offset) * 16.0;
+		break;
+	case kRenderFxPulseFast:
+		blend = ent->renderamt + sin(cl.time * 8.0 + offset) * 16.0;
+		break;
+	case kRenderFxPulseSlowWide:
+		blend = ent->renderamt + sin(cl.time * 2.0 + offset) * 64.0;
+		break;
+	case kRenderFxPulseFastWide:
+		blend = ent->renderamt + sin(cl.time * 8.0 + offset) * 64.0;
+		break;
+	case kRenderFxFadeSlow:
+		if (ent->renderamt > 0)
+			ent->renderamt -= 1;
+		else
+			ent->renderamt = 0;
+			
+		blend = ent->renderamt;
+		break;
+	case kRenderFxFadeFast:
+		if (ent->renderamt > 3)
+			ent->renderamt -= 4;
+		else
+			ent->renderamt = 0;
+			
+		blend = ent->renderamt;
+		break;
+	case kRenderFxSolidSlow:
+		if (ent->renderamt < 255)
+			ent->renderamt += 1;	
+		else
+			ent->renderamt = 255;
+
+		blend = ent->renderamt;
+		break;
+	case kRenderFxSolidFast:
+		if (ent->renderamt < 252)
+			ent->renderamt += 4;
+		else
+			ent->renderamt = 255;
+
+		blend = ent->renderamt;
+		break;
+	case kRenderFxStrobeSlow:
+		blend = sin(cl.time * 4.0 + offset) * 20.0;
+		if (blend < 0)
+			blend = 0;
+		else
+			blend = ent->renderamt;		
+		break;
+	case kRenderFxStrobeFast:
+		blend = sin(cl.time * 16.0 + offset) * 20.0;
+		if (blend < 0)
+			blend = 0;
+		else
+			blend = ent->renderamt;
+		break;
+
+	case kRenderFxStrobeFaster:
+		blend = sin(cl.time * 36.0 + offset) * 20.0;
+		if (blend < 0)
+			blend = 0;
+		else
+			blend = ent->renderamt;
+		break;
+
+	case kRenderFxFlickerSlow:
+		blend = sin(cl.time * 17.0 + offset) + sin(cl.time * 2.0) * 20.0;
+		if (blend < 0)
+			blend = 0;
+		else
+			blend = ent->renderamt;
+		break;
+
+	case kRenderFxFlickerFast:
+		blend = sin(cl.time * 23.0 + offset) + sin(cl.time * 16.0) * 20.0;
+		if (blend < 0)
+			blend = 0;
+		else
+			blend = ent->renderamt;
+		break;
+	case kRenderFxDistort:
+	case kRenderFxHologram:
+		{
+			vec3_t tmp;
+			VectorSubtract(ent->origin, r_origin, tmp);
+
+			float dist = DotProduct(vpn, tmp);
+			if (ent->renderfx == kRenderFxDistort)
+				dist = 1.0;
+
+			if (dist > 0.0)
+			{
+				ent->renderamt = 180;
+
+				if (dist > 100)
+				{
+					blend = RandomLong(-32, 31) + (1 - (dist - 100) * 0.0025) * 180;
+				}
+				else
+				{
+					blend = RandomLong(-32, 31) + 180;
+				}
+			}
+			else
+			{
+				blend = 0;
+			}
+		}
+		break;
+	default:
+		blend = ent->renderamt;
+		break;
+	}
+
+	// clamp it
+	if (blend > 255)
+		blend = 255;
+	else if (blend < 0)
+		blend = 0;
+
+	return blend;
+}
+
+/*
 =============================================================
 
   SPRITE MODELS

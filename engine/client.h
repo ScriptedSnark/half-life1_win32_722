@@ -609,3 +609,4 @@ void CL_ParseTEnt( void );
 int ModelFrameCount( struct model_s* model );
 struct mspriteframe_s* R_GetSpriteFrame( struct msprite_s* pSprite, int frame );
 void CL_TempEntUpdate( void );
+int CL_FxBlend( cl_entity_t* ent );
