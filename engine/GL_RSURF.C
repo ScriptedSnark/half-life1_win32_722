@@ -50,7 +50,66 @@ R_AddDynamicLights
 */
 void R_AddDynamicLights( msurface_t* surf )
 {
-	// TODO: Implement
+	int			lnum;
+	int			sd, td;
+	float		dist, rad, minlight;
+	vec3_t		impact, local;
+	int			s, t;
+	int			smax, tmax;
+	mtexinfo_t* tex;
+
+	smax = (surf->extents[0] >> 4) + 1;
+	tmax = (surf->extents[1] >> 4) + 1;
+	tex = surf->texinfo;
+
+	for (lnum = 0; lnum < MAX_DLIGHTS; lnum++)
+	{
+		if (!(surf->dlightbits & (1 << lnum)))
+			continue;		// not lit by this light
+
+		VectorSubtract(cl_dlights[lnum].origin, currententity->origin, impact);
+
+		rad = cl_dlights[lnum].radius;
+		dist = DotProduct(impact, surf->plane->normal)
+			- surf->plane->dist;
+		rad -= fabs(dist);
+		minlight = cl_dlights[lnum].minlight;
+		if (rad < minlight)
+			continue;
+		minlight = rad - minlight;
+
+		local[0] = DotProduct(impact, tex->vecs[0]) + tex->vecs[0][3];
+		local[1] = DotProduct(impact, tex->vecs[1]) + tex->vecs[1][3];
+
+		local[0] -= surf->texturemins[0];
+		local[1] -= surf->texturemins[1];
+
+		for (t = 0; t < tmax; t++)
+		{
+			td = local[1] - t * 16;
+			if (td < 0)
+				td = -td;
+			for (s = 0; s < smax; s++)
+			{
+				sd = local[0] - s * 16;
+				if (sd < 0)
+					sd = -sd;
+				if (sd > td)
+					dist = sd + (td >> 1);
+				else
+					dist = td + (sd >> 1);
+				if (dist < minlight)
+				{
+					unsigned delta;
+					delta = (rad - dist) * 256;
+
+					blocklights[t * smax + s].r += (delta * cl_dlights[lnum].color.r) >> 8;
+					blocklights[t * smax + s].g += (delta * cl_dlights[lnum].color.g) >> 8;
+					blocklights[t * smax + s].b += (delta * cl_dlights[lnum].color.b) >> 8;
+				}
+			}
+		}
+	}
 }
 
 
