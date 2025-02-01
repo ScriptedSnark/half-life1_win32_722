@@ -1,6 +1,8 @@
 #include "quakedef.h"
-#include "pr_cmds.h"
 #include "cmodel.h"
+#include "decal.h"
+#include "draw.h"
+#include "pr_cmds.h"
 #include "gl_water.h"
 
 #define MAX_DECALSURFS		500
@@ -1233,8 +1235,6 @@ void R_MarkLeaves( void )
 	}
 }
 
-// TODO: Implement
-
 /*
 =============================================================================
 
@@ -1525,14 +1525,109 @@ void GL_BuildLightmaps( void )
 		GL_SelectTexture(TEXTURE0_SGIS);
 }
 
-// TODO: Implement
+//-----------------------------------------------------------------------------
+//
+// Decal system
+//
+//-----------------------------------------------------------------------------
+
+// UNDONE: Compress this???  256K here?
+static decal_t			gDecalPool[MAX_DECALS];
+static int				gDecalCount;					// Pool index
+static vec3_t			gDecalPos;
+
+static model_t*			gDecalModel = NULL;
+static texture_t*		gDecalTexture = NULL;
+static int				gDecalSize, gDecalIndex;
+static int				gDecalFlags, gDecalEntity;
+static float			gDecalAppliedScale;
+
+int R_DecalUnProject( decal_t* pdecal, vec_t* position );
+void R_DecalCreate( msurface_t* psurface, int textureIndex, float scale, float x, float y );
+void R_DecalShoot( int textureIndex, int entity, int modelIndex, vec_t* position, int flags );
+void R_InvalidateSurface( msurface_t* surface );
+
+#define DECAL_DISTANCE			4
+
+// Empirically determined constants for minimizing overalpping decals
+#define MAX_OVERLAP_DECALS		4
+#define DECAL_OVERLAP_DIST		8
 
 
 // Init the decal pool
 void R_DecalInit( void )
 {
-	// TODO: Implement
+	memset(gDecalPool, 0, sizeof(gDecalPool));
+	gDecalCount = 0;
 }
+
+
+// Unlink pdecal from any surface it's attached to
+void R_DecalUnlink( decal_t* pdecal )
+{
+	decal_t* tmp;
+
+	if (pdecal->psurface)
+	{
+		if (pdecal->psurface->pdecals == pdecal)
+		{
+			pdecal->psurface->pdecals = pdecal->pnext;
+		}
+		else
+		{
+			tmp = pdecal->psurface->pdecals;
+			if (!tmp)
+			{
+				Sys_Error("Bad decal list");
+				return;
+			}
+
+			while (tmp->pnext)
+			{
+				if (tmp->pnext == pdecal)
+				{
+					tmp->pnext = pdecal->pnext;
+					break;
+				}
+
+				tmp = tmp->pnext;
+			}
+		}
+	}
+
+	pdecal->psurface = NULL;
+}
+
+
+// Just reuse next decal in list
+// A decal that spans multiple surfaces will use multiple decal_t pool entries, as each surface needs
+// it's own.
+decal_t* R_DecalAlloc( decal_t* pdecal )
+{
+	if (!pdecal)
+	{
+		int count;
+
+		count = 0;		// Check for the odd possiblity of infinte loop
+		do
+		{
+			gDecalCount++;
+			if (gDecalCount >= MAX_DECALS)
+				gDecalCount = 0;
+			pdecal = gDecalPool + gDecalCount;	// reuse next decal
+			count++;
+		} while ((pdecal->flags & FDECAL_PERMANENT) && count < MAX_DECALS);
+	}
+
+	// If decal is already linked to a surface, unlink it.
+	R_DecalUnlink(pdecal);
+
+	return pdecal;
+}
+
+
+
+
 
 
 
