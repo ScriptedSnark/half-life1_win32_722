@@ -742,6 +742,58 @@ void CL_SignonReply( void )
 // TODO: Implement
 
 /*
+=================
+CL_AllocDlight
+
+=================
+*/
+dlight_t* CL_AllocDlight( int key )
+{
+	int	i;
+	dlight_t* dl = NULL;
+
+// first look for an exact key match
+	if (key)
+	{
+		dl = cl_dlights;
+		for (i = 0; i < MAX_DLIGHTS; i++, dl++)
+		{
+			if (dl->key == key)
+			{
+				memset(dl, 0, sizeof(*dl));
+				dl->key = key;
+				r_dlightchanged |= (1 << i);
+				r_dlightactive |= (1 << i);
+				return dl;
+			}
+		}
+	}
+
+// then look for anything else
+	dl = cl_dlights;
+	for (i = 0; i < MAX_DLIGHTS; i++, dl++)
+	{
+		if (dl->die < cl.time)
+		{
+			memset(dl, 0, sizeof(*dl));
+			dl->key = key;
+			r_dlightchanged |= (1 << i);
+			r_dlightactive |= (1 << i);
+			return dl;
+		}
+	}
+
+	dl = &cl_dlights[0];
+	memset(dl, 0, sizeof(*dl));
+	dl->key = key;
+	r_dlightchanged |= (1 << 0);
+	r_dlightactive |= (1 << 0);
+	return dl;
+}
+
+// TODO: Implement
+
+/*
 ===============
 CL_DecayLights
 

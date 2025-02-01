@@ -253,7 +253,7 @@ void S_AmbientOff( void );
 void S_AmbientOn( void );
 void S_FreeChannel( channel_t* ch );
 
-
+void ResampleSfx( sfx_t* sfx, int inrate, int inwidth, byte* data );
 
 void SND_PaintChannelFrom8Offs( portable_samplepair_t* paintbuffer, channel_t* ch, sfxcache_t* sc, int count, int offset );
 void SND_PaintChannelFrom16Offs( portable_samplepair_t* paintbuffer, channel_t* ch, sfxcache_t* sc, int count, int offset );

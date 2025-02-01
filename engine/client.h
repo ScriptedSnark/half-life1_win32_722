@@ -497,6 +497,8 @@ extern int	total_data[64];
 
 // CL_MAIN.C
 //
+dlight_t* CL_AllocDlight( int key );
+dlight_t* CL_AllocElight( int key );
 void	CL_DecayLights( void );
 
 void CL_Init( void );

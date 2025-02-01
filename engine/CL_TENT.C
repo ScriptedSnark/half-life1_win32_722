@@ -188,10 +188,39 @@ CL_ParseTEnt
 void CL_ParseTEnt( void )
 {
 	int		type;
+	vec3_t	pos;
+	dlight_t* dl;
 
 	type = MSG_ReadByte();
 	switch (type)
 	{
+		// TODO: Implement
+
+	case TE_DLIGHT:
+		pos[0] = MSG_ReadCoord();
+		pos[1] = MSG_ReadCoord();
+		pos[2] = MSG_ReadCoord();
+
+		dl = CL_AllocDlight(0);
+
+		dl->origin[0] = pos[0];
+		dl->origin[1] = pos[1];
+		dl->origin[2] = pos[2];
+
+		dl->radius = (float)(MSG_ReadByte() * 10.0);
+
+		dl->color.r = MSG_ReadByte();
+		dl->color.g = MSG_ReadByte();
+		dl->color.b = MSG_ReadByte();
+
+		dl->die = cl.time + MSG_ReadByte() * 0.1;
+		dl->decay = MSG_ReadByte() * 10.0;
+		break;
+
+	case TE_ELIGHT:
+		// TODO: Implement
+		break;
+
 		// TODO: Implement
 
 	default:

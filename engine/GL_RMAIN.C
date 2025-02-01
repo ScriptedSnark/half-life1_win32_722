@@ -1,6 +1,7 @@
 // r_main.c
 
 #include "quakedef.h"
+#include "r_trans.h"
 #include "shake.h"
 
 cl_entity_t	r_worldentity;
