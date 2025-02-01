@@ -1272,9 +1272,8 @@ CL_Init
 void CL_Init( void )
 {
 	CL_InitInput();
-
-	// TODO: Implement
-
+	CL_InitTEnts();
+//	TextMessageInit(); TODO: Implement
 	ClientDLL_HudInit();
 	ClientDLL_HudVidInit();
 

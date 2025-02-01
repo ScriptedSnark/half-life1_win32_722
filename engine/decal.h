@@ -17,15 +17,8 @@
 #define MIP_EXTRASIZE		24
 #endif
 
-
-
-
-
-
-
-
-
-
+// Decal flags
+#define FDECAL_PERMANENT	0x01		// This decal should not be removed in favor of any new decals
 
 typedef struct
 {

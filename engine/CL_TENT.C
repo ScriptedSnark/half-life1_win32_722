@@ -3,6 +3,7 @@
 #include "quakedef.h"
 #include "cl_tent.h"
 #include "pr_cmds.h"
+#include "decal.h"
 
 TEMPENTITY gTempEnts[MAX_TEMP_ENTITIES], * gpTempEntFree, * gpTempEntActive;
 
@@ -265,10 +266,150 @@ void CL_ParseTEnt( void )
 	vec3_t	endpos;
 	dlight_t* dl;
 	float	life;
+	float	scale;
+	float	frameRate;
+	int		flags;
 
 	type = MSG_ReadByte();
 	switch (type)
 	{
+		// TODO: Implement
+
+	case TE_EXPLOSION:			// rocket explosion
+		pos[0] = MSG_ReadCoord();
+		pos[1] = MSG_ReadCoord();
+		pos[2] = MSG_ReadCoord();
+
+		modelindex = MSG_ReadShort();
+
+		scale = MSG_ReadByte() * 0.1;
+		frameRate = MSG_ReadByte();
+
+		if (scale != 0)
+		{
+			// TODO: Implement
+
+			// big flash
+			dl = CL_AllocDlight(0);
+			VectorCopy(pos, dl->origin);
+			dl->radius = 200;
+			dl->color.r = 250;
+			dl->color.g = 250;
+			dl->color.b = 150;
+			dl->die = cl.time + 0.01;
+			dl->decay = 800;
+
+
+			// red glow
+			dl = CL_AllocDlight(0);
+			VectorCopy(pos, dl->origin);
+			dl->radius = 150;
+			dl->color.r = 255;
+			dl->color.g = 190;
+			dl->color.b = 40;
+			dl->die = cl.time + 1.0;
+			dl->decay = 200;
+		}
+
+		// sound
+		switch (RandomLong(0, 2))
+		{
+		case 0:
+			S_StartDynamicSound(-1, CHAN_AUTO, cl_sfx_r_exp1, pos, VOL_NORM, 0.3, 0, PITCH_NORM);
+			break;
+		case 1:
+			S_StartDynamicSound(-1, CHAN_AUTO, cl_sfx_r_exp2, pos, VOL_NORM, 0.3, 0, PITCH_NORM);
+			break;
+		case 2:
+			S_StartDynamicSound(-1, CHAN_AUTO, cl_sfx_r_exp3, pos, VOL_NORM, 0.3, 0, PITCH_NORM);
+			break;
+		}
+		break;
+
+		// TODO: Implement
+
+	case TE_SMOKE:		// alphablend sprite, move vertically 30 pps
+		pos[0] = MSG_ReadCoord();
+		pos[1] = MSG_ReadCoord();
+		pos[2] = MSG_ReadCoord();
+		modelindex = MSG_ReadShort();
+		scale = MSG_ReadByte() * 0.1;
+		frameRate = MSG_ReadByte();
+		// TODO: Implement
+		break;
+
+	case TE_TRACER:
+		pos[0] = MSG_ReadCoord();
+		pos[1] = MSG_ReadCoord();
+		pos[2] = MSG_ReadCoord();
+		endpos[0] = MSG_ReadCoord();
+		endpos[1] = MSG_ReadCoord();
+		endpos[2] = MSG_ReadCoord();
+		R_TracerEffect(pos, endpos);
+		break;
+
+		// TODO: Implement
+
+	case TE_SPARKS:
+		pos[0] = MSG_ReadCoord();
+		pos[1] = MSG_ReadCoord();
+		pos[2] = MSG_ReadCoord();
+//		R_SparkEffect(pos, 8, -200, 200); TODO: Implement
+		break;
+
+		// TODO: Implement
+
+	case TE_BSPDECAL:
+	case TE_DECAL:
+	case TE_WORLDDECAL:
+	case TE_WORLDDECALHIGH:
+	case TE_DECALHIGH:
+	{
+		int decalTextureIndex;
+
+		pos[0] = MSG_ReadCoord();
+		pos[1] = MSG_ReadCoord();
+		pos[2] = MSG_ReadCoord();
+
+		if (type == TE_BSPDECAL)
+		{
+			decalTextureIndex = MSG_ReadShort();
+
+			// Never remove it
+			flags = FDECAL_PERMANENT;
+		}
+		else
+		{
+			decalTextureIndex = MSG_ReadByte();
+
+			modelindex = 0;
+			flags = 0;
+		}
+
+		if (type == TE_DECAL || type == TE_DECALHIGH || type == TE_BSPDECAL)
+		{
+			entnumber = MSG_ReadShort();
+
+			if (type == TE_BSPDECAL && entnumber)
+			{
+				modelindex = MSG_ReadShort();
+			}
+		}
+		else
+		{
+			entnumber = 0;
+		}
+
+		if (type == TE_DECALHIGH || type == TE_WORLDDECALHIGH)
+			decalTextureIndex += 256; // texture index is greater than 256
+
+		if (entnumber >= cl.max_edicts)
+			Sys_Error("Decal: entity = %i", entnumber);
+
+		// TODO: Implement
+		break;
+	}
+
 		// TODO: Implement
 
 	case TE_DLIGHT:
