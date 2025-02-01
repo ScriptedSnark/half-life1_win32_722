@@ -193,6 +193,18 @@ qboolean R_CullBox( vec_t* mins, vec_t* maxs )
 
 // TODO: Implement
 
+//==================================================================================
+
+/*
+=============
+R_DrawEntitiesOnList
+=============
+*/
+void R_DrawEntitiesOnList( void )
+{
+	// TODO: Implement
+}
+
 /*
 =============
 R_DrawViewModel
@@ -539,19 +551,19 @@ void R_RenderScene( void )
 
 	S_ExtraUpdate();	// don't let sound get messed up if going slow
 
-	// TODO: Implement
+	R_DrawEntitiesOnList();
 
 	qglDisable(GL_FOG);
 
-	// TODO: Implement
+	R_DrawTEntitiesOnList();
 
 	S_ExtraUpdate();
 
-	// TODO: Implement
+	R_RenderDlights();
 
 	GL_DisableMultitexture();
 
-	// TODO: Implement
+	R_DrawParticles();
 }
 
 

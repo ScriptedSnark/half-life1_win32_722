@@ -1,5 +1,7 @@
 #include "quakedef.h"
 
+// TODO: Implement
+
 /*
 ===============
 R_ClearParticles
@@ -9,6 +11,8 @@ void R_ClearParticles( void )
 {
 	// TODO: Implement
 }
+
+// TODO: Implement
 
 /*
 ===============
@@ -36,3 +40,17 @@ void R_ParseParticleEffect( void )
 
 	// TODO: Implement
 }
+
+// TODO: Implement
+
+/*
+===============
+R_DrawParticles
+===============
+*/
+void R_DrawParticles( void )
+{
+	// TODO: Implement
+}
+
+// TODO: Implement

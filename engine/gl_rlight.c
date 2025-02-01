@@ -35,6 +35,27 @@ void R_AnimateLight( void )
 	}
 }
 
+/*
+=============================================================================
+
+DYNAMIC LIGHTS BLEND RENDERING
+
+=============================================================================
+*/
+
+// TODO: Implement
+
+/*
+=============
+R_RenderDlights
+=============
+*/
+void R_RenderDlights( void )
+{
+	// TODO: Implement
+}
+
+// TODO: Implement
 
 /*
 =============
@@ -45,3 +66,5 @@ void R_PushDlights( void )
 {
 	// TODO: Implement
 }
+
+// TODO: Implement

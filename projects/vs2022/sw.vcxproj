@@ -57,6 +57,7 @@
     <ClInclude Include="..\..\engine\quakedef.h" />
     <ClInclude Include="..\..\engine\r_local.h" />
     <ClInclude Include="..\..\engine\r_shared.h" />
+    <ClInclude Include="..\..\engine\r_trans.h" />
     <ClInclude Include="..\..\engine\sbar.h" />
     <ClInclude Include="..\..\engine\screen.h" />
     <ClInclude Include="..\..\engine\server.h" />
@@ -112,6 +113,7 @@
     <ClCompile Include="..\..\engine\pr_cmds.c" />
     <ClCompile Include="..\..\engine\R_PART.C" />
     <ClCompile Include="..\..\engine\R_SURF.C" />
+    <ClCompile Include="..\..\engine\r_trans.c" />
     <ClCompile Include="..\..\engine\SCREEN.C" />
     <ClCompile Include="..\..\engine\SND_DMA.C" />
     <ClCompile Include="..\..\engine\SND_MEM.C" />

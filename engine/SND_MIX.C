@@ -2323,6 +2323,8 @@ voxword_t rgrgvoxword[CBSENTENCENAME_MAX][CVOXWORDMAX];
 
 void VOX_Init( void )
 {
+	Q_memset(rgrgvoxword, 0, sizeof(rgrgvoxword));
+
 	// TODO: Implement
 }
 

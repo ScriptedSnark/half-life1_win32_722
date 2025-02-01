@@ -197,6 +197,7 @@ float CalcFov( float fov_x, float width, float height );
 // gl_rlight.c
 //
 void R_AnimateLight( void );
+void R_RenderDlights( void );
 
 //
 // gl_refrag.c
