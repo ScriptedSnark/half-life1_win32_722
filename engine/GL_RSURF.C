@@ -363,8 +363,19 @@ ScrollOffset
 */
 float ScrollOffset( msurface_t* psurface, cl_entity_t* pEntity )
 {
-	// TODO: Implement
-	return 0.0f;
+	float speed;
+	float sOffset;
+
+	sOffset = (float)(pEntity->rendercolor.b + (pEntity->rendercolor.g << 8)) / 16.0f;
+	if (!pEntity->rendercolor.r)
+		sOffset = -sOffset;
+
+	speed = (1.0 / psurface->texinfo->texture->width) * sOffset * cl.time;
+
+	if (speed < 0.0)
+		return fmod(speed, -1);
+	else
+		return fmod(speed, 1);
 }
 
 /*
@@ -374,7 +385,22 @@ DrawGLPolyScroll
 */
 void DrawGLPolyScroll( msurface_t* psurface, cl_entity_t* pEntity )
 {
-	// TODO: Implement
+	int		i;
+	float*	v;
+	float sOffset;
+	glpoly_t* p;
+
+	sOffset = ScrollOffset(psurface, pEntity);
+	p = psurface->polys;
+
+	qglBegin(GL_POLYGON);
+	v = p->verts[0];
+	for (i = 0; i < p->numverts; i++, v += VERTEXSIZE)
+	{
+		qglTexCoord2f(v[3] + sOffset, v[4]);
+		qglVertex3fv(v);
+	}
+	qglEnd();
 }
 
 /*
