@@ -1626,18 +1626,114 @@ decal_t* R_DecalAlloc( decal_t* pdecal )
 }
 
 
-
-
-
-
-
-
-
-
+// remove all decals
 void R_DecalRemoveAll( int textureIndex )
 {
-	// TODO: Implement
+	int i;
+	decal_t* pDecal;
+
+	for (i = 0; i < MAX_DECALS; i++)
+	{
+		pDecal = &gDecalPool[i];
+
+		if (pDecal->texture == textureIndex)
+		{
+			R_DecalUnlink(pDecal);
+			memset(pDecal, 0, sizeof(decal_t));
+		}
+	}
 }
+
+// iterate over all surfaces on a node, looking for surfaces to decal
+void R_DecalNode( mnode_t* node )
+{
+	mplane_t* splitplane;
+	float		dist;
+
+	if (!node)
+		return;
+
+	if (node->contents < 0)
+		return;
+
+	splitplane = node->plane;
+	dist = DotProduct(gDecalPos, splitplane->normal) - splitplane->dist;
+
+	// This is arbitrarily set to 10 right now.  In an ideal world we'd have the 
+	// exact surface but we don't so, this tells me which planes are "sort of 
+	// close" to the gunshot -- the gunshot is actually 4 units in front of the 
+	// wall (see dlls\weapons.cpp). We also need to check to see if the decal 
+	// actually intersects the texture space of the surface, as this method tags
+	// parallel surfaces in the same node always.
+	// JAY: This still tags faces that aren't correct at edges because we don't 
+	// have a surface normal
+
+	if (dist > gDecalSize)
+	{
+		R_DecalNode(node->children[0]);
+	}
+	else if (dist < -gDecalSize)
+	{
+		R_DecalNode(node->children[1]);
+	}
+	else
+	{
+		if (dist < DECAL_DISTANCE && dist > -DECAL_DISTANCE)
+		{
+			int			w, h;
+			float		s, t, scale;
+			msurface_t* surf;
+			int			i;
+			mtexinfo_t* tex;
+			vec3_t		cross, normal;
+			float		face;
+
+			surf = gDecalModel->surfaces + node->firstsurface;
+
+			// iterate over all surfaces in the node
+			for (i = 0; i < node->numsurfaces; i++, surf++)
+			{
+				if (surf->flags & (SURF_DRAWTILED | SURF_DRAWTURB))
+					continue;
+
+				tex = surf->texinfo;
+
+				scale = Length(tex);
+				if (scale == 0)
+					continue;
+
+				// project decal center into the texture space of the surface
+				s = DotProduct(gDecalPos, tex->vecs[0]) + tex->vecs[0][3] - surf->texturemins[0];
+				t = DotProduct(gDecalPos, tex->vecs[1]) + tex->vecs[1][3] - surf->texturemins[1];
+
+				w = gDecalTexture->width * scale;
+				h = gDecalTexture->height * scale;
+
+				// move s,t to upper left corner
+				s -= (w * 0.5);
+				t -= (h * 0.5);
+
+				if (s <= -w || t <= -h ||
+					s > (surf->extents[0] + w) || t > (surf->extents[1] + h))
+				{
+					continue; // nope
+				}
+
+				scale = 1.0 / scale;
+				s = (surf->texturemins[0] + s) / (float)tex->texture->width;
+				t = (surf->texturemins[1] + t) / (float)tex->texture->height;
+
+				// stamp it
+				R_DecalCreate(surf, gDecalIndex, scale, s, t);
+			}
+		}
+
+		R_DecalNode(node->children[0]);
+		R_DecalNode(node->children[1]);
+	}
+}
+
+
 
 
 
