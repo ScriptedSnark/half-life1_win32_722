@@ -319,6 +319,7 @@ typedef struct
 
 	// TODO: Implement
 
+	float frame_lerp; //FF: there probably was a structure similar to cmd_t but there are no xrefs so far to any of its other fields except frame_lerp, so TODO this later
 
 	// the client maintains its own idea of view angles, which are
 	// sent to the server each frame.  The server sets punchangle when
@@ -357,10 +358,10 @@ typedef struct
 	int			inwater;
 	int			waterlevel;
 
-
-
-	// TODO: Implement
-
+// light level at player's position including dlights
+// this is sent back to the server each frame
+// architectually ugly but it works
+	int			light_level;
 
 	int			intermission;	// don't change view angle, full screen, etc
 	int			completed_time;	// latched ffrom time at intermission start
@@ -378,8 +379,6 @@ typedef struct
 
 	frame_t		frames[UPDATE_BACKUP];
 
-	// TODO: Implement
-
 	//
 	// information that is static for the entire time connected to a server
 	//
@@ -393,8 +392,6 @@ typedef struct
 	struct model_s*	model_precache[MAX_MODELS];
 	sfx_t* sound_precache[MAX_SOUNDS];
 
-	// TODO: Implement
-
 	char		levelname[40];	// for display on solo scoreboard
 	int			maxclients;
 
@@ -407,11 +404,16 @@ typedef struct
 	efrag_t*	free_efrags;
 	int			num_entities;	// held in cl_entities array
 	int			num_statics;	// held in cl_staticentities array
+
+	//FF: alignment of client_state_t is 8 (because it uses doubles)
+	//FF: but QW has the "cdtrack" field BEFORE viewent: https://github.com/id-Software/Quake/blob/bf4ac424ce754894ac8f1dae6a3981954bc9852d/QW/client/client.h#L285
+	//FF: meanwhile WinQuake has the "cdtrack" field AFTER viewent: https://github.com/id-Software/Quake/blob/bf4ac424ce754894ac8f1dae6a3981954bc9852d/WinQuake/client.h#L224
+	//FF: and so there are four bytes between num_statics and viewent, which could be the unused "cdtrack2" field or sth like that.
+	//FF: this could actually be a pad inserted by the compiler (because sizeof(num_statics) == 4, and we have alignment 8)
+	//FF: but viewent has its first field's size equal to num_statics' size.
+	//FF: this means that there's something fishy going on (the compiler PROBABLY should have NOT inserted a pad after num_statics because viewent.index (0 offset) is also 4 bytes in size)
+
 	cl_entity_t viewent;			// the gun model
-
-
-	// TODO: Implement
-
 
 	int			cdtrack, looptrack;	// cd audio
 
@@ -524,7 +526,7 @@ void CL_ClearResourceLists( void );
 extern	int				cl_numvisedicts, cl_oldnumvisedicts, cl_numbeamentities;
 extern	cl_entity_t*	cl_visedicts, * cl_oldvisedicts, * cl_newvisedicts;
 extern	cl_entity_t		cl_visedicts_list[2][MAX_VISEDICTS];
-extern	cl_entity_t		cl_beamentities[MAX_BEAMENTS];
+extern	cl_entity_t		cl_beamentities[MAX_BEAMS];
 extern	float			frame_lerp;
 
 // TODO: Implement

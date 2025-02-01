@@ -8,7 +8,7 @@ int cl_playerindex; // player index
 int				cl_numvisedicts, cl_oldnumvisedicts, cl_numbeamentities;
 cl_entity_t*	cl_visedicts, * cl_oldvisedicts, *cl_newvisedicts;
 cl_entity_t		cl_visedicts_list[2][MAX_VISEDICTS];
-cl_entity_t		cl_beamentities[MAX_BEAMENTS];
+cl_entity_t		cl_beamentities[MAX_BEAMS];
 float			frame_lerp;
 
 /*
@@ -1087,7 +1087,7 @@ void CL_EmitEntities( void )
 	cl_numvisedicts = 0;
 	cl_numbeamentities = 0;
 	cl_visedicts = cl_visedicts_list[cls.netchan.incoming_sequence & 1];
-	frame_lerp = CL_LerpPoint();
+	cl.frame_lerp = CL_LerpPoint();
 	CL_LinkPlayers();
 	CL_LinkPacketEntities();
 	CL_TempEntUpdate();
