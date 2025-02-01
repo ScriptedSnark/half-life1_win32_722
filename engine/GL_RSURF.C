@@ -1540,7 +1540,6 @@ static model_t*			gDecalModel = NULL;
 static texture_t*		gDecalTexture = NULL;
 static int				gDecalSize, gDecalIndex;
 static int				gDecalFlags, gDecalEntity;
-static float			gDecalAppliedScale;
 
 int R_DecalUnProject( decal_t* pdecal, vec_t* position );
 void R_DecalCreate( msurface_t* psurface, int textureIndex, float scale, float x, float y );
@@ -1883,10 +1882,83 @@ int R_DecalUnProject( decal_t* pdecal, vec_t* position )
 }
 
 
+// Shoots a decal onto the surface of the BSP.  position is the center of the decal in world coords
+void R_DecalShoot_( texture_t* ptexture, int index, int entity, int modelIndex, vec_t* position, int flags )
+{
+	mnode_t* pnodes;
+	cl_entity_t* pent;
 
+	VectorCopy(position, gDecalPos);	// Pass position in global
 
+	pent = &cl_entities[entity];
 
+	// Try all ways to get the model
+	if (pent)
+	{
+		gDecalModel = pent->model;
+		if (!gDecalModel)
+		{
+			if (modelIndex)
+				gDecalModel = cl.model_precache[modelIndex];
 
+			if (!gDecalModel)
+			{
+				if (sv.active)
+					gDecalModel = sv.models[sv.edicts[entity].v.modelindex];
+			}
+		}
+	}
+	else
+	{
+		gDecalModel = NULL;
+	}
+
+	if (!pent || !gDecalModel || gDecalModel->type != mod_brush || !ptexture)
+	{
+		Con_DPrintf("Decals must hit mod_brush!\n");
+		return;
+	}
+
+	pnodes = gDecalModel->nodes;
+
+	if (entity)
+	{
+		hull_t* phull;
+		vec3_t temp;
+
+		if (gDecalModel->firstmodelsurface)
+		{
+			phull = &gDecalModel->hulls[0]; // always use #0 hull
+
+			VectorSubtract(position, phull->clip_mins, temp);
+			VectorSubtract(temp, pent->origin, gDecalPos);
+			pnodes = pnodes + phull->firstclipnode;
+		}
+
+		if (pent->angles[0] || pent->angles[1] || pent->angles[2])
+		{
+			vec3_t forward, right, up;
+			AngleVectors(pent->angles, forward, right, up);
+			VectorCopy(gDecalPos, temp);
+
+			gDecalPos[0] = DotProduct(temp, forward);
+			gDecalPos[1] = -DotProduct(temp, right);
+			gDecalPos[2] = DotProduct(temp, up);
+		}
+	}
+
+	// More state used by R_DecalNode()
+	gDecalEntity = entity;
+	gDecalTexture = ptexture;
+	gDecalIndex = index;
+	gDecalFlags = flags;
+	gDecalSize = ptexture->width >> 1;
+
+	if (gDecalSize < (int)(ptexture->height >> 1))
+		gDecalSize = ptexture->height >> 1;
+
+	R_DecalNode(pnodes);
+}
 
 
 
