@@ -47,6 +47,13 @@ msurface_t* waterchain;
 
 extern colorVec gWaterColor;
 
+void R_RenderDynamicLightmaps( msurface_t* fa );
+void DrawGLPolyScroll( msurface_t* psurface, cl_entity_t* pEntity );
+void DrawGLSolidPoly( glpoly_t* p );
+void DrawGLWaterPoly( glpoly_t* p );
+void DrawGLWaterPolyLightmap( glpoly_t* p );
+float ScrollOffset( msurface_t* psurface, cl_entity_t* pEntity );
+
 /*
 ===============
 R_AddDynamicLights
@@ -336,9 +343,119 @@ Systems that have fast state and texture changes can
 just do everything as it passes with no need to sort
 ================
 */
-void R_DrawSequentialPolyEx( msurface_t *s )
+void R_DrawSequentialPolyEx( msurface_t* s )
 {
-	// TODO: Implement
+	glpoly_t* p;
+	float* v;
+	int			i;
+	int			maps;
+	int smax, tmax;
+	texture_t* t;
+	byte		dest[4 * 816];
+
+	//
+	// normal lightmaped poly
+	//
+	if (!(s->flags & (SURF_DRAWSKY | SURF_DRAWTURB | SURF_UNDERWATER)))
+	{
+		p = s->polys;
+
+		t = R_TextureAnimation(s);		
+		GL_Bind(t->gl_texturenum);
+		qglBegin(GL_POLYGON);
+		v = p->verts[0];
+		for (i = 0; i < p->numverts; i++, v += VERTEXSIZE)
+		{
+			qglTexCoord2f(v[3], v[4]);
+			qglVertex3fv(v);
+		}
+		qglEnd();
+
+		if (!gl_texsort.value && s->pdecals)
+		{
+			gDecalSurfCount++;
+			gDecalSurfs[gDecalSurfCount] = s;
+			if (gDecalSurfCount > MAX_DECALSURFS)
+				Sys_Error("Too many decal surfaces!\n");
+
+			R_DrawDecals();
+		}
+
+		if (currententity->rendermode != kRenderTransAdd)
+		{
+			if (gl_overbright.value)
+			{
+				qglTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+				qglBlendFunc(GL_DST_COLOR, GL_SRC_COLOR);
+				qglColor4f(170 / 255.0, 170 / 255.0, 170 / 255.0, 1);
+			}
+			else
+			{
+				qglBlendFunc(GL_ZERO, GL_SRC_COLOR);
+			}
+
+			qglEnable(GL_BLEND);
+			GL_Bind(lightmap_textures + s->lightmaptexturenum);
+
+	// check for lightmap modification
+			for (maps = 0; maps < MAXLIGHTMAPS && s->styles[maps] != 255; maps++)
+			{
+				if (d_lightstylevalue[s->styles[maps]] != s->cached_light[maps])
+					goto dynamic;
+			}
+
+			if (s->dlightframe == r_framecount	// dynamic this frame
+				|| s->cached_dlight)			// dynamic previously
+			{
+			dynamic:
+				if (r_dynamic.value)
+				{
+					smax = (s->extents[0] >> 4) + 1;
+					tmax = (s->extents[1] >> 4) + 1;
+					R_BuildLightMap(s, dest, 4 * smax);
+					qglTexSubImage2D(GL_TEXTURE_2D, 0, s->light_s, s->light_t,
+						smax, tmax, gl_lightmap_format, GL_UNSIGNED_BYTE, dest);
+				}
+			}
+
+			qglBegin(GL_POLYGON);
+			v = p->verts[0];
+			for (i = 0; i < p->numverts; i++, v += VERTEXSIZE)
+			{
+				qglTexCoord2f(v[5], v[6]);
+				qglVertex3fv(v);
+			}
+			qglEnd();
+
+			qglDisable(GL_BLEND);
+			qglColor4f(1, 1, 1, 1);
+		}
+		return;
+	}
+
+	//
+	// subdivided water surface warp
+	//
+	if (s->flags & SURF_DRAWTURB)
+	{
+		GL_Bind(s->texinfo->texture->gl_texturenum);
+		EmitWaterPolys(s, SIDE_FRONT);
+		return;
+	}
+
+	//
+	// underwater warped with lightmap
+	//
+	p = s->polys;
+
+	t = R_TextureAnimation(s);
+	GL_Bind(t->gl_texturenum);
+	DrawGLWaterPoly(p);
+
+	GL_Bind(lightmap_textures + s->lightmaptexturenum);
+	qglEnable(GL_BLEND);
+	DrawGLWaterPolyLightmap(p);
+	qglDisable(GL_BLEND);
 }
 
 /*
@@ -351,7 +468,167 @@ just do everything as it passes with no need to sort
 */
 void R_DrawSequentialPoly( msurface_t* s, int face )
 {
-	// TODO: Implement
+	glpoly_t* p;
+	float* v;
+	int			i;
+	texture_t* t;
+	glRect_t* theRect;
+
+	if (currententity->rendermode == kRenderTransColor)
+	{
+		GL_DisableMultitexture();
+		qglBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		qglEnable(GL_BLEND);
+		t = R_TextureAnimation(s);
+		GL_Bind(t->gl_texturenum);
+		qglDisable(GL_TEXTURE_2D);
+		DrawGLSolidPoly(s->polys);
+		qglEnable(GL_TEXTURE_2D);
+		GL_EnableMultitexture();
+		return;
+	}
+
+	//
+	// normal lightmaped poly
+	//
+	if (!(s->flags & (SURF_DRAWSKY | SURF_DRAWTURB | SURF_UNDERWATER)))
+	{
+		R_RenderDynamicLightmaps(s);
+
+		if (gl_mtexable && (currententity->rendermode == kRenderNormal || currententity->rendermode == kRenderTransAlpha))
+		{
+			p = s->polys;
+
+			t = R_TextureAnimation(s);
+			// Binds world to texture env 0
+			GL_SelectTexture(TEXTURE0_SGIS);
+			GL_Bind(t->gl_texturenum);
+			qglTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+
+			if (currententity->rendermode == kRenderTransColor)
+				qglDisable(GL_TEXTURE_2D);
+
+			// Binds lightmap to texenv 1
+			GL_EnableMultitexture(); // Same as SelectTexture (TEXTURE1)
+			GL_Bind(lightmap_textures + s->lightmaptexturenum);
+
+			i = s->lightmaptexturenum;
+			if (lightmap_modified[i])
+			{
+				lightmap_modified[i] = FALSE;
+				theRect = &lightmap_rectchange[i];
+				qglTexSubImage2D(GL_TEXTURE_2D, 0, 0, theRect->t,
+					BLOCK_WIDTH, theRect->h, gl_lightmap_format, GL_UNSIGNED_BYTE,
+					lightmaps + (i * BLOCK_HEIGHT + theRect->t) * BLOCK_WIDTH * lightmap_bytes);
+				theRect->l = BLOCK_WIDTH;
+				theRect->t = BLOCK_HEIGHT;
+				theRect->h = 0;
+				theRect->w = 0;
+			}
+
+			qglTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+
+			qglBegin(GL_POLYGON);
+			v = p->verts[0];
+			if (s->flags & SURF_DRAWTILED)
+			{
+				float sOffset = ScrollOffset(s, currententity);
+
+				for (i = 0; i < p->numverts; i++, v += VERTEXSIZE)
+				{
+					qglMTexCoord2fSGIS(TEXTURE0_SGIS, v[3] + sOffset, v[4]);
+					qglMTexCoord2fSGIS(TEXTURE1_SGIS, v[5], v[6]);
+					qglVertex3fv(v);
+				}
+			}
+			else
+			{
+				for (i = 0; i < p->numverts; i++, v += VERTEXSIZE)
+				{
+					qglMTexCoord2fSGIS(TEXTURE0_SGIS, v[3], v[4]);
+					qglMTexCoord2fSGIS(TEXTURE1_SGIS, v[5], v[6]);
+					qglVertex3fv(v);
+				}
+			}
+			qglEnd();
+
+			if (!gl_texsort.value && s->pdecals)
+			{
+				gDecalSurfCount++;
+				gDecalSurfs[gDecalSurfCount] = s;
+				if (gDecalSurfCount > MAX_DECALSURFS)
+					Sys_Error("Too many decal surfaces!\n");
+
+				if (currententity->rendermode == kRenderNormal)
+				{
+					R_DrawMTexDecals();
+				}
+			}
+		}
+		else
+		{
+			p = s->polys;
+
+			t = R_TextureAnimation(s);
+			GL_DisableMultitexture();
+			GL_Bind(t->gl_texturenum);
+
+			if (s->flags & SURF_DRAWTILED)
+			{
+				DrawGLPolyScroll(s, currententity);
+			}
+			else
+			{
+				qglBegin(GL_POLYGON);
+				v = p->verts[0];
+				for (i = 0; i < p->numverts; i++, v += VERTEXSIZE)
+				{
+					qglTexCoord2f(v[3], v[4]);
+					qglVertex3fv(v);
+				}
+				qglEnd();
+			}
+
+			if (!gl_texsort.value && s->pdecals)
+			{
+				gDecalSurfCount++;
+				gDecalSurfs[gDecalSurfCount] = s;
+				if (gDecalSurfCount > MAX_DECALSURFS)
+					Sys_Error("Too many decal surfaces!\n");
+
+				R_DrawDecals();
+			}
+
+			if (currententity->rendermode == kRenderNormal)
+			{
+				GL_Bind(lightmap_textures + s->lightmaptexturenum);
+				qglEnable(GL_BLEND);
+				qglBegin(GL_POLYGON);
+				v = p->verts[0];
+				for (i = 0; i < p->numverts; i++, v += VERTEXSIZE)
+				{
+					qglTexCoord2f(v[5], v[6]);
+					qglVertex3fv(v);
+				}
+				qglEnd();
+
+				qglDisable(GL_BLEND);
+			}
+		}
+
+		return;
+	}
+
+	//
+	// subdivided water surface warp
+	//
+	if (s->flags & SURF_DRAWTURB)
+	{
+		GL_DisableMultitexture();
+		GL_Bind(s->texinfo->texture->gl_texturenum);
+		EmitWaterPolys(s, face);
+		return;
+	}
 }
 
 /*
