@@ -16,6 +16,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		..\..\.editorconfig = ..\..\.editorconfig
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "hl_res", "hl_res.vcxproj", "{CF1EE61E-5CBA-4C33-9D15-9818757C0C76}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -38,6 +40,10 @@ Global
 		{E5F14980-BB8A-4A73-B8F3-3814C0E3209A}.Debug|Win32.Build.0 = Debug|Win32
 		{E5F14980-BB8A-4A73-B8F3-3814C0E3209A}.Release|Win32.ActiveCfg = Release|Win32
 		{E5F14980-BB8A-4A73-B8F3-3814C0E3209A}.Release|Win32.Build.0 = Release|Win32
+		{CF1EE61E-5CBA-4C33-9D15-9818757C0C76}.Debug|Win32.ActiveCfg = Debug|Win32
+		{CF1EE61E-5CBA-4C33-9D15-9818757C0C76}.Debug|Win32.Build.0 = Debug|Win32
+		{CF1EE61E-5CBA-4C33-9D15-9818757C0C76}.Release|Win32.ActiveCfg = Release|Win32
+		{CF1EE61E-5CBA-4C33-9D15-9818757C0C76}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

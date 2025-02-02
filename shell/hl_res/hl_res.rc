@@ -1,0 +1,479 @@
+// Microsoft Visual C++ generated resource script.
+//
+#include "resource.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#include "afxres.h"
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// English (United States) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+#pragma code_page(1252)
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE 
+BEGIN
+    "resource.h\0"
+END
+
+2 TEXTINCLUDE 
+BEGIN
+    "#include ""afxres.h""\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE 
+BEGIN
+    "\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// String Table
+//
+
+STRINGTABLE
+BEGIN
+    IDS_LANGUAGE            "English"
+    IDS_BORDERLESS_REGFAIL  "Could not register Half-Life edit control class."
+    IDS_CHAT_IGNORE_MISLINKED "Ignoring mislinked chat room"
+    IDS_CHAT_IGNORE_UNLINKED "Ignoring unlinked chat room"
+    IDS_CREATE_MAPSCHANGED  "The number of maps in the map directory changed."
+    IDS_CREATE_LIBLISTBAD   "The file 'liblist.gam' in the game directory was malformed, see /valve/liblist.gam for format info."
+    IDS_SOCKET_CONNECTIONFAILURE 
+                            "Your network connection may have failed, continuing anway..."
+    IDS_PLAYERINFO_NOMEM    "Could not allocate memory for player information instance."
+    IDS_CHAT_NOCONNECTION   "Could not create chat server connection."
+    IDS_CHAT_NOSTREAM       "Could not create chat server data stream."
+    IDS_CHAT_NOSELECT       "Could not prepare chat server client for connection."
+    IDS_CONTROLS_DELETE_LINKED "Deletion of linked key action item."
+    IDS_CONTROLS_KBLIST_EMPTY "Keyboard bindings file 'kb_act.lst' is empty."
+    IDS_CONTROLS_KBLIST_PARSEERROR "Error parsing bindings file 'kb_act.lst'."
+    IDS_CONTROLS_KBKEYS_EMPTY "Keyboard bindings file 'kb_keys.lst' is empty."
+END
+
+STRINGTABLE
+BEGIN
+    IDS_CONTROLS_KBKEYS_PARSEERROR "Error parsing file 'kb_keys.lst'."
+    IDS_CONTROLS_KBKEYS_OVERFLOW "Too many actions in file 'kb_keys.lst'."
+    IDS_PROFILE_COLOR       "Suit Color"
+    IDS_MAIN_NOCAPS         "Could not query graphics device capabilities."
+    IDS_MAIN_INSUFFICIENTCAPS 
+                            "Your graphics card does not support a necessary raster operation."
+    IDS_MAIN_REGWNDCLSFAIL  "Could not register Half-Life window class."
+    IDS_MAIN_INSUFFICIENTSOCKETS 
+                            "Insufficient number of windows sockets, networking may not operate correctly."
+    IDS_MAIN_MEMMAPFAILURE  "Memory-mapped file i/o initialization failed."
+    IDS_PROFILE_NOMEM       "Couldn't allocate memory for player profile, exiting."
+    IDS_BTN_STRANGESIZE     "Button face bitmap graphics file sizes appear invalid."
+    IDS_MAIN_NOUSERMSGS     "Could not register user messages."
+    IDS_MAIN_NOFILEMAPPING  "Could not create file mapping to engine."
+    IDS_MAIN_NOMEMMAPCONNECT "Could not connect to server '%s'."
+    IDS_MSG_OVERFLOW        "SZ_GetSpace overflow without m_bAllowOverflow set"
+    IDS_MSG_REQTOOBIG       "SZ_GetSpace requested length is greater than available buffer size."
+    IDS_MULTI_NOROOMSTATIC  "Could not allocate room static text control."
+END
+
+STRINGTABLE
+BEGIN
+    IDS_MULTI_NOROOMTAB     "Could not allocate room tab control."
+    IDS_MULTI_NOCHATWINDOW  "Could not allocate chat display window control."
+    IDS_MULTI_NOCHATINPUT   "Could not allocate chat text input control."
+    IDS_MULTI_NOUSERLIST    "Could not allocate chat user list control."
+    IDS_MULTI_NOSERVERLIST  "Could not allocate server browser list control."
+    IDS_MULTI_NOSELECTION   "No servers selected."
+    IDS_MULTI_NOARCHIVE     "Half-Life could not open the server list archive file:  '%s'."
+    IDS_CHAT_USER_NOMEM     "Could not allocate space for new chat rrom user."
+    IDS_MULTI_SERVER_NOMEM  "Could not allocate space for a new server."
+    IDS_MULTI_MASTER_BADLISTFILE "Could not open master server list file."
+    IDS_MULTI_NODIALOG      "SetDialog with no dialog!"
+    IDS_PROFILE_REQUIRED    "You must create or select a player profile to continue."
+    IDS_ODCOMBO_REGFAIL     "Could not register Half-Life combobox class."
+    IDS_ODEDIT_REGFAIL      "Could not register Half-Life edit control class."
+    IDS_ODLIST_REGFAIL      "Could not register Half-Life list control class."
+    IDS_ODSCROLL_REGFAIL    "Could not register Half-Life scrollbar class."
+END
+
+STRINGTABLE
+BEGIN
+    IDS_ODSLIDER_REGFAIL    "Could not register Half-Life slider class."
+    IDS_ODTAB_REGFAIL       "Could not register Half-Life tab control class."
+    IDS_PROFILE_NICKREMOVEFAIL "Could not remove chat nicknames."
+    IDS_PROFILE_NOPROFILE   "No chosen profile."
+    IDS_QUICK_NOSERVERS     "Could not locate any active %s servers with available slots."
+    IDS_QUICK_NOACTIVE      "Could not connect to any active %s servers."
+    IDS_README_NOMEM        "Could not allocate buffer for readme:  %i bytes"
+    IDS_ROOM_BADNAME        "The room name was invalid."
+    IDS_SINGLE_NOSELECTION  "You must select a save game slot from the available slots."
+    IDS_SINGLE_CANTSAVE     "You must be playing in a single player game to save."
+    IDS_ODLISTBOX_REGFAIL   "Could not register Half-Life list box class."
+    IDS_DIB_OPENFAIL        "Could not open bitmap file '%s'."
+    IDS_MCI_OPENFAIL        "Could not open MCI file for playback:  %s"
+    IDS_MCI_GETIDFAIL       "Could not get MCI Device ID for MCI device"
+    IDS_MCI_WINDOWFAIL      "Could not set up MCI window for playback of MCI device:  %s"
+    IDS_MCI_PUTFAIL         "Could not display MCI playback of MCI device in window: %s"
+END
+
+STRINGTABLE
+BEGIN
+    IDS_MCI_SEEKFAIL        "Could not seek to start of MCI data:  %s"
+    IDS_MCI_BREAKFAIL       "Could not set break key on MCI data:  %s"
+    IDS_MCI_PLAYFAIL        "Could not start playback of MCI data:  %s"
+    IDS_MCI_STOPFAIL        "Could not stop playback of MCI data:  %s"
+    IDS_MCI_CLOSEFAIL       "Could not close MCI data:  %s"
+    IDS_CONTROLS_RESTOREFAIL "Could not restore default bindings for player."
+    IDS_SND_BADNAME         "Invalid sound name"
+    IDS_PROFILE_ALLOCFAIL   "Could not allocate space for key binding"
+    IDS_AUDIO_NOPROFILE     "Can't change audio settings without a current player profile."
+    IDS_VIDEO_NOPROFILE     "Can't change video settings without a current player profile."
+    IDS_CONTROLS_KEYHELP    "Use your mouse or the arrow keys to select an item.  Double-click or press Enter to change an item.  Press Delete to clear an item."
+    IDS_ENDDEMO_URL         "media/order/default.html"
+    IDS_ORDER_URL           "media/order/default.html"
+    IDS_LOADSAVE_HINT       "During play, you can quickly save your game by pressing %s. Load this game again by pressing %s."
+    IDS_LAUNCHER_BUTTONSIZE "156 26"
+    IDS_MEM_INSUFFICIENT    "Your system reported only %.2fK of physical memory, Half-Life requires at least 16MB."
+END
+
+STRINGTABLE
+BEGIN
+    IDS_MEM_ALLOCFAIL       "Half-Life was unable to allocate %.2fK of memory."
+    IDS_EVENT_CREATEFAIL    "Half-Life was unable to create a system object."
+    IDS_OSVER_FAIL          "Half-Life was unable to retreive system information."
+    IDS_OSVER_OUTDATED      "Half-Life requires Windows/95 or Windows/NT and above."
+    IDS_OSVER_NTSP3         "Half-Life requires Service Pack 3 or above"
+    IDS_OSVER_16BIT         "Half-Life requires 16 bit color. Please change your desktop settings to HiColor. Sometimes this is called ""32767 colors"" or ""65535 colors""."
+    IDS_BINDING_ACTIONHEADING "Action"
+    IDS_BINDING_PRIMARYHEADING "Key / button"
+    IDS_BINDING_ALTERNATEHEADING "Alternate"
+    IDS_BINDING_PROMPT      "Press a key or button."
+    IDS_URL_BROWSERFAIL     "Half-Life was unable to display the web page '%s', please make sure you have a web browser installed and that the association for opening .htm files is valid."
+    IDS_SAVELOAD_TIMECOL    "Time"
+    IDS_SAVELOAD_GAMECOL    "Game"
+    IDS_SAVELOAD_ELAPSEDCOL "Elapsed Time"
+    IDS_SERVER_GAMESERVER   "Game"
+    IDS_SERVER_SPEED        "Net Spd"
+END
+
+STRINGTABLE
+BEGIN
+    IDS_SERVER_MAP          "Map"
+    IDS_SERVER_PLAYERS      "Players/Max"
+    IDS_SERVER_GAME         "Game Type"
+    IDS_SERVER_NETWORK      "Network"
+    IDS_QUERY_STARTING      "Starting..."
+    IDS_QUERY_COMPLETED     "%s completed."
+    IDS_SERVER_REMOVE       "Permanently remove %i servers from list?"
+    IDS_SERVER_CONNECT      "Initiating connection to %s..."
+    IDS_SERVER_LANTAG       "Lan"
+    IDS_SERVER_INTERNETTAG  "Internet"
+    IDS_SERVER_MENU_CONNECT "Connect"
+    IDS_SERVER_MENU_PLAYERINFO "Show player and rule information"
+    IDS_SERVER_MENU_RULEINFO "Show rule information"
+    IDS_SERVER_MENU_FILTER  "Filter server"
+    IDS_SERVER_MENU_ADDTOFAVORITE "Add to favorites"
+END
+
+STRINGTABLE
+BEGIN
+    IDS_SERVER_MENU_REMOVEFROMFAV "Remove from favorites"
+    IDS_SERVER_MENU_REMOVE  "Permanently remove server"
+    IDS_SERVER_MENU_NOPLAYERINFO "No player information available"
+    IDS_SERVER_MENU_NOLANPLAYERINFO 
+                            "Player information is not available for Lan games"
+    IDS_SAVELOAD_QUICKLISTTEXT "[quick] %s"
+    IDS_SAVELOAD_AUTOLISTITEM "[autosave] %s"
+    IDS_PLAYERINFO_NUMBER   "#"
+    IDS_PLAYERINFO_NAME     "Player Name"
+    IDS_PLAYERINFO_KILLS    "Kills"
+    IDS_PLAYERINFO_TIME     "Time"
+    IDS_PLAYERINFO_SUIT     "HEV Suit"
+    IDS_QUICK_REQUEST       "Requesting list of servers..., %i seconds left"
+    IDS_QUICK_GOTLIST       "List received..."
+    IDS_QUICK_CONTACTING    "Contacting servers..."
+    IDS_QUICK_COMPLETEDSERVER "%s completed."
+    IDS_SAVE_NEWCOMMENT     "New Saved Game"
+END
+
+STRINGTABLE
+BEGIN
+    IDS_SAVE_NEWTIME        "New"
+    IDS_SAVE_NEWFILETIME    "Current"
+    IDS_DDRAW_FAILEINIT     "Direct Draw Init Failed (%08lx):%s\n"
+    IDS_DDRAW_DX4FAIL       "Direct Draw 4 Init Failed (%08lx):%s\n"
+    IDS_VIDEO_MODECOL       "Display mode"
+    IDS_ROOM_NAMECOL        "Name"
+    IDS_ROOM_PEOPLECOL      "People"
+    IDS_ROOM_SERVERSCOL     "Servers"
+    IDS_DDRAW_REQUIRED      "Half-Life requires DirectDraw"
+    IDS_DLL_LOADFAIL        "Failed to load Engine DLL."
+    IDS_CMDLINE_VTOPTS      "-vt requires one of software, gl, or d3d."
+    IDS_SAVE_NUMCHANGED     "Number of saved games changed?"
+    IDS_BINDINGS_ALLOCFAIL  "Unable to allocate space for binding"
+    IDS_GAMMA_LOADFAIL      "Unable to locate the gamma image 'gamma.bmp'."
+    IDS_DDRAW_RESTOREMODEFAIL "Unable to restore DirectDraw video mode."
+    IDS_AUDIO_VOLUME        "Game sound volume"
+END
+
+STRINGTABLE
+BEGIN
+    IDS_AUDIO_SUITVOL       "HEV suit volume"
+    IDS_AUDIO_USECD         "Play CD music."
+    IDS_AUDIO_HIGHQUALITY   "High quality sound (for fast computers)"
+    IDS_CFG_VIDHELP         "Change screen size, video mode, gamma, and glare reduction."
+    IDS_CFG_AUDIOHELP       "Change sound volume and quality."
+    IDS_CFG_CONTROLHELP     "Change keyboard, mouse, and joystick settings."
+    IDS_CFG_RETURNTOMAIN    "Go back to the Main Menu."
+    IDS_CREATEROOM_TITLE    "Create Private Room"
+    IDS_CREATEROOM_ROOMNAME "Room Name"
+    IDS_CREATEROOM_ROOMTOPIC "Room Topic"
+    IDS_CREATESERVER_NAME   "Server Name:"
+    IDS_CREATESERVER_MAP    "Map:"
+    IDS_CREATESERVER_ROOM   "Associated Room:"
+    IDS_CREATESERVER_GAMETYPE "Type of Game:"
+    IDS_CREATESERVER_MAXPLAYERS "Max. Players:"
+    IDS_FILTER_TITLE        "Filter the list of Half-Life games"
+END
+
+STRINGTABLE
+BEGIN
+    IDS_FILTER_HEADING      "Show only servers which:"
+    IDS_FILTER_RESPONDING   "are responding"
+    IDS_FILTER_RESPONSETIME "responded more quickly than"
+    IDS_FILTER_NOTFULL      "are not full"
+    IDS_FILTER_NOTEMPTY     "have people currently playing"
+    IDS_FILTER_ONFAVORITES  "are in my 'favorites' list"
+    IDS_FILTER_INCHATROOM   "are associated with the selected chat room"
+    IDS_FINDPLAYER_PLAYER   "Player to find:"
+    IDS_OPTS_CROSSHAIR      "Crosshair"
+    IDS_OPTS_REVERSE        "Reverse mouse"
+    IDS_OPTS_MLOOK          "Mouse look"
+    IDS_OPTS_LOOKSPRING     "Look spring"
+    IDS_OPTS_LOOKSTRAFE     "Look strafe"
+    IDS_OPTS_MFILTER        "Mouse filter"
+END
+
+STRINGTABLE
+BEGIN
+    IDS_OPTS_JOYSTICK       "Joystick"
+    IDS_OPTS_CROSSHAIRHELP  "Enable the weapon aiming crosshair."
+    IDS_OPTS_REVERSEHELP    "Reverse mouse up/down axis."
+    IDS_OPTS_MLOOKHELP      "Use the mouse to look around instead of using the mouse to move."
+    IDS_OPTS_LOOKSPRINGHELP "Causes the screen to ""spring"" back to looking straight ahead when you move forward."
+    IDS_OPTS_LOOKSTRAFEHELP "In combination with your mouse look modifier, causes left-right movements to strafe instead of turn."
+    IDS_OPTS_MFILTERHELP    "Average mouse inputs over the last two frames to smooth out movements."
+    IDS_OPTS_JOYSTICKHELP   "Enable the joystick."
+    IDS_OPTS_SENSITIVITYHELP "Mouse sensitivity."
+    IDS_LOADSAVE_LOADHELP   "Load a previously saved game"
+    IDS_LOADSAVE_SAVEHELP   "Save current game."
+    IDS_LOADSAVE_RETURN     "Go back to the Main Menu."
+    IDS_MAIN_RETURNHELP     "Return to game."
+    IDS_MAIN_NEWGAMEHELP    "Start a new game."
+    IDS_MAIN_TRAININGHELP   "Learn how to play Half-Life."
+    IDS_MAIN_LOADHELP       "Load a previously saved game."
+END
+
+STRINGTABLE
+BEGIN
+    IDS_MAIN_LOADSAVEHELP   "Load a saved game, save the current game."
+    IDS_MAIN_CONFIGUREHELP  "Change game settings, configure controls."
+    IDS_MAIN_READMEHELP     "View the Readme.txt file."
+    IDS_MAIN_ORDERHELP      "Order the full version of Half-Life."
+    IDS_MAIN_QUITHELP       "Quit playing Half-Life."
+    IDS_MAIN_QUICKHELP      "Connect to the fastest, active Internet game server found."
+    IDS_MAIN_MULTIPLAYERHELP 
+                            "Search for Half-Life servers, chat with other players, configure character."
+    IDS_CHAT_PROMPT         "type message:"
+    IDS_NEWGAME_EASYHELP    "Play Half-Life on the 'easy' skill setting."
+    IDS_NEWGAME_MEDIUMHELP  "Play Half-Life on the 'medium' skill setting."
+    IDS_NEWGAME_DIFFICULTHELP "Play Half-Life on the 'difficult' skill setting."
+    IDS_NEWGAME_RETURNHELP  "Go back to the Main Menu."
+    IDS_NEWPROFILE_TITLE    "Select Player"
+    IDS_NEWPROFILE_NAME     "Na&me:"
+    IDS_NEWPROFILE_PASSWORD "Password:"
+    IDS_NEWPROFILE_REMEMBER "remember password"
+END
+
+STRINGTABLE
+BEGIN
+    IDS_PROFILE_MODEL       "Player Model"
+    IDS_PROFILE_NICKNAME    "Player Name"
+    IDS_PROFILE_SELECT      "Player profile:"
+    IDS_PROFILE_PROCEEDHELP "Chat with users and browse for servers."
+    IDS_PROFILE_RETURNHELP  "Go back to the Main Menu."
+    IDS_VIDEO_SCREENSIZE    "Screen size"
+    IDS_VIDEO_GAMMA         "Gamma"
+    IDS_VIDEO_GLARE         "Glare reduction"
+    IDS_VIDEO_GAMMAHELP     "Gamma:  Adjusts Half-Life's color balance to best suit your monitor. Move the slider until you can just make out the figure standing in shadow on the right side of the sample image."
+    IDS_VIDEO_GLAREHELP     "Glare Reduction: Adjusts darker colors to reduce the effect of glare on your monitor. "
+    IDS_VIDMODE_WINDOWED    "Run in a &window"
+    IDS_VIDMODE_MOUSE       "&Use mouse"
+    IDS_VIDMODE_GLLISTHEADER "OpenGL Driver"
+    IDS_VIDMODE_D3DHEADER   "D3D Device"
+    IDS_VIDSELECT_OPTIONSHELP 
+                            "Set video options such as screen size, gamma, and glare reduction."
+    IDS_VIDSELECT_MODESHELP "Set video modes and configure 3D accelerators."
+END
+
+STRINGTABLE
+BEGIN
+    IDS_VIDSELECT_RETURNHELP "Go back to the previous menu."
+    IDS_SERVERS_REFRESH     "Refreshing servers..."
+    IDS_PROGRESS_START      "Start"
+    IDS_QUICK_CONTACT       "Contacting servers..."
+    IDS_QUICK_REQUESTLIST   "Requesting list of servers..."
+    IDS_README_NOFILE       "Could not find readme.txt"
+    IDS_STATUS_CONNECTING   "Connecting to server '%s'\n%i seconds left...\n\n%s"
+    IDS_STATUS_CONNECTIONESTABLISHED 
+                            "Connection established to %s, switching to game"
+    IDS_STATUS_SKIPSERVER   "Skipping..."
+    IDS_STATUS_ELPASEDTIME  "%s\n%3.1f Seconds Elapsed"
+    IDS_TRAINING_EXITCURRENT 
+                            "Entering the Hazard Course will exit any current game, OK to exit?"
+    IDS_MAIN_QUITPROMPTINGAME "Quit Half-Life without saving current game?"
+    IDS_MAIN_QUITPROMPT     "Are you sure you want to quit?"
+    IDS_CONTROLS_CANCELPROMPT "Exit without saving changes?"
+    IDS_LOAD_LOADPROMPT     "Loading a game will exit any current game, OK to exit?"
+    IDS_LOADSAVE_DELETEPROMPT "Delete selected game?"
+END
+
+STRINGTABLE
+BEGIN
+    IDS_NEWGAME_NEWPROMPT   "Starting a new game will exit any current game, OK to exit?"
+    IDS_NICKNAME_ADD        "Enter a name:"
+    IDS_PROFILE_CANCELPROMPT "Save changes made to profile?"
+    IDS_SAVE_INGAMEPROMPT   "Can't save, you are not currently playing a game."
+    IDS_SAVE_OVERWRITE      "Are you sure you want to overwrite this saved game?"
+    IDS_VIDEO_BADSETTINGS   "Your video settings do not appear to be valid, use these settings anyway?"
+    IDS_AUDIO_A3D           "Enable A3D hardware support"
+    IDS_BTN_DONE            "&Done"
+    IDS_BTN_CONTROLS        "&Controls"
+    IDS_BTN_AUDIO           "&Audio"
+    IDS_BTN_VIDEO           "&Video"
+    IDS_BTN_CANCEL          "&Cancel"
+    IDS_BTN_CREATE          "C&reate"
+    IDS_BTN_FILTER          "&Filter"
+    IDS_BTN_FIND            "&Search"
+    IDS_BTN_RETURN          "&Return"
+END
+
+STRINGTABLE
+BEGIN
+    IDS_BTN_NEWGAME         "&New game"
+    IDS_BTN_TRAINING        "&Hazard course"
+    IDS_BTN_CONFIGURE       "&Configure"
+    IDS_BTN_LOADSAVE        "&Save/load game"
+    IDS_BTN_LOAD            "&Load game"
+    IDS_BTN_MULTIPLAYER     "&Multiplayer"
+    IDS_BTN_README          "&View readme"
+    IDS_BTN_ORDER           "&Order"
+    IDS_BTN_QUIT            "&Quit"
+    IDS_BTN_ADVANCED        "&Advanced controls"
+    IDS_BTN_REVERT          "&Cancel"
+    IDS_BTN_RESTORE         "&Use defaults"
+    IDS_BTN_DELETE          "&Delete"
+    IDS_BTN_SAVE            "&Save game"
+    IDS_BTN_LOGIN           "&Login"
+    IDS_BTN_CONNECT         "&Connect"
+END
+
+STRINGTABLE
+BEGIN
+    IDS_BTN_CREATESV        "C&reate"
+    IDS_BTN_REFRESH         "&Refresh"
+    IDS_BTN_ROOM            "R&oom"
+    IDS_BTN_EASY            "&Easy"
+    IDS_BTN_MEDIUM          "&Medium"
+    IDS_BTN_HARD            "&Difficult"
+    IDS_BTN_YES             "&Yes"
+    IDS_BTN_NO              "&No"
+    IDS_BTN_OK              "&Ok"
+    IDS_BTN_OPTIONS         "&Video options"
+    IDS_BTN_MODES           "Video &modes"
+    IDS_BTN_QUICK           "&Quick start"
+    IDS_PROFILE_LOGO        "Custom logo"
+    IDS_BTN_BROWSE          "&Internet games"
+    IDS_MULTI_BROWSEHELP    "View a list of Half-Life game servers and join the one of your choice."
+    IDS_BTN_CHAT            "C&hat rooms"
+END
+
+STRINGTABLE
+BEGIN
+    IDS_MULTI_CHATHELP      "Talk online with other Half-Life players."
+    IDS_BTN_LAN             "&Lan game"
+    IDS_MULTI_LANHELP       "Set up a Half-Life game on a local area network."
+    IDS_BTN_CUSTOMIZE       "C&ustomize"
+    IDS_MULTI_CUSTOMIZEHELP "Set up your player name, and select visual options for your character."
+    IDS_CREATEROOM_ROOMPASSWORD "Room Password (optional)"
+    IDS_PLAYERINFO_RULENAME "Server Rule"
+    IDS_PLAYERINFO_RULEVALUE "Value"
+    IDS_BTN_SEARCH          "&Search for Game"
+    IDS_BTN_CHATMODE        "Chat"
+    IDS_BTN_LISTMODE        "&Internet games"
+    IDS_BTN_EXIT            "&Exit"
+    IDS_SERVER_MANUALADD    "Add a server by manually by IP address..."
+    IDS_SERVER_REQUESTNEWLIST "Request updated server list."
+    IDS_PLAYERINFO_SERVERNAME "Server hostname:"
+    IDS_PLAYERINFO_SERVERIP "Server internet address:"
+END
+
+STRINGTABLE
+BEGIN
+    IDS_PLAYERINFO_SERVERPING "Server 'ping' time:"
+    IDS_PROFILE_FACE        "Player Face"
+    IDS_PROFILE_SKIN        "Player Skin"
+    IDS_BTN_JOIN            "&Join Game"
+    IDS_BTN_FINDGAME        "&Find Game"
+    IDS_BTN_START           "S&tart Game"
+    IDS_PROFILE_LOGOCOLOR   "Color"
+    IDS_MULTI_RESUMEHELP    "Return to your current multi-player game."
+    IDS_MULTI_DISCONNECTHELP "Disconnect yourself from the game server."
+    IDS_BTN_RESUME          "Resume"
+    IDS_BTN_DISCONNECT      "Disconnect"
+    IDS_BTN_ADDSERVER       "&Add server"
+    IDS_BTN_UPDATE          "&Update"
+    IDS_BTN_INFO            "&View game info"
+    IDS_QUICKSTART_TITLE    "Quick multiplayer"
+END
+
+STRINGTABLE
+BEGIN
+    IDS_BTN_LISTROOMS       "&List rooms"
+    IDS_BTN_GORE            "&Gore reduction"
+    IDS_BTN_AUTOPATCH       "&Update Half-Life"
+    IDS_CONFIGURE_GOREHELP  "Turn off blood and gore effects."
+    IDS_CONFIGURE_AUTOPATCHHELP "Get the latest version of Half-Life"
+END
+
+#endif    // English (United States) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+
+
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
+
