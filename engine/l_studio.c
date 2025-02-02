@@ -2,7 +2,6 @@
 
 #include "quakedef.h"
 #include "studio.h"
-#include "zone.h"
 
 int giTextureSize;
 
