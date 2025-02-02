@@ -362,7 +362,57 @@ Multitexture
 */
 void R_RenderDynamicLightmaps( msurface_t* fa )
 {
-	// TODO: Implement
+	byte*		base;
+	int			maps;
+	glRect_t*	theRect;
+	int smax, tmax;
+
+	c_brush_polys++;
+
+	if (fa->flags & (SURF_DRAWSKY | SURF_DRAWTURB))
+		return;
+
+	fa->polys->chain = lightmap_polys[fa->lightmaptexturenum];
+	lightmap_polys[fa->lightmaptexturenum] = fa->polys;
+
+	// check for lightmap modification
+	for (maps = 0; maps < MAXLIGHTMAPS && fa->styles[maps] != 255; maps++)
+	{
+		if (d_lightstylevalue[fa->styles[maps]] != fa->cached_light[maps])
+			goto dynamic;
+	}
+
+	if (fa->dlightframe == r_framecount	// dynamic this frame
+		|| fa->cached_dlight)			// dynamic previously
+	{
+	dynamic:
+		if (r_dynamic.value)
+		{
+			lightmap_modified[fa->lightmaptexturenum] = TRUE;
+			theRect = &lightmap_rectchange[fa->lightmaptexturenum];
+			if (fa->light_t < theRect->t)
+			{
+				if (theRect->h)
+					theRect->h += theRect->t - fa->light_t;		
+				theRect->t = fa->light_t;
+			}
+			if (fa->light_s < theRect->l)
+			{
+				if (theRect->w)
+					theRect->w += theRect->l - fa->light_s;
+				theRect->l = fa->light_s;
+			}
+			smax = (fa->extents[0] >> 4) + 1;
+			tmax = (fa->extents[1] >> 4) + 1;
+			if ((theRect->w + theRect->l) < (fa->light_s + smax))
+				theRect->w = (fa->light_s - theRect->l) + smax;
+			if ((theRect->h + theRect->t) < (fa->light_t + tmax))
+				theRect->h = (fa->light_t - theRect->t) + tmax;
+			base = lightmaps + fa->lightmaptexturenum * lightmap_bytes * BLOCK_WIDTH * BLOCK_HEIGHT;
+			base += fa->light_t * BLOCK_WIDTH * lightmap_bytes + fa->light_s * lightmap_bytes;
+			R_BuildLightMap(fa, base, BLOCK_WIDTH * lightmap_bytes);
+		}
+	}
 }
 
 /*
@@ -1508,8 +1558,8 @@ void GL_BuildLightmaps( void )
 		for (i = 0; i < m->numsurfaces; i++)
 		{
 			GL_CreateSurfaceLightmap(m->surfaces + i);
-			if (m->surfaces[i].flags & SURF_DRAWTURB)
-				continue;
+			//if (m->surfaces[i].flags & SURF_DRAWTURB)
+			//	continue;
 
 			BuildSurfaceDisplayList(m->surfaces + i);
 		}

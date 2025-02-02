@@ -891,11 +891,8 @@ void AdjustSubRect( mspriteframe_t* pFrame, float* pfLeft, float* pfRight, float
 Draw_Frame
 ===============
 */
-void Draw_Frame( mspriteframe_t* pFrame, int ix, int iy, const wrect_t* prcSubRect )
+void Draw_Frame( mspriteframe_t* pFrame, int x, int y, const wrect_t* prcSubRect )
 {
-	float	x;
-	float	y;
-
 	float	fLeft = 0;
 	float	fRight = 1;
 	float	fTop = 0;
@@ -905,9 +902,6 @@ void Draw_Frame( mspriteframe_t* pFrame, int ix, int iy, const wrect_t* prcSubRe
 
 	iWidth = pFrame->width;
 	iHeight = pFrame->height;
-
-	x = (float)ix + 0.5;
-	y = (float)iy + 0.5;
 
 	if (giScissorTest)
 	{
