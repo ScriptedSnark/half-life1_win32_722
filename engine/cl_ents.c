@@ -671,6 +671,8 @@ CL_LinkPacketEntities
 */
 void CL_LinkPacketEntities( void )
 {
+	// TODO: Reimplement
+
 	cl_entity_t* ent, * ent2, nullent;
 	packet_entities_t* pack;
 	entity_state_t* s1, * s2;
@@ -837,8 +839,6 @@ void CL_LinkPacketEntities( void )
 		{
 			// TODO: Implement
 			//R_RocketFlare(ent->origin);
-
-			dl = CL_AllocDlight(ent->index);
 
 			dl = CL_AllocDlight(ent->index);
 			VectorCopy(ent->origin, dl->origin);
