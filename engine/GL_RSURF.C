@@ -1,3 +1,5 @@
+// r_surf.c: surface-related refresh code
+
 #include "quakedef.h"
 #include "cmodel.h"
 #include "decal.h"
@@ -326,7 +328,18 @@ void GL_EnableMultitexture( void )
 	}
 }
 
-// TODO: Implement
+/*
+================
+R_DrawSequentialPolyEx
+
+Systems that have fast state and texture changes can
+just do everything as it passes with no need to sort
+================
+*/
+void R_DrawSequentialPolyEx( msurface_t *s )
+{
+	// TODO: Implement
+}
 
 /*
 ================
@@ -2319,7 +2332,126 @@ void R_DrawDecals( void )
 // Renders all decals in multitexture mode
 void R_DrawMTexDecals( void )
 {
-	// TODO: Implement
+	float vert[MAX_DECALCLIPVERT][VERTEXSIZE];
+	float outvert[MAX_DECALCLIPVERT][VERTEXSIZE];
+
+	decal_t* plist; // decal list
+	int	i, j, k, outCount = 0;
+	texture_t* ptexture;
+	msurface_t* psurf;
+
+	float* v = NULL;
+	float* vlist;
+
+	if (gDecalSurfCount == 0)
+		return;
+
+	qglEnable(GL_BLEND);
+	qglEnable(GL_ALPHA_TEST);
+	qglBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	qglDepthMask(GL_FALSE);
+
+	if (gl_polyoffset.value)
+	{
+		qglEnable(GL_POLYGON_OFFSET_FILL);
+
+		if (!gl_ztrick.value || gldepthmin < 0.5)
+		{
+			qglPolygonOffset(1.0, -gl_polyoffset.value);
+		}
+		else
+		{
+			qglPolygonOffset(1.0, gl_polyoffset.value);
+		}
+	}
+
+	for (i = 0; i < gDecalSurfCount; i++)
+	{
+		psurf = gDecalSurfs[i];
+
+		if (psurf->polys->numverts > MAX_DECALCLIPVERT)
+			continue;
+
+		// Draw all decals
+		for (plist = psurf->pdecals; plist; plist = plist->pnext)
+		{
+			float scalex, scaley;
+
+			ptexture = Draw_DecalTexture(plist->texture);
+
+			GL_SelectTexture(TEXTURE0_SGIS);
+			GL_Bind(ptexture->gl_texturenum);
+
+			GL_EnableMultitexture();
+
+			GL_Bind(lightmap_textures + psurf->lightmaptexturenum);
+			qglTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+			qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+			qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+
+			scalex = (psurf->texinfo->texture->width * plist->scale) / (float)ptexture->width;
+			scaley = (psurf->texinfo->texture->height * plist->scale) / (float)ptexture->height;
+
+			v = psurf->polys->verts[0];
+			for (j = 0; j < psurf->polys->numverts; j++, v += VERTEXSIZE)
+			{
+				VectorCopy(v, vert[j]);
+				vert[j][3] = (v[3] - plist->dx) * scalex;
+				vert[j][4] = (v[4] - plist->dy) * scaley;
+			}
+
+			// Clip the polygon to the decal texture space
+			outCount = SHClip(vert[0], psurf->polys->numverts, outvert[0], LEFT_EDGE);
+			outCount = SHClip(outvert[0], outCount, vert[0], RIGHT_EDGE);
+			outCount = SHClip(vert[0], outCount, outvert[0], TOP_EDGE);
+			outCount = SHClip(outvert[0], outCount, vert[0], BOTTOM_EDGE);
+
+			if (outCount)
+			{
+				float s, t;
+				mtexinfo_t* tex;
+
+				tex = psurf->texinfo;
+
+				qglBegin(GL_POLYGON);
+				vlist = vert[0];
+				for (k = 0; k < outCount; k++, vlist += VERTEXSIZE)
+				{
+					//
+					// lightmap texture coordinates
+					//
+					s = DotProduct(vlist, tex->vecs[0]) + tex->vecs[0][3];
+					s -= psurf->texturemins[0];
+					s += psurf->light_s * 16;
+					s += 8;
+					s /= BLOCK_WIDTH * 16; //fa->texinfo->texture->width;
+
+					t = DotProduct(vlist, tex->vecs[1]) + tex->vecs[1][3];
+					t -= psurf->texturemins[1];
+					t += psurf->light_t * 16;
+					t += 8;
+					t /= BLOCK_HEIGHT * 16; //fa->texinfo->texture->height;
+
+					qglMTexCoord2fSGIS(TEXTURE0_SGIS, vlist[3], vlist[4]);
+					qglMTexCoord2fSGIS(TEXTURE1_SGIS, s, t);
+					qglVertex3fv(vlist);
+				}
+				qglEnd();
+			}
+
+			qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+			qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+		}
+	}
+
+	if (gl_polyoffset.value)
+		qglDisable(GL_POLYGON_OFFSET_FILL);
+
+	qglDisable(GL_ALPHA_TEST);
+	qglDisable(GL_BLEND);
+	qglDepthMask(GL_TRUE);
+
+	gDecalSurfCount = 0;
 }
 
 void R_InvalidateSurface( msurface_t* surface )
