@@ -38,6 +38,8 @@ extern	int nanmask;
 #define VectorCopy(a,b) {(b)[0]=(a)[0];(b)[1]=(a)[1];(b)[2]=(a)[2];}
 #define VectorClear(a) {(a)[0]=0.0;(a)[1]=0.0;(a)[2]=0.0;}
 
+void VectorMA( const vec_t* veca, float scale, const vec_t* vecb, vec_t* vecc );
+
 // TODO: Implement
 
 int VectorCompare( const vec_t* v1, const vec_t* v2 );

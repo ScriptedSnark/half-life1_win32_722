@@ -33,7 +33,9 @@ extern int					sv_decalnamecount;
 
 extern char					decal_names[MAX_BASE_DECALS][16];
 
-void		R_DecalRemoveAll( int textureIndex );
+extern void					R_DecalShoot( int textureIndex, int entity, int modelIndex, vec_t* position, int flags );
+extern void					R_CustomDecalShoot( texture_t* ptexture, int playernum, int entity, int modelIndex, vec_t* position, int flags );
+extern void					R_DecalRemoveAll( int textureIndex );
 
 extern void					Draw_MiptexTexture( cachewad_t* wad, byte* data );
 extern void					Draw_CacheWadInit( char* name, int cacheMax, cachewad_t* wad );

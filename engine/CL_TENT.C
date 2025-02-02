@@ -431,7 +431,7 @@ void CL_ParseTEnt( void )
 		{
 			decalTextureIndex = MSG_ReadShort();
 
-			// Never remove it
+			modelindex = 0; // Never remove it
 			flags = FDECAL_PERMANENT;
 		}
 		else
@@ -462,7 +462,10 @@ void CL_ParseTEnt( void )
 		if (entnumber >= cl.max_edicts)
 			Sys_Error("Decal: entity = %i", entnumber);
 
-		// TODO: Implement
+		if (r_decals.value)
+		{
+			R_DecalShoot(Draw_DecalIndex(decalTextureIndex), entnumber, modelindex, pos, flags);
+		}
 		break;
 	}
 
@@ -578,7 +581,10 @@ void CL_ParseTEnt( void )
 		if (entnumber >= cl.max_edicts)
 			Sys_Error("Decal: entity = %i", entnumber);
 
-		// TODO: Implement
+		if (r_decals.value)
+		{
+			R_DecalShoot(Draw_DecalIndex(decalTextureIndex), entnumber, 0, pos, 0);
+		}
 		break;
 	}
 

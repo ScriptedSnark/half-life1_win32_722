@@ -7,7 +7,7 @@ cvar_t	r_drawentities = { "r_drawentities", "1" };
 cvar_t	r_drawviewmodel = { "r_drawviewmodel", "1" };
 cvar_t	r_speeds = { "r_speeds", "0" };
 cvar_t	r_fullbright = { "r_fullbright", "0" };
-
+cvar_t	r_decals = { "r_decals", "1" };
 cvar_t	r_lightmap = { "r_lightmap", "0" };
 
 cvar_t	r_novis = { "r_novis", "0" };
@@ -153,9 +153,7 @@ void R_Init( void )
 	Cvar_RegisterVariable(&r_norefresh);
 	Cvar_RegisterVariable(&r_lightmap);
 	Cvar_RegisterVariable(&r_fullbright);
-
-	// TODO: Implement
-
+	Cvar_RegisterVariable(&r_decals);
 	Cvar_RegisterVariable(&r_drawentities);
 	Cvar_RegisterVariable(&r_drawviewmodel);
 	Cvar_RegisterVariable(&r_mirroralpha);

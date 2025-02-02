@@ -118,6 +118,13 @@ int VectorCompare( const vec_t* v1, const vec_t* v2 )
 	return 1;
 }
 
+void VectorMA( const vec_t* veca, float scale, const vec_t* vecb, vec_t* vecc )
+{
+	vecc[0] = veca[0] + scale * vecb[0];
+	vecc[1] = veca[1] + scale * vecb[1];
+	vecc[2] = veca[2] + scale * vecb[2];
+}
+
 // TODO: Implement
 
 void CrossProduct( const vec_t* v1, const vec_t* v2, vec_t* cross )

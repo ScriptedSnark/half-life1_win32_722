@@ -1684,8 +1684,6 @@ void R_DecalNode( mnode_t* node )
 			msurface_t* surf;
 			int			i;
 			mtexinfo_t* tex;
-			vec3_t		cross, normal;
-			float		face;
 
 			surf = gDecalModel->surfaces + node->firstsurface;
 
@@ -1697,7 +1695,7 @@ void R_DecalNode( mnode_t* node )
 
 				tex = surf->texinfo;
 
-				scale = Length(tex);
+				scale = Length(tex->vecs[0]);
 				if (scale == 0)
 					continue;
 
@@ -1960,9 +1958,138 @@ void R_DecalShoot_( texture_t* ptexture, int index, int entity, int modelIndex, 
 	R_DecalNode(pnodes);
 }
 
+// Shoots a decal onto the surface of the BSP.  position is the center of the decal in world coords
+// This is called from cl_parse.c, cl_tent.c
+void R_DecalShoot( int textureIndex, int entity, int modelIndex, vec_t* position, int flags )
+{
+	texture_t* ptexture;
+
+	ptexture = Draw_DecalTexture(textureIndex);
+	R_DecalShoot_(ptexture, textureIndex, entity, modelIndex, position, flags);
+}
+
+void R_CustomDecalShoot( texture_t* ptexture, int playernum, int entity, int modelIndex, vec_t* position, int flags )
+{
+	int plindex = ~playernum;
+	R_DecalShoot_(ptexture, plindex, entity, modelIndex, position, flags);
+}
+
+// Check for intersecting decals on this surface
+decal_t* R_DecalIntersect( msurface_t* psurf, int* pcount, float x, float y )
+{
+	decal_t* plist;
+	decal_t* plast;
+	int			dist;
+	int			lastDist;
+	int			dx, dy;
+	texture_t* ptexture;
+	float		w, h;
+	float		maxWidth;
+	qboolean	bPermanent;
+
+	plast = NULL;
+
+	lastDist = 0xFFFF;
+	*pcount = 0;
+
+	maxWidth = (float)(gDecalTexture->width) * 1.5;
+
+	plist = psurf->pdecals;
+	while (plist)
+	{
+		ptexture = Draw_DecalTexture(plist->texture);
+
+		// Don't steal bigger decals and replace them with smaller decals
+		// Don't steal permanent decals
+		bPermanent = (plist->flags & FDECAL_PERMANENT);
+		if (!bPermanent)
+		{
+			if (maxWidth >= (float)ptexture->width)
+			{
+				w = abs((int)((gDecalTexture->width >> 1) + psurf->texinfo->texture->width * x
+					- (psurf->texinfo->texture->width * plist->dx + (ptexture->width >> 1))));
+				h = abs((int)((gDecalTexture->height >> 1) + psurf->texinfo->texture->height * y
+					- (psurf->texinfo->texture->height * plist->dy + (ptexture->height >> 1))));
+
+				// Now figure out the part of the projection that intersects plist's
+				// clip box [0,0,1,1].
+				if (h <= w)
+				{
+					dx = w;
+					dy = h;
+				}
+				else
+				{
+					dx = h;
+					dy = w;
+				}
+
+				// Figure out how much of this intersects the (0,0) - (1,1) bbox
+				dist = (float)dx + (float)dy * 0.5;
+				if ((dist * plist->scale) < 8)
+				{
+					*pcount += 1;
+
+					if (!plast || dist <= lastDist)
+					{
+						lastDist = dist;
+						plast = plist;
+					}
+				}
+			}
+		}
+
+		plist = plist->pnext;
+	}
+
+	return plast;
+}
+
+// Allocate and initialize a decal from the pool, on surface with offsets x, y
+void R_DecalCreate( msurface_t* psurface, int textureIndex, float scale, float x, float y )
+{
+	decal_t* pdecal;
+	decal_t* pold;
+	int				count;
+
+	pold = R_DecalIntersect(psurface, &count, x, y);
+
+	if (count < MAX_OVERLAP_DECALS)
+		pold = NULL;
+
+	pdecal = R_DecalAlloc(pold);
+	pdecal->texture = textureIndex;
+	pdecal->flags = gDecalFlags;
+	pdecal->dx = x;
+	pdecal->dy = y;
+	pdecal->pnext = NULL;
+
+	if (psurface->pdecals)
+	{
+		pold = psurface->pdecals;
+
+		while (pold->pnext)
+			pold = pold->pnext;
+
+		pold->pnext = pdecal;
+	}
+	else
+	{
+		psurface->pdecals = pdecal;
+	}
+
+	// Tag surface
+	pdecal->psurface = psurface;
+
+	// Set scaling
+	pdecal->scale = scale;
+	pdecal->entityIndex = gDecalEntity;	
+
+	R_InvalidateSurface(psurface);
+}
 
 
-
+// TODO: Implement
 
 
 // Renders all decals

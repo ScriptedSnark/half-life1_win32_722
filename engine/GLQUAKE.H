@@ -108,7 +108,7 @@ extern	cvar_t	r_drawentities;
 extern	cvar_t	r_drawviewmodel;
 extern	cvar_t	r_speeds;
 extern	cvar_t	r_fullbright;
-
+extern	cvar_t	r_decals;
 extern	cvar_t	r_lightmap;
 
 
