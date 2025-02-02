@@ -59,7 +59,7 @@ void Mod_LoadStudioModel( model_t* mod, void* buffer )
 			pPal = cache + ptexture->index + ptexture->width + ptexture->height;
 			strcpy(texname, mod->name);
 			strcat(texname, ptexture->name);
-			GL_LoadTexture(texname, GLT_STUDIO, ptexture->width, ptexture->height, cache + ptexture->index, FALSE, TEX_TYPE_NONE, pPal);
+			ptexture->index = GL_LoadTexture(texname, GLT_STUDIO, ptexture->width, ptexture->height, cache + ptexture->index, FALSE, TEX_TYPE_NONE, pPal);
 		}
 	}
 	size = phdr->texturedataindex - phdr->length - total + Hunk_LowMark();
