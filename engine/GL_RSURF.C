@@ -2088,6 +2088,142 @@ void R_DecalCreate( msurface_t* psurface, int textureIndex, float scale, float x
 	R_InvalidateSurface(psurface);
 }
 
+// clip edges
+#define LEFT_EDGE			0
+#define RIGHT_EDGE			1
+#define TOP_EDGE			2
+#define BOTTOM_EDGE			3
+
+// Quick and dirty sutherland Hodgman clipper
+// Clip polygon to decal in texture space
+// JAY: This code is lame, change it later.  It does way too much work per frame
+// It can be made to recursively call the clipping code and only copy the vertex list once
+int Inside( float* vert, int edge )
+{
+	switch (edge)
+	{
+		case LEFT_EDGE:
+			if (vert[3] > 0.0)
+				return 1;
+			return 0;
+
+		case RIGHT_EDGE:
+			if (vert[3] < 1.0)
+				return 1;
+			return 0;
+
+		case TOP_EDGE:
+			if (vert[4] > 0.0)
+				return 1;
+			return 0;
+
+		case BOTTOM_EDGE:
+			if (vert[4] < 1.0)
+				return 1;
+			return 0;
+	}
+
+	return 0;
+}
+
+void Intersect( float* one, float* two, int edge, float* out )
+{
+	float t;
+
+	// t is the parameter of the line between one and two clipped to the edge
+	// or the fraction of the clipped point between one & two
+	// vert[3] is u
+	// vert[4] is v
+	// vert[5] is lightmap u
+	// vert[6] is lightmap v
+	// vert[0], vert[1], vert[2] is X, Y, Z
+
+
+	if (edge < TOP_EDGE)
+	{
+		if (edge == LEFT_EDGE)
+		{
+			// left
+			t = ((one[3] - 0) / (one[3] - two[3]));
+			out[3] = 0;
+		}
+		else
+		{
+			// right
+			t = ((one[3] - 1) / (one[3] - two[3]));
+			out[3] = 1;
+		}
+
+		out[4] = one[4] + (two[4] - one[4]) * t;
+	}
+	else
+	{
+		if (edge == TOP_EDGE)
+		{
+			// top
+			t = ((one[4] - 0) / (one[4] - two[4]));
+			out[4] = 0;
+		}
+		else
+		{
+			// bottom
+			t = ((one[4] - 1) / (one[4] - two[4]));
+			out[4] = 1;
+		}
+
+		out[3] = one[3] + (two[3] - one[3]) * t;
+	}
+
+	out[0] = one[0] + (two[0] - one[0]) * t;
+	out[1] = one[1] + (two[1] - one[1]) * t;
+	out[2] = one[2] + (two[2] - one[2]) * t;
+}
+
+int SHClip( float* vert, int vertCount, float* out, int edge )
+{
+	int j, outCount;
+	float* s, * p;
+
+
+	outCount = 0;
+
+	s = &vert[(vertCount - 1) * VERTEXSIZE];
+	for (j = 0; j < vertCount; j++)
+	{
+		p = &vert[j * VERTEXSIZE];
+		if (Inside(p, edge))
+		{
+			if (Inside(s, edge))
+			{
+				memcpy(out, p, sizeof(*out) * VERTEXSIZE);
+				outCount++;
+				out += VERTEXSIZE;
+			}
+			else
+			{
+				Intersect(s, p, edge, out);
+				out += VERTEXSIZE;
+				outCount++;
+				memcpy(out, p, sizeof(*out) * VERTEXSIZE);
+				outCount++;
+				out += VERTEXSIZE;
+			}
+		}
+		else
+		{
+			if (Inside(s, edge))
+			{
+				Intersect(p, s, edge, out);
+				out += VERTEXSIZE;
+				outCount++;
+			}
+		}
+		s = p;
+	}
+
+	return outCount;
+}
+
 
 // TODO: Implement
 
