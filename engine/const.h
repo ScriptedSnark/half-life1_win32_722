@@ -696,7 +696,7 @@ typedef unsigned short 		word;
 #undef false
 
 #ifndef __cplusplus
-typedef enum {false, true}	qboolean;
+typedef enum {false, true}  qboolean;
 #else 
 typedef int qboolean;
 #endif

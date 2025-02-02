@@ -15,6 +15,7 @@
     <ClCompile Include="..\..\engine\cdll_exp.c" />
     <ClCompile Include="..\..\engine\cdll_int.c" />
     <ClCompile Include="..\..\engine\chase.c" />
+    <ClCompile Include="..\..\engine\cl_cam.c" />
     <ClCompile Include="..\..\engine\CL_DEMO.C" />
     <ClCompile Include="..\..\engine\cl_draw.c" />
     <ClCompile Include="..\..\engine\cl_ents.c" />
@@ -31,6 +32,7 @@
     <ClCompile Include="..\..\engine\crc.c" />
     <ClCompile Include="..\..\engine\cvar.c" />
     <ClCompile Include="..\..\engine\glHud.c" />
+    <ClCompile Include="..\..\engine\glide.c" />
     <ClCompile Include="..\..\engine\GL_DRAW.C" />
     <ClCompile Include="..\..\engine\GL_MODEL.C" />
     <ClCompile Include="..\..\engine\gl_refrag.c" />
@@ -83,6 +85,8 @@
     <ClInclude Include="..\..\common\exefuncs.h" />
     <ClInclude Include="..\..\common\platform.h" />
     <ClInclude Include="..\..\common\qfont.h" />
+    <ClInclude Include="..\..\common\winsani_in.h" />
+    <ClInclude Include="..\..\common\winsani_out.h" />
     <ClInclude Include="..\..\engine\a3d.h" />
     <ClInclude Include="..\..\engine\anorms.h" />
     <ClInclude Include="..\..\engine\anorm_dots.h" />

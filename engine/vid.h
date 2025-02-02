@@ -2,6 +2,9 @@
 #ifndef VID_H
 #define VID_H
 
+#define VID_CBITS	6
+#define VID_GRADES	(1 << VID_CBITS)
+
 #include "vmodes.h"
 
 // TODO: This struct is 76 bytes sized instead of 80
