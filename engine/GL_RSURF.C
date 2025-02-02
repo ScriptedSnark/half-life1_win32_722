@@ -2224,12 +2224,104 @@ int SHClip( float* vert, int vertCount, float* out, int edge )
 	return outCount;
 }
 
-
-// TODO: Implement
-
+#define MAX_DECALCLIPVERT		32
 
 // Renders all decals
 void R_DrawDecals( void )
 {
+	float vert[MAX_DECALCLIPVERT][VERTEXSIZE];
+	float outvert[MAX_DECALCLIPVERT][VERTEXSIZE];
+
+	decal_t* plist; // decal list
+	int	i, j, k, outCount = 0;
+	texture_t* ptexture;
+	msurface_t* psurf;
+
+	float* v = NULL;
+	float* vlist;
+
+	if (gDecalSurfCount == 0)
+		return;
+
+	qglEnable(GL_BLEND);
+	qglEnable(GL_ALPHA_TEST);
+	qglBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	qglDepthMask(GL_FALSE);
+
+	if (gl_polyoffset.value)
+	{
+		qglEnable(GL_POLYGON_OFFSET_FILL);
+
+		if (!gl_ztrick.value || gldepthmin < 0.5)
+		{
+			qglPolygonOffset(1.0, -gl_polyoffset.value);
+		}
+		else
+		{
+			qglPolygonOffset(1.0, gl_polyoffset.value);
+		}
+	}
+
+	for (i = 0; i < gDecalSurfCount; i++)
+	{
+		psurf = gDecalSurfs[i];
+
+		// Draw all decals
+		for (plist = psurf->pdecals; plist; plist = plist->pnext)
+		{
+			float scalex, scaley;
+
+			ptexture = Draw_DecalTexture(plist->texture);
+
+			scalex = (psurf->texinfo->texture->width * plist->scale) / (float)ptexture->width;
+			scaley = (psurf->texinfo->texture->height * plist->scale) / (float)ptexture->height;
+
+			v = psurf->polys->verts[0];
+			for (j = 0; j < psurf->polys->numverts; j++, v += VERTEXSIZE)
+			{
+				VectorCopy(v, vert[j]);
+				vert[j][3] = (v[3] - plist->dx) * scalex;
+				vert[j][4] = (v[4] - plist->dy) * scaley;
+			}
+
+			// Clip the polygon to the decal texture space
+			outCount = SHClip(vert[0], psurf->polys->numverts, outvert[0], LEFT_EDGE);
+			outCount = SHClip(outvert[0], outCount, vert[0], RIGHT_EDGE);
+			outCount = SHClip(vert[0], outCount, outvert[0], TOP_EDGE);
+			outCount = SHClip(outvert[0], outCount, vert[0], BOTTOM_EDGE);
+
+			if (outCount)
+			{
+				GL_Bind(ptexture->gl_texturenum);
+
+				qglBegin(GL_POLYGON);
+				vlist = vert[0];
+				for (k = 0; k < outCount; k++, vlist += VERTEXSIZE)
+				{
+					qglTexCoord2f(vlist[3], vlist[4]);
+					qglVertex3fv(vlist);
+				}
+				qglEnd();
+			}
+		}
+	}
+
+	if (gl_polyoffset.value)
+		qglDisable(GL_POLYGON_OFFSET_FILL);
+
+	qglDisable(GL_ALPHA_TEST);
+	qglDisable(GL_BLEND);
+	qglDepthMask(GL_TRUE);
+
+	gDecalSurfCount = 0;
+}
+
+// Renders all decals in multitexture mode
+void R_DrawMTexDecals( void )
+{
 	// TODO: Implement
+}
+
+void R_InvalidateSurface( msurface_t* surface )
+{
 }

@@ -40,7 +40,7 @@ cvar_t	gl_keeptjunctions = { "gl_keeptjunctions", "1" };
 cvar_t	gl_wateramp = { "gl_wateramp", "0.3" };
 cvar_t	gl_dither = { "gl_dither", "1", TRUE };
 cvar_t	gl_spriteblend = { "gl_spriteblend", "1" };
-
+cvar_t	gl_polyoffset = { "gl_polyoffset", "4", TRUE };
 cvar_t	gl_lightholes = { "gl_lightholes", "1" };
 cvar_t	gl_zmax = { "gl_zmax", "4096" };
 cvar_t	gl_alphamin = { "gl_alphamin", "0.25" };
@@ -173,9 +173,7 @@ void R_Init( void )
 
 	Cvar_RegisterVariable(&gl_dither);
 	Cvar_RegisterVariable(&gl_spriteblend);
-	
-	// TODO: Implement
-
+	Cvar_RegisterVariable(&gl_polyoffset);
 	Cvar_RegisterVariable(&gl_lightholes);
 	Cvar_RegisterVariable(&gl_keeptjunctions);
 	// TODO: Implement
