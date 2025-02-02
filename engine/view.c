@@ -699,6 +699,22 @@ void V_RenderView( void )
 	}
 }
 
+// Screen shake variables
+typedef struct
+{
+	float time;
+	float duration;
+	float amplitude;
+	float frequency;
+	float nextShake;
+	vec3_t offset;
+	float angle;
+	vec3_t appliedOffset;
+	float appliedAngle;
+} screenshake_t;
+
+screenshake_t gVShake;
+
 /*
 =================
 V_CalcShake
@@ -722,7 +738,11 @@ This is so you can blend in part of the shake
 */
 void V_ApplyShake( float* origin, float* angles, float factor )
 {
-	// TODO: Implement
+	if (origin)
+		VectorMA(origin, factor, gVShake.appliedOffset, origin);
+
+	if (angles)
+		angles[ROLL] += gVShake.appliedAngle * factor;
 }
 
 /*
@@ -863,7 +883,7 @@ Initialize sceen fade/shake data
 */
 void V_InitLevel( void )
 {
-	// TODO: Implement
+	memset(&gVShake, 0, sizeof(gVShake));
 
 	cl.sf.fadeFlags = 0;
 	cl.sf.fader = 0;
