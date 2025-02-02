@@ -29,7 +29,7 @@ typedef struct cl_entity_s
 {
 	int				index;      // Index into cl_entities
 
-	struct player_info_s* scoreboard;	// identify player
+	struct player_info_s* scoreboard;
 
 	// TODO: Implement
 
@@ -86,6 +86,8 @@ typedef struct cl_entity_s
 	// TODO: Implement
 
 	colorVec		cvFloorColor;
+
+	// TODO: Implement
 
 	mouth_t			mouth;			// For synchronizing mouth movements.
 

@@ -2,6 +2,7 @@
 
 #include "quakedef.h"
 #include "pr_cmds.h"
+#include "pmove.h"
 
 int cl_playerindex; // player index
 
@@ -566,6 +567,50 @@ void CL_ParsePacketEntities( qboolean delta )
 
 /*
 ===============
+CL_PrintEntity
+
+===============
+*/
+void CL_PrintEntity(cl_entity_t* ent)
+{
+	Con_DPrintf("----------------------------\n");
+	Con_DPrintf("T %.2f", cl.time);
+	Con_DPrintf(":Gap %.2f\n", cl.time - ent->animtime);
+	Con_DPrintf("#%i", ent->index);
+	if (ent->model)
+		Con_DPrintf(":%s\n", ent->model->name);
+	else
+		Con_DPrintf(":?\n");
+	Con_DPrintf("AT %4.2f ST %4.2f S %i F %4.1f\n", ent->animtime, ent->sequencetime, ent->sequence, ent->frame);
+	Con_DPrintf("PA %4.2f PS %i FR %.1f\n", ent->prevanimtime, ent->prevsequence, ent->framerate);
+	Con_DPrintf("C0 %i:%i BL %i:%i\n", ent->controller[0], ent->prevcontroller[0], ent->blending[0], ent->prevblending[0]);
+	Con_DPrintf("O : %.0f %.0f %.0f\n", ent->origin[0], ent->origin[1], ent->origin[2]);
+	Con_DPrintf("PO: %.0f %.0f %.0f\n", ent->prevorigin[0], ent->prevorigin[1], ent->prevorigin[2]);
+	Con_DPrintf("RM:  %i RA: %i RX: %i PF %4.2f\n", ent->rendermode, ent->renderamt, ent->renderfx, ent->prevframe);
+	Con_DPrintf("MT: %i:", ent->movetype);
+	if ((ent->effects & EF_NOINTERP) != 0)
+		Con_DPrintf("NoInterp ");
+	if ((ent->effects & EF_NODRAW) != 0)
+		Con_DPrintf("NoDraw ");
+	if ((ent->effects & EF_LIGHT) != 0)
+		Con_DPrintf("Light ");
+	if ((ent->effects & EF_BRIGHTFIELD) != 0)
+		Con_DPrintf("BFLD ");
+	if ((ent->effects & EF_MUZZLEFLASH) != 0)
+		Con_DPrintf("MUZ ");
+	if ((ent->effects & EF_BRIGHTLIGHT) != 0)
+		Con_DPrintf("BLT ");
+	if ((ent->effects & EF_DIMLIGHT) != 0)
+		Con_DPrintf("Dim ");
+	if ((ent->effects & EF_INVLIGHT) != 0)
+		Con_DPrintf("Inv ");
+	if (ent->resetlatched)
+		Con_DPrintf("F ");
+	Con_DPrintf("\n");
+}
+
+/*
+===============
 CL_UpdateEntity
 
 ===============
@@ -761,6 +806,7 @@ void CL_LinkPacketEntities( void )
 			if (ent->effects & EF_BRIGHTLIGHT)
 			{
 				dl = CL_AllocDlight(ent->index);
+
 				VectorCopy(ent->origin, dl->origin);
 				dl->origin[2] += 16.0;
 				dl->color.r = 250;
@@ -775,6 +821,7 @@ void CL_LinkPacketEntities( void )
 			if (ent->effects & EF_DIMLIGHT)
 			{
 				dl = CL_AllocDlight(ent->index);
+
 				VectorCopy(ent->origin, dl->origin);
 				dl->color.r = 100;
 				dl->color.g = 100;
@@ -790,6 +837,8 @@ void CL_LinkPacketEntities( void )
 		{
 			// TODO: Implement
 			//R_RocketFlare(ent->origin);
+
+			dl = CL_AllocDlight(ent->index);
 
 			dl = CL_AllocDlight(ent->index);
 			VectorCopy(ent->origin, dl->origin);
@@ -1048,9 +1097,142 @@ Create visible entities in the correct position
 for all current players
 =============
 */
+extern int cam_thirdperson;
 void CL_LinkPlayers( void )
 {
+	int				j;
+	player_info_t	*info;
+	player_state_t	*state;
+	player_state_t	exact;
+	double			playertime;
+	vec_t			lerp_factor;
+	vec_t*			start;
+	vec_t*			end;
+	vec_t*			current;
+	frame_t*		frame;
+	cl_entity_t*	ent;
+	int				msec;
+	int				oldphysent;
+	dlight_t*		dl;
+
+	vec_t			previous_x, previous_y, previous_z;
+
+	start = cl.mvelocity[1];
+	end = cl.mvelocity[2];
+
+	lerp_factor = cl.frame_lerp;
+
+	for (current = start; current < end; current += 3) {
+		previous_x = current[-3];
+		previous_y = current[-2];
+		previous_z = current[-1];
+
+		current[0] = (previous_x - current[0]) * lerp_factor + current[0];
+		current[1] = (previous_y - current[1]) * lerp_factor + current[1];
+		current[2] = (previous_z - current[2]) * lerp_factor + current[2];
+	}
+
+	playertime = realtime - cls.latency + 0.02;
+	if (playertime > realtime)
+		playertime = realtime;
+
+	frame = &cl.frames[cl.parsecount & UPDATE_MASK];
+
+
+	for (j = 0, info = cl.players, state = frame->playerstate; j < MAX_CLIENTS
+		; j++, info++, state++)
+	{
+		if (state->messagenum == cl.parsecount
+			&& (cam_thirdperson || cl.viewentity - j != 1 || chase_active.value != 0.0) //if we are in third person or seeing our PoV...
+			&& state->modelindex != 0 //make sure that the entity is visible...
+			&& (state->effects & EF_NODRAW) == 0 //of course, it also should not have EF_NODRAW
+			&& (cl.spectator == FALSE || autocam != 2 || spec_track != j))
+		{
+			// grab an entity to fill in
+			if (cl_numvisedicts >= MAX_VISEDICTS)
+				break;		// object list is full
+
+			ent = &cl_visedicts[cl_numvisedicts];
+			++cl_numvisedicts;
+
+			memcpy(ent, &cl_entities[j + 1], sizeof(cl_entity_t));
+			ent->index = j + 1;
+
+			// only predict half the move to minimize overruns
+			msec = 500 * (playertime - state->state_time);
+			if (cl.playernum == j || msec <= 0 || !cl_predict_players.value)
+			{
+				VectorCopy(state->origin, ent->origin);
+//Con_DPrintf ("nopredict\n");
+			}
+			else
+			{
+				// predict players movement
+				if (msec > 255)
+					msec = 255;
+				state->command.msec = msec;
+//Con_DPrintf ("predict: %i\n", msec);
+
+				oldphysent = pmove.numphysent;
+				CL_SetSolidPlayers(j);
+
+				// TODO: Implement
+				//CL_PredictUsercmd(state, &exact, &state->command, FALSE);
+
+				pmove.numphysent = oldphysent;
+				VectorCopy(exact.origin, ent->origin);
+			}
+
+			VectorCopy(ent->origin, ent->prevorigin);
+
+			ent->colormap = info->translations;
+			if (state->modelindex == cl_playerindex)
+				ent->scoreboard = info;
+			else
+				ent->scoreboard = 0;
+
+			// TODO: Implement
+			//FF: the dword_E06C5B8 bitvector was used for the first condition
+			if (FALSE || (ent->effects & EF_NOINTERP) != 0)
+			{
+				ent->prevsequence = ent->sequence;
+				ent->animtime = cl.time;
+				ent->prevanimtime = cl.time;
+				VectorCopy(ent->origin, ent->prevorigin);
+				VectorCopy(ent->angles, ent->prevangles);
+			}
+
+			if (cl.viewentity - j != 1)
+			{
+				if ((ent->effects & EF_BRIGHTLIGHT) != 0)
+				{
+					dl = CL_AllocDlight(3);
+					VectorCopy(ent->origin, dl->origin);
+					dl->origin[2] = dl->origin[2] + 16.0;
+					dl->color.b = 250;
+					dl->color.g = 250;
+					dl->color.r = 250;
+					dl->radius = RandomFloat(400.0, 431.0);
+					// die on next frame
+				}
+				if ((ent->effects & EF_DIMLIGHT) != 0)
+				{
+					dl = CL_AllocDlight(3);
+					VectorCopy(ent->origin, dl->origin);
+					dl->color.b = 100;
+					dl->color.g = 100;
+					dl->color.r = 100;
+					dl->radius = RandomFloat(200.0, 231.0);
+					dl->die = cl.time + 0.001;
+				}
+			}
+			if (cl_printplayers.value)
+				CL_PrintEntity(ent);
+		}
+	}
+
 	// TODO: Implement
+	//FF: last function call to an unknown subroutine
 }
 
 /*

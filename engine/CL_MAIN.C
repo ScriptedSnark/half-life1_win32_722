@@ -25,7 +25,7 @@ cvar_t	cl_nolerp = { "cl_nolerp","0" };
 
 cvar_t	cl_spectator_password = { "cl_spectator_password", "0" };
 
-
+cvar_t	cl_predict_players = { "cl_predict_players", "1" };
 
 
 cvar_t	lookspring = { "lookspring", "0", TRUE };
@@ -35,6 +35,8 @@ cvar_t	sensitivity = { "sensitivity", "3", TRUE };
 cvar_t	cl_skyname = { "cl_skyname", "desert", TRUE };
 
 // TODO: Implement
+
+cvar_t	cl_printplayers = { "cl_printplayers", "0" };
 
 cvar_t	m_pitch = { "m_pitch", "0.022", TRUE };
 cvar_t	m_yaw = { "m_yaw", "0.022", TRUE };
@@ -1320,6 +1322,11 @@ void CL_Init( void )
 	// TODO: Implement
 
 	Cvar_RegisterVariable(&cl_spectator_password);
+	Cvar_RegisterVariable(&cl_predict_players);
+
+	// TODO: Implement
+
+	Cvar_RegisterVariable(&cl_printplayers);
 
 	// TODO: Implement
 	

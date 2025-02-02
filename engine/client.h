@@ -71,19 +71,21 @@ typedef struct
 #define	MAX_SCOREBOARDNAME		32
 typedef struct player_info_s
 {
-	// TODO: Implement
-
+	// User id on server
+	int		userid;
 
 	// Name
 	char	name[MAX_SCOREBOARDNAME];
 
-	short	ping;
+	int		ping;
 
 	// skin information
 	int		color;
 
 	// TRUE if joined the game as spectator
 	qboolean spectator;
+
+	byte translations[VID_GRADES*256];
 
 	// TODO: Implement
 
@@ -327,7 +329,7 @@ typedef struct
 	// of each level and after teleporting.
 	vec3_t		viewangles;
 
-	vec3_t		mvelocity[2];	// update by server, used for lean+bob
+	vec3_t		mvelocity[3];	// update by server, used for lean+bob
 								// (0 is newest)
 
 
@@ -458,12 +460,15 @@ extern	cvar_t	cl_movespeedkey;
 extern	cvar_t	cl_yawspeed;
 extern	cvar_t	cl_pitchspeed;
 
+extern	cvar_t	cl_predict_players;
 
 extern	cvar_t	lookspring;
 extern	cvar_t	lookstrafe;
 extern	cvar_t	sensitivity;
 
 extern	cvar_t	cl_skyname;
+
+extern	cvar_t	cl_printplayers;
 
 extern	cvar_t	m_pitch;
 extern	cvar_t	m_yaw;
@@ -579,6 +584,17 @@ void CL_ParsePlayerinfo( void );
 void CL_InitPrediction( void );
 void CL_PredictMove( void );
 
+
+//
+// cl_cam.c
+//
+#define CAM_NONE	0
+#define CAM_TRACK	1
+// TODO: Implement
+//FF: valve added at least two new values (2 and 3), need to know what do these do
+
+extern	int		autocam;
+extern int spec_track; // player# of who we are tracking
 
 //
 // cl_parse.c
