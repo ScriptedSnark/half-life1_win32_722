@@ -805,10 +805,7 @@ void CL_LinkPacketEntities( void )
 		{
 			if (ent->effects & EF_BRIGHTLIGHT)
 			{
-				dl = NULL; //shut up the compiler at least for now
-
-				//dl = CL_AllocDlight(ent->index);
-				// TODO: Implement (CL_AllocDlight needed)
+				dl = CL_AllocDlight(ent->index);
 
 				VectorCopy(ent->origin, dl->origin);
 				dl->origin[2] += 16.0;
@@ -823,10 +820,7 @@ void CL_LinkPacketEntities( void )
 
 			if (ent->effects & EF_DIMLIGHT)
 			{
-				dl = NULL; //shut up the compiler at least for now
-
-				//dl = CL_AllocDlight(ent->index);
-				// TODO: Implement (CL_AllocDlight needed)
+				dl = CL_AllocDlight(ent->index);
 
 				VectorCopy(ent->origin, dl->origin);
 				dl->color.r = 100;
@@ -843,10 +837,8 @@ void CL_LinkPacketEntities( void )
 		{
 			// TODO: Implement
 			//R_RocketFlare(ent->origin);
-			dl = NULL; //shut up the compiler at least for now
 
-			//dl = CL_AllocDlight(ent->index);
-			// TODO: Implement (CL_AllocDlight needed)
+			dl = CL_AllocDlight(ent->index);
 
 			dl = CL_AllocDlight(ent->index);
 			VectorCopy(ent->origin, dl->origin);
