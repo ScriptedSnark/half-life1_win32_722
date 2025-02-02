@@ -51,13 +51,7 @@ float		v_blend[4];		// rgba 0.0 - 1.0
 
 // TODO: Implement
 
-/*
-===============
-V_CalcRoll
 
-Used by view and sv_user
-===============
-*/
 vec3_t	v_forward, v_right, v_up;
 
 
@@ -66,6 +60,34 @@ vec3_t	v_forward, v_right, v_up;
 
 
 
+
+
+/*
+===============
+V_CalcRoll
+Used by view and sv_user
+===============
+*/
+float V_CalcRoll( float* angles, float* velocity )
+{
+	float	sign;
+	float	side;
+	float	value;
+
+	AngleVectors(angles, v_forward, v_right, v_up);
+	side = DotProduct(velocity, v_right);
+	sign = side < 0 ? -1 : 1;
+	side = fabs(side);
+
+	value = cl_rollangle.value;
+
+	if (side < cl_rollspeed.value)
+		side = side * value / cl_rollspeed.value;
+	else
+		side = value;
+
+	return side * sign;
+}
 
 /*
 ===============
@@ -453,7 +475,19 @@ Roll is induced by movement and damage
 */
 void V_CalcViewRoll( void )
 {
+	float		side;
+
+	side = V_CalcRoll(cl_entities[cl.viewentity].angles, cl.simvel);
+
+	r_refdef.viewangles[ROLL] += side;
+
 	// TODO: Implement
+
+	if (cl.stats[STAT_HEALTH] <= 0)
+	{
+		r_refdef.viewangles[ROLL] = 80;	// dead view angle
+		return;
+	}
 }
 
 
@@ -517,8 +551,6 @@ void V_CalcRefdef( void )
 
 	V_CalcViewRoll();
 	V_AddIdle();
-
-	// TODO: Implement
 
 	// offsets
 	VectorCopy(cl.viewangles, angles);
