@@ -18,6 +18,5 @@
 #define FTENT_HITSOUND			0x00000200
 #define FTENT_SPIRAL			0x00000400
 #define FTENT_SPRCYCLE			0x00000800
-#define FTENT_COLLIDEALL		0x00001000 // will collide with world and slideboxes
 
 #endif
