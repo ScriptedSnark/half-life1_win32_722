@@ -695,13 +695,35 @@ void CL_TempEntPlaySound( TEMPENTITY *pTemp, float damp )
 =============
 CL_AddVisibleEntity
 
+Adds a client entity to the list of visible entities if it's within the PVS
 =============
 */
 int CL_AddVisibleEntity( cl_entity_t* ent )
 {
-	// TODO: Implement
+	vec3_t world_mins, world_maxs;
 
-	return 0;
+	if (!ent->model)
+		return FALSE; // invalid entity was passed into this function
+
+	if (cl_numvisedicts >= MAX_VISEDICTS)
+		return FALSE; // object list is full
+
+	for (int i = 0; i < 3; ++i)
+	{
+		world_mins[i] = ent->model->mins[i] + ent->origin[i];
+		world_maxs[i] = ent->model->maxs[i] + ent->origin[i];
+	}
+
+	if (!PVSNode(cl.worldmodel->nodes, world_mins, world_maxs))
+		return FALSE;
+
+	ent->index = -1;
+
+	memcpy(&cl_visedicts[cl_numvisedicts], ent, sizeof(cl_entity_t));
+
+	cl_numvisedicts++;
+
+	return TRUE;
 }
 
 /*

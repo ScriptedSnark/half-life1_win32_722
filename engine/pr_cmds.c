@@ -3,7 +3,7 @@
 
 #include "quakedef.h"
 
-
+int r_visframecount;
 
 #define IA	16807
 #define IM	2147483647
@@ -122,4 +122,52 @@ int32 RandomLong( int32 lLow, int32 lHigh )
 	} while (n > maxAcceptable);
 
 	return lLow + (n % x);
+}
+
+// TODO: Implement
+
+struct mnode_s* PVSNode(struct mnode_s* node, vec_t* emins, vec_t* emaxs)
+{
+	mplane_t *splitplane;
+	int sides;
+	mnode_t *splitNode;
+
+	if (node->visframe != r_visframecount)
+		return NULL;
+
+	if (node->contents < 0)
+		return node->contents == CONTENT_SOLID ? NULL : node;
+
+
+	splitplane = node->plane;
+	if (splitplane->type >= 3u)
+	{
+		sides = BoxOnPlaneSide(emins, emaxs, splitplane);
+	}
+	else
+	{
+		if (splitplane->dist > emins[splitplane->type])
+		{
+			if (splitplane->dist < emaxs[splitplane->type])
+				sides = 3;
+			else
+				sides = 2;
+		}
+		else
+		{
+			sides = 1;
+		}
+	}
+
+	if (sides & 1)
+	{
+		splitNode = PVSNode(node->children[0], emins, emaxs);
+		if (splitNode)
+			return splitNode;
+	}
+
+	if (sides & 2)
+		return PVSNode(node->children[1], emins, emaxs);
+
+	return NULL;
 }
