@@ -148,4 +148,12 @@ void R_DrawParticles( void )
 	// TODO: Implement
 }
 
+
+// TODO: Implement
+
+void R_RocketTrail( vec_t *start, vec_t *end, int type )
+{
+	// TODO: Implement
+}
+
 // TODO: Implement

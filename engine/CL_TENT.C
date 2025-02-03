@@ -680,7 +680,16 @@ TEMPENTITY* CL_TempEntAlloc( vec_t* org, model_t* model )
 	return NULL;
 }
 
-// TODO: Implement
+/*
+=============
+CL_TempEntPlaySound
+
+=============
+*/
+void CL_TempEntPlaySound( TEMPENTITY *pTemp, float damp )
+{
+	// TODO: Implement
+}
 
 /*
 =============
@@ -703,6 +712,7 @@ Simulation and cleanup of temporary entities
 =============
 */
 extern cvar_t sv_gravity;
+extern qboolean SV_RecursiveHullCheck(hull_t *hull, int num, float p1f, float p2f, vec3_t p1, vec3_t p2, trace_t *trace);
 void CL_TempEntUpdate( void )
 {
 	double		frametime;
@@ -733,6 +743,7 @@ void CL_TempEntUpdate( void )
 		return;
 	}
 
+	pprev = NULL;
 	freq = cl.time * 0.01;
 	fastFreq = cl.time * 5.5;
 	gravity = -frametime * sv_gravity.value;
@@ -777,7 +788,7 @@ void CL_TempEntUpdate( void )
 
 			VectorCopy(pTemp->entity.origin, pTemp->entity.prevorigin);
 
-			if ((pTemp->flags & FTENT_SINEWAVE) != 0)
+			if (pTemp->flags & FTENT_SINEWAVE)
 			{
 				pTemp->x += pTemp->entity.baseline.origin[0] * frametime;
 				pTemp->y += pTemp->entity.baseline.origin[1] * frametime;
@@ -786,7 +797,7 @@ void CL_TempEntUpdate( void )
 				pTemp->entity.origin[1] = pTemp->y + sin(pTemp->entity.baseline.origin[2] + fastFreq + 0.7) * (8 * pTemp->entity.scale);
 				pTemp->entity.origin[2] += pTemp->entity.baseline.origin[2] * frametime;
 			}
-			else if ((pTemp->flags & FTENT_SPIRAL) != 0)
+			else if (pTemp->flags & FTENT_SPIRAL)
 			{
 				float s, c;
 				s = sin(pTemp->entity.baseline.origin[2] + fastFreq);
@@ -802,7 +813,7 @@ void CL_TempEntUpdate( void )
 					pTemp->entity.origin[i] += pTemp->entity.baseline.origin[i] * frametime;
 			}
 
-			if ((pTemp->flags & FTENT_SPRANIMATE) != 0)
+			if (pTemp->flags & FTENT_SPRANIMATE)
 			{
 				pTemp->entity.frame += frametime * pTemp->entity.framerate;
 				if (pTemp->entity.frame >= pTemp->frameMax)
@@ -813,7 +824,7 @@ void CL_TempEntUpdate( void )
 					pTemp->die = cl.time;
 				}
 			}
-			else if ((pTemp->flags & FTENT_SPRCYCLE) != 0)
+			else if (pTemp->flags & FTENT_SPRCYCLE)
 			{
 				pTemp->entity.frame += frametime * 10;
 				if (pTemp->entity.frame >= pTemp->frameMax)
@@ -835,7 +846,60 @@ void CL_TempEntUpdate( void )
 				pTemp->entity.angles[2] += pTemp->entity.baseline.angles[2] * frametime;
 			}
 
-			if ((pTemp->flags & FTENT_FLICKER) != 0 && pTemp->entity.effects == gTempEntFrame)
+			if (pTemp->flags & FTENT_COLLIDEWORLD)
+			{
+				trace_t t;
+				t.fraction = 1.0;
+				t.allsolid = TRUE;
+
+				SV_RecursiveHullCheck(cl.worldmodel->hulls, cl.worldmodel->hulls[0].firstclipnode,
+				  0.0,
+				  1.0,
+				  pTemp->entity.prevorigin,
+				  pTemp->entity.origin, &t);
+
+				if (t.fraction != 1.0)
+				{
+					float damp, proj;
+
+					VectorMA(pTemp->entity.prevorigin, t.fraction * frametime, pTemp->entity.baseline.origin, pTemp->entity.origin);
+					damp = 1;
+					if (pTemp->flags & (FTENT_GRAVITY | FTENT_SLOWGRAVITY))
+					{
+						damp = 0.5;
+						if (t.plane.normal[2] > 0.9) //Hit floor?
+						{
+							if (pTemp->entity.baseline.origin[2] <= 0 && pTemp->entity.baseline.origin[2] >= gravity*3)
+							{
+								damp = 0;
+								pTemp->flags &= ~(FTENT_ROTATE | FTENT_GRAVITY | FTENT_SLOWGRAVITY | FTENT_COLLIDEWORLD | FTENT_SMOKETRAIL);
+								pTemp->entity.angles[0] = 0;
+								pTemp->entity.angles[2] = 0;
+							}
+						}
+					}
+					if (pTemp->hitSound)
+						CL_TempEntPlaySound(pTemp, damp);
+					// Reflect velocity
+					if (damp != 0)
+					{
+						proj = DotProduct(pTemp->entity.baseline.origin, t.plane.normal);
+						VectorMA(pTemp->entity.baseline.origin, -proj * 2, t.plane.normal, pTemp->entity.baseline.origin);
+						// Reflect rotation (fake)
+
+						pTemp->entity.angles[1] = -pTemp->entity.angles[1];
+					}
+
+					if (damp != 1)
+					{
+
+						VectorScale(pTemp->entity.baseline.origin, damp, pTemp->entity.baseline.origin);
+						VectorScale(pTemp->entity.angles, 0.9, pTemp->entity.angles);
+					}
+				}
+			}
+
+			if (pTemp->flags & FTENT_FLICKER && pTemp->entity.effects == gTempEntFrame)
 			{
 				dlight_t* dl = CL_AllocDlight(0);
 				dl->origin[0] = pTemp->entity.origin[0];
@@ -848,7 +912,26 @@ void CL_TempEntUpdate( void )
 				// die on next frame
 				dl->die = cl.time + 0.01;
 			}
+
+			if (pTemp->flags & FTENT_SMOKETRAIL)
+			{
+				R_RocketTrail(pTemp->entity.prevorigin, pTemp->entity.origin, 1);
+			}
+
+			if (pTemp->flags & FTENT_GRAVITY)
+				pTemp->entity.baseline.origin[2] += gravity;
+			else if (pTemp->flags & FTENT_SLOWGRAVITY)
+				pTemp->entity.baseline.origin[2] += gravitySlow;
+
+			// Cull to PVS (not frustum cull, just PVS)
+			if (!CL_AddVisibleEntity(&pTemp->entity))
+			{
+				pTemp->die = cl.time; // If we can't draw it this frame, just dump it.
+				pTemp->flags &= ~FTENT_FADEOUT; // Don't fade out, just die
+			}
 		}
+
+		pTemp = pnext;
 	}
 }
 

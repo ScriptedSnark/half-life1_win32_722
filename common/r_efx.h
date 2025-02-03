@@ -19,11 +19,5 @@
 #define FTENT_SPIRAL			0x00000400
 #define FTENT_SPRCYCLE			0x00000800
 #define FTENT_COLLIDEALL		0x00001000 // will collide with world and slideboxes
-#define FTENT_PERSIST			0x00002000 // tent is not removed when unable to draw 
-#define FTENT_COLLIDEKILL		0x00004000 // tent is removed upon collision with anything
-#define FTENT_PLYRATTACHMENT	0x00008000 // tent is attached to a player (owner)
-#define FTENT_SPRANIMATELOOP	0x00010000 // animating sprite doesn't die when last frame is displayed
-#define FTENT_SPARKSHOWER		0x00020000
-#define FTENT_NOMODEL			0x00040000 // Doesn't have a model, never try to draw ( it just triggers other things )
 
 #endif
