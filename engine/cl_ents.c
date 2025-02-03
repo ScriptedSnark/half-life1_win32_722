@@ -571,7 +571,7 @@ CL_PrintEntity
 
 ===============
 */
-void CL_PrintEntity(cl_entity_t* ent)
+void CL_PrintEntity( cl_entity_t* ent )
 {
 	Con_DPrintf("----------------------------\n");
 	Con_DPrintf("T %.2f", cl.time);

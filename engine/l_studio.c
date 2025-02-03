@@ -20,7 +20,7 @@ void Mod_LoadStudioModel( model_t* mod, void* buffer )
 	byte*				pin;
 	studiohdr_t*		phdr;
 	int					version;
-	void*				cache;
+	char*				cache;
 	int					i;
 	mstudiotexture_t*	ptexture;
 	char				texname[256];

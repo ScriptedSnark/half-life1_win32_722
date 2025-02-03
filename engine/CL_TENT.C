@@ -4,6 +4,9 @@
 #include "cl_tent.h"
 #include "pr_cmds.h"
 #include "decal.h"
+#include "r_efx.h"
+
+static int gTempEntFrame = 0;
 
 TEMPENTITY gTempEnts[MAX_TEMP_ENTITIES], * gpTempEntFree, * gpTempEntActive;
 
@@ -627,20 +630,226 @@ void CL_TempEntInit( void )
 =================
 CL_TempEntAlloc
 
-Allocate temp entity ( normal/low priority )
+Allocate temp entity
 =================
 */
 TEMPENTITY* CL_TempEntAlloc( vec_t* org, model_t* model )
 {
-	// TODO: Implement
+	TEMPENTITY* ent;
+
+	if (gpTempEntFree)
+	{
+		if (!model)
+			return NULL;
+
+		ent = gpTempEntFree;
+
+		gpTempEntFree = gpTempEntFree->next;
+
+		memset(&ent->entity, 0, sizeof(cl_entity_t));
+
+		ent->flags = 0;
+		ent->entity.colormap = vid.colormap;
+
+		// set the model
+		ent->entity.model = model;
+
+		// set the render mode and special effects
+		ent->entity.rendermode = kRenderNormal;
+		ent->entity.renderfx = kRenderFxNone;
+
+		ent->fadeSpeed = 0.5;
+
+		// when should we disappear?
+		ent->die = cl.time + 0.75;
+
+		VectorCopy(org, ent->entity.origin);
+
+		// link it with another active temp entity if any
+		ent->next = gpTempEntActive;
+
+		gpTempEntActive = ent;
+
+		return ent;
+	}
+	else
+	{
+		Con_DPrintf("Overflow %d temporary ents!", MAX_TEMP_ENTITIES);
+	}
+
 	return NULL;
 }
 
 // TODO: Implement
 
-void CL_TempEntUpdate( void )
+/*
+=============
+CL_AddVisibleEntity
+
+=============
+*/
+int CL_AddVisibleEntity( cl_entity_t* ent )
 {
 	// TODO: Implement
+
+	return 0;
+}
+
+/*
+=============
+CL_UpdateTEnts
+
+Simulation and cleanup of temporary entities
+=============
+*/
+extern cvar_t sv_gravity;
+void CL_TempEntUpdate( void )
+{
+	double		frametime;
+	TEMPENTITY* pTemp, *pprev, *pnext;
+	float		freq, gravity, gravitySlow, life, fastFreq;
+	int			i;
+
+	// Nothing to simulate
+	if (!gpTempEntActive || !cl.worldmodel)
+		return;
+
+	// !!!BUGBUG	-- This needs to be time based
+	gTempEntFrame = (gTempEntFrame + 1) & 31;
+
+	frametime = cl.time - cl.oldtime;
+
+	pTemp = gpTempEntActive;
+
+	// !!! Don't simulate while paused....  This is sort of a hack, revisit.
+	if (frametime <= 0)
+	{
+		while (pTemp)
+		{
+			CL_AddVisibleEntity(&pTemp->entity);
+			pTemp = pTemp->next;
+		}
+
+		return;
+	}
+
+	freq = cl.time * 0.01;
+	fastFreq = cl.time * 5.5;
+	gravity = -frametime * sv_gravity.value;
+	gravitySlow = gravity * 0.5;
+
+	while (pTemp)
+	{
+		int active;
+
+		active = 1;
+
+		life = pTemp->die - cl.time;
+		pnext = pTemp->next;
+
+		if (life < 0)
+		{
+			if (pTemp->flags & FTENT_FADEOUT)
+			{
+				if (pTemp->entity.rendermode == kRenderNormal)
+					pTemp->entity.rendermode = kRenderTransTexture;
+				pTemp->entity.renderamt = pTemp->entity.baseline.renderamt * (1 + life * pTemp->fadeSpeed);
+				if (pTemp->entity.renderamt <= 0)
+					active = 0;
+
+			}
+			else
+				active = 0;
+		}
+
+		if (!active)		// Kill it
+		{
+			pTemp->next = gpTempEntFree;
+			gpTempEntFree = pTemp;
+			if (!pprev)	// Deleting at head of list
+				gpTempEntActive = pnext;
+			else
+				pprev->next = pnext;
+		}
+		else
+		{
+			pprev = pTemp;
+
+			VectorCopy(pTemp->entity.origin, pTemp->entity.prevorigin);
+
+			if ((pTemp->flags & FTENT_SINEWAVE) != 0)
+			{
+				pTemp->x += pTemp->entity.baseline.origin[0] * frametime;
+				pTemp->y += pTemp->entity.baseline.origin[1] * frametime;
+
+				pTemp->entity.origin[0] = pTemp->x + sin(pTemp->entity.baseline.origin[2] + cl.time * pTemp->entity.prevframe) * (10 * pTemp->entity.scale);
+				pTemp->entity.origin[1] = pTemp->y + sin(pTemp->entity.baseline.origin[2] + fastFreq + 0.7) * (8 * pTemp->entity.scale);
+				pTemp->entity.origin[2] += pTemp->entity.baseline.origin[2] * frametime;
+			}
+			else if ((pTemp->flags & FTENT_SPIRAL) != 0)
+			{
+				float s, c;
+				s = sin(pTemp->entity.baseline.origin[2] + fastFreq);
+				c = cos(pTemp->entity.baseline.origin[2] + fastFreq);
+
+				pTemp->entity.origin[0] += pTemp->entity.baseline.origin[0] * frametime + 8 * sin(cl.time * 20 + (int)pTemp);
+				pTemp->entity.origin[1] += pTemp->entity.baseline.origin[1] * frametime + 4 * sin(cl.time * 30 + (int)pTemp);
+				pTemp->entity.origin[2] += pTemp->entity.baseline.origin[2] * frametime;
+			}
+			else
+			{
+				for (i = 0; i < 3; i++)
+					pTemp->entity.origin[i] += pTemp->entity.baseline.origin[i] * frametime;
+			}
+
+			if ((pTemp->flags & FTENT_SPRANIMATE) != 0)
+			{
+				pTemp->entity.frame += frametime * pTemp->entity.framerate;
+				if (pTemp->entity.frame >= pTemp->frameMax)
+				{
+					pTemp->entity.frame = pTemp->entity.frame - (int)(pTemp->entity.frame);
+
+					// this animating sprite isn't set to loop, so destroy it.
+					pTemp->die = cl.time;
+				}
+			}
+			else if ((pTemp->flags & FTENT_SPRCYCLE) != 0)
+			{
+				pTemp->entity.frame += frametime * 10;
+				if (pTemp->entity.frame >= pTemp->frameMax)
+				{
+					pTemp->entity.frame = pTemp->entity.frame - (int)(pTemp->entity.frame);
+				}
+			}
+
+// Experiment
+#if 0
+			if (pTemp->flags & FTENT_SCALE)
+				pTemp->entity.scale += 20.0 * (frametime / pTemp->entity.scale);
+#endif
+
+			if (pTemp->flags & FTENT_ROTATE)
+			{
+				pTemp->entity.angles[0] += pTemp->entity.baseline.angles[0] * frametime;
+				pTemp->entity.angles[1] += pTemp->entity.baseline.angles[1] * frametime;
+				pTemp->entity.angles[2] += pTemp->entity.baseline.angles[2] * frametime;
+			}
+
+			if ((pTemp->flags & FTENT_FLICKER) != 0 && pTemp->entity.effects == gTempEntFrame)
+			{
+				dlight_t* dl = CL_AllocDlight(0);
+				dl->origin[0] = pTemp->entity.origin[0];
+				dl->origin[1] = pTemp->entity.origin[1];
+				dl->origin[2] = pTemp->entity.origin[2];
+				dl->radius = 60.0;
+				dl->color.r = 255;
+				dl->color.g = 120;
+				dl->color.b = 0;
+				// die on next frame
+				dl->die = cl.time + 0.01;
+			}
+		}
+	}
 }
 
 /*
