@@ -684,11 +684,128 @@ TEMPENTITY* CL_TempEntAlloc( vec_t* org, model_t* model )
 =============
 CL_TempEntPlaySound
 
+play collide bounce sound
 =============
 */
 void CL_TempEntPlaySound( TEMPENTITY *pTemp, float damp )
 {
-	// TODO: Implement
+	char*		soundname;
+	float		fvol, zvel;
+	sfx_t*		bouncesounds[6];
+	int			sndamt, pitch, sndnum;
+	qboolean	shell;
+
+	soundname = NULL;
+	shell = FALSE;
+
+	memset(bouncesounds, 0, sizeof(bouncesounds));
+
+	switch (pTemp->hitSound)
+	{
+	case BOUNCE_GLASS:
+		sndamt = 3;
+		bouncesounds[0] = cl_sfx_glass1;
+		bouncesounds[1] = cl_sfx_glass2;
+		bouncesounds[2] = cl_sfx_glass3;
+		fvol = 0.8f;
+		break;
+	case BOUNCE_METAL:
+		sndamt = 3;
+		bouncesounds[0] = cl_sfx_metal1;
+		bouncesounds[1] = cl_sfx_metal2;
+		bouncesounds[2] = cl_sfx_metal3;
+		fvol = 0.8f;
+		break;
+	case BOUNCE_FLESH:
+		sndamt = 6;
+		bouncesounds[0] = cl_sfx_flesh1;
+		bouncesounds[1] = cl_sfx_flesh2;
+		bouncesounds[2] = cl_sfx_flesh3;
+		bouncesounds[3] = cl_sfx_flesh4;
+		bouncesounds[4] = cl_sfx_flesh5;
+		bouncesounds[5] = cl_sfx_flesh6;
+		fvol = 0.8f;
+		break;
+	case BOUNCE_WOOD:
+		sndamt = 3;
+		bouncesounds[0] = cl_sfx_wood1;
+		bouncesounds[1] = cl_sfx_wood2;
+		bouncesounds[2] = cl_sfx_wood3;
+		fvol = 0.8f;
+		break;
+	case BOUNCE_SHRAP: //"SHRAP"
+		sndamt = 5;
+		bouncesounds[0] = cl_sfx_ric1;
+		bouncesounds[1] = cl_sfx_ric2;
+		bouncesounds[2] = cl_sfx_ric3;
+		bouncesounds[3] = cl_sfx_ric4;
+		bouncesounds[4] = cl_sfx_ric5;
+		fvol = 0.8f;
+		break;
+	case BOUNCE_SHELL:
+		sndamt = 3;
+		shell = TRUE;
+		bouncesounds[0] = cl_sfx_pl_shell1;
+		bouncesounds[1] = cl_sfx_pl_shell2;
+		bouncesounds[2] = cl_sfx_pl_shell3;
+		fvol = 0.8f;
+		break;
+	case BOUNCE_CONCRETE:
+		sndamt = 3;
+		bouncesounds[0] = cl_sfx_concrete1;
+		bouncesounds[1] = cl_sfx_concrete2;
+		bouncesounds[2] = cl_sfx_concrete3;
+		fvol = 0.8f;
+		break;
+	case BOUNCE_SHOTSHELL:
+		sndamt = 3;
+		shell = TRUE;
+		bouncesounds[0] = cl_sfx_sshell1;
+		bouncesounds[1] = cl_sfx_sshell2;
+		bouncesounds[2] = cl_sfx_sshell3;
+		fvol = 0.5f;
+		break;
+	}
+
+	zvel = abs(pTemp->entity.baseline.origin[2]);
+
+	if (shell)
+	{
+		if (zvel < 200 && RandomLong(0, 3))
+			return;
+	}
+	else
+	{
+		if (RandomLong(0, 5))
+			return;
+	}
+
+	if (damp > 0)
+	{
+		if (RandomLong(0, 3))
+		{
+			pitch = 100;
+		}
+		else
+		{
+			pitch = 100;
+			if (!shell)
+				pitch = RandomLong(90, 124);
+		}
+
+		if (shell)
+		{
+			fvol *= min(1, zvel / 350);
+		}
+		else
+		{
+			fvol *= min(1, zvel / 450);
+		}
+
+		sndnum = RandomLong(0, sndamt - 1);
+
+		S_StartDynamicSound(-1, CHAN_AUTO, bouncesounds[sndnum], pTemp->entity.origin, fvol, ATTN_NORM, 0, pitch);
+	}
 }
 
 /*
@@ -700,7 +817,8 @@ Adds a client entity to the list of visible entities if it's within the PVS
 */
 int CL_AddVisibleEntity( cl_entity_t* ent )
 {
-	vec3_t world_mins, world_maxs;
+	vec3_t	world_mins, world_maxs;
+	int		i;
 
 	if (!ent->model)
 		return FALSE; // invalid entity was passed into this function
@@ -708,7 +826,7 @@ int CL_AddVisibleEntity( cl_entity_t* ent )
 	if (cl_numvisedicts >= MAX_VISEDICTS)
 		return FALSE; // object list is full
 
-	for (int i = 0; i < 3; ++i)
+	for (i = 0; i < 3; ++i)
 	{
 		world_mins[i] = ent->model->mins[i] + ent->origin[i];
 		world_maxs[i] = ent->model->maxs[i] + ent->origin[i];
