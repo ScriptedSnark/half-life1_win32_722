@@ -214,6 +214,9 @@ void R_InitParticles( void );
 void R_ClearParticles( void );
 void R_DrawParticles( void );
 
+
+int ScreenTransform( vec_t* point, vec_t* screen );
+
 particle_t* R_TracerParticles( vec_t* org, vec_t* vel, float life );
 
 extern qboolean r_intentities;

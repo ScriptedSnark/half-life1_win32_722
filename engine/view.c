@@ -14,8 +14,8 @@ when crossing a water boudnary.
 
 */
 
-cvar_t		lcd_x = { "lcd_x", "0" };
-cvar_t		lcd_yaw = { "lcd_yaw", "0" };
+cvar_t	lcd_x = { "lcd_x", "0" };
+cvar_t	lcd_yaw = { "lcd_yaw", "0" };
 
 cvar_t	scr_ofsx = { "scr_ofsx", "0" };
 cvar_t	scr_ofsy = { "scr_ofsy", "0" };
@@ -33,8 +33,7 @@ cvar_t	cl_bobup = { "cl_bobup", "0.5" };
 
 
 cvar_t	v_dark = { "v_dark", "0" };
-
-
+cvar_t	crosshair = { "crosshair", "0", TRUE };
 
 
 
@@ -876,9 +875,7 @@ void V_Init( void )
 	// TODO: Implement
 	
 	Cvar_RegisterVariable(&v_dark);
-
-	// TODO: Implement
-
+	Cvar_RegisterVariable(&crosshair);
 	Cvar_RegisterVariable(&scr_ofsx);
 	Cvar_RegisterVariable(&scr_ofsy);
 	Cvar_RegisterVariable(&scr_ofsz);
