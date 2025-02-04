@@ -663,6 +663,48 @@ void CL_UpdateEntity( cl_entity_t* ent, entity_state_t* state, qboolean sync )
 
 // TODO: Implement
 
+void CL_PlayerFlashlight( void )
+{
+	cl_entity_t* ent;
+
+	ent = &cl_entities[cl.playernum + 1];
+
+	if (ent->effects & (EF_BRIGHTLIGHT | EF_DIMLIGHT) && cl.worldmodel)
+	{
+		if (!cl.pLight || cl.pLight->key != 1)
+			cl.pLight = CL_AllocDlight(1);
+
+		if (ent->effects & EF_BRIGHTLIGHT)
+		{
+			cl.pLight->color.b = 250;
+			cl.pLight->color.g = 250;
+			cl.pLight->color.r = 250;
+			cl.pLight->radius = 400;
+			VectorCopy(ent->origin, cl.pLight->origin);
+			cl.pLight->origin[2] += 16;
+		}
+		else
+		{
+			VectorCopy(ent->origin, cl.pLight->origin);
+			cl.pLight->origin[2] += cl.viewheight;
+
+			// TODO: Implement
+		}
+	}
+	else
+	{
+		if (cl.pLight && cl.pLight->key == 1)
+		{
+			cl.pLight->die = cl.time;
+		}
+		cl.pLight = NULL;
+	}
+
+	// apply muzzle to our weapon too if we have muzzle effect ourselves
+	if (cl_entities[cl.viewentity].effects & EF_MUZZLEFLASH)
+		cl.viewent.effects |= EF_MUZZLEFLASH;
+}
+
 /*
 ===============
 CL_LinkPacketEntities

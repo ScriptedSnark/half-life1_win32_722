@@ -19,6 +19,7 @@ typedef struct
 
 	int			flags;			// FL_ONGROUND, FL_DUCKING, etc.
 
+	int			usehull;
 
 	// TODO: Implement
 	

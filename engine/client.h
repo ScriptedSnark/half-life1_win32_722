@@ -430,6 +430,10 @@ typedef struct
 
 	// TODO: Implement
 
+	struct dlight_s* pLight;
+
+	// TODO: Implement
+
 
 // all player information
 	player_info_t	players[MAX_CLIENTS];

@@ -765,6 +765,8 @@ void CL_TempEntPlaySound( TEMPENTITY *pTemp, float damp )
 		bouncesounds[2] = cl_sfx_sshell3;
 		fvol = 0.5f;
 		break;
+	default:
+		return;
 	}
 
 	zvel = abs(pTemp->entity.baseline.origin[2]);
