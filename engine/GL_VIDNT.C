@@ -26,6 +26,11 @@ cvar_t	vid_d3d = { "vid_d3d", "0" };
 
 viddef_t	vid;				// global video state
 
+PROC qglArrayElementEXT;
+PROC qglColorPointerEXT;
+PROC qglTexCoordPointerEXT;
+PROC qglVertexPointerEXT;
+
 //int		texture_mode = GL_NEAREST;
 //int		texture_mode = GL_NEAREST_MIPMAP_NEAREST;
 //int		texture_mode = GL_NEAREST_MIPMAP_LINEAR;
@@ -91,8 +96,15 @@ void CheckArrayExtensions( void )
 	{
 		if (strncmp(tmp, "GL_EXT_vertex_array", strlen("GL_EXT_vertex_array")) == 0)
 		{
-			// TODO: Implement this block
-
+			if (
+((qglArrayElementEXT = qwglGetProcAddress("glArrayElementEXT")) == NULL) ||
+((qglColorPointerEXT = qwglGetProcAddress("glColorPointerEXT")) == NULL) ||
+((qglTexCoordPointerEXT = qwglGetProcAddress("glTexCoordPointerEXT")) == NULL) ||
+((qglVertexPointerEXT = qwglGetProcAddress("glVertexPointerEXT")) == NULL))
+			{
+				Sys_Error("GetProcAddress for vertex extension failed");
+				return;
+			}
 			return;
 		}
 		tmp++;

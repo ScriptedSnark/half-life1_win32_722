@@ -216,6 +216,9 @@
     <ClCompile Include="..\..\engine\glide.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\engine\sv_phys.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\engine\anorm_dots.h">
@@ -453,6 +456,9 @@
       <Filter>Header Files\common</Filter>
     </ClInclude>
     <ClInclude Include="..\..\common\winsani_out.h">
+      <Filter>Header Files\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\common\r_efx.h">
       <Filter>Header Files\common</Filter>
     </ClInclude>
   </ItemGroup>

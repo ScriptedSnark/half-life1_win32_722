@@ -4,6 +4,9 @@
 #include "cl_tent.h"
 #include "pr_cmds.h"
 #include "decal.h"
+#include "r_efx.h"
+
+static int gTempEntFrame = 0;
 
 TEMPENTITY gTempEnts[MAX_TEMP_ENTITIES], * gpTempEntFree, * gpTempEntActive;
 
@@ -627,20 +630,331 @@ void CL_TempEntInit( void )
 =================
 CL_TempEntAlloc
 
-Allocate temp entity ( normal/low priority )
+Allocate temp entity
 =================
 */
 TEMPENTITY* CL_TempEntAlloc( vec_t* org, model_t* model )
 {
-	// TODO: Implement
+	TEMPENTITY* ent;
+
+	if (gpTempEntFree)
+	{
+		if (!model)
+			return NULL;
+
+		ent = gpTempEntFree;
+
+		gpTempEntFree = gpTempEntFree->next;
+
+		memset(&ent->entity, 0, sizeof(cl_entity_t));
+
+		ent->flags = 0;
+		ent->entity.colormap = vid.colormap;
+
+		// set the model
+		ent->entity.model = model;
+
+		// set the render mode and special effects
+		ent->entity.rendermode = kRenderNormal;
+		ent->entity.renderfx = kRenderFxNone;
+
+		ent->fadeSpeed = 0.5;
+
+		// when should we disappear?
+		ent->die = cl.time + 0.75;
+
+		VectorCopy(org, ent->entity.origin);
+
+		// link it with another active temp entity if any
+		ent->next = gpTempEntActive;
+
+		gpTempEntActive = ent;
+
+		return ent;
+	}
+	else
+	{
+		Con_DPrintf("Overflow %d temporary ents!", MAX_TEMP_ENTITIES);
+	}
+
 	return NULL;
 }
 
-// TODO: Implement
+/*
+=============
+CL_TempEntPlaySound
 
-void CL_TempEntUpdate( void )
+=============
+*/
+void CL_TempEntPlaySound( TEMPENTITY *pTemp, float damp )
 {
 	// TODO: Implement
+}
+
+/*
+=============
+CL_AddVisibleEntity
+
+Adds a client entity to the list of visible entities if it's within the PVS
+=============
+*/
+int CL_AddVisibleEntity( cl_entity_t* ent )
+{
+	vec3_t world_mins, world_maxs;
+
+	if (!ent->model)
+		return FALSE; // invalid entity was passed into this function
+
+	if (cl_numvisedicts >= MAX_VISEDICTS)
+		return FALSE; // object list is full
+
+	for (int i = 0; i < 3; ++i)
+	{
+		world_mins[i] = ent->model->mins[i] + ent->origin[i];
+		world_maxs[i] = ent->model->maxs[i] + ent->origin[i];
+	}
+
+	if (!PVSNode(cl.worldmodel->nodes, world_mins, world_maxs))
+		return FALSE;
+
+	ent->index = -1;
+
+	memcpy(&cl_visedicts[cl_numvisedicts], ent, sizeof(cl_entity_t));
+
+	cl_numvisedicts++;
+
+	return TRUE;
+}
+
+/*
+=============
+CL_UpdateTEnts
+
+Simulation and cleanup of temporary entities
+=============
+*/
+extern cvar_t sv_gravity;
+extern qboolean SV_RecursiveHullCheck(hull_t *hull, int num, float p1f, float p2f, vec3_t p1, vec3_t p2, trace_t *trace);
+void CL_TempEntUpdate( void )
+{
+	double		frametime;
+	TEMPENTITY* pTemp, *pprev, *pnext;
+	float		freq, gravity, gravitySlow, life, fastFreq;
+	int			i;
+
+	// Nothing to simulate
+	if (!gpTempEntActive || !cl.worldmodel)
+		return;
+
+	// !!!BUGBUG	-- This needs to be time based
+	gTempEntFrame = (gTempEntFrame + 1) & 31;
+
+	frametime = cl.time - cl.oldtime;
+
+	pTemp = gpTempEntActive;
+
+	// !!! Don't simulate while paused....  This is sort of a hack, revisit.
+	if (frametime <= 0)
+	{
+		while (pTemp)
+		{
+			CL_AddVisibleEntity(&pTemp->entity);
+			pTemp = pTemp->next;
+		}
+
+		return;
+	}
+
+	pprev = NULL;
+	freq = cl.time * 0.01;
+	fastFreq = cl.time * 5.5;
+	gravity = -frametime * sv_gravity.value;
+	gravitySlow = gravity * 0.5;
+
+	while (pTemp)
+	{
+		int active;
+
+		active = 1;
+
+		life = pTemp->die - cl.time;
+		pnext = pTemp->next;
+
+		if (life < 0)
+		{
+			if (pTemp->flags & FTENT_FADEOUT)
+			{
+				if (pTemp->entity.rendermode == kRenderNormal)
+					pTemp->entity.rendermode = kRenderTransTexture;
+				pTemp->entity.renderamt = pTemp->entity.baseline.renderamt * (1 + life * pTemp->fadeSpeed);
+				if (pTemp->entity.renderamt <= 0)
+					active = 0;
+
+			}
+			else
+				active = 0;
+		}
+
+		if (!active)		// Kill it
+		{
+			pTemp->next = gpTempEntFree;
+			gpTempEntFree = pTemp;
+			if (!pprev)	// Deleting at head of list
+				gpTempEntActive = pnext;
+			else
+				pprev->next = pnext;
+		}
+		else
+		{
+			pprev = pTemp;
+
+			VectorCopy(pTemp->entity.origin, pTemp->entity.prevorigin);
+
+			if (pTemp->flags & FTENT_SINEWAVE)
+			{
+				pTemp->x += pTemp->entity.baseline.origin[0] * frametime;
+				pTemp->y += pTemp->entity.baseline.origin[1] * frametime;
+
+				pTemp->entity.origin[0] = pTemp->x + sin(pTemp->entity.baseline.origin[2] + cl.time * pTemp->entity.prevframe) * (10 * pTemp->entity.scale);
+				pTemp->entity.origin[1] = pTemp->y + sin(pTemp->entity.baseline.origin[2] + fastFreq + 0.7) * (8 * pTemp->entity.scale);
+				pTemp->entity.origin[2] += pTemp->entity.baseline.origin[2] * frametime;
+			}
+			else if (pTemp->flags & FTENT_SPIRAL)
+			{
+				float s, c;
+				s = sin(pTemp->entity.baseline.origin[2] + fastFreq);
+				c = cos(pTemp->entity.baseline.origin[2] + fastFreq);
+
+				pTemp->entity.origin[0] += pTemp->entity.baseline.origin[0] * frametime + 8 * sin(cl.time * 20 + (int)pTemp);
+				pTemp->entity.origin[1] += pTemp->entity.baseline.origin[1] * frametime + 4 * sin(cl.time * 30 + (int)pTemp);
+				pTemp->entity.origin[2] += pTemp->entity.baseline.origin[2] * frametime;
+			}
+			else
+			{
+				for (i = 0; i < 3; i++)
+					pTemp->entity.origin[i] += pTemp->entity.baseline.origin[i] * frametime;
+			}
+
+			if (pTemp->flags & FTENT_SPRANIMATE)
+			{
+				pTemp->entity.frame += frametime * pTemp->entity.framerate;
+				if (pTemp->entity.frame >= pTemp->frameMax)
+				{
+					pTemp->entity.frame = pTemp->entity.frame - (int)(pTemp->entity.frame);
+
+					// this animating sprite isn't set to loop, so destroy it.
+					pTemp->die = cl.time;
+				}
+			}
+			else if (pTemp->flags & FTENT_SPRCYCLE)
+			{
+				pTemp->entity.frame += frametime * 10;
+				if (pTemp->entity.frame >= pTemp->frameMax)
+				{
+					pTemp->entity.frame = pTemp->entity.frame - (int)(pTemp->entity.frame);
+				}
+			}
+
+// Experiment
+#if 0
+			if (pTemp->flags & FTENT_SCALE)
+				pTemp->entity.scale += 20.0 * (frametime / pTemp->entity.scale);
+#endif
+
+			if (pTemp->flags & FTENT_ROTATE)
+			{
+				pTemp->entity.angles[0] += pTemp->entity.baseline.angles[0] * frametime;
+				pTemp->entity.angles[1] += pTemp->entity.baseline.angles[1] * frametime;
+				pTemp->entity.angles[2] += pTemp->entity.baseline.angles[2] * frametime;
+			}
+
+			if (pTemp->flags & FTENT_COLLIDEWORLD)
+			{
+				trace_t t;
+				t.fraction = 1.0;
+				t.allsolid = TRUE;
+
+				SV_RecursiveHullCheck(cl.worldmodel->hulls, cl.worldmodel->hulls[0].firstclipnode,
+				  0.0,
+				  1.0,
+				  pTemp->entity.prevorigin,
+				  pTemp->entity.origin, &t);
+
+				if (t.fraction != 1.0)
+				{
+					float damp, proj;
+
+					VectorMA(pTemp->entity.prevorigin, t.fraction * frametime, pTemp->entity.baseline.origin, pTemp->entity.origin);
+					damp = 1;
+					if (pTemp->flags & (FTENT_GRAVITY | FTENT_SLOWGRAVITY))
+					{
+						damp = 0.5;
+						if (t.plane.normal[2] > 0.9) //Hit floor?
+						{
+							if (pTemp->entity.baseline.origin[2] <= 0 && pTemp->entity.baseline.origin[2] >= gravity*3)
+							{
+								damp = 0;
+								pTemp->flags &= ~(FTENT_ROTATE | FTENT_GRAVITY | FTENT_SLOWGRAVITY | FTENT_COLLIDEWORLD | FTENT_SMOKETRAIL);
+								pTemp->entity.angles[0] = 0;
+								pTemp->entity.angles[2] = 0;
+							}
+						}
+					}
+					if (pTemp->hitSound)
+						CL_TempEntPlaySound(pTemp, damp);
+					// Reflect velocity
+					if (damp != 0)
+					{
+						proj = DotProduct(pTemp->entity.baseline.origin, t.plane.normal);
+						VectorMA(pTemp->entity.baseline.origin, -proj * 2, t.plane.normal, pTemp->entity.baseline.origin);
+						// Reflect rotation (fake)
+
+						pTemp->entity.angles[1] = -pTemp->entity.angles[1];
+					}
+
+					if (damp != 1)
+					{
+
+						VectorScale(pTemp->entity.baseline.origin, damp, pTemp->entity.baseline.origin);
+						VectorScale(pTemp->entity.angles, 0.9, pTemp->entity.angles);
+					}
+				}
+			}
+
+			if (pTemp->flags & FTENT_FLICKER && pTemp->entity.effects == gTempEntFrame)
+			{
+				dlight_t* dl = CL_AllocDlight(0);
+				dl->origin[0] = pTemp->entity.origin[0];
+				dl->origin[1] = pTemp->entity.origin[1];
+				dl->origin[2] = pTemp->entity.origin[2];
+				dl->radius = 60.0;
+				dl->color.r = 255;
+				dl->color.g = 120;
+				dl->color.b = 0;
+				// die on next frame
+				dl->die = cl.time + 0.01;
+			}
+
+			if (pTemp->flags & FTENT_SMOKETRAIL)
+			{
+				R_RocketTrail(pTemp->entity.prevorigin, pTemp->entity.origin, 1);
+			}
+
+			if (pTemp->flags & FTENT_GRAVITY)
+				pTemp->entity.baseline.origin[2] += gravity;
+			else if (pTemp->flags & FTENT_SLOWGRAVITY)
+				pTemp->entity.baseline.origin[2] += gravitySlow;
+
+			// Cull to PVS (not frustum cull, just PVS)
+			if (!CL_AddVisibleEntity(&pTemp->entity))
+			{
+				pTemp->die = cl.time; // If we can't draw it this frame, just dump it.
+				pTemp->flags &= ~FTENT_FADEOUT; // Don't fade out, just die
+			}
+		}
+
+		pTemp = pnext;
+	}
 }
 
 /*

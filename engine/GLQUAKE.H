@@ -61,6 +61,13 @@ void DrawWedge( float centerx, float centery, float angle1, float angle2, float 
 
 extern	int glx, gly, glwidth, glheight;
 
+#ifdef _WIN32
+extern	PROC qglArrayElementEXT;
+extern	PROC qglColorPointerEXT;
+extern	PROC qglTexturePointerEXT;
+extern	PROC qglVertexPointerEXT;
+#endif
+
 #define BACKFACE_EPSILON	0.01
 
 #define TEX_TYPE_NONE				0

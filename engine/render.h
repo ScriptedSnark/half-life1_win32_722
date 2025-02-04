@@ -219,6 +219,8 @@ int ScreenTransform( vec_t* point, vec_t* screen );
 
 particle_t* R_TracerParticles( vec_t* org, vec_t* vel, float life );
 
+void R_RocketTrail( vec_t* start, vec_t* end, int type );
+
 extern qboolean r_intentities;
 
 //

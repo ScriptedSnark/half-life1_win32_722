@@ -68,6 +68,7 @@
     <ClCompile Include="..\..\engine\SND_MIX.C" />
     <ClCompile Include="..\..\engine\SND_WIN.C" />
     <ClCompile Include="..\..\engine\sv_main.c" />
+    <ClCompile Include="..\..\engine\sv_phys.c" />
     <ClCompile Include="..\..\engine\sv_send.c" />
     <ClCompile Include="..\..\engine\sv_upld.c" />
     <ClCompile Include="..\..\engine\sys_win.c" />
@@ -85,6 +86,7 @@
     <ClInclude Include="..\..\common\exefuncs.h" />
     <ClInclude Include="..\..\common\platform.h" />
     <ClInclude Include="..\..\common\qfont.h" />
+    <ClInclude Include="..\..\common\r_efx.h" />
     <ClInclude Include="..\..\common\winsani_in.h" />
     <ClInclude Include="..\..\common\winsani_out.h" />
     <ClInclude Include="..\..\engine\a3d.h" />

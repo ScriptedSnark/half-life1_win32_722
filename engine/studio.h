@@ -12,6 +12,7 @@ Studio models are position independent, so the cache manager can move them.
 ==============================================================================
 */
 
+#define STUDIO_VERSION		10
 
 #define MAXSTUDIOTRIANGLES	20000	// TODO: tune this
 #define MAXSTUDIOVERTS		2048	// TODO: tune this
