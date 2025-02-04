@@ -148,12 +148,47 @@ void R_DrawParticles( void )
 	// TODO: Implement
 }
 
-
 // TODO: Implement
 
 void R_RocketTrail( vec_t *start, vec_t *end, int type )
 {
 	// TODO: Implement
+}
+
+// TODO: Implement
+
+/*
+===============
+ScreenTransform
+
+Converts a world coordinate to a screen coordinate
+Returns true if it's Z clipped, false otherwise
+===============
+*/
+int ScreenTransform( vec_t* point, vec_t* screen )
+{
+	float w;
+
+#if defined ( GLQUAKE )
+	screen[0] = gWorldToScreen[0] * point[0] + gWorldToScreen[4] * point[1] + gWorldToScreen[8] * point[2] + gWorldToScreen[12];
+	screen[1] = gWorldToScreen[1] * point[0] + gWorldToScreen[5] * point[1] + gWorldToScreen[9] * point[2] + gWorldToScreen[13];
+	w = gWorldToScreen[3] * point[0] + gWorldToScreen[7] * point[1] + gWorldToScreen[11] * point[2] + gWorldToScreen[15];
+#else
+	vec3_t out;
+	VectorSubtract(point, r_origin, out);
+	TransformVector(out, screen);
+
+	w = screen[2];
+#endif
+
+	if (w != 0.0)
+	{
+		w = 1.0 / w;
+		screen[0] *= w;
+		screen[1] *= w;
+	}
+
+	return w <= 0.0;
 }
 
 // TODO: Implement
