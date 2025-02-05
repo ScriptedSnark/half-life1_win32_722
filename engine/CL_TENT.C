@@ -284,7 +284,29 @@ TEMPENTITY* R_DefaultSprite( float* pos, int spriteIndex, float framerate )
 	return pTemp;
 }
 
-// TODO: Implement
+/*
+===============
+R_Sprite_Smoke
+
+Create sprite smoke
+===============
+*/
+void R_Sprite_Smoke( TEMPENTITY* pTemp, float scale )
+{
+	if (!pTemp)
+		return;
+
+	pTemp->entity.rendermode = kRenderTransAlpha;	
+	pTemp->entity.renderfx = kRenderFxNone;
+	pTemp->entity.renderamt = 255;
+	pTemp->entity.baseline.origin[2] = 30;
+	int iColor = RandomLong(20, 35);
+	pTemp->entity.rendercolor.r = iColor;
+	pTemp->entity.rendercolor.g = iColor;
+	pTemp->entity.rendercolor.b = iColor;
+	pTemp->entity.origin[2] += 20;
+	pTemp->entity.scale = scale;
+}
 
 /*
 ===============
@@ -298,11 +320,11 @@ void R_Sprite_Explode( TEMPENTITY* pTemp, float scale )
 	if (!pTemp)
 		return;
 
+	pTemp->entity.rendermode = kRenderTransAdd;
 	pTemp->entity.renderfx = kRenderFxNone;
 	pTemp->entity.rendercolor.r = 0;
 	pTemp->entity.rendercolor.g = 0;
 	pTemp->entity.rendercolor.b = 0;
-	pTemp->entity.rendermode = kRenderTransAdd;
 	pTemp->entity.scale = scale;
 	pTemp->entity.origin[2] += 10;
 	pTemp->entity.renderamt = 180;
@@ -476,7 +498,7 @@ void CL_ParseTEnt( void )
 		modelindex = MSG_ReadShort();
 		scale = MSG_ReadByte() * 0.1;
 		frameRate = MSG_ReadByte();
-		// TODO: Implement
+		R_Sprite_Smoke(R_DefaultSprite(pos, modelindex, frameRate), scale);
 		break;
 
 	case TE_TRACER:
