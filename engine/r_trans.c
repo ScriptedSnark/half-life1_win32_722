@@ -55,7 +55,11 @@ void R_DestroyObjects( void )
 	maxTransObjs = 0;
 }
 
-// TODO: Implement
+float GlowBlend( cl_entity_t* pEntity )
+{
+	// TODO: Implement
+    return 1.0;
+}
 
 /*
 =================
@@ -140,6 +144,28 @@ void R_DrawTEntitiesOnList( void )
 		{
 		case mod_brush:
 			R_DrawBrushModel(currententity);
+			break;
+
+		case mod_sprite:
+			if (currententity->body)
+			{
+				// TODO: Implement
+			}
+			else
+			{
+				VectorCopy(currententity->origin, r_entorigin);
+			}
+
+			// Glow sprite
+			if (currententity->rendermode == kRenderGlow)
+			{
+				r_blend *= GlowBlend(currententity);
+			}
+
+			if (r_blend != 0.0)
+			{
+				R_DrawSpriteModel(currententity);
+			}
 			break;
 
 		// TODO: Implement

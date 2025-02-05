@@ -241,6 +241,138 @@ void R_RotateForEntity( cl_entity_t* e )
 	qglRotatef(angles[2], 1, 0, 0);
 }
 
+/*
+=============================================================
+
+  SPRITE MODELS
+
+=============================================================
+*/
+
+/*
+=================
+R_DrawSpriteModel
+
+=================
+*/
+void R_DrawSpriteModel( cl_entity_t* e )
+{
+	vec3_t	point, forward, right, up;
+	mspriteframe_t* frame;
+	float			scale;
+	msprite_t* psprite;
+	colorVec		color;
+
+	psprite = (msprite_t*)e->model->cache.data;
+
+	// don't even bother culling, because it's just a single
+	// polygon without a surface cache
+	frame = R_GetSpriteFrame(psprite, e->frame);
+	if (e->scale > 0)
+		scale = e->scale;
+	else
+		scale = 1;
+
+	if (e->rendermode == kRenderNormal)
+		r_blend = 1;
+
+	R_SpriteColor(&color, e, (int)(r_blend * 255.0));
+
+	if (gl_spriteblend.value || e->rendermode != kRenderNormal)
+	{
+		switch (e->rendermode)
+		{
+		case kRenderTransColor:
+			qglBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+			qglTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_ALPHA);
+			qglColor4ub(color.r, color.g, color.b, (int)(r_blend * 255.0));
+			break;
+		case kRenderTransAdd:
+			qglTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+			qglBlendFunc(GL_ONE, GL_ONE);
+			qglColor4ub(color.r, color.g, color.b, 255);
+			qglDepthMask(GL_FALSE);
+			break;
+		case kRenderGlow:
+			qglTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+			qglBlendFunc(GL_ONE, GL_ONE);
+			qglColor4ub(color.r, color.g, color.b, 255);
+			qglDisable(GL_DEPTH_TEST);
+			qglDepthMask(GL_FALSE);
+			break;
+		case kRenderTransAlpha:
+			qglTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+			qglBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+			qglColor4ub(color.r, color.g, color.b, (int)(r_blend * 255.0));
+			qglDepthMask(GL_FALSE);
+			break;
+		default:
+			qglTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+			qglBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+			qglColor4ub(color.r, color.g, color.b, (int)(r_blend * 255.0));
+			break;
+		}
+		qglEnable(GL_BLEND);
+	}
+	else
+	{
+		qglTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+		qglColor4ub(color.r, color.g, color.b, 255);
+		qglDisable(GL_BLEND);
+	}
+
+	// Get orthonormal bases
+	R_GetSpriteAxes(e, psprite->type, forward, right, up);
+
+	GL_DisableMultitexture();
+
+	GL_Bind(frame->gl_texturenum);
+
+	qglEnable(GL_ALPHA_TEST);
+	qglBegin(GL_QUADS);
+
+	qglTexCoord2f(0, 1);
+	VectorMA(r_entorigin, frame->down * scale, up, point);
+	VectorMA(point, frame->left * scale, right, point);
+	qglVertex3fv(point);
+
+	qglTexCoord2f(0, 0);
+	VectorMA(r_entorigin, frame->up * scale, up, point);
+	VectorMA(point, frame->left * scale, right, point);
+	qglVertex3fv(point);
+
+	qglTexCoord2f(1, 0);
+	VectorMA(r_entorigin, frame->up * scale, up, point);
+	VectorMA(point, frame->right * scale, right, point);
+	qglVertex3fv(point);
+
+	qglTexCoord2f(1, 1);
+	VectorMA(r_entorigin, frame->down * scale, up, point);
+	VectorMA(point, frame->right * scale, right, point);
+	qglVertex3fv(point);
+
+	qglEnd();
+
+	qglDisable(GL_ALPHA_TEST);
+
+	qglDepthMask(GL_TRUE);
+
+	if (gl_spriteblend.value || e->rendermode != kRenderNormal)
+	{
+		qglTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+		qglDisable(GL_BLEND);
+		qglEnable(GL_DEPTH_TEST);
+	}
+}
+
+/*
+=============================================================
+
+  ALIAS MODELS
+
+=============================================================
+*/
+
 // TODO: Implement
 
 //==================================================================================
@@ -289,7 +421,32 @@ void R_DrawEntitiesOnList( void )
 
 	r_blend = 1.0;
 
-	// TODO: Implement
+	for (i = 0; i < cl_numvisedicts; i++)
+	{
+		currententity = &cl_visedicts[i];
+
+		if (currententity->rendermode != kRenderNormal)
+			continue;
+
+		switch (currententity->model->type)
+		{
+			case mod_sprite:
+				if (currententity->body)
+				{
+					// TODO: Implement
+				}
+				else
+				{
+					VectorCopy(currententity->origin, r_entorigin);
+				}
+
+				R_DrawSpriteModel(currententity);
+				break;
+
+			default:
+				break;
+		}
+	}
 }
 
 /*

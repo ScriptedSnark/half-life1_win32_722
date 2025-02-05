@@ -233,8 +233,87 @@ void R_TracerEffect( vec_t* start, vec_t* end )
 }
 
 
+//============================================================================================== <- FINISH LINE
+
+
 // TODO: Implement
 
+/*
+=================
+R_DefaultSprite
+
+Create default sprite TE
+=================
+*/
+TEMPENTITY* R_DefaultSprite( float* pos, int spriteIndex, float framerate )
+{
+	TEMPENTITY* pTemp;
+	int				frameCount;
+	model_t* pSprite;
+
+	// don't spawn while paused
+	if (cl.time == cl.oldtime)
+		return NULL;
+
+	pSprite = cl.model_precache[spriteIndex];
+
+	if (!spriteIndex || !pSprite || pSprite->type != mod_sprite)
+	{
+		Con_DPrintf("No Sprite %d!\n", spriteIndex);
+		return NULL;
+	}
+
+	frameCount = ModelFrameCount(cl.model_precache[spriteIndex]);
+
+	pTemp = CL_TempEntAlloc(pos, pSprite);
+	if (!pTemp)
+		return NULL;
+
+	pTemp->entity.scale = 1.0;
+	pTemp->frameMax = frameCount;
+	pTemp->flags |= FTENT_SPRANIMATE;
+	if (framerate == 0)
+		framerate = 10;
+
+	VectorCopy(pos, pTemp->entity.origin);
+
+	pTemp->entity.framerate = framerate;
+	pTemp->entity.frame = 0;
+	pTemp->die = cl.time + (float)frameCount / framerate;
+	
+	return pTemp;
+}
+
+// TODO: Implement
+
+/*
+===============
+R_Sprite_Explode
+
+Create explosion sprite
+===============
+*/
+void R_Sprite_Explode( TEMPENTITY* pTemp, float scale )
+{
+	if (!pTemp)
+		return;
+
+	pTemp->entity.renderfx = kRenderFxNone;
+	pTemp->entity.rendercolor.r = 0;
+	pTemp->entity.rendercolor.g = 0;
+	pTemp->entity.rendercolor.b = 0;
+	pTemp->entity.rendermode = kRenderTransAdd;
+	pTemp->entity.scale = scale;
+	pTemp->entity.origin[2] += 10;
+	pTemp->entity.renderamt = 180;
+
+	pTemp->entity.baseline.origin[2] = 8.0;
+
+	if (RandomLong(0, 1))
+	{
+		pTemp->entity.angles[ROLL] = 180.0;
+	}
+}
 
 /*
 ===============
@@ -346,6 +425,9 @@ void CL_ParseTEnt( void )
 
 		if (scale != 0)
 		{
+			// sprite
+			R_Sprite_Explode(R_DefaultSprite(pos, modelindex, frameRate), scale);
+
 			// TODO: Implement
 
 			// big flash
@@ -1131,4 +1213,153 @@ mspriteframe_t* R_GetSpriteFrame( msprite_t* pSprite, int frame )
 	}
 
 	return pspriteframe;
+}
+
+/*
+=================
+R_GetSpriteAxes
+
+Determine sprite orientation axes
+=================
+*/
+void R_GetSpriteAxes( cl_entity_t* pEntity, int type, vec_t* forward, vec_t* right, vec_t* up )
+{
+	int i;
+	float dot;
+	float angle;
+	float sr, cr;
+	vec3_t tvec;
+
+	// Automatically roll parallel sprites if requested
+	if (pEntity->angles[2] != 0 && type == SPR_VP_PARALLEL)
+	{
+		type = SPR_VP_PARALLEL_ORIENTED;
+	}
+
+	switch (type)
+	{
+		case SPR_FACING_UPRIGHT:
+		{
+			// generate the sprite's axes, with r_vup straight up in worldspace.
+			// This will not work if the view direction is very close to straight up or
+			// down, because the cross product will be between two nearly parallel
+			// vectors and starts to approach an undefined state, so we don't draw if
+			// the two vectors are less than 1 degree apart
+			tvec[0] = -modelorg[0];
+			tvec[1] = -modelorg[1];
+			tvec[2] = -modelorg[2];
+			VectorNormalize(tvec);
+			dot = tvec[2];
+			if (dot > 0.999848 || dot < -0.999848)	// cos(1 degree) = 0.999848
+				return;
+			up[0] = 0;
+			up[1] = 0;
+			up[2] = 1;
+			right[0] = tvec[1];
+			right[1] = -tvec[0];
+			right[2] = 0;
+			VectorNormalize(right);
+			forward[0] = -right[1];
+			forward[1] = right[0];
+			forward[2] = 0;
+		}
+		break;
+
+		case SPR_VP_PARALLEL:
+		{
+			// generate the sprite's axes, completely parallel to the viewplane. There
+			// are no problem situations, because the sprite is always in the same
+			// position relative to the viewer
+			for (i = 0; i < 3; i++)
+			{
+				up[i] = vup[i];
+				right[i] = vright[i];
+				forward[i] = vpn[i];
+			}
+		}
+		break;
+
+		case SPR_VP_PARALLEL_UPRIGHT:
+		{
+			// generate the sprite's axes, with vup straight up in worldspace.
+			// This will not work if the view direction is very close to straight up or
+			// down, because the cross product will be between two nearly parallel
+			// vectors and starts to approach an undefined state, so we don't draw if
+			// the two vectors are less than 1 degree apart
+			dot = vpn[2];
+			if (dot > 0.999848 || dot < -0.999848)
+				return;
+			up[0] = 0;
+			up[1] = 0;
+			up[2] = 1;
+			right[0] = vpn[1];
+			right[1] = -vpn[0];
+			right[2] = 0;
+			VectorNormalize(right);
+			forward[0] = -right[1];
+			forward[1] = right[0];
+			forward[2] = 0;
+		}
+		break;
+
+		case SPR_ORIENTED:
+		{
+			// generate the sprite's axes, according to the sprite's world orientation
+			AngleVectors(pEntity->angles, forward, right, up);
+		}
+		break;
+
+		case SPR_VP_PARALLEL_ORIENTED:
+		{
+			// generate the sprite's axes, parallel to the viewplane, but rotated in
+			// that plane around the center according to the sprite entity's roll
+			// angle. So vpn stays the same, but vright and vup rotate
+			angle = currententity->angles[ROLL] * (M_PI * 2 / 360.0);
+			sr = sin(angle);
+			cr = cos(angle);
+
+			for (i = 0; i < 3; i++)
+			{
+				forward[i] = vpn[i];
+				right[i] = vright[i] * cr + vup[i] * sr;
+				up[i] = vright[i] * -sr + vup[i] * cr;
+			}
+		}
+		break;
+
+		default:
+			Sys_Error("R_DrawSprite: Bad sprite type %d", type);
+			break;
+	}
+}
+
+/*
+=================
+R_SpriteColor
+
+=================
+*/
+void R_SpriteColor( colorVec* pColor, cl_entity_t* pEntity, int alpha )
+{
+	int a;
+
+	if ((pEntity->rendermode == kRenderTransAdd) || (pEntity->rendermode == kRenderGlow))
+	{
+		a = alpha;
+	}
+	else
+	{
+		a = 256;
+	}
+
+	if ((pEntity->rendercolor.r == 0) && (pEntity->rendercolor.g == 0) && (pEntity->rendercolor.b == 0))
+	{
+		pColor->r = pColor->g = pColor->b = (255 * a) / 256;
+	}
+	else
+	{
+		pColor->r = (pEntity->rendercolor.r * a) / 256;
+		pColor->g = (pEntity->rendercolor.g * a) / 256;
+		pColor->b = (pEntity->rendercolor.b * a) / 256;
+	}
 }
