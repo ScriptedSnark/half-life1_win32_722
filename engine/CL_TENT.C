@@ -346,7 +346,19 @@ Create a wallpuff
 */
 void R_Sprite_WallPuff( TEMPENTITY* pTemp, float scale )
 {
-	// TODO: Implement
+	if (!pTemp)
+		return;
+
+	pTemp->entity.rendermode = kRenderTransAlpha;
+	pTemp->entity.renderamt = 255;
+	pTemp->entity.rendercolor.r = 0;
+	pTemp->entity.rendercolor.g = 0;
+	pTemp->entity.rendercolor.b = 0;
+	pTemp->entity.renderfx = kRenderFxNone;
+	pTemp->entity.scale = scale;
+	pTemp->entity.frame = 0;
+	pTemp->entity.angles[ROLL] = RandomLong(0, 359);
+	pTemp->die = cl.time + 0.01;
 }
 
 
