@@ -612,6 +612,61 @@ void R_BreakModel( float* pos, float* size, float* dir, float random, float life
 	}
 }
 
+/*
+====================
+R_TempSprite
+
+Create sprite TE
+====================
+*/
+TEMPENTITY* R_TempSprite( float* pos, float* dir, float scale, int modelIndex, int rendermode, int renderfx, float a, float life, int flags )
+{
+	TEMPENTITY* pTemp;
+	model_t* model;
+	int					frameCount;
+
+	if (!modelIndex)
+		return NULL;
+
+	model = cl.model_precache[modelIndex];
+	if (!model)
+	{
+		Con_Printf("No model %d!\n", modelIndex);
+		return NULL;
+	}
+
+	frameCount = ModelFrameCount(model);
+
+	pTemp = CL_TempEntAlloc(pos, model);
+	if (!pTemp)
+		return NULL;
+	
+	pTemp->frameMax = frameCount;
+	pTemp->entity.framerate = 10;
+	pTemp->entity.rendermode = rendermode;
+	pTemp->entity.renderfx = renderfx;
+	pTemp->entity.scale = scale;
+	pTemp->entity.baseline.renderamt = a * 255;
+	pTemp->entity.rendercolor.r = 255;
+	pTemp->entity.rendercolor.g = 255;
+	pTemp->entity.rendercolor.b = 255;
+	pTemp->entity.renderamt = a * 255;
+
+	pTemp->flags |= flags;
+
+	VectorCopy(dir, pTemp->entity.baseline.origin);
+	VectorCopy(pos, pTemp->entity.origin);
+	if (life)
+		pTemp->die = cl.time + life;
+	else
+		pTemp->die = cl.time + (frameCount * 0.1) + 1;
+
+	pTemp->entity.frame = 0;
+	return pTemp;
+}
+
+
+
 
 
 
@@ -1006,6 +1061,16 @@ void CL_ParseTEnt( void )
 		R_Sprite_Trail(type, pos, endpos, modelindex, count, life, scale, amplitude, 255, flSpeed);
 		break;
 	}
+
+	case TE_SPRITE:
+		pos[0] = MSG_ReadCoord();
+		pos[1] = MSG_ReadCoord();
+		pos[2] = MSG_ReadCoord();
+		modelindex = MSG_ReadShort();
+		scale = MSG_ReadByte() * 0.1;
+		a = MSG_ReadByte() / 255.0;
+		R_TempSprite(pos, vec3_origin, scale, modelindex, kRenderTransAdd, kRenderFxNone, a, 0.0, FTENT_SPRANIMATE);
+		break;
 
 		// TODO: Implement
 
