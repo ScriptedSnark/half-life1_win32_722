@@ -5,6 +5,7 @@
 
 
 int	gHostSpawnCount = 0;
+int	current_skill;
 qboolean noclip_anglehack;
 
 

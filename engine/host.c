@@ -495,8 +495,6 @@ cvar_t	sk_player_leg3 = { "sk_player_leg3","1" };
 cvar_t	developer = { "developer", "0" };
 
 
-
-
 void Profile_Init( void );
 
 /*
@@ -512,7 +510,25 @@ int COM_EntsForPlayerSlots( int nPlayers )
 	return 15 * (nPlayers - 1) + 800;
 }
 
-// TODO: Implement
+/*
+================
+Host_DeallocateDynamicData
+================
+*/
+void Host_DeallocateDynamicData( void )
+{
+	// TODO: Implement
+}
+
+/*
+================
+Host_ReallocateDynamicData
+================
+*/
+void Host_ReallocateDynamicData( void )
+{
+	// TODO: Implement
+}
 
 /*
 ================
