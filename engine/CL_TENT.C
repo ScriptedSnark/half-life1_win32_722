@@ -847,6 +847,70 @@ void CL_ParseTEnt( void )
 
 		// TODO: Implement
 		
+	case TE_PLAYERDECAL:
+	{
+		static int decalTextureIndex;
+		int playernum;
+		customization_t* pCust = NULL;
+		texture_t* pTexture = NULL;
+
+		flags = (type == TE_BSPDECAL) ? FDECAL_PERMANENT : 0;
+
+		playernum = MSG_ReadByte() - 1;
+		if (playernum < MAX_CLIENTS)
+			pCust = cl.players[playernum].customdata.pNext;
+
+		pos[0] = MSG_ReadCoord();
+		pos[1] = MSG_ReadCoord();
+		pos[2] = MSG_ReadCoord();
+
+		entnumber = MSG_ReadShort();
+		decalTextureIndex = MSG_ReadByte();
+
+		if (entnumber && type == TE_BSPDECAL)
+		{
+			modelindex = MSG_ReadShort();
+		}
+		else
+		{
+			modelindex = 0;
+		}
+
+		if (entnumber >= cl.max_edicts)
+			Sys_Error("Decal: entity = %i", entnumber);
+
+		if (pCust && pCust->pBuffer)
+		{
+			cachewad_t* pwad;
+
+			pwad = (cachewad_t*)pCust->pInfo;
+			if (pwad)
+			{
+				if ((pCust->resource.ucFlags & RES_CUSTOM) && pCust->resource.type == t_decal && pCust->bTranslated)
+				{
+					if (decalTextureIndex > pwad->lumpCount - 1)
+						decalTextureIndex = pwad->lumpCount - 1;
+
+					pCust->nUserData1 = decalTextureIndex;
+					pTexture = (texture_t*)Draw_CustomCacheGet(pwad, pCust->pBuffer, decalTextureIndex);
+				}
+			}
+		}
+
+		if (r_decals.value)
+		{
+			if (pCust && pTexture)
+			{
+				R_CustomDecalShoot(pTexture, playernum, entnumber, modelindex, pos, flags);
+			}
+			else
+			{
+				R_DecalShoot(Draw_DecalIndex(decalTextureIndex), entnumber, modelindex, pos, flags);
+			}
+		}
+		break;
+	}
+
 	case TE_BUBBLES:
 	{
 		float height;
