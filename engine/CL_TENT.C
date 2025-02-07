@@ -232,6 +232,74 @@ void R_TracerEffect( vec_t* start, vec_t* end )
 	R_TracerParticles(start, vel, len / tracerSpeed.value);
 }
 
+/*
+===============
+R_FizzEffect
+
+Create a fizz effect
+===============
+*/
+void R_FizzEffect( cl_entity_t* pent, int modelIndex, int density )
+{
+	TEMPENTITY* pTemp;
+	model_t* model;
+	int				i, width, depth, count, frameCount;
+	float			maxHeight, speed, xspeed, yspeed;
+	vec3_t			origin;
+
+	if (!pent->model || !modelIndex)
+		return;
+
+	model = cl.model_precache[modelIndex];
+	if (!model)
+		return;
+
+	count = density + 1;
+
+	maxHeight = pent->model->maxs[2] - pent->model->mins[2];
+	width = pent->model->maxs[0] - pent->model->mins[0];
+	depth = pent->model->maxs[1] - pent->model->mins[1];
+	speed = (float)pent->rendercolor.r * 256.0 + (float)pent->rendercolor.g;
+	if (pent->rendercolor.b)
+		speed = -speed;
+
+	xspeed = cos(pent->angles[YAW] * M_PI / 180) * speed;
+	yspeed = sin(pent->angles[YAW] * M_PI / 180) * speed;
+
+	frameCount = ModelFrameCount(model);
+
+	for (i = 0; i < count; i++)
+	{
+		origin[0] = pent->model->mins[0] + RandomLong(0, width - 1);
+		origin[1] = pent->model->mins[1] + RandomLong(0, depth - 1);
+		origin[2] = pent->model->mins[2];
+		pTemp = CL_TempEntAlloc(origin, model);
+		if (!pTemp)
+			return;
+
+		pTemp->flags |= FTENT_SINEWAVE;
+
+		pTemp->x = origin[0];
+		pTemp->y = origin[1];
+
+		float zspeed = RandomLong(80, 140);
+		pTemp->entity.baseline.origin[0] = xspeed;
+		pTemp->entity.baseline.origin[1] = yspeed;
+		pTemp->entity.baseline.origin[2] = zspeed;
+		pTemp->die = cl.time + (maxHeight / zspeed) - 0.1;
+		pTemp->entity.frame = RandomLong(0, frameCount - 1);
+		// Set sprite scale
+		pTemp->entity.scale = 1.0 / RandomFloat(2, 5);
+		pTemp->entity.rendermode = kRenderTransAlpha;
+		pTemp->entity.renderamt = 255;
+	}
+}
+
+
+
+
+
+
 
 //============================================================================================== <- FINISH LINE
 
@@ -610,6 +678,20 @@ void CL_ParseTEnt( void )
 		break;
 
 		// TODO: Implement
+
+	case TE_FIZZ:
+	{
+		int density;
+
+		entnumber = MSG_ReadShort();
+		if (entnumber >= cl.max_edicts)
+			Sys_Error("Bubble: entity = %i", entnumber);
+
+		modelindex = MSG_ReadShort();
+		density = MSG_ReadByte();
+		R_FizzEffect(&cl_entities[entnumber], modelindex, density);
+		break;
+	}
 
 	case TE_MODEL:
 		pos[0] = MSG_ReadCoord();
