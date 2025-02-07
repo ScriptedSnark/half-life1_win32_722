@@ -348,6 +348,61 @@ void R_Bubbles( vec_t* mins, vec_t* maxs, float height, int modelIndex, int coun
 	}
 }
 
+/*
+===============
+R_BubbleTrail
+
+Create bubble trail
+===============
+*/
+void R_BubbleTrail( vec_t* start, vec_t* end, float height, int modelIndex, int count, float speed )
+{
+	TEMPENTITY* pTemp;
+	model_t* model;
+	int					i, frameCount;
+	float				dist, angle;
+	vec3_t				origin;
+
+	if (!modelIndex)
+		return;
+
+	model = cl.model_precache[modelIndex];
+	if (!model)
+		return;
+
+	frameCount = ModelFrameCount(model);
+
+	for (i = 0; i < count; i++)
+	{
+		dist = RandomFloat(0, 1.0);
+		origin[0] = start[0] + dist * (end[0] - start[0]);
+		origin[1] = start[1] + dist * (end[1] - start[1]);
+		origin[2] = start[2] + dist * (end[2] - start[2]);
+		pTemp = CL_TempEntAlloc(origin, model);
+		if (!pTemp)
+			return;
+
+		pTemp->flags |= FTENT_SINEWAVE;
+
+		pTemp->x = origin[0];
+		pTemp->y = origin[1];
+		angle = RandomLong(-3, 3);
+
+		float zspeed = RandomLong(80, 140);
+		pTemp->entity.baseline.origin[0] = speed * cos(angle);
+		pTemp->entity.baseline.origin[1] = speed * sin(angle);
+		pTemp->entity.baseline.origin[2] = zspeed;
+		pTemp->die = cl.time + ((height - (origin[2] - start[2])) / zspeed) - 0.1;
+		pTemp->entity.frame = RandomLong(0, frameCount - 1);
+
+		// Set sprite scale
+		pTemp->entity.scale = 1.0 / RandomFloat(2, 5);
+		pTemp->entity.rendermode = kRenderTransAlpha;
+		pTemp->entity.renderamt = 255;
+	}
+}
+
+
 
 
 
@@ -928,6 +983,26 @@ void CL_ParseTEnt( void )
 		count = MSG_ReadByte();
 		flSpeed = MSG_ReadCoord();
 		R_Bubbles(pos, endpos, height, modelindex, count, flSpeed);
+		break;
+	}
+
+	case TE_BUBBLETRAIL:
+	{
+		float height;
+
+		pos[0] = MSG_ReadCoord();
+		pos[1] = MSG_ReadCoord();
+		pos[2] = MSG_ReadCoord();
+
+		endpos[0] = MSG_ReadCoord();
+		endpos[1] = MSG_ReadCoord();
+		endpos[2] = MSG_ReadCoord();
+
+		height = MSG_ReadCoord();
+		modelindex = MSG_ReadShort();
+		count = MSG_ReadByte();
+		flSpeed = MSG_ReadCoord();
+		R_BubbleTrail(pos, endpos, height, modelindex, count, flSpeed);
 		break;
 	}
 
