@@ -461,7 +461,70 @@ void R_Sprite_Trail( int type, vec_t* start, vec_t* end, int modelIndex, int cou
 	}
 }
 
+/*
+===============
+R_TempSphereModel
 
+Spherical shower of models, picks from set
+===============
+*/
+void R_TempSphereModel( float* pos, float speed, float life, int count, int modelIndex )
+{
+	int					i, frameCount;
+	TEMPENTITY* pTemp;
+	model_t* model;
+
+	if (!modelIndex)
+		return;
+
+	model = cl.model_precache[modelIndex];
+	if (!model)
+		return;
+
+	frameCount = ModelFrameCount(model);
+
+	// Create temporary models
+	for (i = 0; i < count; i++)
+	{
+		pTemp = CL_TempEntAlloc(pos, model);
+		if (!pTemp)
+			return;
+
+		pTemp->entity.body = RandomLong(0, frameCount - 1);
+
+		if (RandomLong(0, 255) < 10)
+			pTemp->flags |= FTENT_SLOWGRAVITY;
+		else
+			pTemp->flags |= FTENT_GRAVITY;
+
+		if (RandomLong(0, 255) < 220)
+		{
+			pTemp->flags |= FTENT_ROTATE;
+			pTemp->entity.baseline.angles[0] = RandomFloat(-256, -255);
+			pTemp->entity.baseline.angles[1] = RandomFloat(-256, -255);
+			pTemp->entity.baseline.angles[2] = RandomFloat(-256, -255);
+		}
+
+		if (RandomLong(0, 255) < 100)
+		{
+			pTemp->flags |= FTENT_SMOKETRAIL;
+		}
+
+		pTemp->flags |= FTENT_FLICKER | FTENT_COLLIDEWORLD;
+
+		pTemp->entity.effects = i & 0x1F;
+		pTemp->entity.rendermode = kRenderNormal;
+
+		pTemp->entity.baseline.origin[0] = RandomFloat(-1, 1);
+		pTemp->entity.baseline.origin[1] = RandomFloat(-1, 1);
+		pTemp->entity.baseline.origin[2] = RandomFloat(-1, 1);
+
+		VectorNormalize(pTemp->entity.baseline.origin);
+		VectorScale(pTemp->entity.baseline.origin, speed, pTemp->entity.baseline.origin);
+
+		pTemp->die = cl.time + life;
+	}
+}
 
 
 
@@ -913,7 +976,19 @@ void CL_ParseTEnt( void )
 		//R_TempModel(pos, dir, endpos, life, modelindex, soundtype); TODO: Implement
 		break;
 
-		// TODO: Implement
+	case TE_EXPLODEMODEL:
+		pos[0] = MSG_ReadCoord();
+		pos[1] = MSG_ReadCoord();
+		pos[2] = MSG_ReadCoord();
+
+		flSpeed = MSG_ReadCoord();
+
+		modelindex = MSG_ReadShort();
+		count = MSG_ReadShort();
+		life = MSG_ReadByte() * 0.1;
+
+		R_TempSphereModel(pos, flSpeed, life, count, modelindex);
+		break;
 		
 	case TE_BREAKMODEL:
 	{
