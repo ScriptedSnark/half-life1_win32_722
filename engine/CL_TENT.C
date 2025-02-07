@@ -295,6 +295,59 @@ void R_FizzEffect( cl_entity_t* pent, int modelIndex, int density )
 	}
 }
 
+/*
+===============
+R_Bubbles
+
+Create bubbles
+===============
+*/
+void R_Bubbles( vec_t* mins, vec_t* maxs, float height, int modelIndex, int count, float speed )
+{
+	TEMPENTITY* pTemp;
+	model_t* model;
+	int					i, frameCount;
+	float				angle;
+	vec3_t				origin;
+
+	if (!modelIndex)
+		return;
+
+	model = cl.model_precache[modelIndex];
+	if (!model)
+		return;
+
+	frameCount = ModelFrameCount(model);
+
+	for (i = 0; i < count; i++)
+	{
+		origin[0] = RandomLong(mins[0], maxs[0]);
+		origin[1] = RandomLong(mins[1], maxs[1]);
+		origin[2] = RandomLong(mins[2], maxs[2]);
+		pTemp = CL_TempEntAlloc(origin, model);
+		if (!pTemp)
+			return;
+
+		pTemp->flags |= FTENT_SINEWAVE;
+
+		pTemp->x = origin[0];
+		pTemp->y = origin[1];
+
+		angle = RandomLong(-3, 3);
+
+		pTemp->entity.baseline.origin[0] = cos(angle) * speed;
+		pTemp->entity.baseline.origin[1] = sin(angle) * speed;
+		pTemp->entity.baseline.origin[2] = RandomLong(80, 140);
+		pTemp->die = cl.time + ((height - (origin[2] - mins[2])) / pTemp->entity.baseline.origin[2]) - 0.1;
+		pTemp->entity.frame = RandomLong(0, frameCount - 1);
+
+		// Set sprite scale
+		pTemp->entity.scale = 1.0 / RandomFloat(2, 5);
+		pTemp->entity.rendermode = kRenderTransAlpha;
+		pTemp->entity.renderamt = 255;
+	}
+}
+
 
 
 
@@ -456,6 +509,7 @@ void CL_ParseTEnt( void )
 	int		count;
 	float	life;
 	float	scale;
+	float	flSpeed;
 	float	r, g, b, a;
 	float	frameRate;
 	int		flags;
@@ -479,6 +533,7 @@ void CL_ParseTEnt( void )
 		else if (type == TE_BEAMENTPOINT)
 		{
 			startEnt = MSG_ReadShort();
+
 			endpos[0] = MSG_ReadCoord();
 			endpos[1] = MSG_ReadCoord();
 			endpos[2] = MSG_ReadCoord();
@@ -488,6 +543,7 @@ void CL_ParseTEnt( void )
 			pos[0] = MSG_ReadCoord();
 			pos[1] = MSG_ReadCoord();
 			pos[2] = MSG_ReadCoord();
+
 			endpos[0] = MSG_ReadCoord();
 			endpos[1] = MSG_ReadCoord();
 			endpos[2] = MSG_ReadCoord();
@@ -786,6 +842,28 @@ void CL_ParseTEnt( void )
 		{
 			R_DecalShoot(Draw_DecalIndex(decalTextureIndex), entnumber, 0, pos, 0);
 		}
+		break;
+	}
+
+		// TODO: Implement
+		
+	case TE_BUBBLES:
+	{
+		float height;
+
+		pos[0] = MSG_ReadCoord();
+		pos[1] = MSG_ReadCoord();
+		pos[2] = MSG_ReadCoord();
+
+		endpos[0] = MSG_ReadCoord();
+		endpos[1] = MSG_ReadCoord();
+		endpos[2] = MSG_ReadCoord();
+
+		height = MSG_ReadCoord();
+		modelindex = MSG_ReadShort();
+		count = MSG_ReadByte();
+		flSpeed = MSG_ReadCoord();
+		R_Bubbles(pos, endpos, height, modelindex, count, flSpeed);
 		break;
 	}
 
