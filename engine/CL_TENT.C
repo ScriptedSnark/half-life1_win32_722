@@ -526,6 +526,94 @@ void R_TempSphereModel( float* pos, float speed, float life, int count, int mode
 	}
 }
 
+#define SHARD_VOLUME 12.0	// on shard ever n^3 units
+
+/*
+===============
+R_BreakModel
+
+Create model shattering shards
+===============
+*/
+void R_BreakModel( float* pos, float* size, float* dir, float random, float life, int count, int modelIndex, char flags )
+{
+	int					i, frameCount;
+	TEMPENTITY* pTemp;
+	model_t* pModel;
+	char				type;
+
+	if (!modelIndex)
+		return;
+
+	type = flags & BREAK_TYPEMASK;
+
+	pModel = cl.model_precache[modelIndex];
+	if (!pModel)
+		return;
+
+	frameCount = ModelFrameCount(pModel);
+
+	if (count == 0)
+		// assume surface (not volume)
+		count = (size[0] * size[1] + size[1] * size[2] + size[2] * size[0]) / (3 * SHARD_VOLUME * SHARD_VOLUME);
+
+	for (i = 0; i < count; i++)
+	{
+		vec3_t vecSpot;
+
+		// fill up the box with stuff
+		
+		vecSpot[0] = pos[0] + RandomFloat(-0.5, 0.5) * size[0];
+		vecSpot[1] = pos[1] + RandomFloat(-0.5, 0.5) * size[1];
+		vecSpot[2] = pos[2] + RandomFloat(-0.5, 0.5) * size[2];
+
+		pTemp = CL_TempEntAlloc(vecSpot, pModel);
+		if (!pTemp)
+			break;
+
+		// keep track of break_type, so we know how to play sound on collision
+		pTemp->hitSound = type;
+
+		if (pModel->type == mod_sprite)
+			pTemp->entity.frame = RandomLong(0, frameCount - 1);
+		else if (pModel->type == mod_studio)
+			pTemp->entity.body = RandomLong(0, frameCount - 1);
+
+		pTemp->flags |= FTENT_COLLIDEWORLD | FTENT_FADEOUT | FTENT_SLOWGRAVITY;
+
+		if (RandomLong(0, 255) < 200)
+		{
+			pTemp->flags |= FTENT_ROTATE;
+			pTemp->entity.baseline.angles[0] = RandomFloat(-256, 255);
+			pTemp->entity.baseline.angles[1] = RandomFloat(-256, 255);
+			pTemp->entity.baseline.angles[2] = RandomFloat(-256, 255);
+		}
+
+		if ((RandomLong(0, 255) < 100) && (flags & BREAK_SMOKE))
+			pTemp->flags |= FTENT_SMOKETRAIL;
+
+		if ((type == BREAK_GLASS) || (flags & BREAK_TRANS))
+		{
+			pTemp->entity.rendermode = kRenderTransTexture;
+			pTemp->entity.renderamt = 128;
+			pTemp->entity.baseline.renderamt = 128;
+		}
+		else
+		{
+			pTemp->entity.rendermode = kRenderNormal;
+			pTemp->entity.baseline.renderamt = 255;		// Set this for fadeout
+		}
+
+		pTemp->entity.baseline.origin[0] = dir[0] + RandomFloat(-random, random);
+		pTemp->entity.baseline.origin[1] = dir[1] + RandomFloat(-random, random);
+		pTemp->entity.baseline.origin[2] = dir[2] + RandomFloat(0, random);
+
+		pTemp->die = cl.time + life + RandomFloat(0, 1);	// Add an extra 0-1 secs of life
+	}
+}
+
+
+
 
 
 
@@ -1012,7 +1100,7 @@ void CL_ParseTEnt( void )
 		life = MSG_ReadByte() * 0.1;
 		c = MSG_ReadByte();
 
-		// TODO: Implement
+		R_BreakModel(pos, size, dir, frandom, life, count, modelindex, c);
 		break;
 	}
 
