@@ -402,7 +402,64 @@ void R_BubbleTrail( vec_t* start, vec_t* end, float height, int modelIndex, int 
 	}
 }
 
+/*
+===============
+R_Sprite_Trail
 
+Line of moving glow sprites with gravity, fadeout, and collisions
+===============
+*/
+void R_Sprite_Trail( int type, vec_t* start, vec_t* end, int modelIndex, int count, float life, float size, float amplitude, int renderamt, float speed )
+{
+	TEMPENTITY* ptemp;
+	model_t* model;
+	int				i, frameCount;
+	vec3_t			delta, pos, dir;
+
+	model = cl.model_precache[modelIndex];
+	if (!model)
+		return;
+
+	frameCount = ModelFrameCount(model);
+
+	VectorSubtract(end, start, delta);
+	VectorCopy(delta, dir);
+	VectorNormalize(dir);
+
+	amplitude /= 256.0;
+
+	for (i = 0; i < count; i++)
+	{
+		float scale = (float)i / ((float)count - 1.0);
+		VectorMA(start, scale, delta, pos);
+
+		ptemp = CL_TempEntAlloc(pos, model);
+		if (!ptemp)
+			return;
+
+		ptemp->flags |= (FTENT_COLLIDEWORLD | FTENT_SPRCYCLE | FTENT_FADEOUT | FTENT_SLOWGRAVITY);
+
+		VectorScale(dir, speed, ptemp->entity.baseline.origin);
+
+		ptemp->entity.baseline.origin[0] += RandomLong(-127, 128) * amplitude;
+		ptemp->entity.baseline.origin[1] += RandomLong(-127, 128) * amplitude;
+		ptemp->entity.baseline.origin[2] += RandomLong(-127, 128) * amplitude;
+
+		ptemp->entity.rendermode = kRenderGlow;
+		ptemp->entity.renderfx = kRenderFxNoDissipation;
+		ptemp->entity.renderamt = renderamt;
+		ptemp->entity.baseline.renderamt = renderamt;
+		ptemp->entity.scale = size;
+		
+		ptemp->entity.frame = RandomLong(0, frameCount - 1);
+		ptemp->frameMax = frameCount;
+		ptemp->die = cl.time + life + RandomFloat(0, 4);
+
+		ptemp->entity.rendercolor.r = 255;
+		ptemp->entity.rendercolor.g = 255;
+		ptemp->entity.rendercolor.b = 255;
+	}
+}
 
 
 
@@ -764,6 +821,38 @@ void CL_ParseTEnt( void )
 		{
 			R_DecalShoot(Draw_DecalIndex(decalTextureIndex), entnumber, modelindex, pos, flags);
 		}
+		break;
+	}
+
+		// TODO: Implement
+	
+	case TE_SPRITETRAIL:
+	{
+		float amplitude;
+
+		pos[0] = MSG_ReadCoord();
+		pos[1] = MSG_ReadCoord();
+		pos[2] = MSG_ReadCoord();
+
+		endpos[0] = MSG_ReadCoord();
+		endpos[1] = MSG_ReadCoord();
+		endpos[2] = MSG_ReadCoord();
+
+		modelindex = MSG_ReadShort();
+		count = MSG_ReadByte();
+
+		life = MSG_ReadByte() * 0.1;
+
+		scale = MSG_ReadByte();
+		if (scale == 0.0)
+			scale = 1.0;
+		else
+			scale *= 0.1;
+
+		amplitude = MSG_ReadByte() * 10.0;
+		flSpeed = MSG_ReadByte() * 10.0;
+
+		R_Sprite_Trail(type, pos, endpos, modelindex, count, life, scale, amplitude, 255, flSpeed);
 		break;
 	}
 
