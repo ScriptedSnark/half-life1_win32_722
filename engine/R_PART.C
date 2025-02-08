@@ -882,6 +882,59 @@ void R_LargeFunnel( vec_t* org, int reverse )
 	}
 }
 
+/*
+===============
+R_TeleportSplash
+
+Quake1 teleport splash
+===============
+*/
+void R_TeleportSplash( vec_t* org )
+{
+	int			i, j, k;
+	particle_t* p;
+	float		vel;
+	vec3_t		dir;
+
+	for (i = -16; i < 16; i += 4)
+	{
+		for (j = -16; j < 16; j += 4)
+		{
+			for (k = -24; k < 32; k += 4)
+			{
+				if (!free_particles)
+					return;
+
+				p = free_particles;
+				free_particles = p->next;
+				p->next = active_particles;
+				active_particles = p;
+
+				p->die = cl.time + RandomFloat(0.2, 0.34);
+				p->color = RandomLong(7, 14);
+				p->type = pt_slowgrav;
+#if defined( GLQUAKE )
+				p->packedColor = 0;
+#else
+				p->packedColor = hlRGB(host_basepal, p->color);
+#endif
+
+				dir[0] = j * 8;
+				dir[1] = i * 8;
+				dir[2] = k * 8;
+
+				p->org[0] = org[0] + i + RandomFloat(0, 3);
+				p->org[1] = org[1] + j + RandomFloat(0, 3);
+				p->org[2] = org[2] + k + RandomFloat(0, 3);
+
+				VectorNormalize(dir);
+				vel = RandomFloat(50, 113);
+				VectorScale(dir, vel, p->vel);
+			}
+		}
+	}
+}
+
 // TODO: Implement
 
 void R_RocketTrail( vec_t *start, vec_t *end, int type )
