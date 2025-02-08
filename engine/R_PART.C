@@ -140,6 +140,30 @@ particle_t* R_TracerParticles( vec_t* org, vec_t* vel, float life )
 
 /*
 ===============
+R_SparkStreaks
+===============
+*/
+void R_SparkStreaks( vec_t* pos, int count, int velocityMin, int velocityMax )
+{
+	// TODO: Implement
+}
+
+// TODO: Implement
+
+/*
+===============
+R_LargeFunnel
+===============
+*/
+void R_LargeFunnel( vec_t* org, int reverse )
+{
+	// TODO: Implement
+}
+
+// TODO: Implement
+
+/*
+===============
 R_DrawParticles
 ===============
 */

@@ -108,7 +108,32 @@ void AddTEntity( cl_entity_t* pEnt )
 	numTransObjs++;
 }
 
-// TODO: Implement
+/*
+=================
+AppendTEntity
+
+Append a transparent entity to a list of transparent objects
+=================
+*/
+void AppendTEntity( cl_entity_t* pEnt )
+{
+	float   dist;
+	vec3_t  v;
+
+	if (numTransObjs >= maxTransObjs)
+		Sys_Error("AddTentity: Too many objects");
+
+	VectorAdd(pEnt->model->mins, pEnt->model->maxs, v);
+	VectorScale(v, 0.5, v);
+	VectorAdd(v, pEnt->origin, v);
+	VectorSubtract(r_origin, v, v);
+
+	dist = DotProduct(v, v);
+
+	transObjects[numTransObjs].pEnt = pEnt;
+	transObjects[numTransObjs].distance = dist;
+	numTransObjs++;
+}
 
 #if defined( GLQUAKE )
 float r_blend;	// blending amount in [0..1] range

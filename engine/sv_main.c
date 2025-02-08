@@ -10,6 +10,7 @@ server_static_t	svs;
 // TODO: Implement
 
 
+char* pr_strings = NULL, * gNullString = "";
 globalvars_t gGlobalVariables;
 
 char	localmodels[MAX_MODELS][5];			// inline model names for precache
@@ -24,10 +25,6 @@ decalname_t	sv_decalnames[MAX_BASE_DECALS];
 int			sv_decalnamecount;
 
 
-
-// TODO: Implement
-
-char* gNullString = "";
 
 // TODO: Implement
 

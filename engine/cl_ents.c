@@ -2,6 +2,7 @@
 
 #include "quakedef.h"
 #include "pr_cmds.h"
+#include "cl_tent.h"
 #include "pmove.h"
 
 int cl_playerindex; // player index
@@ -879,8 +880,7 @@ void CL_LinkPacketEntities( void )
 
 		if (ent->effects & EF_LIGHT)
 		{
-			// TODO: Implement
-			//R_RocketFlare(ent->origin);
+			R_RocketFlare(ent->origin);
 
 			dl = CL_AllocDlight(ent->index);
 			VectorCopy(ent->origin, dl->origin);

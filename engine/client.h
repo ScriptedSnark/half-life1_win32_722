@@ -629,6 +629,7 @@ void CL_ParseTEnt( void );
 int ModelFrameCount( struct model_s* model );
 void CL_TempEntUpdate( void );
 int CL_FxBlend( cl_entity_t* ent );
+void CL_FxTransform( cl_entity_t* ent, float* transform );
 struct mspriteframe_s* R_GetSpriteFrame( struct msprite_s* pSprite, int frame );
 void R_GetSpriteAxes( cl_entity_t* pEntity, int type, vec_t* forward, vec_t* right, vec_t* up );
 void R_SpriteColor( colorVec* pColor, cl_entity_t* pEntity, int alpha );

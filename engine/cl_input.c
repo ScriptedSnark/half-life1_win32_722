@@ -610,7 +610,7 @@ float MoveToward( float cur, float goal, float maxspeed )
 	return cur;
 }
 
-extern trace_t SV_ClipMoveToEntity( edict_t *ent, vec3_t start, vec3_t mins, vec3_t maxs, vec3_t end );
+extern trace_t SV_ClipMoveToEntity( edict_t* ent, const vec_t* start, const vec_t* mins, const vec_t* maxs, const vec_t* end );
 
 void CAM_Think( void )
 {

@@ -62,6 +62,8 @@ typedef struct cl_entity_s
 
 	// TODO: Implement
 
+	struct mnode_s* topnode;		// for bmodels, first world node that splits bmodel, or NULL if not split
+
 	int				movetype;
 	float			animtime;
 	float			framerate;
@@ -83,11 +85,10 @@ typedef struct cl_entity_s
 	byte			prevcontroller[4];
 	byte			prevblending[2];
 
-	// TODO: Implement
-
 	colorVec		cvFloorColor;
 
-	// TODO: Implement
+	// Attachment points
+	vec3_t			attachment[4];
 
 	mouth_t			mouth;			// For synchronizing mouth movements.
 
@@ -218,6 +219,8 @@ void R_DrawParticles( void );
 int ScreenTransform( vec_t* point, vec_t* screen );
 
 particle_t* R_TracerParticles( vec_t* org, vec_t* vel, float life );
+void R_SparkStreaks( vec_t* pos, int count, int velocityMin, int velocityMax );
+void R_LargeFunnel( vec_t* org, int reverse );
 
 void R_RocketTrail( vec_t* start, vec_t* end, int type );
 
