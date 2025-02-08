@@ -815,7 +815,71 @@ R_LargeFunnel
 */
 void R_LargeFunnel( vec_t* org, int reverse )
 {
-	// TODO: Implement
+	int			i, j;
+	particle_t* p;
+	float		vel;
+	vec3_t		dir, dest;
+	float		flDist;
+
+	for (i = -256; i <= 256; i += 32)
+	{
+		for (j = -256; j <= 256; j += 32)
+		{
+			if (!free_particles)
+				return;
+
+			p = free_particles;
+			free_particles = p->next;
+			p->next = active_particles;
+			active_particles = p;
+
+			if (reverse)
+			{
+				VectorCopy(org, p->org);
+
+				dest[0] = org[0] + i;
+				dest[1] = org[1] + j;
+				dest[2] = org[2] + RandomFloat(100, 800);
+
+				// send particle heading to dest at a random speed
+				VectorSubtract(dest, p->org, dir);
+
+				vel = dest[2] / 8.0;// velocity based on how far particle starts from org
+			}
+			else
+			{
+				p->org[0] = org[0] + i;
+				p->org[1] = org[1] + j;
+				p->org[2] = org[2] + RandomFloat(100, 800);
+
+				// send particle heading to dest at a random speed
+				VectorSubtract(org, p->org, dir);
+
+				vel = p->org[2] / 8.0;// velocity based on how far particle starts from org
+			}
+
+			p->type = pt_static;
+			p->color = 244;
+#if defined( GLQUAKE )
+			p->packedColor = 0;
+#else
+			p->packedColor = hlRGB(host_basepal, p->color);
+#endif
+
+			flDist = VectorNormalize(dir);	// save the distance
+
+			if (vel < 64)
+			{
+				vel = 64;
+			}
+
+			vel += RandomFloat(64, 128);
+			VectorScale(dir, vel, p->vel);
+
+			// die right when you get there
+			p->die = cl.time + (flDist / vel);
+		}
+	}
 }
 
 // TODO: Implement
