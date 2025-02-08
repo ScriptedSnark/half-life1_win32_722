@@ -665,6 +665,70 @@ TEMPENTITY* R_TempSprite( float* pos, float* dir, float scale, int modelIndex, i
 	return pTemp;
 }
 
+/*
+===============
+R_Sprite_Spray
+
+Spray sprite
+===============
+*/
+void R_Sprite_Spray( vec_t* pos, vec_t* dir, int modelIndex, int count, int speed, int iRand )
+{
+	TEMPENTITY* pTemp;
+	model_t* pModel;
+	float				noise;
+	float				znoise;
+	int					frameCount;
+	int					i;
+
+	noise = (float)iRand / 100;
+
+	// more vertical displacement
+	znoise = noise * 1.5;
+
+	if (znoise > 1)
+	{
+		znoise = 1;
+	}
+
+	pModel = cl.model_precache[modelIndex];
+	if (!pModel)
+	{
+		Con_Printf("No model %d!\n", modelIndex);
+		return;
+	}
+
+	frameCount = ModelFrameCount(pModel) - 1;
+
+	for (i = 0; i < count; i++)
+	{
+		pTemp = CL_TempEntAlloc(pos, pModel);
+		if (!pTemp)
+			return;
+
+		pTemp->entity.rendermode = kRenderTransAlpha;
+		pTemp->entity.renderamt = 255;
+		pTemp->entity.baseline.renderamt = 255;
+		pTemp->entity.renderfx = kRenderFxNoDissipation;
+		pTemp->entity.scale = 0.5;
+		pTemp->flags |= FTENT_FADEOUT | FTENT_SLOWGRAVITY;
+		pTemp->fadeSpeed = 2.0;
+
+		// make the spittle fly the direction indicated, but mix in some noise.
+		pTemp->entity.baseline.origin[0] = dir[0] + RandomFloat(-noise, noise);
+		pTemp->entity.baseline.origin[1] = dir[1] + RandomFloat(-noise, noise);
+		pTemp->entity.baseline.origin[2] = dir[2] + RandomFloat(0, znoise);
+		VectorScale(pTemp->entity.baseline.origin, RandomFloat((speed * 0.8), (speed * 1.2)), pTemp->entity.baseline.origin);
+
+		VectorCopy(pos, pTemp->entity.origin);
+
+		pTemp->die = cl.time + 0.35;
+
+		pTemp->entity.frame = RandomLong(0, frameCount);
+	}
+}
+
+
 
 
 
@@ -814,6 +878,7 @@ void CL_ParseTEnt( void )
 	char	c;
 	int		type;
 	int		soundtype;
+	int		speed;
 	int		iRand;
 	int		entnumber;
 	int		modelindex;
@@ -1081,7 +1146,7 @@ void CL_ParseTEnt( void )
 
 		dl = CL_AllocDlight(0);
 		VectorCopy(pos, dl->origin);
-		dl->radius = (float)(MSG_ReadByte() * 10.0);
+		dl->radius = MSG_ReadByte() * 10.0;
 		dl->color.r = MSG_ReadByte();
 		dl->color.g = MSG_ReadByte();
 		dl->color.b = MSG_ReadByte();
@@ -1216,6 +1281,20 @@ void CL_ParseTEnt( void )
 		}
 		break;
 	}
+
+	case TE_SPRITE_SPRAY:
+		pos[0] = MSG_ReadCoord();
+		pos[1] = MSG_ReadCoord();
+		pos[2] = MSG_ReadCoord();
+		dir[0] = MSG_ReadCoord();
+		dir[1] = MSG_ReadCoord();
+		dir[2] = MSG_ReadCoord();
+		modelindex = MSG_ReadShort();
+		count = MSG_ReadByte();
+		speed = MSG_ReadByte();
+		iRand = MSG_ReadByte();
+		R_Sprite_Spray(pos, dir, modelindex, count, speed * 2, iRand);
+		break;
 
 		// TODO: Implement
 		
