@@ -237,6 +237,7 @@ void R_StreakSplash( vec_t* pos, vec_t* dir, int color, int count, float speed, 
 void R_LavaSplash( vec_t* org );
 void R_LargeFunnel( vec_t* org, int reverse );
 void R_TeleportSplash( vec_t* org );
+void R_ShowLine( vec_t* start, vec_t* end );
 
 int ScreenTransform( vec_t* point, vec_t* screen );
 

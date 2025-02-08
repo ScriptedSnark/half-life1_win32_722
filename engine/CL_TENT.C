@@ -1540,6 +1540,18 @@ void CL_ParseTEnt( void )
 		break;
 
 		// TODO: Implement
+		
+	case TE_SHOWLINE:
+		pos[0] = MSG_ReadCoord();
+		pos[1] = MSG_ReadCoord();
+		pos[2] = MSG_ReadCoord();
+		endpos[0] = MSG_ReadCoord();
+		endpos[1] = MSG_ReadCoord();
+		endpos[2] = MSG_ReadCoord();
+		R_ShowLine(pos, endpos);
+		break;
+
+		// TODO: Implement
 
 	case TE_FIZZ:
 	{

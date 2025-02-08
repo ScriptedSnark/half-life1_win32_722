@@ -935,6 +935,56 @@ void R_TeleportSplash( vec_t* org )
 	}
 }
 
+/*
+===============
+R_ShowLine
+===============
+*/
+void R_ShowLine( vec_t* start, vec_t* end )
+{
+	vec3_t		vec;
+	float		len;
+	particle_t* p;
+	int			dec = 5;
+
+	static int tracercount;
+
+	VectorSubtract(end, start, vec);
+	len = VectorNormalize(vec);
+	VectorScale(vec, dec, vec);
+
+	while (len > 0)
+	{
+		len -= dec;
+
+		if (!free_particles)
+			return;
+
+		p = free_particles;
+		free_particles = p->next;
+		p->next = active_particles;
+		active_particles = p;
+
+		VectorCopy(vec3_origin, p->vel);
+
+		p->die = cl.time + 30;
+		p->type = pt_static;
+		p->color = 75;
+#if defined( GLQUAKE )
+		p->packedColor = 0;
+#else
+		p->packedColor = hlRGB(host_basepal, p->color);
+#endif
+
+		VectorCopy(start, p->org);
+		VectorAdd(start, vec, start);
+	}
+}
+
+
+
+
+
 // TODO: Implement
 
 void R_RocketTrail( vec_t *start, vec_t *end, int type )
