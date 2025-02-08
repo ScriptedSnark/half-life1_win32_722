@@ -1362,6 +1362,13 @@ void CL_ParseTEnt( void )
 		R_SparkEffect(pos, 8, -200, 200);
 		break;
 
+	case TE_LAVASPLASH:
+		pos[0] = MSG_ReadCoord();
+		pos[1] = MSG_ReadCoord();
+		pos[2] = MSG_ReadCoord();
+		R_LavaSplash(pos);
+		break;
+
 		// TODO: Implement
 
 	case TE_EXPLOSION2:
@@ -1479,6 +1486,22 @@ void CL_ParseTEnt( void )
 		break;
 
 		// TODO: Implement
+
+	case TE_STREAK_SPLASH:
+		pos[0] = MSG_ReadCoord();
+		pos[1] = MSG_ReadCoord();
+		pos[2] = MSG_ReadCoord();
+
+		dir[0] = MSG_ReadCoord();
+		dir[1] = MSG_ReadCoord();
+		dir[2] = MSG_ReadCoord();
+
+		color = MSG_ReadByte();
+		count = MSG_ReadShort();
+		speed = MSG_ReadShort();
+		iRand = MSG_ReadShort();
+		R_StreakSplash(pos, dir, color, count, speed, -iRand, iRand);
+		break;
 
 	case TE_DLIGHT:
 		pos[0] = MSG_ReadCoord();

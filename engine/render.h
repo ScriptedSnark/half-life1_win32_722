@@ -229,12 +229,15 @@ void R_ClearParticles( void );
 void R_DrawParticles( void );
 
 
-int ScreenTransform( vec_t* point, vec_t* screen );
 
 void R_FlickerParticles( vec_t* org );
 particle_t* R_TracerParticles( vec_t* org, vec_t* vel, float life );
 void R_SparkStreaks( vec_t* pos, int count, int velocityMin, int velocityMax );
+void R_StreakSplash( vec_t* pos, vec_t* dir, int color, int count, float speed, int velocityMin, int velocityMax );
+void R_LavaSplash( vec_t* org );
 void R_LargeFunnel( vec_t* org, int reverse );
+
+int ScreenTransform( vec_t* point, vec_t* screen );
 
 extern qboolean r_intentities;
 

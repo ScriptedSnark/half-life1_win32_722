@@ -582,7 +582,68 @@ R_RunParticleEffect
 */
 void R_RunParticleEffect( vec_t* org, vec_t* dir, int color, int count )
 {
-	// TODO: Implement
+	int		i, j;
+	particle_t* p;
+
+	for (i = 0; i < count; i++)
+	{
+		if (!free_particles)
+			return;
+
+		p = free_particles;
+		free_particles = p->next;
+		p->next = active_particles;
+		active_particles = p;
+
+		if (count == 1024)
+		{
+			// rocket explosion
+			p->die = cl.time + 5.0;
+			p->color = ramp1[0];
+#if defined( GLQUAKE )
+			p->packedColor = 0;
+#else
+			p->packedColor = hlRGB(host_basepal, ramp1[0]);
+#endif
+			p->ramp = RandomLong(0, 3);
+
+			if (i & 1)
+			{
+				p->type = pt_explode;
+				for (j = 0; j < 3; j++)
+				{
+					p->org[j] = org[j] + RandomFloat(-16, 16);
+					p->vel[j] = RandomFloat(-256, 256);
+				}
+			}
+			else
+			{
+				p->type = pt_explode2;
+				for (j = 0; j < 3; j++)
+				{
+					p->org[j] = org[j] + RandomFloat(-16, 16);
+					p->vel[j] = RandomFloat(-256, 256);
+				}
+			}
+		}
+		else
+		{
+			p->die = cl.time + RandomFloat(0, 0.4);
+			p->color = (color & ~7) + RandomLong(0, 7);
+#if defined( GLQUAKE )
+			p->packedColor = 0;
+#else
+			p->packedColor = hlRGB(host_basepal, p->color);
+#endif
+			p->type = pt_slowgrav;
+
+			for (j = 0; j < 3; j++)
+			{
+				p->org[j] = org[j] + RandomFloat(-8, 8);
+				p->vel[j] = dir[j] * 15;
+			}
+		}
+	}
 }
 
 /*
@@ -658,7 +719,94 @@ void R_SparkStreaks( vec_t* pos, int count, int velocityMin, int velocityMax )
 	}
 }
 
-// TODO: Implement
+/*
+===============
+R_StreakSplash
+===============
+*/
+void R_StreakSplash( vec_t* pos, vec_t* dir, int color, int count, float speed, int velocityMin, int velocityMax )
+{
+	int		i, j;
+	particle_t* p;
+	vec3_t	initialVelocity;
+
+	VectorScale(dir, speed, initialVelocity);
+
+	for (i = 0; i < count; i++)
+	{
+		if (!free_particles)
+			return;
+
+		p = free_particles;
+		free_particles = p->next;
+		p->next = gpActiveTracers;
+		gpActiveTracers = p;
+		
+		p->color = color;
+		p->packedColor = 255;
+		p->type = pt_grav;
+		p->die = cl.time + RandomFloat(0.1, 0.5);
+		p->ramp = 1;
+
+		for (j = 0; j < 3; j++)
+		{
+			p->org[j] = pos[j];
+			p->vel[j] = initialVelocity[j] + RandomFloat(velocityMin, velocityMax);
+		}
+	}
+}
+
+/*
+===============
+R_LavaSplash
+
+===============
+*/
+void R_LavaSplash( vec_t* org )
+{
+	int			i, j, k;
+	particle_t* p;
+	float		vel;
+	vec3_t		dir;
+
+	for (i = -16; i < 16; i++)
+	{
+		for (j = -16; j < 16; j++)
+		{
+			for (k = 0; k < 1; k++)
+			{
+				if (!free_particles)
+					return;
+
+				p = free_particles;
+				free_particles = p->next;
+				p->next = active_particles;
+				active_particles = p;
+
+				p->die = cl.time + RandomFloat(2, 2.62);
+				p->type = pt_slowgrav;
+				p->color = RandomLong(224, 231);
+#if defined( GLQUAKE )
+				p->packedColor = 0;
+#else
+				p->packedColor = hlRGB(host_basepal, p->color);
+#endif
+
+				dir[0] = j * 8 + RandomFloat(0, 7);
+				dir[1] = i * 8 + RandomFloat(0, 7);
+				dir[2] = 256;
+
+				p->org[0] = org[0] + dir[0];
+				p->org[1] = org[1] + dir[1];
+				p->org[2] = org[2] + RandomFloat(0, 63);
+
+				VectorNormalize(dir);
+				vel = RandomFloat(50, 113);
+				VectorScale(dir, vel, p->vel);
+			}
+		}
+	}
+}
 
 /*
 ===============
