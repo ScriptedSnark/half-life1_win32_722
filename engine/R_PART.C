@@ -1,5 +1,6 @@
 #include "quakedef.h"
 #include "pr_cmds.h"
+#include "r_triangle.h"
 
 #define MAX_BEAMS				128		// Max simultaneous beams
 #define MAX_PARTICLES			2048	// default max # of particles at one
@@ -25,10 +26,6 @@ color24 gTracerColors[] =
 	{ 255, 167, 17 },		// Yellow-orange sparks
 	{ 255, 130, 90 },		// Yellowish streaks (garg)
 	{ 55, 60, 144 },		// Blue egon streak
-	{ 255, 130, 90 },		// More Yellowish streaks (garg)
-	{ 255, 140, 90 },		// More Yellowish streaks (garg)
-	{ 200, 130, 90 },		// More red streaks (garg)
-	{ 255, 120, 70 },		// Darker red streaks (garg)
 };
 
 particle_t* active_particles, * free_particles, * gpActiveTracers;
@@ -595,7 +592,37 @@ R_FlickerParticles
 */
 void R_FlickerParticles( vec_t* org )
 {
-	// TODO: Implement
+	int		i, j;
+	particle_t* p;
+
+	for (i = 0; i < 15; i++)
+	{
+		if (!free_particles)
+			return;
+
+		p = free_particles;
+		free_particles = p->next;
+		p->next = active_particles;
+		active_particles = p;
+
+		for (j = 0; j < 3; j++)
+		{
+			p->org[j] = org[j];
+			p->vel[j] = RandomFloat(-32, 32);
+		}
+
+		p->vel[2] = RandomFloat(80, 143);
+
+		p->color = 254;
+		p->ramp = 0;
+#if defined( GLQUAKE )
+		p->packedColor = 0;
+#else
+		p->packedColor = hlRGB(host_basepal, p->color);
+#endif
+		p->die = cl.time + 2.0;
+		p->type = pt_blob2;
+	}
 }
 
 /*
@@ -605,7 +632,30 @@ R_SparkStreaks
 */
 void R_SparkStreaks( vec_t* pos, int count, int velocityMin, int velocityMax )
 {
-	// TODO: Implement
+	int		i, j;
+	particle_t* p;
+
+	for (i = 0; i < count; i++)
+	{
+		if (!free_particles)
+			return;
+
+		p = free_particles;
+		free_particles = p->next;
+		p->next = gpActiveTracers;
+		gpActiveTracers = p;
+
+		p->color = 5;
+		p->type = pt_grav;
+		p->packedColor = 255;
+		p->die = cl.time + RandomFloat(0.1, 0.5);
+		p->ramp = 0.5;
+
+		VectorCopy(pos, p->org);
+
+		for (j = 0; j < 3; j++)
+			p->vel[j] = RandomFloat(velocityMin, velocityMax);
+	}
 }
 
 // TODO: Implement
@@ -762,7 +812,7 @@ void R_DrawParticles( void )
 			}
 
 			for (i = 0; i < 3; i++)
-				p->vel[i] += p->vel[i] * (dvel + 1.0);
+				p->vel[i] *= (dvel + 1.0);
 
 			p->vel[2] -= grav;
 			break;
@@ -785,7 +835,7 @@ void R_DrawParticles( void )
 			}
 
 			for (i = 0; i < 3; i++)
-				p->vel[i] -= p->vel[i] * (1.0 - frametime);
+				p->vel[i] *= (1.0 - frametime);
 
 			p->vel[2] -= grav;
 			break;
@@ -805,8 +855,8 @@ void R_DrawParticles( void )
 			p->packedColor = hlRGB(host_basepal, p->color);
 #endif
 
-			p->vel[0] -= p->vel[0] * ((frametime * 0.5) + 1.0);
-			p->vel[1] -= p->vel[1] * ((frametime * 0.5) + 1.0);
+			p->vel[0] *= (1.0 - (frametime * 0.5));
+			p->vel[1] *= (1.0 - (frametime * 0.5));
 			p->vel[2] -= grav * 5.0;
 
 			if (RandomLong(0, 3))
@@ -855,7 +905,169 @@ Draw tracer effects, like sparks, gun tracers etc
 */
 void R_TracerDraw( void )
 {
-	// TODO: Implement
+	float		scale;
+	float		attenuation;
+	float		frametime;
+	float		clipDist;
+	float		gravity;
+	float		size;
+	vec3_t		up, right;
+	vec3_t		start, end;
+	particle_t* p;
+	vec3_t		screenLast, screen;
+	vec3_t		tmp, normal;
+//	int			clip;
+
+	qboolean	draw = TRUE;
+
+	if (!gpActiveTracers)
+		return; // no tracers to draw
+
+	gTracerColors[4].r = tracerRed.value * tracerAlpha.value * 255;
+	gTracerColors[4].g = tracerGreen.value * tracerAlpha.value * 255;
+	gTracerColors[4].b = tracerBlue.value * tracerAlpha.value * 255;
+
+	frametime = cl.time - cl.oldtime;
+
+	R_FreeDeadParticles(&gpActiveTracers);
+
+	VectorScale(vup, 1.5, up);
+	VectorScale(vright, 1.5, right);
+
+	if (R_TriangleSpriteTexture(cl_sprite_dot, 0))
+	{
+		gravity = sv_gravity.value * frametime;
+		size = DotProduct(r_origin, vpn);
+
+		scale = 1.0 - frametime * 0.9;
+		if (scale < 0.0)
+			scale = 0.0;
+
+		tri_GL_RenderMode(kRenderTransAdd);
+		tri_GL_CullFace(TRI_NONE);
+
+		for (p = gpActiveTracers; p; p = p->next)
+		{
+			color24* pColor;
+
+			pColor = &gTracerColors[p->color];
+
+			attenuation = (p->die - cl.time);
+			if (attenuation > 0.1)
+				attenuation = 0.1;
+
+			VectorScale(p->vel, (p->ramp * attenuation), end);
+			VectorAdd(p->org, end, end);
+			VectorCopy(p->org, start);
+
+			draw = TRUE;
+
+			if (ScreenTransform(start, screen) || ScreenTransform(end, screenLast))
+			{
+				float fraction;
+				float dist1, dist2;
+
+				dist1 = DotProduct(vpn, start) - size;
+				dist2 = DotProduct(vpn, end) - size;
+
+				if (dist1 <= 0.0 && dist2 <= 0.0)
+					draw = FALSE;
+
+				if (draw == TRUE)
+				{
+					clipDist = dist2 - dist1;
+					if (clipDist < 0.01)
+						draw = FALSE;
+				}
+
+				if (draw == TRUE)
+				{
+					fraction = dist1 / clipDist;
+
+					if (dist1 > 0)
+					{
+						end[0] = start[0] + (end[0] - start[0]) * fraction;
+						end[1] = start[1] + (end[1] - start[1]) * fraction;
+						end[2] = start[2] + (end[2] - start[2]) * fraction;
+					}
+					else
+					{
+						start[0] = start[0] + (end[0] - start[0]) * fraction;
+						start[1] = start[1] + (end[1] - start[1]) * fraction;
+						start[2] = start[2] + (end[2] - start[2]) * fraction;
+					}
+
+					// Transform point into screen space
+					ScreenTransform(start, screen);
+					ScreenTransform(end, screenLast);
+				}
+			}
+
+			if (draw == TRUE)
+			{
+				// Transform point into screen space
+				ScreenTransform(start, screen);
+				ScreenTransform(end, screenLast);
+
+				// Build world-space normal to screen-space direction vector
+				VectorSubtract(screenLast, screen, tmp);
+
+				// We don't need Z, we're in screen space
+				tmp[2] = 0;
+
+				VectorNormalize(tmp);
+
+				// build point along noraml line (normal is -y, x)
+				VectorScale(vup, tmp[0] * gTracerSize[p->type], normal);
+				VectorMA(normal, -tmp[1] * gTracerSize[p->type], vright, normal);
+
+				qglBegin(GL_QUADS);
+
+				tri_GL_Color4ub(pColor->r, pColor->g, pColor->b, p->packedColor);
+
+				tri_GL_Brightness(0);
+				qglTexCoord2f(0, 0);
+				qglVertex3f(start[0] + normal[0], start[1] + normal[1], start[2] + normal[2]);
+
+				tri_GL_Brightness(1);
+				qglTexCoord2f(0, 1);
+				qglVertex3f(end[0] + normal[0], end[1] + normal[1], end[2] + normal[2]);
+
+				tri_GL_Brightness(1);
+				qglTexCoord2f(1, 1);
+				qglVertex3f(end[0] - normal[0], end[1] - normal[1], end[2] - normal[2]);
+
+				tri_GL_Brightness(0);
+				qglTexCoord2f(1, 0);
+				qglVertex3f(start[0] - normal[0], start[1] - normal[1], start[2] - normal[2]);
+
+				p->org[0] = frametime * p->vel[0] + p->org[0];
+				p->org[1] = frametime * p->vel[1] + p->org[1];
+				p->org[2] = frametime * p->vel[2] + p->org[2];
+
+				if (p->type == pt_grav)
+				{
+					p->vel[0] *= scale;
+					p->vel[1] *= scale;
+					p->vel[2] -= gravity;
+
+					p->packedColor = 255 * (p->die - cl.time) * 2;
+
+					if (p->packedColor > 255)
+						p->packedColor = 255;
+				}
+				else if (p->type == pt_slowgrav)
+				{
+					p->vel[2] = gravity * 0.05;
+				}
+
+				qglEnd();
+			}
+		}
+
+		tri_GL_CullFace(TRI_FRONT);
+		tri_GL_RenderMode(kRenderNormal);
+	}
 }
 
 // TODO: Implement

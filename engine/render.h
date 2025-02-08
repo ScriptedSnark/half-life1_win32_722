@@ -205,6 +205,15 @@ void R_PushDlights( void );
 
 // R_PART.C
 
+extern struct model_s* cl_sprite_dot;
+extern struct model_s* cl_sprite_lightning;
+extern struct model_s* cl_sprite_white;
+extern struct model_s* cl_sprite_glow;
+extern struct model_s* cl_sprite_ricochet;
+extern struct model_s* cl_sprite_shell;
+
+extern struct model_s* cl_sprite_muzzleflash[3];
+
 extern cvar_t tracerSpeed;
 extern cvar_t tracerOffset;
 extern cvar_t tracerLength;
