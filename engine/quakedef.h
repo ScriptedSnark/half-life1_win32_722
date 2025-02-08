@@ -70,7 +70,8 @@
 #define ON_EPSILON		0.1			// point on plane side epsilon
 
 #define MAX_MSGLEN		7500		// max length of a reliable message
-
+#define MAX_DATAGRAM	4000		// max length of unreliable message
+#define MAX_MULTICAST	1024		// max length of a message sent to all clients
 
 
 #define MAX_LIGHTSTYLE_INDEX_BITS	6
@@ -181,7 +182,7 @@ typedef struct _UserMsg
 #endif
 
 #include "input.h"
-
+#include "world.h"
 #include "keys.h"
 #include "console.h"
 #include "view.h"
@@ -242,7 +243,8 @@ DLL_EXPORT void Host_Shutdown( void );
 void Host_Error( char* error, ... );
 void Host_EndGame( char* message, ... );
 void Host_ShutdownServer( qboolean crash );
-
+void Host_DeallocateDynamicData( void );
+void Host_ReallocateDynamicData( void );
 
 void Master_Init( void );
 

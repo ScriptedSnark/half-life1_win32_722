@@ -2,6 +2,18 @@
 
 #include "quakedef.h"
 
+
+/*
+===============
+SV_ClearWorld
+
+===============
+*/
+void SV_ClearWorld( void )
+{
+	// TODO: Implement
+}
+
 /*
 ==================
 SV_RecursiveHullCheck

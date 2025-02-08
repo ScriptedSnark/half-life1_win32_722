@@ -5,11 +5,15 @@
 #pragma once
 #endif
 
+#define	MAX_SIGNON_BUFFERS	16
+
 typedef struct server_static_s
 {
 	// TODO: Implement
 
 	struct client_s* clients;			// array of up to [maxclients] client slots
+
+	int			serverflags;			// episode completion information
 
 	int			maxclients;				// Current max #
 	int			maxclientslimit;		// Max allowed on server.
@@ -36,19 +40,30 @@ typedef struct
 	qboolean	active;				// false if only a net client
 	qboolean	paused;				// are we paused?
 
+	// TODO: Implement
+
+	double		time;
 
 	// TODO: Implement
 
 	char name[MAX_QPATH]; // map name
-	char oldname[MAX_QPATH];
 	char startspot[MAX_QPATH];
+	char modelname[MAX_QPATH];
 
 	struct model_s*	worldmodel;			// cl_entitites[0].model
 
+	CRC32_t			worldmapCRC;		// For detecting that client has a hacked local copy of map, the client will be dropped if this occurs.
+	CRC32_t			clientSideDllCRC;	// The dll that this server is expecting clients to be using.
+										// To prevent cheating with hacked client dlls
+
 
 	// TODO: Implement
+
+	char*	model_precache[MAX_MODELS];
 	
 	struct model_s*	models[MAX_MODELS];
+
+	char*	sound_precache[MAX_SOUNDS];
 
 	// TODO: Implement
 
@@ -58,6 +73,33 @@ typedef struct
 	edict_t*	edicts;			// can NOT be array indexed, because
 									// edict_t is variable sized, but can
 									// be used to reference the world ent
+
+	server_state_t state;
+
+	// added to every client's unreliable buffer each frame, then cleared
+	sizebuf_t		datagram;
+	byte			datagram_buf[MAX_DATAGRAM];
+
+	// added to every client's reliable buffer each frame, then cleared
+	sizebuf_t		reliable_datagram;
+	byte			reliable_datagram_buf[MAX_DATAGRAM];
+
+	// the master buffer is used for building log packets
+	sizebuf_t		master;
+	byte			master_buf[MAX_DATAGRAM];
+
+	// the multicast buffer is used to send a message to a set of clients
+	sizebuf_t		multicast;
+	byte			multicast_buf[MAX_MULTICAST];	// Longest multicast message
+
+	// the signon buffer will be sent to each client as they connect
+	// includes the entity baselines, the static entities, etc
+	// large levels will have >MAX_DATAGRAM sized signons, so 
+	// multiple signon messages are kept
+	sizebuf_t		signon;
+	int				num_signon_buffers;
+	int				signon_buffer_size[MAX_SIGNON_BUFFERS];
+	byte			signon_buffers[MAX_SIGNON_BUFFERS][MAX_DATAGRAM];
 
 	// TODO: Implement
 
@@ -102,6 +144,18 @@ typedef struct client_s
 
 
 
+extern cvar_t sv_cheats;
+
+
+
+
+extern	cvar_t	skill;
+extern	cvar_t	deathmatch;
+extern	cvar_t	coop;
+
+
+extern float		g_LastScreenUpdateTime;
+extern float		scr_centertime_off;
 
 
 extern	server_static_t	svs;				// persistant server info
@@ -130,8 +184,9 @@ void SV_BroadcastPrintf( char* fmt, ... );
 
 void SV_ClearChannel( qboolean forceclear );
 
-void SV_ClearResourceLists(client_t* cl);
+void SV_ClearResourceLists( client_t* cl );
 
+int SV_SpawnServer( qboolean bIsDemo, char* server, char* startspot );
 
 //
 // sv_send.c
@@ -144,5 +199,11 @@ typedef enum
 } redirect_t;
 extern redirect_t	sv_redirected;
 void SV_FlushRedirect( void );
+
+//
+// sv_phys.c
+//
+
+void SV_SetMoveVars( void );
 
 #endif // SERVER_H

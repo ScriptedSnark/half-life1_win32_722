@@ -6,6 +6,7 @@
 #endif
 
 extern int  gHostSpawnCount;
+extern int	current_skill;
 
 void Host_ClearSaveDirectory( void );
 
