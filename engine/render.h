@@ -194,8 +194,11 @@ void R_NewMap( void );
 
 
 void R_ParseParticleEffect( void );
-
-
+void R_RunParticleEffect( vec_t* org, vec_t* dir, int color, int count );
+void R_RocketTrail( vec_t* start, vec_t* end, int type );
+void R_EntityParticles( cl_entity_t* ent );
+void R_ParticleExplosion( vec_t* org );
+void R_ParticleExplosion2( vec_t* org, int colorStart, int colorLength );
 
 void R_PushDlights( void );
 
@@ -218,11 +221,10 @@ void R_DrawParticles( void );
 
 int ScreenTransform( vec_t* point, vec_t* screen );
 
+void R_FlickerParticles( vec_t* org );
 particle_t* R_TracerParticles( vec_t* org, vec_t* vel, float life );
 void R_SparkStreaks( vec_t* pos, int count, int velocityMin, int velocityMax );
 void R_LargeFunnel( vec_t* org, int reverse );
-
-void R_RocketTrail( vec_t* start, vec_t* end, int type );
 
 extern qboolean r_intentities;
 

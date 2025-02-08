@@ -187,6 +187,7 @@ typedef struct _UserMsg
 #include "console.h"
 #include "view.h"
 #include "crc.h"
+#include "beamdef.h"
 
 #ifdef GLQUAKE
 #include "qgl.h"

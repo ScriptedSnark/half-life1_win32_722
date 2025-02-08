@@ -78,6 +78,10 @@ extern	PROC qglVertexPointerEXT;
 
 #define TEX_IS_ALPHA(type)		((type) == TEX_TYPE_ALPHA || (type) == TEX_TYPE_ALPHA_GRADIENT || (type) == TEX_TYPE_RGBA)
 
+void R_TimeRefresh_f( void );
+void R_ReadPointFile_f( void );
+texture_t* R_TextureAnimation( msurface_t* s );
+
 
 //====================================================
 
@@ -91,7 +95,13 @@ extern	mplane_t	frustum[4];
 extern	int		c_brush_polys, c_alias_polys;
 
 
-
+//
+// view origin
+//
+extern vec3_t vup;
+extern vec3_t vpn;
+extern vec3_t vright;
+extern vec3_t r_origin;
 
 //
 // screen size info

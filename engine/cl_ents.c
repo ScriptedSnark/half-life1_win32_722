@@ -10,7 +10,6 @@ int cl_playerindex; // player index
 int				cl_numvisedicts, cl_oldnumvisedicts, cl_numbeamentities;
 cl_entity_t*	cl_visedicts, * cl_oldvisedicts, *cl_newvisedicts;
 cl_entity_t		cl_visedicts_list[2][MAX_VISEDICTS];
-cl_entity_t		cl_beamentities[MAX_BEAMENTS];
 
 /*
 =========================================================================
@@ -845,13 +844,15 @@ void CL_LinkPacketEntities( void )
 			VectorCopy(ent->origin, ent->prevorigin);
 			VectorCopy(ent->angles, ent->prevangles);
 		}
+
+		if (ent->effects & EF_BRIGHTFIELD)
+			R_EntityParticles(ent);
 		
 		if (ent->index != 1)
 		{
 			if (ent->effects & EF_BRIGHTLIGHT)
 			{
 				dl = CL_AllocDlight(ent->index);
-
 				VectorCopy(ent->origin, dl->origin);
 				dl->origin[2] += 16.0;
 				dl->color.r = 250;
@@ -866,7 +867,6 @@ void CL_LinkPacketEntities( void )
 			if (ent->effects & EF_DIMLIGHT)
 			{
 				dl = CL_AllocDlight(ent->index);
-
 				VectorCopy(ent->origin, dl->origin);
 				dl->color.r = 100;
 				dl->color.g = 100;

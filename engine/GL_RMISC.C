@@ -150,6 +150,8 @@ void R_Init( void )
 {
 	// TODO: Implement
 
+	Cmd_AddCommand("pointfile", R_ReadPointFile_f);
+
 	Cvar_RegisterVariable(&r_norefresh);
 	Cvar_RegisterVariable(&r_lightmap);
 	Cvar_RegisterVariable(&r_fullbright);

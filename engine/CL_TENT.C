@@ -1174,6 +1174,7 @@ void CL_ParseTEnt( void )
 	vec3_t	size;
 	vec3_t	dir;
 	vec3_t	endpos;
+	int		colorStart, colorLength;
 	dlight_t* dl;
 	int		startEnt, endEnt;
 	int		startFrame;
@@ -1257,7 +1258,7 @@ void CL_ParseTEnt( void )
 			// sprite
 			R_Sprite_Explode(R_DefaultSprite(pos, modelindex, frameRate), scale);
 
-			// TODO: Implement
+			R_FlickerParticles(pos);
 
 			// big flash
 			dl = CL_AllocDlight(0);
@@ -1328,6 +1329,24 @@ void CL_ParseTEnt( void )
 		break;
 
 		// TODO: Implement
+
+	case TE_EXPLOSION2:
+		pos[0] = MSG_ReadCoord();
+		pos[1] = MSG_ReadCoord();
+		pos[2] = MSG_ReadCoord();
+
+		colorStart = MSG_ReadByte();
+		colorLength = MSG_ReadByte();
+		R_ParticleExplosion2(pos, colorStart, colorLength);
+
+		// spawn some dynamic light
+		dl = CL_AllocDlight(0);
+		VectorCopy(pos, dl->origin);
+		dl->radius = 350;
+		dl->decay = 300;
+		dl->die = cl.time + 0.5;
+		S_StartDynamicSound(-1, CHAN_AUTO, cl_sfx_r_exp1, pos, 1.0, 0.6f, 0, 100);
+		break;
 
 	case TE_BSPDECAL:
 	case TE_DECAL:

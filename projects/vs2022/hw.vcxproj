@@ -92,6 +92,7 @@
     <ClInclude Include="..\..\engine\a3d.h" />
     <ClInclude Include="..\..\engine\anorms.h" />
     <ClInclude Include="..\..\engine\anorm_dots.h" />
+    <ClInclude Include="..\..\engine\beamdef.h" />
     <ClInclude Include="..\..\engine\bothdefs.h" />
     <ClInclude Include="..\..\engine\bspfile.h" />
     <ClInclude Include="..\..\engine\cdll_int.h" />
