@@ -62,6 +62,10 @@ General initialization of the server
 void SV_Init( void )
 {
 	// TODO: Implement
+	
+	Cvar_RegisterVariable(&sv_gravity);
+
+	// TODO: Implement
 
 	Cvar_RegisterVariable(&sv_cheats);
 

@@ -199,6 +199,7 @@ void R_RocketTrail( vec_t* start, vec_t* end, int type );
 void R_EntityParticles( cl_entity_t* ent );
 void R_ParticleExplosion( vec_t* org );
 void R_ParticleExplosion2( vec_t* org, int colorStart, int colorLength );
+void R_BlobExplosion(vec_t* org);
 
 void R_PushDlights( void );
 

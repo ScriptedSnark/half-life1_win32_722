@@ -10,10 +10,10 @@
 // particle ramps
 int		ramp1[8] = { 0x6F, 0x6D, 0x6B, 0x69, 0x67, 0x65, 0x63, 0x61 };
 int		ramp2[8] = { 0x6F, 0x6E, 0x6D, 0x6C, 0x6B, 0x6A, 0x68, 0x66 };
-int		ramp3[6] = { 0x6D, 0x6B, 6, 5, 4, 3 };
+int		ramp3[8] = { 0x6D, 0x6B, 6, 5, 4, 3, 0, 0 };
 
 // spark ramps
-int		gSparkRamp[9] = { 0x0FE, 0x0FD, 0x0FC, 0x6F, 0x6E, 0x6D, 0x6C, 0x67, 0x60 };
+int		gSparkRamp[9] = { 0xFE, 0xFD, 0xFC, 0x6F, 0x6E, 0x6D, 0x6C, 0x67, 0x60 };
 
 color24 gTracerColors[] =
 {
@@ -486,10 +486,63 @@ void R_ParticleExplosion2( vec_t* org, int colorStart, int colorLength )
 	}
 }
 
+/*
+===============
+R_BlobExplosion
 
+===============
+*/
+void R_BlobExplosion( vec_t* org )
+{
+	int			i, j;
+	particle_t* p;
 
+	for (i = 0; i < 1024; i++)
+	{
+		if (!free_particles)
+			return;
 
-// TODO: Implement
+		p = free_particles;
+		free_particles = p->next;
+		p->next = active_particles;
+		active_particles = p;
+
+		p->die = cl.time + RandomFloat(1, 1.4);
+
+		if (i & 1)
+		{
+			p->type = pt_blob;
+			p->color = RandomLong(66, 71);
+#if defined( GLQUAKE )
+			p->packedColor = 0;
+#else
+			p->packedColor = hlRGB(host_basepal, p->color);
+#endif
+
+			for (j = 0; j < 3; j++)
+			{
+				p->org[j] = org[j] + RandomFloat(-16, 16);
+				p->vel[j] = RandomFloat(-256, 256);
+			}
+		}
+		else
+		{
+			p->type = pt_blob2;
+			p->color = RandomLong(150, 155);
+#if defined( GLQUAKE )
+			p->packedColor = 0;
+#else
+			p->packedColor = hlRGB(host_basepal, p->color);
+#endif
+
+			for (j = 0; j < 3; j++)
+			{
+				p->org[j] = org[j] + RandomFloat(-16, 16);
+				p->vel[j] = RandomFloat(-256, 256);
+			}
+		}
+	}
+}
 
 /*
 ===============
@@ -503,16 +556,16 @@ particle_t* R_TracerParticles( vec_t* org, vec_t* vel, float life )
 
 	if (!free_particles)
 		return NULL;
-	
+
 	p = free_particles;
 	free_particles = p->next;
 	p->next = gpActiveTracers;
 	gpActiveTracers = p;
 
-	p->die = cl.time + life;
 	p->type = pt_static;
-	p->packedColor = 255;
 	p->color = 4;
+	p->packedColor = 255;
+	p->die = cl.time + life;
 
 	p->ramp = tracerLength.value;
 
@@ -581,7 +634,226 @@ void R_RocketTrail( vec_t *start, vec_t *end, int type )
 R_DrawParticles
 ===============
 */
+extern	cvar_t	sv_gravity;
+
 void R_DrawParticles( void )
+{
+	particle_t* p;
+	float			grav;
+	int				i;
+	float			time2, time3;
+	float			time1;
+	float			dvel;
+	float			frametime;
+#ifdef GLQUAKE
+	vec3_t			up, right;
+	float			scale;
+
+	GL_Bind(particletexture);
+	qglEnable(GL_ALPHA_TEST);
+	qglEnable(GL_BLEND);
+	qglTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+	qglBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	qglBegin(GL_TRIANGLES);
+
+	VectorScale(vup, 1.5, up);
+	VectorScale(vright, 1.5, right);
+#else
+	D_StartParticles();
+
+	VectorScale(vright, xscaleshrink, r_pright);
+	VectorScale(vup, yscaleshrink, r_pup);
+	VectorCopy(vpn, r_ppn);
+#endif
+
+	frametime = cl.time - cl.oldtime;
+	time3 = frametime * 15;
+	time2 = frametime * 10; // 15;
+	time1 = frametime * 5;
+	grav = frametime * sv_gravity.value * 0.05;
+	dvel = 4 * frametime;
+
+	R_FreeDeadParticles(&active_particles);
+
+	for (p = active_particles; p; p = p->next)
+	{
+		if (p->type != pt_blob)
+		{
+#if defined ( GLQUAKE )
+			word* pb;
+			byte rgba[4];
+
+			// hack a scale up to keep particles from disapearing
+			scale = (p->org[0] - r_origin[0]) * vpn[0] + (p->org[1] - r_origin[1]) * vpn[1]
+				+ (p->org[2] - r_origin[2]) * vpn[2];
+
+			if (scale < 20)
+				scale = 1;
+			else
+				scale = 1 + scale * 0.004;
+
+			pb = &host_basepal[4 * p->color];
+			rgba[0] = pb[2];
+			rgba[1] = pb[1];
+			rgba[2] = pb[0];
+			rgba[3] = 255;
+
+			qglColor3ubv(rgba);
+			qglTexCoord2f(0, 0);
+			qglVertex3fv(p->org);
+			qglTexCoord2f(1, 0);
+			qglVertex3f(p->org[0] + up[0] * scale, p->org[1] + up[1] * scale, p->org[2] + up[2] * scale);
+			qglTexCoord2f(0, 1);
+			qglVertex3f(p->org[0] + right[0] * scale, p->org[1] + right[1] * scale, p->org[2] + right[2] * scale);
+#else
+			D_DrawParticle(p);
+#endif
+		}
+
+		p->org[0] += p->vel[0] * frametime;
+		p->org[1] += p->vel[1] * frametime;
+		p->org[2] += p->vel[2] * frametime;
+
+		switch (p->type)
+		{
+		case pt_grav:
+			p->vel[2] -= grav * 20;
+			break;
+
+		case pt_slowgrav:
+			p->vel[2] = grav;
+			break;
+
+		case pt_fire:
+			p->ramp += time1;
+
+			if (p->ramp >= 6)
+			{
+				p->die = -1;
+			}
+			else
+			{
+				p->color = ramp3[(int)p->ramp];
+#if defined( GLQUAKE )
+				p->packedColor = 0;
+#else
+				p->packedColor = hlRGB(host_basepal, p->color);
+#endif
+			}
+
+			p->vel[2] += grav;
+			break;
+
+		case pt_explode:
+			p->ramp += time2;
+
+			if (p->ramp >= 8)
+			{
+				p->die = -1;
+			}
+			else
+			{
+				p->color = ramp1[(int)p->ramp];
+#if defined( GLQUAKE )
+				p->packedColor = 0;
+#else
+				p->packedColor = hlRGB(host_basepal, p->color);
+#endif
+			}
+
+			for (i = 0; i < 3; i++)
+				p->vel[i] += p->vel[i] * (dvel + 1.0);
+
+			p->vel[2] -= grav;
+			break;
+
+		case pt_explode2:
+			p->ramp += time3;
+
+			if (p->ramp >= 8)
+			{
+				p->die = -1;
+			}
+			else
+			{
+				p->color = ramp2[(int)p->ramp];
+#if defined( GLQUAKE )
+				p->packedColor = 0;
+#else
+				p->packedColor = hlRGB(host_basepal, p->color);
+#endif
+			}
+
+			for (i = 0; i < 3; i++)
+				p->vel[i] -= p->vel[i] * (1.0 - frametime);
+
+			p->vel[2] -= grav;
+			break;
+
+		case pt_blob:
+		case pt_blob2:
+			p->ramp += time2;
+
+			if (p->ramp >= 9) // bounds check
+				p->ramp = 0;
+
+			// set spark color
+			p->color = gSparkRamp[(int)p->ramp];
+#if defined( GLQUAKE )
+			p->packedColor = 0;
+#else
+			p->packedColor = hlRGB(host_basepal, p->color);
+#endif
+
+			p->vel[0] -= p->vel[0] * ((frametime * 0.5) + 1.0);
+			p->vel[1] -= p->vel[1] * ((frametime * 0.5) + 1.0);
+			p->vel[2] -= grav * 5.0;
+
+			if (RandomLong(0, 3))
+			{
+				p->type = pt_blob;
+			}
+			else
+			{
+				p->type = pt_blob2;
+			}
+			break;
+
+		case pt_vox_slowgrav:
+			p->vel[2] -= grav * 4;
+			break;
+
+		case pt_vox_grav:
+			p->vel[2] -= grav * 8;
+			break;
+		}
+	}
+
+#ifdef GLQUAKE
+	qglEnd();
+#endif
+
+	R_TracerDraw();
+	R_BeamDrawList();
+
+#ifdef GLQUAKE
+	qglDisable(GL_BLEND);
+	qglDisable(GL_ALPHA_TEST);
+#else
+	D_EndParticles();
+#endif
+}
+
+float	gTracerSize[10] = { 1.5, 0.5, 1, 1, 1, 1, 1, 1, 1, 1 };
+
+/*
+===============
+R_TracerDraw
+
+Draw tracer effects, like sparks, gun tracers etc
+===============
+*/
+void R_TracerDraw( void )
 {
 	// TODO: Implement
 }
@@ -620,6 +892,20 @@ int ScreenTransform( vec_t* point, vec_t* screen )
 	}
 
 	return w <= 0.0;
+}
+
+// TODO: Implement
+
+/*
+===============
+R_BeamDrawList
+
+Update beams created by temp entity system
+===============
+*/
+void R_BeamDrawList( void )
+{
+	// TODO: Implement
 }
 
 // TODO: Implement

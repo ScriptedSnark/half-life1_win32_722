@@ -1241,7 +1241,35 @@ void CL_ParseTEnt( void )
 		break;
 	}
 
-		// TODO: Implement
+	case TE_GUNSHOT:			// bullet hitting wall
+		pos[0] = MSG_ReadCoord();
+		pos[1] = MSG_ReadCoord();
+		pos[2] = MSG_ReadCoord();
+		R_RunParticleEffect(pos, vec3_origin, 0, 20);
+
+		iRand = RandomLong(0, 0x7FFF);
+		if (iRand < 0x3FFF)
+		{
+			switch (iRand % 5)
+			{
+			case 0:
+				S_StartDynamicSound(-1, CHAN_AUTO, cl_sfx_ric1, pos, VOL_NORM, 1.0, 0, PITCH_NORM);
+				break;
+			case 1:
+				S_StartDynamicSound(-1, CHAN_AUTO, cl_sfx_ric2, pos, VOL_NORM, 1.0, 0, PITCH_NORM);
+				break;
+			case 2:
+				S_StartDynamicSound(-1, CHAN_AUTO, cl_sfx_ric3, pos, VOL_NORM, 1.0, 0, PITCH_NORM);
+				break;
+			case 3:
+				S_StartDynamicSound(-1, CHAN_AUTO, cl_sfx_ric4, pos, VOL_NORM, 1.0, 0, PITCH_NORM);
+				break;
+			case 4:
+				S_StartDynamicSound(-1, CHAN_AUTO, cl_sfx_ric5, pos, VOL_NORM, 1.0, 0, PITCH_NORM);
+				break;
+			}
+		}
+		break;
 
 	case TE_EXPLOSION:			// rocket explosion
 		pos[0] = MSG_ReadCoord();
@@ -1297,7 +1325,13 @@ void CL_ParseTEnt( void )
 		}
 		break;
 
-		// TODO: Implement
+	case TE_TAREXPLOSION:			// Quake1 "tarbaby" explosion with sound
+		pos[0] = MSG_ReadCoord();
+		pos[1] = MSG_ReadCoord();
+		pos[2] = MSG_ReadCoord();
+		R_BlobExplosion(pos);
+		S_StartDynamicSound(-1, CHAN_AUTO, cl_sfx_r_exp1, pos, VOL_NORM, 1.0, 0, PITCH_NORM);
+		break;
 
 	case TE_SMOKE:		// alphablend sprite, move vertically 30 pps
 		pos[0] = MSG_ReadCoord();
@@ -1567,8 +1601,8 @@ void CL_ParseTEnt( void )
 		pTemp = CL_TempEntAlloc(pos, cl_sprite_shell);
 		R_Sprite_WallPuff(pTemp, 0.3);
 
-		iRand = RandomLong(0, 32767);
-		if (iRand < 16383)
+		iRand = RandomLong(0, 0x7FFF);
+		if (iRand < 0x3FFF)
 		{
 			switch (iRand % 5)
 			{
