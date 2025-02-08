@@ -1096,12 +1096,72 @@ void R_BloodStream( vec_t* org, vec_t* dir, int pcolor, int speed )
 	}
 }
 
+/*
+===============
+R_Blood
 
+===============
+*/
+void R_Blood( vec_t* org, vec_t* dir, int pcolor, int speed )
+{
+	vec3_t	dirCopy;
+	vec3_t	orgCopy;
+	float	arc;
+	int		count;
+	int		count2;
+	particle_t* p;
+	int		pspeed;
 
+	VectorNormalize(dir);
 
+	pspeed = speed * 3;
 
-// TODO: Implement
+	arc = 0.06;
+	for (count = 0; count < (speed / 2); count++)
+	{
+		orgCopy[0] = org[0] + RandomFloat(-3, 3);
+		orgCopy[1] = org[1] + RandomFloat(-3, 3);
+		orgCopy[2] = org[2] + RandomFloat(-3, 3);
 
+		dirCopy[0] = dir[0] + RandomFloat(-arc, arc);
+		dirCopy[1] = dir[1] + RandomFloat(-arc, arc);
+		dirCopy[2] = dir[2] + RandomFloat(-arc, arc);
+
+		for (count2 = 0; count2 < 8; count2++)
+		{
+			if (!free_particles)
+				return;
+
+			p = free_particles;
+			free_particles = p->next;
+			p->next = active_particles;
+			active_particles = p;
+
+			p->die = cl.time + 1.5;
+			p->color = pcolor + RandomLong(0, 9);
+			p->type = pt_vox_grav;
+#if defined( GLQUAKE )
+			p->packedColor = 0;
+#else
+			p->packedColor = hlRGB(host_basepal, p->color);
+#endif
+
+			p->org[0] = orgCopy[0] + RandomFloat(-1, 1);
+			p->org[1] = orgCopy[1] + RandomFloat(-1, 1);
+			p->org[2] = orgCopy[2] + RandomFloat(-1, 1);
+
+			VectorScale(dirCopy, pspeed, p->vel);
+		}
+
+		pspeed -= speed;
+	}
+}
+
+/*
+===============
+R_RocketTrail
+===============
+*/
 void R_RocketTrail( vec_t *start, vec_t *end, int type )
 {
 	// TODO: Implement

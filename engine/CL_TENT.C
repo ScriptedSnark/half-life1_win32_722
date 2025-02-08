@@ -1561,7 +1561,17 @@ void CL_ParseTEnt( void )
 		R_ShowLine(pos, endpos);
 		break;
 
-		// TODO: Implement
+	case TE_BLOOD:
+		pos[0] = MSG_ReadCoord();
+		pos[1] = MSG_ReadCoord();
+		pos[2] = MSG_ReadCoord();
+		dir[0] = MSG_ReadCoord();
+		dir[1] = MSG_ReadCoord();
+		dir[2] = MSG_ReadCoord();
+		color = MSG_ReadByte();
+		speed = MSG_ReadByte();
+		R_Blood(pos, dir, color, speed);
+		break;
 
 	case TE_FIZZ:
 	{
