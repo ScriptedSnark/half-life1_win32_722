@@ -1539,7 +1539,17 @@ void CL_ParseTEnt( void )
 		R_FunnelSprite(pos, modelindex, flags);
 		break;
 
-		// TODO: Implement
+	case TE_BLOODSTREAM:
+		pos[0] = MSG_ReadCoord();
+		pos[1] = MSG_ReadCoord();
+		pos[2] = MSG_ReadCoord();
+		dir[0] = MSG_ReadCoord();
+		dir[1] = MSG_ReadCoord();
+		dir[2] = MSG_ReadCoord();
+		color = MSG_ReadByte();
+		speed = MSG_ReadByte();
+		R_BloodStream(pos, dir, color, speed);
+		break;
 		
 	case TE_SHOWLINE:
 		pos[0] = MSG_ReadCoord();

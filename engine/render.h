@@ -238,6 +238,7 @@ void R_LavaSplash( vec_t* org );
 void R_LargeFunnel( vec_t* org, int reverse );
 void R_TeleportSplash( vec_t* org );
 void R_ShowLine( vec_t* start, vec_t* end );
+void R_BloodStream( vec_t* org, vec_t* dir, int pcolor, int speed );
 
 int ScreenTransform( vec_t* point, vec_t* screen );
 

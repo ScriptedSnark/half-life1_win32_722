@@ -981,6 +981,121 @@ void R_ShowLine( vec_t* start, vec_t* end )
 	}
 }
 
+/*
+===============
+R_BloodStream
+
+===============
+*/
+void R_BloodStream( vec_t* org, vec_t* dir, int pcolor, int speed )
+{
+	// Add our particles
+	vec3_t	dirCopy;
+	float	arc;
+	int		count;
+	int		count2;
+	particle_t* p;
+	float	num;
+	int		speedCopy = speed;
+
+	VectorNormalize(dir);
+
+	arc = 0.05;
+	for (count = 0; count < 100; count++)
+	{
+		if (!free_particles)
+			return;
+
+		p = free_particles;
+		free_particles = p->next;
+		p->next = active_particles;
+		active_particles = p;
+
+		p->die = cl.time + 2.0;
+		p->color = pcolor + RandomLong(0, 9);
+#if defined( GLQUAKE )
+		p->packedColor = 0;
+#else
+		p->packedColor = hlRGB(host_basepal, p->color);
+#endif
+
+		p->type = pt_vox_grav;
+
+		VectorCopy(org, p->org);
+		VectorCopy(dir, dirCopy);
+		dirCopy[2] -= arc;
+
+		arc -= 0.005;
+
+		VectorScale(dirCopy, speedCopy, p->vel);
+		speedCopy -= 0.00001; // make last few drip
+	}
+
+	arc = 0.075;
+	for (count = 0; count < (speed / 5); count++)
+	{
+		if (!free_particles)
+			return;
+
+		p = free_particles;
+		free_particles = p->next;
+		p->next = active_particles;
+		active_particles = p;
+
+		p->die = cl.time + 3.0;
+		p->type = pt_vox_slowgrav;
+		p->color = pcolor + RandomLong(0, 9);
+#if defined( GLQUAKE )
+		p->packedColor = 0;
+#else
+		p->packedColor = hlRGB(host_basepal, p->color);
+#endif
+
+		VectorCopy(org, p->org);
+		VectorCopy(dir, dirCopy);
+		dirCopy[2] -= arc;
+
+		arc -= 0.005;
+
+		num = RandomFloat(0, 1);
+		speedCopy = speed * num;
+		num *= 1.7;
+
+		VectorScale(dirCopy, num, dirCopy); // randomize a bit
+		VectorScale(dirCopy, speedCopy, p->vel);
+
+		for (count2 = 0; count2 < 2; count2++)
+		{
+			if (!free_particles)
+				return;
+
+			p = free_particles;
+			free_particles = p->next;
+			p->next = active_particles;
+			active_particles = p;
+
+			p->die = cl.time + 3.0;
+			p->type = pt_vox_slowgrav;
+			p->color = pcolor + RandomLong(0, 9);
+#if defined( GLQUAKE )
+			p->packedColor = 0;
+#else
+			p->packedColor = hlRGB(host_basepal, p->color);
+#endif
+
+			p->org[0] = org[0] + RandomFloat(-1, 1);
+			p->org[1] = org[1] + RandomFloat(-1, 1);
+			p->org[2] = org[2] + RandomFloat(-1, 1);
+
+			VectorCopy(dir, dirCopy);
+			dirCopy[2] -= arc;
+
+			VectorScale(dirCopy, num, dirCopy); // randomize a bit
+			VectorScale(dirCopy, speedCopy, p->vel);
+		}
+	}
+}
+
 
 
 
@@ -991,8 +1106,6 @@ void R_RocketTrail( vec_t *start, vec_t *end, int type )
 {
 	// TODO: Implement
 }
-
-// TODO: Implement
 
 /*
 ===============
