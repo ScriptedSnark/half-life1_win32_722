@@ -2468,6 +2468,59 @@ void R_DrawDisk( vec_t* source, vec_t* delta, float width, float scale, float fr
 	}
 }
 
+// Draw cylinder beams (like apache explosion effect)
+void R_DrawCylinder( vec_t* source, vec_t* delta, float width, float scale, float freq, float speed, int segments )
+{
+	int				i;
+	float			div, length, fraction, vLast, vStep;
+	vec3_t			point;
+
+	if (segments < 2)
+		return;
+
+	if (segments > NOISE_DIVISIONS)		// UNDONE: Allow more segments?
+	{
+		segments = NOISE_DIVISIONS;
+	}
+
+	length = Length(delta) * 0.01;
+
+	// Don't lose all of the noise/texture on short beams
+	if (length < 0.5)
+		length = 0.5;
+
+	div = 1.0 / (segments - 1);
+
+	vStep = length * div;		// Texture length texels per space pixel
+
+	vLast = fmod(freq * speed, 1.0);	// Scroll speed 3.5 -- initial texture position, scrolls 3.5/sec (1.0 is entire texture)
+
+	for (i = 0; i < segments; i++)
+	{
+		fraction = i * div;
+
+		point[0] = source[0] + sin(fraction * 2 * M_PI) * freq * delta[2];
+		point[1] = source[1] + cos(fraction * 2 * M_PI) * freq * delta[2];
+		point[2] = source[2] + width;
+
+		tri_GL_Brightness(0);
+		qglTexCoord2f(1, vLast);
+		qglVertex3fv(point);
+
+		point[0] = source[0] + sin(fraction * 2 * M_PI) * freq * (delta[2] + width);
+		point[1] = source[1] + cos(fraction * 2 * M_PI) * freq * (delta[2] + width);
+		point[2] = source[2] - width;
+
+		tri_GL_Brightness(1);
+		qglTexCoord2f(0, vLast);
+		qglVertex3fv(point);
+
+		vLast += vStep; // advance texture scroll (v axis only)
+
+		vLast = fmod(vLast, 1.0);
+	}
+}
+
 
 // TODO: Implement
 
