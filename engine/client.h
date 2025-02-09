@@ -633,3 +633,4 @@ void CL_FxTransform( cl_entity_t* ent, float* transform );
 struct mspriteframe_s* R_GetSpriteFrame( struct msprite_s* pSprite, int frame );
 void R_GetSpriteAxes( cl_entity_t* pEntity, int type, vec_t* forward, vec_t* right, vec_t* up );
 void R_SpriteColor( colorVec* pColor, cl_entity_t* pEntity, int alpha );
+float* R_GetAttachmentPoint( int entity, int attachment );

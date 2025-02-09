@@ -2875,15 +2875,242 @@ int R_BeamCull( vec_t* start, vec_t* end, int pvsOnly )
 // Draw all beam entities
 void R_BeamDraw( BEAM* pbeam, float frametime )
 {
-	// TODO: Implement
-}
+	model_t* sprite;
+	vec3_t	difference;
 
-// TODO: Implement
+	if (pbeam->modelIndex < 0)
+	{
+		pbeam->die = cl.time;
+		return;
+	}
+
+	sprite = cl.model_precache[pbeam->modelIndex];
+	if (!sprite)
+		return;
+
+	if (pbeam->flags & FBEAM_SOLID)
+		tri_GL_RenderMode(kRenderNormal);
+	else
+		tri_GL_RenderMode(kRenderTransAdd);
+
+	// Update frequency
+	pbeam->freq += frametime;
+
+	// UNDONE: Do this differentially somehow?
+	// Generate fractal noise
+	gNoise[0] = 0;
+	gNoise[NOISE_DIVISIONS] = 0;
+	if (pbeam->amplitude != 0)
+	{
+		if (pbeam->flags & FBEAM_SINENOISE)
+		{
+			SineNoise(gNoise, NOISE_DIVISIONS);
+		}
+		else
+		{
+			Noise(gNoise, NOISE_DIVISIONS);
+		}
+	}
+	
+	// update end points
+	if (pbeam->flags & (FBEAM_STARTENTITY | FBEAM_ENDENTITY))
+	{
+		if (pbeam->flags & FBEAM_STARTENTITY)
+		{
+			cl_entity_t* start;
+
+			start = &cl_entities[BEAMENT_ENTITY(pbeam->startEntity)];
+			if (start->model)
+			{
+				float* attachmentPoint = R_GetAttachmentPoint(BEAMENT_ENTITY(pbeam->startEntity), BEAMENT_ATTACHMENT(pbeam->startEntity));
+				VectorCopy(attachmentPoint, pbeam->source);
+
+				pbeam->flags |= FBEAM_STARTVISIBLE;
+			}
+			else
+			{
+				if (!(pbeam->flags & FBEAM_FOREVER))
+					pbeam->flags &= ~FBEAM_STARTENTITY;
+			}
+		}
+		
+		if (pbeam->flags & FBEAM_ENDENTITY)
+		{
+			cl_entity_t* end;
+
+			end = &cl_entities[BEAMENT_ENTITY(pbeam->endEntity)];
+			if (end->model)
+			{
+				float* attachmentPoint = R_GetAttachmentPoint(BEAMENT_ATTACHMENT(pbeam->endEntity), BEAMENT_ATTACHMENT(pbeam->endEntity));
+				VectorCopy(attachmentPoint, pbeam->target);
+
+				pbeam->flags |= FBEAM_ENDVISIBLE;
+
+				// If we've never seen the end entity, don't display
+				if (!(pbeam->flags & FBEAM_ENDVISIBLE))
+					return;
+			}
+			else
+			{
+				if (!(pbeam->flags & FBEAM_FOREVER))
+				{
+					pbeam->flags &= ~FBEAM_ENDENTITY;
+					pbeam->die = cl.time;
+				}
+				return;
+			}
+		}
+
+		if ((pbeam->flags & FBEAM_STARTENTITY) && (!(pbeam->flags & FBEAM_STARTVISIBLE)))
+			return;
+
+		// Compute segments from the new endpoints
+		VectorSubtract(pbeam->target, pbeam->source, difference);
+		VectorCopy(difference, pbeam->delta);
+		
+		if (pbeam->amplitude >= 0.50)
+			pbeam->segments = Length(pbeam->delta) * 0.25 + 3; // one per 4 pixels
+		else
+			pbeam->segments = Length(pbeam->delta) * 0.075 + 3; // one per 16 pixels
+	}
+
+	if ((pbeam->type != TE_BEAMPOINTS || R_BeamCull(pbeam->source, pbeam->target, FALSE))
+		&& R_TriangleSpriteTexture(sprite, (int)(pbeam->frameRate * cl.time + pbeam->frame) % pbeam->frameCount))
+	{
+		if ((pbeam->flags & FBEAM_SINENOISE) && egon_amplitude.value > 0)
+		{
+			particle_t* p;
+			vec3_t org, speed;
+			float length;
+
+			VectorMA(pbeam->target, sin(pbeam->freq * 10.0) * egon_amplitude.value * pbeam->amplitude, vup, org);
+			VectorMA(org, cos(pbeam->freq * 10.0) * egon_amplitude.value * pbeam->amplitude, vright, org);
+
+			VectorSubtract(pbeam->source, org, speed);
+			length = Length(speed);
+			if (length != 0)
+				VectorScale(speed, 1000.0 / length, speed);
+
+			p = R_TracerParticles(org, speed, length * 0.001);
+			if (p)
+				p->color = 7;
+		}
+
+		// update life cycle
+		pbeam->t = pbeam->freq + (pbeam->die - cl.time);
+		if (pbeam->t != 0)
+			pbeam->t = 1.0 - (pbeam->freq / pbeam->t);
+
+		if (pbeam->flags & FBEAM_FADEIN)
+			tri_GL_Color4f(pbeam->r, pbeam->g, pbeam->b, pbeam->t * pbeam->brightness);
+		else if (pbeam->flags & FBEAM_FADEOUT)
+			tri_GL_Color4f(pbeam->r, pbeam->g, pbeam->b, (1.0 - pbeam->t) * pbeam->brightness);
+		else
+			tri_GL_Color4f(pbeam->r, pbeam->g, pbeam->b, pbeam->brightness);
+
+		// Now draw the beam by type
+		switch (pbeam->type)
+		{
+		// Beam between 2 selected points
+		case TE_BEAMPOINTS:
+			qglBegin(GL_QUADS);
+			R_DrawSegs(pbeam->source, pbeam->delta, pbeam->width, pbeam->amplitude, pbeam->freq, pbeam->speed, pbeam->segments, pbeam->flags);
+			qglEnd();
+			break;
+
+		// Screen-aligned beam ring, expands to max radius over lifetime
+		case TE_BEAMTORUS:
+			qglBegin(GL_QUAD_STRIP);
+			R_DrawTorus(pbeam->source, pbeam->delta, pbeam->width, pbeam->amplitude, pbeam->freq, pbeam->speed, pbeam->segments);
+			qglEnd();
+			break;
+
+		// Disk that expands to max radius over lifetime
+		case TE_BEAMDISK:
+			qglBegin(GL_QUAD_STRIP);
+			R_DrawDisk(pbeam->source, pbeam->delta, pbeam->width, pbeam->amplitude, pbeam->freq, pbeam->speed, pbeam->segments);
+			qglEnd();
+			break;
+
+		// Cylinder that expands to max radius over lifetime
+		// Houndeye shockwave effect uses this to create blast circles
+		case TE_BEAMCYLINDER:
+			qglBegin(GL_QUAD_STRIP);
+			R_DrawCylinder(pbeam->source, pbeam->delta, pbeam->width, pbeam->amplitude, pbeam->freq, pbeam->speed, pbeam->segments);
+			qglEnd();
+			break;
+
+		// Create a line of decaying beam segments until entity stops moving
+		case TE_BEAMFOLLOW:
+			qglBegin(GL_QUADS);
+			R_DrawBeamFollow(pbeam);
+			qglEnd();
+			break;
+
+		// Connect a beam ring to two entities
+		case TE_BEAMRING:
+			qglBegin(GL_QUAD_STRIP);
+			R_DrawRing(pbeam->source, pbeam->delta, pbeam->width, pbeam->amplitude, pbeam->freq, pbeam->speed, pbeam->segments);
+			qglEnd();
+			break;
+		}
+	}
+}
 
 // Update beams created by temp entity system
 void R_BeamDrawList( void )
 {
-	// TODO: Implement
+	float	frametime;
+	BEAM* pbeam, * pkill;
+
+	if (!gpActiveBeams && cl_numbeamentities == 0)
+		return;
+
+	frametime = cl.time - cl.oldtime;
+#if defined ( GLQUAKE )
+	qglDisable(GL_ALPHA_TEST);
+	qglDepthMask(GL_FALSE);
+#endif
+	tri_GL_CullFace(TRI_NONE);
+
+	for (;;)
+	{
+		pkill = gpActiveBeams;
+		if (pkill && pkill->die < cl.time && !(pkill->flags & FBEAM_FOREVER))
+		{
+			gpActiveBeams = pkill->next;
+			pkill->next = gpFreeBeams;
+			gpFreeBeams = pkill;
+			continue;
+		}
+		break;
+	}
+
+	for (pbeam = gpActiveBeams; pbeam; pbeam = pbeam->next)
+	{
+		for (;;)
+		{
+			pkill = pbeam->next;
+			if (pkill && pkill->die <= cl.time && !(pkill->flags & FBEAM_FOREVER))
+			{
+				pbeam->next = pkill->next;
+				pkill->next = gpFreeBeams;
+				gpFreeBeams = pkill;
+				continue;
+			}
+			break;
+		}
+
+		R_BeamDraw(pbeam, frametime);
+	}
+
+	R_DrawBeamEntList(frametime);
+
+#if defined ( GLQUAKE )
+	qglDepthMask(GL_TRUE);
+#endif
+	tri_GL_CullFace(TRI_FRONT);
+	tri_GL_RenderMode(kRenderNormal);
 }
 
-// TODO: Implement
+// TODO: Implement (check if there's sw code in the memory)
