@@ -2664,6 +2664,129 @@ void R_DrawBeamFollow( BEAM* pbeam )
 	}
 }
 
+// Draw beam ring
+void R_DrawRing( vec_t* source, vec_t* delta, float width, float amplitude, float freq, float speed, int segments )
+{
+	int				i, j, noiseIndex, noiseStep;
+	float			div, length, fraction, factor, vLast, vStep;
+	vec3_t			last1, last2, point, screen, screenLast, tmp, normal;
+	vec3_t			center, xaxis, yaxis, zaxis;
+	float			radius, x, y, scale;
+
+	if (segments < 2)
+		return;
+
+	VectorClear(screenLast);
+	segments = segments * M_PI;
+
+	if (segments > NOISE_DIVISIONS * 8)		// UNDONE: Allow more segments?
+	{
+		segments = NOISE_DIVISIONS * 8;
+	}
+
+	length = Length(delta) * 0.01 * M_PI;
+	if (length < 0.5)	// Don't lose all of the noise/texture on short beams
+		length = 0.5;
+
+	div = 1.0 / (segments - 1);
+
+	vStep = length * div / 8.0;	// Texture length texels per space pixel
+
+	vLast = fmod(freq * speed, 1);	// Scroll speed 3.5 -- initial texture position, scrolls 3.5/sec (1.0 is entire texture)
+	scale = amplitude * length / 8.0;
+
+	// Iterator to resample noise waveform (it needs to be generated in powers of 2)
+	noiseStep = (int)(NOISE_DIVISIONS * div * 65536.0) * 8;
+	noiseIndex = 0;
+
+	VectorScale(delta, 0.5, delta);
+	VectorAdd(source, delta, center);
+	zaxis[0] = 0; zaxis[1] = 0; zaxis[2] = 1;
+
+	VectorCopy(delta, xaxis);
+	radius = Length(xaxis);
+
+	// cull beamring
+	// --------------------------------
+	// Compute box center +/- radius
+	last1[0] = radius;
+	last1[1] = radius;
+	last1[2] = scale;
+	VectorAdd(center, last1, tmp);		// maxs
+	VectorSubtract(center, last1, screen);	// mins
+
+	if (!cl.worldmodel)
+		return;
+
+	// Is that box in PVS && frustum?
+	if (!PVSNode(cl.worldmodel->nodes, screen, tmp) || R_CullBox(screen, tmp))
+	{
+		return;
+	}
+
+	yaxis[0] = xaxis[1]; yaxis[1] = -xaxis[0]; yaxis[2] = 0;
+	VectorNormalize(yaxis);
+	VectorScale(yaxis, radius, yaxis);
+
+	j = segments / 8;
+
+	for (i = 0; i < segments + 1; i++)
+	{
+		fraction = i * div;
+		x = sin(fraction * 2 * M_PI);
+		y = cos(fraction * 2 * M_PI);
+
+		point[0] = center[0] + xaxis[0] * x + yaxis[0] * y;
+		point[1] = center[1] + xaxis[1] * x + yaxis[1] * y;
+		point[2] = center[2] + xaxis[2] * x + yaxis[2] * y;
+
+		// distort using noise
+		factor = gNoise[(noiseIndex >> 16) & (NOISE_DIVISIONS - 1)] * scale;
+		VectorMA(point, factor, vup, point);
+
+		// Rotate the noise along the perpendicluar axis a bit to keep the bolt from looking diagonal
+		factor = gNoise[(noiseIndex >> 16) & (NOISE_DIVISIONS - 1)] * scale;
+		factor *= cos(fraction * M_PI * 24 + freq);
+		VectorMA(point, factor, vright, point);
+
+		// Transform start into screen space
+		ScreenTransform(point, screen);
+
+		if (i != 0)
+		{
+			// build world-space normal to screen-space direction vector
+			VectorSubtract(screen, screenLast, tmp);
+			// we don't need Z, we're in screen space
+			tmp[2] = 0;
+			VectorNormalize(tmp);
+			VectorScale(vup, tmp[0], normal);	// Build point along noraml line (normal is -y, x)
+			VectorMA(normal, -tmp[1], vright, normal);
+
+			// Make a wide line
+			VectorMA(point, width, normal, last1);
+			VectorMA(point, -width, normal, last2);
+
+			vLast += vStep;	// Advance texture scroll (v axis only)
+			qglTexCoord2f(1, vLast);
+			qglVertex3fv(last2);
+			qglTexCoord2f(0, vLast);
+			qglVertex3fv(last1);
+		}
+
+		VectorCopy(screen, screenLast);
+
+		vLast = fmod(vLast, 1.0);
+		noiseIndex += noiseStep;
+
+		j--;
+		if (j == 0 && amplitude != 0)
+		{
+			j = segments / 8;
+			Noise(gNoise, NOISE_DIVISIONS);
+		}
+	}
+}
+
 // TODO: Implement
 
 /*
