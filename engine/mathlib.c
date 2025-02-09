@@ -180,6 +180,30 @@ void VectorScale( const vec_t* in, vec_t scale, vec_t* out )
 
 // TODO: Implement
 
+void VectorMatrix( vec_t* forward, vec_t* right, vec_t* up )
+{
+	vec3_t tmp;
+
+	if (forward[0] == 0 && forward[1] == 0)
+	{
+		right[0] = 1;
+		right[1] = 0;
+		right[2] = 0;
+		up[0] = -forward[2];
+		up[1] = 0;
+		up[2] = 0;
+		return;
+	}
+
+	tmp[0] = 0; tmp[1] = 0; tmp[2] = 1;
+	CrossProduct(forward, tmp, right);
+	VectorNormalize(right);
+	CrossProduct(right, forward, up);
+	VectorNormalize(up);
+}
+
+// TODO: Implement
+
 
 /*
 ================

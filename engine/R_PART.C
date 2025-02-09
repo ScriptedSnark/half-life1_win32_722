@@ -1164,7 +1164,152 @@ R_RocketTrail
 */
 void R_RocketTrail( vec_t *start, vec_t *end, int type )
 {
-	// TODO: Implement
+	vec3_t	vec, right, up;
+	float	len;
+	int		j;
+	particle_t* p;
+	int		dec;
+
+	static int tracercount;
+
+	VectorSubtract(end, start, vec);
+
+	len = VectorNormalize(vec);
+
+	if (type == 7)
+	{
+		dec = 1;
+		VectorMatrix(vec, right, up);
+	}
+	else if (type < 128)
+	{
+		dec = 3;
+	}
+	else
+	{
+		dec = 1;
+		type -= 128;
+	}
+
+	VectorScale(vec, dec, vec);
+
+	while (len > 0)
+	{
+		len -= dec;
+
+		if (!free_particles)
+			return;
+
+		p = free_particles;
+		free_particles = p->next;
+		p->next = active_particles;
+		active_particles = p;
+
+		VectorCopy(vec3_origin, p->vel);
+
+		p->die = cl.time + 2.0;
+
+		switch (type)
+		{
+		case 0: // rocket trail
+			p->ramp = RandomLong(0, 3);
+			p->type = pt_fire;
+			p->color = ramp3[(int)p->ramp];
+			for (j = 0; j < 3; j++)
+				p->org[j] = start[j] + RandomFloat(-3, 3);
+			break;
+
+		case 1:	// smoke
+			p->ramp = RandomLong(2, 5);
+			p->type = pt_fire;
+			p->color = ramp3[(int)p->ramp];
+			for (j = 0; j < 3; j++)
+				p->org[j] = start[j] + RandomFloat(-3, 3);
+			break;
+	
+		case 2:	// blood
+			p->type = pt_grav;
+			p->color = RandomLong(67, 70);
+			for (j = 0; j < 3; j++)
+				p->org[j] = start[j] + RandomFloat(-3, 3);
+			break;
+
+		case 3:
+		case 5:	// tracer
+			p->die = cl.time + 0.5;
+			p->type = pt_static;
+
+			if (type == 3)
+				p->color = 52 + (tracercount & 4) * 2;
+			else
+				p->color = 230 + (tracercount & 4) * 2;
+
+			VectorCopy(start, p->org);
+			tracercount++;
+
+			if (tracercount & 1)
+			{
+				p->vel[0] = 30 * vec[1];
+				p->vel[1] = 30 * -vec[0];
+			}
+			else
+			{
+				p->vel[0] = 30 * -vec[1];
+				p->vel[1] = 30 * vec[0];
+			}
+			break;
+
+		case 4: // slight blood
+			p->type = pt_grav;
+			p->color = RandomLong(67, 70);
+			for (j = 0; j < 3; j++)
+				p->org[j] = start[j] + RandomFloat(-3, 3);
+			len -= 3;
+			break;
+
+		case 6:	// voor trail
+			p->ramp = RandomLong(0, 3);
+			p->type = pt_fire;
+			p->color = ramp3[(int)p->ramp];
+			VectorCopy(start, p->org);
+			break;
+
+		case 7:	// explosion tracer
+		{
+			float s, c, x, y;
+
+			j = RandomLong(0, 0xFFFF);
+			s = sin(j);
+			c = cos(j);
+
+			j = RandomLong(8, 16);
+			y = s * j;
+			x = c * j;
+
+			p->org[0] = start[0] + right[0] * y + up[0] * x;
+			p->org[1] = start[1] + right[1] * y + up[1] * x;
+			p->org[2] = start[2] + right[2] * y + up[2] * x;
+			
+			VectorSubtract(start, p->org, p->vel);
+			VectorScale(p->vel, 2.0, p->vel);
+			VectorMA(p->vel, RandomFloat(96, 111), vec, p->vel);
+
+			p->die = cl.time + 2.0;
+			p->ramp = RandomLong(0, 3);
+			p->color = ramp3[(int)p->ramp];
+			p->type = pt_explode2;
+			break;
+		}
+		}
+
+#if defined( GLQUAKE )
+		p->packedColor = 0;
+#else
+		p->packedColor = hlRGB(host_basepal, p->color);
+#endif
+
+		VectorAdd(start, vec, start);
+	}
 }
 
 /*
