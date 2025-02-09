@@ -2192,6 +2192,156 @@ int ScreenTransform( vec_t* point, vec_t* screen )
 	return w <= 0.0;
 }
 
+/*
+===============
+R_DrawSegs
+
+Draw segmented beams
+===============
+*/
+void R_DrawSegs( vec_t* source, vec_t* delta, float width, float scale, float freq, float speed, int segments, int flags )
+{
+	int				i, noiseIndex, noiseStep;
+	float			div, length, fraction, factor, vLast, vStep, brightness;
+	vec3_t			last1, last2, point, screen, screenLast, tmp, normal;
+
+	if (segments < 2)
+		return;
+	
+	if (segments > NOISE_DIVISIONS)		// UNDONE: Allow more segments?
+	{
+		segments = NOISE_DIVISIONS;
+	}
+
+	length = Length(delta) * 0.01;
+
+	// Don't lose all of the noise/texture on short beams
+	if (length < 0.5)
+		length = 0.5;
+
+	div = 1.0 / (segments - 1);
+
+	vStep = length * div;	// Texture length texels per space pixel
+
+	vLast = fmod(freq * speed, 1);	// Scroll speed 3.5 -- initial texture position, scrolls 3.5/sec (1.0 is entire texture)
+
+	if (flags & FBEAM_SINENOISE)
+	{
+		if (segments < 16)
+			segments = 16;
+
+		scale *= 100;
+		length = segments * (1.0 / 10);
+	}
+	else
+	{
+		scale *= length;
+	}
+
+	ScreenTransform(source, screenLast);
+	VectorMA(source, div, delta, point);
+	ScreenTransform(point, screen);
+
+	// build world-space normal to screen-space direction vector
+	VectorSubtract(screen, screenLast, tmp);
+	// we don't need Z, we're in screen space
+	tmp[2] = 0.0;
+	VectorNormalize(tmp);
+	VectorScale(vup, tmp[0], normal);	// Build start along noraml line (normal is -y, x)
+	VectorMA(normal, -tmp[1], vright, normal);
+
+	// Make a wide line
+	VectorMA(source, width, normal, last1);
+	VectorMA(source, -width, normal, last2);
+
+	// Iterator to resample noise waveform (it needs to be generated in powers of 2)
+	noiseStep = (int)((float)NOISE_DIVISIONS * div * 65536.0);
+	noiseIndex = noiseStep;
+	
+	// Sine noise beams have different length calculations
+	if (flags & FBEAM_SINENOISE)
+	{
+		noiseIndex = 0;
+	}
+
+	brightness = 1.0f;
+	if (flags & FBEAM_SHADEIN)
+		brightness = 0.0;
+
+	for (i = 1; i < segments; i++)
+	{
+		fraction = i * div;
+
+		tri_GL_Brightness(brightness);
+		qglTexCoord2f(0, vLast);
+		qglVertex3fv(last1);
+		tri_GL_Brightness(brightness);
+		qglTexCoord2f(1, vLast);
+		qglVertex3fv(last2);
+
+		if (flags & FBEAM_SHADEIN)
+		{
+			brightness = fraction;
+		}
+		else if (flags & FBEAM_SHADEOUT)
+		{
+			brightness = 1.0 - fraction;
+		}
+
+		VectorMA(source, fraction, delta, point);
+
+		// Distort using noise
+		if (scale != 0)
+		{
+			factor = gNoise[noiseIndex >> 16] * scale;
+
+			if (flags & FBEAM_SINENOISE)
+			{
+				VectorMA(point, factor * sin(fraction * M_PI * length + freq), vup, point);
+				// rotate the noise along the perpendicluar axis a bit to keep the bolt from looking diagonal
+				VectorMA(point, factor * cos(fraction * M_PI * length + freq), vright, point);
+			}
+			else
+			{
+				VectorMA(point, factor, vup, point);
+				VectorMA(point, factor * cos(fraction * M_PI * 3.0 + freq), vright, point);
+			}
+		}
+
+		ScreenTransform(point, screen);
+
+		// build world-space normal to screen-space direction vector
+		VectorSubtract(screen, screenLast, tmp);
+
+		// we don't need Z, we're in screen space
+		tmp[2] = 0.0;
+
+		VectorNormalize(tmp);
+		VectorScale(vup, tmp[0], normal);	// Build start along noraml line (normal is -y, x)
+		VectorMA(normal, -tmp[1], vright, normal);
+
+		// Make a wide line
+		VectorMA(point, width, normal, last1);
+		VectorMA(point, -width, normal, last2);
+
+		vLast += vStep; // advance texture scroll (v axis only)
+		tri_GL_Brightness(brightness);
+		qglTexCoord2f(1, vLast);
+		qglVertex3fv(last2);
+		tri_GL_Brightness(brightness);
+		qglTexCoord2f(0, vLast);
+		qglVertex3fv(last1);
+
+		VectorCopy(screen, screenLast);
+
+		noiseIndex += noiseStep;
+		vLast = fmod(vLast, 1.0);
+	};
+}
+
+
+
+
 // TODO: Implement
 
 /*
