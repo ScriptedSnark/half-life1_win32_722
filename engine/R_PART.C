@@ -2239,7 +2239,7 @@ void R_DrawSegs( vec_t* source, vec_t* delta, float width, float scale, float fr
 	// build world-space normal to screen-space direction vector
 	VectorSubtract(screen, screenLast, tmp);
 	// we don't need Z, we're in screen space
-	tmp[2] = 0.0;
+	tmp[2] = 0;
 	VectorNormalize(tmp);
 	VectorScale(vup, tmp[0], normal);	// Build start along noraml line (normal is -y, x)
 	VectorMA(normal, -tmp[1], vright, normal);
@@ -2308,7 +2308,7 @@ void R_DrawSegs( vec_t* source, vec_t* delta, float width, float scale, float fr
 		VectorSubtract(screen, screenLast, tmp);
 
 		// we don't need Z, we're in screen space
-		tmp[2] = 0.0;
+		tmp[2] = 0;
 
 		VectorNormalize(tmp);
 		VectorScale(vup, tmp[0], normal);	// Build start along noraml line (normal is -y, x)
@@ -2521,6 +2521,148 @@ void R_DrawCylinder( vec_t* source, vec_t* delta, float width, float scale, floa
 	}
 }
 
+// Draw beam that follows some entity
+void R_DrawBeamFollow( BEAM* pbeam )
+{
+	particle_t* pNew = NULL;
+	particle_t* pHead;
+
+	vec3_t			delta;
+	float			fraction;
+	float			div;
+	float			vLast = 0.0;
+	float			vStep = 1.0;
+	vec3_t			last1, last2, screen, screenLast, tmp, normal;
+
+	R_FreeDeadParticles(&pbeam->particles);
+
+	pHead = pbeam->particles;
+
+	div = 0;
+	if (pbeam->flags & FBEAM_STARTENTITY)
+	{
+		if (pHead)
+		{
+			VectorSubtract(pHead->org, pbeam->source, delta);
+			div = Length(delta);
+			if (div >= 32 && free_particles)
+			{
+				pNew = free_particles;
+				free_particles = pNew->next;
+			}
+		}
+		else if (free_particles)
+		{
+			pNew = free_particles;
+			free_particles = pNew->next;
+		}
+	}
+
+	if (pNew)
+	{
+		VectorCopy(pbeam->source, pNew->org);
+		pNew->die = cl.time + pbeam->amplitude;
+		VectorCopy(vec3_origin, pNew->vel);
+
+		pbeam->die = cl.time + pbeam->amplitude;
+		pNew->next = pHead;
+		pbeam->particles = pNew;
+		pHead = pNew;
+	}
+
+	if (!pHead)
+	{
+		return;
+	}
+	if (!pNew && div != 0)
+	{
+		VectorCopy(pbeam->source, delta);
+		ScreenTransform(pbeam->source, screenLast);
+		ScreenTransform(pHead->org, screen);
+	}
+	else if (pHead && pHead->next)
+	{
+		VectorCopy(pHead->org, delta);
+		ScreenTransform(pHead->org, screenLast);
+		ScreenTransform(pHead->next->org, screen);
+		pHead = pHead->next;
+	}
+	else
+	{
+		return;
+	}
+
+	// Build world-space normal to screen-space direction vector
+	VectorSubtract(screen, screenLast, tmp);
+	// we don't need Z, we're in screen space
+	tmp[2] = 0;
+	VectorNormalize(tmp);
+	VectorScale(vup, tmp[0], normal);	// Build point along noraml line (normal is -y, x)
+	VectorMA(normal, -tmp[1], vright, normal);
+
+	// Make a wide line
+	VectorMA(delta, pbeam->width, normal, last1);
+	VectorMA(delta, -pbeam->width, normal, last2);
+
+	div = 1.0 / pbeam->amplitude;
+	fraction = (pbeam->die - cl.time) * div;
+
+	for (; pHead; pHead = pHead->next)
+	{
+		tri_GL_Brightness(fraction);
+		qglTexCoord2f(0, 0);
+		qglVertex3fv(last1);
+
+		tri_GL_Brightness(fraction);
+		qglTexCoord2f(1, 0);
+		qglVertex3fv(last2);
+
+		// Transform start into screen space
+		ScreenTransform(pHead->org, screen);
+		// Build world-space normal to screen-space direction vector
+		VectorSubtract(screen, screenLast, tmp);
+		// we don't need Z, we're in screen space
+		tmp[2] = 0;
+		VectorNormalize(tmp);
+		VectorScale(vup, tmp[0], normal);	// Build point along noraml line (normal is -y, x)
+		VectorMA(normal, -tmp[1], vright, normal);
+
+		// Make a wide line
+		VectorMA(pHead->org, pbeam->width, normal, last1);
+		VectorMA(pHead->org, -pbeam->width, normal, last2);
+
+		vLast += vStep;	// Advance texture scroll (v axis only)
+
+		if (pHead->next != NULL)
+		{
+			fraction = (pHead->die - cl.time) * div;
+		}
+		else
+		{
+			fraction = 0.0;
+		}
+
+		tri_GL_Brightness(fraction);
+		qglTexCoord2f(1, 1);
+		qglVertex3fv(last2);
+
+		tri_GL_Brightness(fraction);
+		qglTexCoord2f(0, 1);
+		qglVertex3fv(last1);
+
+		VectorCopy(screen, screenLast);
+
+		vLast = fmod(vLast, 1.0);
+	}
+
+	// Drift popcorn trail if there is a velocity
+	pHead = pbeam->particles;
+	while (pHead)
+	{
+		VectorMA(pHead->org, cl.time - cl.oldtime, pHead->vel, pHead->org);
+		pHead = pHead->next;
+	}
+}
 
 // TODO: Implement
 
