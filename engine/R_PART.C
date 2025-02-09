@@ -1851,7 +1851,318 @@ void R_DrawBeamEntList( float frametime )
 	}
 }
 
-// TODO: Implement
+BEAM* R_BeamEnts( int startEnt, int endEnt, int modelIndex, float life, float width, float amplitude, float brightness, float speed, int startFrame, float framerate, float r, float g, float b )
+{
+	BEAM* pbeam;
+	cl_entity_t* start, * end;
+
+	if (life != 0.0)
+	{
+		start = &cl_entities[BEAMENT_ENTITY(startEnt)];
+		if (!start->model)
+			return NULL;
+
+		end = &cl_entities[BEAMENT_ENTITY(endEnt)];
+		if (!end->model)
+			return NULL;
+	}
+
+	pbeam = R_BeamLightning(vec3_origin, vec3_origin, modelIndex, life, width, amplitude, brightness, speed);
+	if (!pbeam)
+		return NULL;
+
+	pbeam->type = TE_BEAMPOINTS;
+	pbeam->flags = (FBEAM_STARTENTITY | FBEAM_ENDENTITY);
+
+	if (life == 0.0)
+	{
+		pbeam->flags |= FBEAM_FOREVER;
+	}
+
+	pbeam->startEntity = startEnt;
+	pbeam->endEntity = endEnt;
+
+	SetBeamAttributes(pbeam, r, g, b, framerate, startFrame);
+
+	return pbeam;
+}
+
+// Creates a beam between an entity and a point
+BEAM* R_BeamEntPoint( int startEnt, vec_t* end, int modelIndex, float life, float width, float amplitude, float brightness, float speed, int startFrame, float framerate, float r, float g, float b )
+{
+	BEAM* pbeam;
+	cl_entity_t* start;
+
+	if (life != 0.0)
+	{
+		start = &cl_entities[BEAMENT_ENTITY(startEnt)];
+		if (!start->model)
+			return NULL;
+	}
+
+	pbeam = R_BeamLightning(vec3_origin, end, modelIndex, life, width, amplitude, brightness, speed);
+	if (!pbeam)
+		return NULL;
+
+	pbeam->type = TE_BEAMPOINTS;
+	pbeam->flags = FBEAM_STARTENTITY;
+
+	if (life == 0.0)
+	{
+		pbeam->flags |= FBEAM_FOREVER;
+	}
+
+	pbeam->startEntity = startEnt;
+	pbeam->endEntity = 0;
+
+	SetBeamAttributes(pbeam, r, g, b, framerate, startFrame);
+
+	return pbeam;
+}
+
+BEAM* R_BeamPoints( vec_t* start, vec_t* end, int modelIndex, float life, float width, float amplitude, float brightness, float speed, int startFrame, float framerate, float r, float g, float b )
+{
+	BEAM* pbeam;
+
+	// don't start temporary beams out of the PVS
+	if (life != 0.0 && !R_BeamCull(start, end, TRUE))
+		return NULL;
+
+	pbeam = R_BeamLightning(start, end, modelIndex, life, width, amplitude, brightness, speed);
+	if (!pbeam)
+		return NULL;
+
+	if (life == 0.0)
+	{
+		pbeam->flags |= FBEAM_FOREVER;
+	}
+
+	SetBeamAttributes(pbeam, r, g, b, framerate, startFrame);
+
+	return pbeam;
+}
+
+BEAM* R_BeamCirclePoints( int type, vec_t* start, vec_t* end, int modelIndex, float life, float width, float amplitude, float brightness, float speed, int startFrame, float framerate, float r, float g, float b )
+{
+	BEAM* pbeam;
+
+	pbeam = R_BeamLightning(start, end, modelIndex, life, width, amplitude, brightness, speed);
+	if (!pbeam)
+		return NULL;
+
+	pbeam->type = type;
+
+	if (life == 0.0)
+	{
+		pbeam->flags |= FBEAM_FOREVER;
+	}
+
+	SetBeamAttributes(pbeam, r, g, b, framerate, startFrame);
+
+	return pbeam;
+}
+
+BEAM* R_BeamFollow( int startEnt, int modelIndex, float life, float width, float r, float g, float b, float brightness )
+{
+	BEAM* pbeam;
+
+	pbeam = R_BeamLightning(vec3_origin, vec3_origin, modelIndex, life, width, life, brightness, 1.0);
+	if (!pbeam)
+		return NULL;
+
+	pbeam->type = TE_BEAMFOLLOW;
+	pbeam->flags = FBEAM_STARTENTITY;
+
+	pbeam->startEntity = startEnt;
+
+	SetBeamAttributes(pbeam, r, g, b, 1.0, 0);
+
+	return pbeam;
+}
+
+// Create a beam ring between two entities
+BEAM* R_BeamRing( int startEnt, int endEnt, int modelIndex, float life, float width, float amplitude, float brightness, float speed, int startFrame, float framerate, float r, float g, float b )
+{
+	BEAM* pbeam;
+	cl_entity_t* start, * end;
+
+	if (life != 0.0)
+	{
+		start = &cl_entities[startEnt];
+		if (!start->model)
+			return NULL;
+
+		end = &cl_entities[endEnt];
+		if (!end->model)
+			return NULL;
+	}
+
+	pbeam = R_BeamLightning(vec3_origin, vec3_origin, modelIndex, life, width, amplitude, brightness, speed);
+	if (!pbeam)
+		return NULL;
+
+	pbeam->type = TE_BEAMRING;
+	pbeam->flags = (FBEAM_STARTENTITY | FBEAM_ENDENTITY);
+
+	if (life == 0.0)
+	{
+		pbeam->flags |= FBEAM_FOREVER;
+	}
+
+	pbeam->startEntity = startEnt;
+	pbeam->endEntity = endEnt;
+	
+	SetBeamAttributes(pbeam, r, g, b, framerate, startFrame);
+
+	return pbeam;
+}
+
+// Iterates through active list and kills beams associated with deadEntity
+void R_KillDeadBeams( int deadEntity )
+{
+	BEAM* pbeam;
+	BEAM* pnewlist;
+	BEAM* pnext;
+	particle_t* pHead;
+
+	pbeam = gpActiveBeams;  // Old list.
+	pnewlist = NULL;		// New list.
+
+	while (pbeam)
+	{
+		pnext = pbeam->next;
+		if (pbeam->startEntity != deadEntity)   // Link into new list.
+		{
+			pbeam->next = pnewlist;
+			pnewlist = pbeam;
+
+			pbeam = pnext;
+			continue;
+		}
+
+		pbeam->flags &= ~(FBEAM_STARTENTITY | FBEAM_ENDENTITY);
+		if (pbeam->type != TE_BEAMFOLLOW)
+		{
+			// Die Die Die!
+			pbeam->die = cl.time - 0.1;
+
+			// Kill off particles
+			pHead = pbeam->particles;
+			while (pHead)
+			{
+				pHead->die = cl.time - 0.1;
+				pHead = pHead->next;
+			}
+
+			// Free particles that have died off.
+			R_FreeDeadParticles(&pbeam->particles);
+
+			// Clear us out
+			memset(pbeam, 0, sizeof(*pbeam));
+
+			// Now link into free list;
+			pbeam->next = gpFreeBeams;
+			gpFreeBeams = pbeam;
+		}
+		else
+		{
+			// Stay active
+			pbeam->next = pnewlist;
+			pnewlist = pbeam;
+		}
+		pbeam = pnext;
+	}
+
+	// We now have a new list with the bogus stuff released.
+	gpActiveBeams = pnewlist;
+}
+
+void R_BeamKill( int deadEntity )
+{
+	BEAM* pbeam;
+
+	pbeam = gpActiveBeams;
+	while (pbeam)
+	{
+		if ((pbeam->flags & FBEAM_STARTENTITY) && pbeam->startEntity == deadEntity)
+		{
+			pbeam->flags &= ~(FBEAM_STARTENTITY | FBEAM_FOREVER);
+
+			if (pbeam->type != TE_BEAMFOLLOW)
+				pbeam->die = cl.time;
+		}
+
+		if ((pbeam->flags & FBEAM_ENDENTITY) && pbeam->endEntity == deadEntity)
+		{
+			pbeam->flags &= ~(FBEAM_ENDENTITY | FBEAM_FOREVER);
+			pbeam->die = cl.time;
+		}
+
+		pbeam = pbeam->next;
+	}
+}
+
+/*
+===============
+R_Implosion
+===============
+*/
+void R_Implosion( vec_t* end, float radius, int count, float life )
+{
+	int		i;
+	vec3_t	start, temp;
+	vec3_t	vel;
+
+	for (i = 0; i < count; i++)
+	{
+		temp[0] = (radius / 100) * RandomFloat(-100, 100);
+		temp[1] = (radius / 100) * RandomFloat(-100, 100);
+		temp[2] = (radius / 100) * RandomFloat(0, 100);
+
+		VectorAdd(temp, end, start);
+		VectorScale(temp, -1.0 / life, vel);
+
+		R_TracerParticles(start, vel, life);
+	}
+}
+
+#define NOISE_DIVISIONS		128
+float	gNoise[NOISE_DIVISIONS + 1];
+
+//		freq2 += step * 0.1;
+// Fractal noise generator, power of 2 wavelength
+void Noise( float* noise, int divs )
+{
+	int div2;
+
+	div2 = divs >> 1;
+
+	if (divs < 2)
+		return;
+
+	// noise is normalized to +/- scale
+	noise[div2] = (noise[0] + noise[divs]) * 0.5 + divs * RandomFloat(-0.125, 0.125);
+	if (div2 > 1)
+	{
+		Noise(&noise[div2], div2);
+		Noise(noise, div2);
+	}
+}
+
+void SineNoise( float* noise, int divs )
+{
+	int i;
+	float freq, freq2;
+	float step = M_PI / (float)divs;
+
+	freq = 0;
+	freq2 = 0;
+	for (i = 0; i < divs; i++)
+	{
+		noise[i] = sin(freq);
+		freq += step;
+	}
+}
 
 // Converts a world coordinate to a screen coordinate
 // Returns true if it's Z clipped, false otherwise
@@ -1882,6 +2193,19 @@ int ScreenTransform( vec_t* point, vec_t* screen )
 }
 
 // TODO: Implement
+
+/*
+===============
+R_BeamCull
+
+Cull beam by bbox
+===============
+*/
+int R_BeamCull( vec_t* start, vec_t* end, int pvsOnly )
+{
+	// TODO: Implement
+	return 0;
+}
 
 // Draw all beam entities
 void R_BeamDraw( BEAM* pbeam, float frametime )

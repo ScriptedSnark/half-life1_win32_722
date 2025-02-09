@@ -543,7 +543,7 @@ void CL_ParsePacketEntities( qboolean delta )
 			if (flags & U_REMOVE)
 			{
 				oldindex++;
-//				R_BeamRemove(oldnum); TODO: Implement
+				R_KillDeadBeams(oldnum);
 				continue;
 			}
 //Con_Printf("delta %i\n",newnum);

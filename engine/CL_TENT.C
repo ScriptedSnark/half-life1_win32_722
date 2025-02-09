@@ -1237,7 +1237,18 @@ void CL_ParseTEnt( void )
 
 		flSpeed = MSG_ReadByte() * 0.1;
 
-		// TODO: Implement
+		switch (type)
+		{
+		case TE_BEAMENTS:
+			R_BeamEnts(startEnt, endEnt, modelindex, life, width, amplitude, a, flSpeed, startFrame, frameRate, r, g, b);
+			break;
+		case TE_BEAMENTPOINT:
+			R_BeamEntPoint(startEnt, endpos, modelindex, life, width, amplitude, a, flSpeed, startFrame, frameRate, r, g, b);
+			break;
+		case TE_BEAMPOINTS:
+			R_BeamPoints(pos, endpos, modelindex, life, width, amplitude, a, flSpeed, startFrame, frameRate, r, g, b);
+			break;
+		}
 		break;
 	}
 
@@ -1353,7 +1364,24 @@ void CL_ParseTEnt( void )
 		R_TracerEffect(pos, endpos);
 		break;
 
-		// TODO: Implement
+	case TE_LIGHTNING:				// lightning bolts
+	{
+		float width;
+		float amplitude;
+
+		pos[0] = MSG_ReadCoord();
+		pos[1] = MSG_ReadCoord();
+		pos[2] = MSG_ReadCoord();
+		endpos[0] = MSG_ReadCoord();
+		endpos[1] = MSG_ReadCoord();
+		endpos[2] = MSG_ReadCoord();
+		life = MSG_ReadByte() * 0.1;
+		width = MSG_ReadByte() * 0.1;
+		amplitude = MSG_ReadByte() * 0.01;
+		modelindex = MSG_ReadShort();
+		R_BeamLightning(pos, endpos, modelindex, life, width, amplitude, 0.6, 3.5);
+		break;
+	}
 
 	case TE_SPARKS:
 		pos[0] = MSG_ReadCoord();
@@ -1448,7 +1476,19 @@ void CL_ParseTEnt( void )
 		break;
 	}
 
-		// TODO: Implement
+	case TE_IMPLOSION:
+	{
+		float radius;
+
+		pos[0] = MSG_ReadCoord();
+		pos[1] = MSG_ReadCoord();
+		pos[2] = MSG_ReadCoord();
+		radius = MSG_ReadByte();
+		count = MSG_ReadByte();
+		life = MSG_ReadByte() / 10.0;
+		R_Implosion(pos, radius, count, life);
+		break;
+	}
 	
 	case TE_SPRITETRAIL:
 	{
@@ -1524,11 +1564,33 @@ void CL_ParseTEnt( void )
 		break;
 
 	case TE_ELIGHT:
-		// TODO: Implement
+	{
+		float flTime;
+
+		dl = CL_AllocElight(MSG_ReadShort());
+		dl->origin[0] = MSG_ReadCoord();
+		dl->origin[1] = MSG_ReadCoord();
+		dl->origin[2] = MSG_ReadCoord();
+		dl->radius = MSG_ReadCoord();
+		dl->color.r = MSG_ReadByte();
+		dl->color.g = MSG_ReadByte();
+		dl->color.b = MSG_ReadByte();
+
+		life = MSG_ReadByte() * 0.1;
+		dl->die = cl.time + life;
+		flTime = MSG_ReadCoord();
+		if (life != 0)
+			flTime /= life;
+
+		dl->decay = flTime;
+		break;
+	}
+
+	case TE_KILLBEAM:
+		entnumber = MSG_ReadShort();
+		R_BeamKill(entnumber);
 		break;
 
-		// TODO: Implement
-		
 	case TE_LARGEFUNNEL:
 		pos[0] = MSG_ReadCoord();
 		pos[1] = MSG_ReadCoord();

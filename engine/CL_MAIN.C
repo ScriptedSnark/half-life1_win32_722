@@ -793,7 +793,49 @@ dlight_t* CL_AllocDlight( int key )
 	return dl;
 }
 
-// TODO: Implement
+/*
+=================
+CL_AllocElight
+
+=================
+*/
+dlight_t* CL_AllocElight( int key )
+{
+	int	i;
+	dlight_t* el = NULL;
+
+// first look for an exact key match
+	if (key)
+	{
+		el = cl_elights;
+		for (i = 0; i < MAX_ELIGHTS; i++, el++)
+		{
+			if (el->key == key)
+			{
+				memset(el, 0, sizeof(*el));
+				el->key = key;
+				return el;
+			}
+		}
+	}
+
+// then look for anything else
+	el = cl_elights;
+	for (i = 0; i < MAX_ELIGHTS; i++, el++)
+	{
+		if (el->die < cl.time)
+		{
+			memset(el, 0, sizeof(*el));
+			el->key = key;
+			return el;
+		}
+	}
+
+	el = &cl_elights[0];
+	memset(el, 0, sizeof(*el));
+	el->key = key;
+	return el;
+}
 
 /*
 ===============
