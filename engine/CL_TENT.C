@@ -1598,6 +1598,19 @@ void CL_ParseTEnt( void )
 		break;
 	}
 
+	case TE_GLOWSPRITE:
+		pos[0] = MSG_ReadCoord();
+		pos[1] = MSG_ReadCoord();
+		pos[2] = MSG_ReadCoord();
+
+		modelindex = MSG_ReadShort();
+		life = MSG_ReadByte() * 0.1;
+		scale = MSG_ReadByte() * 0.1;
+		a = MSG_ReadByte() / 255.0;
+
+		R_TempSprite(pos, vec3_origin, scale, modelindex, kRenderGlow, kRenderFxNoDissipation, a, life, FTENT_FADEOUT);
+		break;
+
 		// TODO: Implement
 
 	case TE_STREAK_SPLASH:
