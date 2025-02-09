@@ -1579,6 +1579,25 @@ void CL_ParseTEnt( void )
 		break;
 	}
 
+	case TE_BEAMFOLLOW:
+	{
+		float width;
+
+		startEnt = MSG_ReadShort();
+		modelindex = MSG_ReadShort();
+
+		life = MSG_ReadByte() * 0.1;
+		width = MSG_ReadByte();
+
+		r = MSG_ReadByte() / 255.0;
+		g = MSG_ReadByte() / 255.0;
+		b = MSG_ReadByte() / 255.0;
+		a = MSG_ReadByte() / 255.0;
+
+		R_BeamFollow(startEnt, modelindex, life, width, r, g, b, a);
+		break;
+	}
+
 		// TODO: Implement
 
 	case TE_STREAK_SPLASH:
