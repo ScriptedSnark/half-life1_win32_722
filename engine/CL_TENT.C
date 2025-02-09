@@ -1546,6 +1546,39 @@ void CL_ParseTEnt( void )
 		R_TempSprite(endpos, vec3_origin, 0.1, modelindex2, kRenderTransAdd, kRenderFxNone, 0.35, 0.01, 0);
 		break;
 
+	case TE_BEAMTORUS:
+	case TE_BEAMDISK:
+	case TE_BEAMCYLINDER:
+	{
+		float width;
+		float amplitude;
+
+		pos[0] = MSG_ReadCoord();
+		pos[1] = MSG_ReadCoord();
+		pos[2] = MSG_ReadCoord();
+
+		endpos[0] = MSG_ReadCoord();
+		endpos[1] = MSG_ReadCoord();
+		endpos[2] = MSG_ReadCoord();
+
+		modelindex = MSG_ReadShort();
+		startFrame = MSG_ReadByte();
+		frameRate = MSG_ReadByte() * 0.1;
+		life = MSG_ReadByte() * 0.1;
+		width = MSG_ReadByte();
+		amplitude = MSG_ReadByte() * 0.01;
+
+		r = MSG_ReadByte() / 255.0;
+		g = MSG_ReadByte() / 255.0;
+		b = MSG_ReadByte() / 255.0;
+		a = MSG_ReadByte() / 225.0;
+
+		flSpeed = MSG_ReadByte() * 0.1;
+
+		R_BeamCirclePoints(type, pos, endpos, modelindex, life, width, amplitude, a, flSpeed, startFrame, frameRate, r, g, b);
+		break;
+	}
+
 		// TODO: Implement
 
 	case TE_STREAK_SPLASH:
