@@ -1,6 +1,7 @@
 #include "quakedef.h"
 #include "pr_cmds.h"
 #include "r_triangle.h"
+#include "customentity.h"
 
 #define MAX_BEAMS				128		// Max simultaneous beams
 #define MAX_PARTICLES			2048	// default max # of particles at one
@@ -41,7 +42,10 @@ BEAM*		gBeams, * gpFreeBeams, * gpActiveBeams;
 
 // Forward declarations
 void R_TracerDraw( void );
+void R_BeamDraw( BEAM* pbeam, float frametime );
 void R_BeamDrawList( void );
+int R_BeamCull( vec_t* start, vec_t* end, int pvsOnly );
+
 
 void R_BeamInit( void )
 {
@@ -1703,16 +1707,154 @@ void R_TracerDraw( void )
 	}
 }
 
+//-----------------------------------------------------------------------------
+//
+// Beams
+//
+//-----------------------------------------------------------------------------
+
+BEAM* R_BeamAlloc( void )
+{
+	BEAM* pbeam;
+
+	if (!gpFreeBeams)
+		return NULL;
+
+	pbeam = gpFreeBeams;
+	gpFreeBeams = pbeam->next;
+	pbeam->next = gpActiveBeams;
+	gpActiveBeams = pbeam;
+
+	return pbeam;
+}
+
+BEAM* R_BeamLightning( vec_t* start, vec_t* end, int modelIndex, float life, float width, float amplitude, float brightness, float speed )
+{
+	BEAM* pbeam;
+
+	pbeam = R_BeamAlloc();
+	if (!pbeam)
+		return NULL;
+	
+	pbeam->die = cl.time;
+
+	if (modelIndex < 0)
+		return NULL;
+
+	R_BeamSetup(pbeam, start, end, modelIndex, life, width, amplitude, brightness, speed);
+
+	return pbeam;
+}
+
+void R_BeamSetup( BEAM* pbeam, vec_t* start, vec_t* end, int modelIndex, float life, float width, float amplitude, float brightness, float speed )
+{
+	model_t* sprite;
+
+	sprite = cl.model_precache[modelIndex];
+	if (!sprite)
+		return;
+
+	pbeam->type = TE_BEAMPOINTS;
+	pbeam->modelIndex = modelIndex;
+	pbeam->frame = 0;
+	pbeam->frameRate = 0;
+	pbeam->frameCount = ModelFrameCount(sprite);
+
+	VectorCopy(start, pbeam->source);
+	VectorCopy(end, pbeam->target);
+	VectorSubtract(end, start, pbeam->delta);
+
+	pbeam->freq = cl.time * speed;
+	pbeam->die = cl.time + life;
+	pbeam->width = width;
+	pbeam->amplitude = amplitude;
+	pbeam->brightness = brightness;
+	pbeam->speed = speed;
+
+	if (amplitude >= 0.5)
+		pbeam->segments = Length(pbeam->delta) * 0.25 + 3;	// once per 4 pixels
+	else
+		pbeam->segments = Length(pbeam->delta) * 0.075 + 3; // once per 16 pixels
+
+	pbeam->flags = 0;
+}
+
+void SetBeamAttributes( BEAM* pbeam, float r, float g, float b, float framerate, int startFrame )
+{
+	pbeam->frameRate = framerate;
+	pbeam->frame = startFrame;
+
+	pbeam->r = r;
+	pbeam->g = g;
+	pbeam->b = b;
+}
+
+// Initialize beam from server entity
+void R_DrawBeamEntList( float frametime )
+{
+	BEAM	beam;
+	int		i;
+	int		beamType;
+
+	cl_entity_t* ent;
+
+	for (i = 0; i < cl_numbeamentities; i++)
+	{
+		ent = &cl_beamentities[i];
+
+		// Set up the beam
+		beamType = ent->rendermode & 0xF;
+
+		R_BeamSetup(&beam, ent->origin, ent->angles, ent->movetype, 0.0, ent->scale, ent->body * 0.01,
+			CL_FxBlend(ent) / 255.0, ent->animtime);
+
+		SetBeamAttributes(&beam,
+			ent->rendercolor.r / 255.0,
+			ent->rendercolor.g / 255.0,
+			ent->rendercolor.b / 255.0,
+			0.0,
+			ent->frame);
+		
+		// Handle code from relinking.
+		switch (beamType)
+		{
+		case BEAM_ENTPOINT:
+			beam.type = TE_BEAMPOINTS;
+			beam.flags = FBEAM_ENDENTITY;
+			beam.startEntity = 0;
+			beam.endEntity = ent->skin;
+			break;
+
+		case BEAM_ENTS:
+			beam.type = TE_BEAMPOINTS;
+			beam.flags = (FBEAM_STARTENTITY | FBEAM_ENDENTITY);
+			beam.startEntity = ent->sequence;
+			beam.endEntity = ent->skin;
+			break;
+
+		case BEAM_POINTS:
+			// Already set up
+			break;
+		}
+
+		if (ent->rendermode & BEAM_FSINE)
+			beam.flags |= FBEAM_SINENOISE;
+		if (ent->rendermode & BEAM_FSOLID)
+			beam.flags |= FBEAM_SOLID;
+		if (ent->rendermode & BEAM_FSHADEIN)
+			beam.flags |= FBEAM_SHADEIN;
+		if (ent->rendermode & BEAM_FSHADEOUT)
+			beam.flags |= FBEAM_SHADEOUT;
+
+		// Draw it
+		R_BeamDraw(&beam, frametime);
+	}
+}
+
 // TODO: Implement
 
-/*
-===============
-ScreenTransform
-
-Converts a world coordinate to a screen coordinate
-Returns true if it's Z clipped, false otherwise
-===============
-*/
+// Converts a world coordinate to a screen coordinate
+// Returns true if it's Z clipped, false otherwise
 int ScreenTransform( vec_t* point, vec_t* screen )
 {
 	float w;
@@ -1741,13 +1883,15 @@ int ScreenTransform( vec_t* point, vec_t* screen )
 
 // TODO: Implement
 
-/*
-===============
-R_BeamDrawList
+// Draw all beam entities
+void R_BeamDraw( BEAM* pbeam, float frametime )
+{
+	// TODO: Implement
+}
 
-Update beams created by temp entity system
-===============
-*/
+// TODO: Implement
+
+// Update beams created by temp entity system
 void R_BeamDrawList( void )
 {
 	// TODO: Implement

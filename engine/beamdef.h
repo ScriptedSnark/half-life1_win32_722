@@ -5,7 +5,13 @@
 #endif
 
 #define FBEAM_STARTENTITY		0x00000001
+#define FBEAM_ENDENTITY			0x00000002
 
+
+#define FBEAM_SINENOISE			0x00000010
+#define FBEAM_SOLID				0x00000020
+#define FBEAM_SHADEIN			0x00000040
+#define FBEAM_SHADEOUT			0x00000080
 
 typedef struct beam_s
 {

@@ -228,8 +228,6 @@ void R_InitParticles( void );
 void R_ClearParticles( void );
 void R_DrawParticles( void );
 
-
-
 void R_FlickerParticles( vec_t* org );
 particle_t* R_TracerParticles( vec_t* org, vec_t* vel, float life );
 void R_SparkStreaks( vec_t* pos, int count, int velocityMin, int velocityMax );
@@ -240,6 +238,11 @@ void R_TeleportSplash( vec_t* org );
 void R_ShowLine( vec_t* start, vec_t* end );
 void R_BloodStream( vec_t* org, vec_t* dir, int pcolor, int speed );
 void R_Blood( vec_t* org, vec_t* dir, int pcolor, int speed );
+
+// Beams
+struct beam_s* R_BeamAlloc( void );
+void R_BeamSetup( struct beam_s* pbeam, vec_t* start, vec_t* end, int modelIndex, float life, float width, float amplitude, float brightness, float speed );
+struct beam_s* R_BeamLightning( vec_t* start, vec_t* end, int modelIndex, float life, float width, float amplitude, float brightness, float speed );
 
 int ScreenTransform( vec_t* point, vec_t* screen );
 
