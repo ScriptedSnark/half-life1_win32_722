@@ -1530,6 +1530,22 @@ void CL_ParseTEnt( void )
 		R_TempSprite(pos, vec3_origin, scale, modelindex, kRenderTransAdd, kRenderFxNone, a, 0, FTENT_SPRANIMATE);
 		break;
 
+	case TE_BEAMSPRITE:
+		pos[0] = MSG_ReadCoord();
+		pos[1] = MSG_ReadCoord();
+		pos[2] = MSG_ReadCoord();
+
+		endpos[0] = MSG_ReadCoord();
+		endpos[1] = MSG_ReadCoord();
+		endpos[2] = MSG_ReadCoord();
+
+		modelindex = MSG_ReadShort();	// beam modelindex
+		modelindex2 = MSG_ReadShort();	// sprite modelindex
+
+		R_BeamPoints(pos, endpos, modelindex, 0.01, 0.4, 0, RandomFloat(0.5, 0.655), 5, 0, 0, 1, 0, 0);
+		R_TempSprite(endpos, vec3_origin, 0.1, modelindex2, kRenderTransAdd, kRenderFxNone, 0.35, 0.01, 0);
+		break;
+
 		// TODO: Implement
 
 	case TE_STREAK_SPLASH:
