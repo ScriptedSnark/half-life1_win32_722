@@ -2787,18 +2787,88 @@ void R_DrawRing( vec_t* source, vec_t* delta, float width, float amplitude, floa
 	}
 }
 
-// TODO: Implement
+void ParticleLine( float x1, float y1, float z1, float x2, float y2, float z2 )
+{
+	vec3_t	start, end;
 
+	start[0] = x1;
+	start[1] = y1;
+	start[2] = z1;
+	end[0] = x2;
+	end[1] = y2;
+	end[2] = z2;
+	R_ShowLine(start, end);
+}
+
+void ParticleBox( vec_t* mins, vec_t* maxs )
+{
+	ParticleLine(mins[0], mins[1], mins[2], mins[0], maxs[1], mins[2]);
+	ParticleLine(maxs[0], mins[1], mins[2], maxs[0], maxs[1], mins[2]);
+	ParticleLine(mins[0], mins[1], mins[2], maxs[0], mins[1], mins[2]);
+	ParticleLine(mins[0], maxs[1], mins[2], maxs[0], maxs[1], mins[2]);
+	ParticleLine(mins[0], mins[1], maxs[2], mins[0], maxs[1], maxs[2]);
+	ParticleLine(maxs[0], mins[1], maxs[2], maxs[0], maxs[1], maxs[2]);
+	ParticleLine(mins[0], mins[1], maxs[2], maxs[0], mins[1], maxs[2]);
+	ParticleLine(mins[0], maxs[1], maxs[2], maxs[0], maxs[1], maxs[2]);
+	ParticleLine(mins[0], mins[1], mins[2], mins[0], mins[1], maxs[2]);
+	ParticleLine(mins[0], maxs[1], mins[2], mins[0], maxs[1], maxs[2]);
+	ParticleLine(maxs[0], maxs[1], mins[2], maxs[0], maxs[1], maxs[2]);
+	ParticleLine(maxs[0], mins[1], mins[2], maxs[0], mins[1], maxs[2]);
+}
+
+#if !defined ( GLQUAKE )
 /*
 ===============
-R_BeamCull
-
-Cull beam by bbox
+R_TriangleFakeTexture
 ===============
 */
-int R_BeamCull( vec_t* start, vec_t* end, int pvsOnly )
+int R_TriangleFakeTexture( float r, float g, float b, float a )
 {
 	// TODO: Implement
+	return TRUE;
+}
+#endif
+
+// Cull beam by bbox
+int R_BeamCull( vec_t* start, vec_t* end, int pvsOnly )
+{
+	vec3_t mins, maxs;
+	int i;
+
+	if (!cl.worldmodel)
+		return 0;
+
+	for (i = 0; i < 3; i++)
+	{
+		if (start[i] < end[i])
+		{
+			mins[i] = start[i];
+			maxs[i] = end[i];
+		}
+		else
+		{
+			mins[i] = end[i];
+			maxs[i] = start[i];
+		}
+
+		// Don't let it be zero sized
+		if (mins[i] == maxs[i])
+		{
+			maxs[i] += 1;
+		}
+	}
+
+	// Check bbox
+	if (PVSNode(cl.worldmodel->nodes, mins, maxs))
+	{
+		if (pvsOnly || !R_CullBox(mins, maxs))
+		{
+			// Beam is visible
+			return 1;
+		}
+	}
+
+	// Beam is not visible
 	return 0;
 }
 
