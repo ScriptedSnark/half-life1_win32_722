@@ -4,6 +4,7 @@
 #include "cl_tent.h"
 #include "pr_cmds.h"
 #include "decal.h"
+#include "r_studio.h"
 #include "r_trans.h"
 #include "r_efx.h"
 
@@ -196,7 +197,7 @@ int ModelFrameCount( model_t* model )
 		}
 		else if (model->type == mod_studio)
 		{
-//			count = R_StudioBodyVariations(model); TODO: Implement
+			count = R_StudioBodyVariations(model);
 		}
 
 		if (count < 1)
@@ -1611,7 +1612,31 @@ void CL_ParseTEnt( void )
 		R_TempSprite(pos, vec3_origin, scale, modelindex, kRenderGlow, kRenderFxNoDissipation, a, life, FTENT_FADEOUT);
 		break;
 
-		// TODO: Implement
+	case TE_BEAMRING:
+	{
+		float width;
+		float amplitude;
+
+		startEnt = MSG_ReadShort();
+		endEnt = MSG_ReadShort();
+		modelindex = MSG_ReadShort();
+
+		startFrame = MSG_ReadByte();
+		frameRate = MSG_ReadByte() * 0.1;
+		life = MSG_ReadByte() * 0.1;
+		width = MSG_ReadByte() * 0.1;
+		amplitude = MSG_ReadByte() * 0.01;
+
+		r = MSG_ReadByte() / 255.0;
+		g = MSG_ReadByte() / 255.0;
+		b = MSG_ReadByte() / 255.0;
+		a = MSG_ReadByte() / 255.0;
+
+		flSpeed = MSG_ReadByte() * 0.1;
+
+		R_BeamRing(startEnt, endEnt, modelindex, life, width, amplitude, a, flSpeed, startFrame, frameRate, r, g, b);
+		break;
+	}
 
 	case TE_STREAK_SPLASH:
 		pos[0] = MSG_ReadCoord();
