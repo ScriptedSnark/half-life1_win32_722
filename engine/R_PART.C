@@ -2192,13 +2192,7 @@ int ScreenTransform( vec_t* point, vec_t* screen )
 	return w <= 0.0;
 }
 
-/*
-===============
-R_DrawSegs
-
-Draw segmented beams
-===============
-*/
+// Draw segmented beams
 void R_DrawSegs( vec_t* source, vec_t* delta, float width, float scale, float freq, float speed, int segments, int flags )
 {
 	int				i, noiseIndex, noiseStep;
@@ -2339,13 +2333,7 @@ void R_DrawSegs( vec_t* source, vec_t* delta, float width, float scale, float fr
 	};
 }
 
-/*
-===============
-R_DrawTorus
-
-Draw torus beams
-===============
-*/
+// Draw torus beams
 void R_DrawTorus( vec_t* source, vec_t* delta, float width, float scale, float freq, float speed, int segments )
 {
 	int				i, noiseIndex, noiseStep;
@@ -2423,6 +2411,60 @@ void R_DrawTorus( vec_t* source, vec_t* delta, float width, float scale, float f
 
 		vLast = fmod(vLast, 1.0);
 		noiseIndex += noiseStep;
+	}
+}
+
+// Draw disk beams
+void R_DrawDisk( vec_t* source, vec_t* delta, float width, float scale, float freq, float speed, int segments )
+{
+	int				i;
+	float			div, length, fraction, vLast, vStep;
+	vec3_t			point;
+	float			w;
+
+	if (segments < 2)
+		return;
+
+	if (segments > NOISE_DIVISIONS)		// UNDONE: Allow more segments?
+	{
+		segments = NOISE_DIVISIONS;
+	}
+
+	length = Length(delta) * 0.01;
+	if (length < 0.5)	// Don't lose all of the noise/texture on short beams
+		length = 0.5;
+
+	div = 1.0 / (segments - 1);
+	
+	vStep = length * div;		// Texture length texels per space pixel
+
+	// Scroll speed 3.5 -- initial texture position, scrolls 3.5/sec (1.0 is entire texture)
+	vLast = fmod(freq * speed, 1.0);
+
+	// Beam width
+	w = freq * delta[2];
+
+	for (i = 0; i < segments; i++)
+	{
+		VectorCopy(source, point);
+
+		fraction = i * div;
+
+		tri_GL_Brightness(1);
+		qglTexCoord2f(1, vLast);
+		qglVertex3fv(point);
+
+		point[0] = source[0] + sin(fraction * 2 * M_PI) * w;
+		point[1] = source[1] + cos(fraction * 2 * M_PI) * w;
+		point[2] = source[2];
+
+		tri_GL_Brightness(1);
+		qglTexCoord2f(0, vLast);
+		qglVertex3fv(point);
+
+		vLast += vStep; // advance texture scroll (v axis only)
+
+		vLast = fmod(vLast, 1.0);
 	}
 }
 
