@@ -2339,7 +2339,92 @@ void R_DrawSegs( vec_t* source, vec_t* delta, float width, float scale, float fr
 	};
 }
 
+/*
+===============
+R_DrawTorus
 
+Draw torus beams
+===============
+*/
+void R_DrawTorus( vec_t* source, vec_t* delta, float width, float scale, float freq, float speed, int segments )
+{
+	int				i, noiseIndex, noiseStep;
+	float			div, length, fraction, factor, vLast, vStep;
+	vec3_t			last1, last2, point, screen, screenLast, tmp, normal;
+
+	if (segments < 2)
+		return;
+
+	if (segments > NOISE_DIVISIONS)		// UNDONE: Allow more segments?
+	{
+		segments = NOISE_DIVISIONS;
+	}
+
+	length = Length(delta) * 0.01;
+
+	// Don't lose all of the noise/texture on short beams
+	if (length < 0.5)
+		length = 0.5;
+
+	div = 1.0 / (segments - 1);
+	
+	vStep = length * div; // Texture length texels per space pixel
+	
+	// Scroll speed 3.5 -- initial texture position, scrolls 3.5/sec (1.0 is entire texture)
+	vLast = fmod(freq * speed, 1.0);
+	scale *= length;
+
+	// Iterator to resample noise waveform (it needs to be generated in powers of 2)
+	noiseStep = (int)((float)NOISE_DIVISIONS * div * 65536.0);
+	noiseIndex = 0;
+
+	for (i = 0; i <= segments; i++)
+	{
+		fraction = i * div;
+
+		point[0] = source[0] + sin(fraction * 2 * M_PI) * freq * delta[2];
+		point[1] = source[1] + cos(fraction * 2 * M_PI) * freq * delta[2];
+		point[2] = source[2];
+
+		// Distort using noise
+		factor = gNoise[noiseIndex >> 16] * scale;
+		VectorMA(point, factor, vup, point);
+
+		// Rotate the noise along the perpendicluar axis a bit to keep the bolt from looking diagonal
+		factor = gNoise[noiseIndex >> 16] * scale * cos(fraction * M_PI * 3 + freq);
+		VectorMA(point, factor, vright, point);
+
+		// Transform start into screen space
+		ScreenTransform(point, screen);
+
+		if (i != 0)
+		{
+			// build world-space normal to screen-space direction vector
+			VectorSubtract(screen, screenLast, tmp);
+			// we don't need Z, we're in screen space
+			tmp[2] = 0;
+
+			VectorNormalize(tmp);
+			VectorScale(vup, tmp[0], normal);	// Build start along noraml line (normal is -y, x)
+			VectorMA(normal, -tmp[1], vright, normal);
+
+			// Make a wide line
+			VectorMA(point, width, normal, last1);
+			VectorMA(point, -width, normal, last2);
+
+			vLast += vStep; // advance texture scroll (v axis only)
+			qglTexCoord2f(1, vLast);
+			qglVertex3fv(last2);
+			qglTexCoord2f(0, vLast);
+			qglVertex3fv(last1);
+		}
+
+		VectorCopy(screen, screenLast);
+
+		vLast = fmod(vLast, 1.0);
+		noiseIndex += noiseStep;
+	}
+}
 
 
 // TODO: Implement
