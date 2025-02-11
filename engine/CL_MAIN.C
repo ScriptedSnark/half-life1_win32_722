@@ -743,6 +743,26 @@ void CL_SignonReply( void )
 
 // TODO: Implement
 
+// TODO: Implement
+void VID_TakeSnapshot(const char* pFilename); // TODO: Move it to header or somewhere else - ScriptedSnark
+void CL_TakeSnapshot_f(void)
+{
+	static int filenumber;
+	char base[64];
+	char filename[64];
+	model_t* in;
+
+	if (cl.num_entities && (in = cl_entities->model) != 0)
+		COM_FileBase(in->name, base);
+	else
+		strcpy(base, "Snapshot");
+
+	sprintf(filename, "%s%04d.bmp", base, filenumber);
+	filenumber++;
+
+	VID_TakeSnapshot(filename);
+}
+
 /*
 =================
 CL_AllocDlight
@@ -1370,6 +1390,7 @@ void CL_Init( void )
 
 	Cvar_RegisterVariable(&cl_printplayers);
 
+	Cmd_AddCommand("snapshot", CL_TakeSnapshot_f);
 	// TODO: Implement
 	
 	CL_InitPrediction();

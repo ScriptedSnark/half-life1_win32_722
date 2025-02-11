@@ -52,6 +52,7 @@ RECT		window_rect;
 
 
 extern void	(*VID_GetVID)( struct viddef_s* pvid );
+extern int GlideReadPixels(int x, int y, int width, int height, word* pixels);
 
 void CheckTextureExtensions( void )
 {
@@ -401,10 +402,123 @@ int VID_Init( word* palette )
 	return 1;
 }
 
+void VID_TakeSnapshot(const char* pFilename)
+{
+	HANDLE fp;
+	BITMAPFILEHEADER hdr;
+	BITMAPINFOHEADER bi;
+	int imageSize = 3 * vid.height * vid.width;
+
+	fp = CreateFile(pFilename, GENERIC_READ | GENERIC_WRITE, 0, 0, 2u, 0x80u, 0);
+	if (fp == (HANDLE)-1)
+		Sys_Error("Couldn't create file for snapshot.\n");
+
+	hdr.bfType = (long)'MB';
+	hdr.bfSize = imageSize + sizeof(hdr) + sizeof(bi);
+	hdr.bfReserved1 = 0;
+	hdr.bfReserved2 = 0;
+	hdr.bfOffBits = sizeof(hdr) + sizeof(bi);
+
+	DWORD dwWritten;
+	if (!WriteFile(fp, &hdr.bfType, sizeof(hdr), &dwWritten, 0))
+		Sys_Error("Couldn't write file header to snapshot.\n");
+
+	bi.biWidth = vid.width;
+	bi.biHeight = vid.height;
+	bi.biSize = sizeof(bi);
+	bi.biPlanes = 1;
+	bi.biBitCount = 24;
+	bi.biSizeImage = 0;
+	bi.biXPelsPerMeter = 0;
+	bi.biYPelsPerMeter = 0;
+	bi.biClrUsed = 0;
+	bi.biClrImportant = 0;
+	bi.biCompression = 0;
+
+	if (!WriteFile(fp, &bi, sizeof(bi), &dwWritten, 0))
+		Sys_Error("Couldn't write bitmap header to snapshot.\n");
+
+	byte *hp = (byte *)malloc(imageSize);
+	if (!hp)
+		Sys_Error("Couldn't allocate bitmap header to snapshot.\n");
+
+	if ( gGLHardwareType != GL_HW_3Dfx || !GlideReadPixels(0, 0, vid.width, vid.height, (word *)hp) )
+		qglReadPixels(0, 0, vid.width, vid.height, GL_RGB, GL_UNSIGNED_BYTE, hp);
+
+	byte b;
+	// swap rgb to bgr
+	for ( int i = sizeof(hdr) + sizeof(bi); i < imageSize; i += sizeof(byte) * sizeof(RGBTRIPLE) )
+	{
+		b = hp[i];
+		hp[i] = hp[i + 2];
+		hp[i + 2] = b;
+	}
+
+	if ( !WriteFile(fp, hp, imageSize, &dwWritten, 0) )
+		Sys_Error("Couldn't write bitmap data snapshot.\n");
+
+	free(hp);
+
+	if ( !CloseHandle(fp) )
+		Sys_Error("Couldn't close file for snapshot.\n");
+}
 
 void VID_WriteBuffer( const char* pFilename )
 {
-	// TODO: Implement
+	static char szFileName[256];
+	static HANDLE hFile;
+
+	int imageSize = 3 * vid.height * vid.width;
+
+	WORD frameHeader[3];
+	int blockHeader[2];
+
+	frameHeader[0] = vid.width;
+	frameHeader[1] = vid.height;
+	frameHeader[2] = 24;
+
+	blockHeader[0] = 'MFRM';
+	blockHeader[1] = imageSize + (sizeof(short) * 3);
+
+	if ( pFilename && pFilename[0] )
+	{
+		strcpy( szFileName, pFilename );
+		if (hFile != INVALID_HANDLE_VALUE)
+			CloseHandle( hFile );
+	}
+
+	hFile = CreateFile( szFileName, GENERIC_WRITE, 0, NULL,
+						  pFilename ? OPEN_EXISTING : CREATE_ALWAYS,
+						  FILE_ATTRIBUTE_NORMAL, NULL );
+
+	if ( hFile == INVALID_HANDLE_VALUE )
+		Sys_Error("Couldn't open movie file.\n");
+
+	SetFilePointer( hFile, 0, NULL, FILE_END );
+
+	void* pFrameData = malloc( imageSize );
+	if ( !pFrameData )
+		Sys_Error("Couldn't allocate frame buffer.\n");
+
+	if ( gGLHardwareType != GL_HW_3Dfx || !GlideReadPixels(0, 0, vid.width, vid.height, pFrameData) )
+		qglReadPixels( 0, 0, vid.width, vid.height, GL_RGB, GL_UNSIGNED_BYTE, pFrameData );
+
+	DWORD dwWritten;
+	if (!WriteFile(hFile, blockHeader, sizeof(blockHeader), &dwWritten, NULL) )
+		Sys_Error("Couldn't write block header.\n");
+
+	if (!WriteFile(hFile, frameHeader, sizeof(frameHeader), &dwWritten, NULL) )
+		Sys_Error("Couldn't write frame header.\n");
+
+	if (!WriteFile(hFile, pFrameData, imageSize, &dwWritten, NULL) )
+		Sys_Error("Couldn't write frame data.\n");
+
+	free( pFrameData );
+
+	if (!CloseHandle(hFile))
+		Sys_Error("Couldn't close file for movie.\n");
+
+	hFile = INVALID_HANDLE_VALUE;
 }
 
 DLL_EXPORT void VID_UpdateWindowVars( void* prc, int x, int y )
