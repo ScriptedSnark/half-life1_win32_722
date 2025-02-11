@@ -399,7 +399,7 @@ void R_DrawEntitiesOnList( void )
 	{
 		currententity = &cl_visedicts[i];
 
-		if (currententity->rendermode)
+		if (currententity->rendermode != kRenderNormal)
 		{
 			AddTEntity(currententity);
 			continue;
@@ -438,7 +438,10 @@ void R_DrawEntitiesOnList( void )
 			case mod_sprite:
 				if (currententity->body)
 				{
-					// TODO: Implement
+					float* pAttachment;
+
+					pAttachment = R_GetAttachmentPoint(currententity->skin, currententity->body);
+					VectorCopy(pAttachment, r_entorigin);
 				}
 				else
 				{

@@ -174,7 +174,10 @@ void R_DrawTEntitiesOnList( void )
 		case mod_sprite:
 			if (currententity->body)
 			{
-				// TODO: Implement
+				float* pAttachment;
+
+				pAttachment = R_GetAttachmentPoint(currententity->skin, currententity->body);
+				VectorCopy(pAttachment, r_entorigin);
 			}
 			else
 			{
