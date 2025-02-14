@@ -11,10 +11,18 @@ studiohdr_t* pstudiohdr;
 // Model to world transformation
 float			rotationmatrix[3][4];
 
+// Concatenated bone and light transforms
+float			bonetransform[MAXSTUDIOBONES][3][4];
+float			lighttransform[MAXSTUDIOBONES][3][4];
+
 // TODO: Implement
 
 // Do interpolation?
 int r_dointerp = 1;
+
+
+// TODO: Implement
+
 
 
 // TODO: Implement
@@ -276,9 +284,213 @@ void R_StudioSetUpTransform( int trivial_accept )
 
 // TODO: Implement
 
-void R_StudioSetupBones( void )
+void QuaternionMatrix( vec_t* quaternion, float(*matrix)[4] )
+{
+	matrix[0][0] = 1.0 - 2.0 * quaternion[1] * quaternion[1] - 2.0 * quaternion[2] * quaternion[2];
+	matrix[1][0] = 2.0 * quaternion[0] * quaternion[1] + 2.0 * quaternion[3] * quaternion[2];
+	matrix[2][0] = 2.0 * quaternion[0] * quaternion[2] - 2.0 * quaternion[3] * quaternion[1];
+
+	matrix[0][1] = 2.0 * quaternion[0] * quaternion[1] - 2.0 * quaternion[3] * quaternion[2];
+	matrix[1][1] = 1.0 - 2.0 * quaternion[0] * quaternion[0] - 2.0 * quaternion[2] * quaternion[2];
+	matrix[2][1] = 2.0 * quaternion[1] * quaternion[2] + 2.0 * quaternion[3] * quaternion[0];
+
+	matrix[0][2] = 2.0 * quaternion[0] * quaternion[2] + 2.0 * quaternion[3] * quaternion[1];
+	matrix[1][2] = 2.0 * quaternion[1] * quaternion[2] - 2.0 * quaternion[3] * quaternion[0];
+	matrix[2][2] = 1.0 - 2.0 * quaternion[0] * quaternion[0] - 2.0 * quaternion[1] * quaternion[1];
+}
+
+// TODO: Implement
+
+/*
+====================
+R_StudioCalcBoneAdj
+
+Compute bone adjustments ( bone controllers )
+====================
+*/
+void R_StudioCalcBoneAdj( float dadt, float* adj, const unsigned char* pcontroller1, const unsigned char* pcontroller2, unsigned char mouthopen )
 {
 	// TODO: Implement
+}
+
+void R_StudioCalcBoneQuaterion( int frame, float s, mstudiobone_t* pbone, mstudioanim_t* panim, float* adj, float* q )
+{
+	// TODO: Implement
+}
+
+void R_StudioCalcBonePosition( int frame, float s, mstudiobone_t* pbone, mstudioanim_t* panim, float* adj, float* pos )
+{
+	// TODO: Implement
+}
+
+float CL_StudioEstimateInterpolant( void )
+{
+	float dadt = 1.0;
+
+	if (r_dointerp && (currententity->animtime >= currententity->prevanimtime + 0.01))
+	{
+		dadt = (cl.time - currententity->animtime) / 0.1;
+		if (dadt > 2.0)
+		{
+			dadt = 2.0;
+		}
+	}
+	return dadt;
+}
+
+/*
+====================
+R_StudioCalcRotations
+
+====================
+*/
+void R_StudioCalcRotations( vec3_t* pos, vec4_t* q, mstudioseqdesc_t* pseqdesc, mstudioanim_t* panim, float f )
+{
+	// TODO: Implement
+}
+
+/*
+====================
+R_GetAnim
+
+====================
+*/
+mstudioanim_t* R_GetAnim( model_t* psubmodel, mstudioseqdesc_t* pseqdesc )
+{
+	// TODO: Implement
+	return NULL;
+}
+
+/*
+====================
+R_StudioSlerpBones
+
+====================
+*/
+void R_StudioSlerpBones( vec4_t* q1, vec3_t* pos1, vec4_t* q2, vec3_t* pos2, float s )
+{
+	// TODO: Implement
+}
+
+float CL_StudioEstimateFrame( mstudioseqdesc_t* pseqdesc )
+{
+	// TODO: Implement
+	return 0.0;
+}
+
+void R_StudioSetupBones( void )
+{
+	int					i;
+	double				f;
+
+	mstudiobone_t* pbones;
+	mstudioseqdesc_t* pseqdesc;
+	mstudioanim_t* panim;
+
+	static float		pos[MAXSTUDIOBONES][3];
+	static vec4_t		q[MAXSTUDIOBONES];
+	float				bonematrix[3][4];
+
+	static float		pos2[MAXSTUDIOBONES][3];
+	static vec4_t		q2[MAXSTUDIOBONES];
+
+	if (currententity->sequence >= pstudiohdr->numseq)
+	{
+		currententity->sequence = 0;
+	}
+
+	pseqdesc = (mstudioseqdesc_t*)((byte*)pstudiohdr + pstudiohdr->seqindex) + currententity->sequence;
+
+	f = CL_StudioEstimateFrame(pseqdesc);
+
+	if (currententity->prevframe > f)
+	{
+		//Con_DPrintf("%f %f\n", currententity->prevframe, f);
+	}
+
+	panim = R_GetAnim(currententity->model, pseqdesc);
+	R_StudioCalcRotations(pos, q, pseqdesc, panim, f);
+
+	if (pseqdesc->numblends > 1)
+	{
+		float				s;
+		float				dadt;
+
+		pseqdesc = (mstudioseqdesc_t*)((byte*)pstudiohdr + pstudiohdr->seqindex) + currententity->sequence;
+		panim = R_GetAnim(currententity->model, pseqdesc) + pstudiohdr->numbones;
+		R_StudioCalcRotations(pos2, q2, pseqdesc, panim, f);
+
+		dadt = CL_StudioEstimateInterpolant();
+		s = (currententity->blending[0] * dadt + currententity->prevblending[0] * (1.0 - dadt)) / 255.0;
+
+		R_StudioSlerpBones(q, pos, q2, pos2, s);
+	}
+
+	if (r_dointerp &&
+		currententity->sequencetime &&
+		(currententity->sequencetime + 0.2 > cl.time) &&
+		(currententity->prevsequence < pstudiohdr->numseq))
+	{
+		// blend from last sequence
+		static float		pos1b[MAXSTUDIOBONES][3];
+		static float		pos2b[MAXSTUDIOBONES][3];
+		static vec4_t		q1b[MAXSTUDIOBONES];
+		static vec4_t		q2b[MAXSTUDIOBONES];
+		float				s;
+
+		pseqdesc = (mstudioseqdesc_t*)((byte*)pstudiohdr + pstudiohdr->seqindex) + currententity->prevsequence;
+		panim = R_GetAnim(currententity->model, pseqdesc);
+		// clip prevframe
+		R_StudioCalcRotations(pos1b, q1b, pseqdesc, panim, currententity->prevframe);
+
+		if (pseqdesc->numblends > 1)
+		{
+			pseqdesc = (mstudioseqdesc_t*)((byte*)pstudiohdr + pstudiohdr->seqindex) + currententity->prevsequence;
+			panim = R_GetAnim(currententity->model, pseqdesc) + pstudiohdr->numbones;
+			R_StudioCalcRotations(pos2b, q2b, pseqdesc, panim, f);
+
+			s = (currententity->prevseqblending[0]) / 255.0;
+			R_StudioSlerpBones(q1b, pos1b, q2b, pos2b, s);
+		}
+
+		s = 1.0 - (cl.time - currententity->sequencetime) / 0.2;
+		R_StudioSlerpBones(q, pos, q1b, pos1b, s);
+	}
+	else
+	{
+		//Con_DPrintf("prevframe = %4.2f\n", f);
+		currententity->prevframe = f;
+	}
+
+	pbones = (mstudiobone_t*)((byte*)pstudiohdr + pstudiohdr->boneindex);
+
+	for (i = 0; i < pstudiohdr->numbones; i++)
+	{
+		QuaternionMatrix(q[i], bonematrix);
+
+		bonematrix[0][3] = pos[i][0];
+		bonematrix[1][3] = pos[i][1];
+		bonematrix[2][3] = pos[i][2];
+
+		if (pbones[i].parent == -1)
+		{
+#if defined( GLQUAKE )
+			R_ConcatTransforms(rotationmatrix, bonematrix, bonetransform[i]);
+			R_ConcatTransforms(rotationmatrix, bonematrix, lighttransform[i]);
+#else
+			R_ConcatTransforms(aliastransform, bonematrix, bonetransform[i]);
+			R_ConcatTransforms(rotationmatrix, bonematrix, lighttransform[i]);
+#endif
+
+			// Apply client-side effects to the transformation matrix
+			CL_FxTransform(currententity, bonetransform[i][0]);
+		}
+		else
+		{
+			R_ConcatTransforms(bonetransform[pbones[i].parent], bonematrix, bonetransform[i]);
+			R_ConcatTransforms(lighttransform[pbones[i].parent], bonematrix, lighttransform[i]);
+		}
+	}
 }
 
 // TODO: Implement
