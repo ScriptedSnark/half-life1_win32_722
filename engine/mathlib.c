@@ -107,6 +107,37 @@ void AngleVectorsTranspose( const vec_t* angles, vec_t* forward, vec_t* right, v
 	}
 }
 
+void AngleMatrix( const vec_t* angles, float(*matrix)[4] )
+{
+	float		angle;
+	float		sr, sp, sy, cr, cp, cy;
+
+	angle = angles[ROLL] * (M_PI * 2 / 360.0);
+	sy = sin(angle);
+	cy = cos(angle);
+	angle = angles[YAW] * (M_PI * 2 / 360.0);
+	sp = sin(angle);
+	cp = cos(angle);
+	angle = angles[PITCH] * (M_PI * 2 / 360.0);
+	sr = sin(angle);
+	cr = cos(angle);
+
+	matrix[0][0] = cr * cp;
+	matrix[0][1] = (sy * sr) * cp - cy * sp;
+	matrix[0][2] = (cy * sr) * cp + sy * sp;
+	matrix[0][3] = 0.0f;
+
+	matrix[1][0] = cr * sp;
+	matrix[1][1] = (sy * sr) * sp + cy * cp;
+	matrix[1][2] = (cy * sr) * sp - sy * cp;
+	matrix[1][3] = 0.0f;
+
+	matrix[2][0] = -sr;
+	matrix[2][1] = sy * cr;
+	matrix[2][2] = cy * cr;
+	matrix[2][3] = 0.0f;
+}
+
 int VectorCompare( const vec_t* v1, const vec_t* v2 )
 {
 	int i;

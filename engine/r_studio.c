@@ -8,6 +8,17 @@ studiohdr_t* pstudiohdr;
 
 // TODO: Implement
 
+// Model to world transformation
+float			rotationmatrix[3][4];
+
+// TODO: Implement
+
+// Do interpolation?
+int r_dointerp = 1;
+
+
+// TODO: Implement
+
 #if defined( GLQUAKE )
 int				r_ambientlight;					// ambient world light
 float			r_shadelight;					// direct world light
@@ -64,7 +75,97 @@ R_StudioSetUpTransform
 */
 void R_StudioSetUpTransform( int trivial_accept )
 {
+	int				i;
+	vec3_t			angles;
+	vec3_t			modelpos;
+
+	// tweek model origin	
+		//for (i = 0; i < 3; i++)
+		//	modelpos[i] = currententity->origin[i];
+
+	VectorCopy(currententity->origin, modelpos);
+
+	// TODO: should really be stored with the entity instead of being reconstructed
+	// TODO: should use a look-up table
+	// TODO: could cache lazily, stored in the entity
+	angles[ROLL] = currententity->angles[ROLL];
+	angles[PITCH] = currententity->angles[PITCH];
+	angles[YAW] = currententity->angles[YAW];
+
+	//Con_DPrintf("Angles %4.2f prev %4.2f for %i\n", angles[PITCH], currententity->index);
+	//Con_DPrintf("movetype %d %d\n", currententity->movetype, currententity->aiment);
+	if (currententity->movetype != MOVETYPE_NONE)
+	{
+		float			f = 0;
+		float			d;
+
+		// don't do it if the goalstarttime hasn't updated in a while.
+
+		// NOTE:  Because we need to interpolate multiplayer characters, the interpolation time limit
+		//  was increased to 1.0 s., which is 2x the max lag we are accounting for.
+
+		if (cl.time < (currententity->animtime + 1.0) &&
+			(currententity->animtime != currententity->prevanimtime))
+		{
+			f = (cl.time - currententity->animtime) / (currententity->animtime - currententity->prevanimtime);
+			//Con_DPrintf("%4.2f %.2f %.2f\n", f, currententity->animtime, cl.time);
+		}
+
+		if (r_dointerp)
+		{
+			// ugly hack to interpolate angle, position. current is reached 0.1 seconds after being set
+			f = f - 1.0;
+		}
+		else
+		{
+			f = 0;
+		}
+
+		for (i = 0; i < 3; i++)
+		{
+			modelpos[i] += (currententity->origin[i] - currententity->prevorigin[i]) * f;
+		}
+
+		// NOTE:  Because multiplayer lag can be relatively large, we don't want to cap
+		//  f at 1.5 anymore.
+		//if (f > -1.0 && f < 1.5) {}
+
+//			Con_DPrintf("%.0f %.0f\n", currententity->msg_angles[0][YAW], currententity->msg_angles[1][YAW]);
+		for (i = 0; i < 3; i++)
+		{
+			float ang1, ang2;
+
+			ang1 = currententity->angles[i];
+			ang2 = currententity->prevangles[i];
+
+			d = ang1 - ang2;
+			if (d > 180)
+			{
+				d -= 360;
+			}
+			else if (d < -180)
+			{
+				d += 360;
+			}
+
+			angles[i] += d * f;
+		}
+		//Con_DPrintf("%.3f \n", f);
+	}
+
+	//Con_DPrintf("%.0f %0.f %0.f\n", modelpos[0], modelpos[1], modelpos[2]);
+	//Con_DPrintf("%.0f %0.f %0.f\n", angles[0], angles[1], angles[2]);
+
+	angles[PITCH] = -angles[PITCH];
+	AngleMatrix(angles, rotationmatrix);
+
+#if !defined( GLQUAKE )
 	// TODO: Implement
+#endif
+
+	rotationmatrix[0][3] = modelpos[0];
+	rotationmatrix[1][3] = modelpos[1];
+	rotationmatrix[2][3] = modelpos[2];
 }
 
 // TODO: Implement

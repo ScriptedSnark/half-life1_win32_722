@@ -64,6 +64,10 @@ void AngleVectorsTranspose( const vec_t* angles, vec_t* forward, vec_t* right, v
 void BOPS_Error( void );
 int BoxOnPlaneSide( vec_t * emins, vec_t * emaxs, struct mplane_s* p );
 
+
+void AngleMatrix( const vec_t* angles, float(*matrix)[4] );
+
+
 void VectorMatrix( vec_t* forward, vec_t* right, vec_t* up );
 
 float	anglemod( float a );
