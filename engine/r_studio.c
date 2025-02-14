@@ -357,8 +357,30 @@ R_GetAnim
 */
 mstudioanim_t* R_GetAnim( model_t* psubmodel, mstudioseqdesc_t* pseqdesc )
 {
-	// TODO: Implement
-	return NULL;
+	mstudioseqgroup_t* pseqgroup;
+	cache_user_t* paSequences;
+
+	pseqgroup = (mstudioseqgroup_t*)((byte*)pstudiohdr + pstudiohdr->seqgroupindex) + pseqdesc->seqgroup;
+
+	if (pseqdesc->seqgroup == 0)
+	{
+		return (mstudioanim_t*)((byte*)pstudiohdr + pseqdesc->animindex + pseqgroup->data);
+	}
+
+	paSequences = (cache_user_t*)psubmodel->submodels;
+
+	if (paSequences == NULL)
+	{
+		paSequences = (cache_user_t*)calloc(sizeof(dmodel_t) * MAXSTUDIOGROUPS, MAXSTUDIOGROUPS); // UNDONE: leak!
+		psubmodel->submodels = (dmodel_t*)paSequences;
+	}
+
+	if (!Cache_Check(&paSequences[pseqdesc->seqgroup]))
+	{
+		Con_DPrintf("loading %s\n", pseqgroup->name);
+		COM_LoadCacheFile(pseqgroup->name, &paSequences[pseqdesc->seqgroup]);
+	}
+	return (mstudioanim_t*)((byte*)paSequences[pseqdesc->seqgroup].data + pseqdesc->animindex);
 }
 
 /*
@@ -374,8 +396,51 @@ void R_StudioSlerpBones( vec4_t* q1, vec3_t* pos1, vec4_t* q2, vec3_t* pos2, flo
 
 float CL_StudioEstimateFrame( mstudioseqdesc_t* pseqdesc )
 {
-	// TODO: Implement
-	return 0.0;
+	double				dfdt, f;
+
+	if (r_dointerp)
+	{
+		dfdt = (cl.time - currententity->animtime) * currententity->framerate * pseqdesc->fps;
+	}
+	else
+	{
+		dfdt = 0;
+	}
+
+	if (pseqdesc->numframes <= 1)
+	{
+		f = 0;
+	}
+	else
+	{
+		f = (currententity->frame * (pseqdesc->numframes - 1)) / 256.0;
+	}
+
+	f += dfdt;
+
+	if (pseqdesc->flags & STUDIO_LOOPING)
+	{
+		if (pseqdesc->numframes > 1)
+		{
+			f -= (int)(f / (pseqdesc->numframes - 1)) * (pseqdesc->numframes - 1);
+		}
+		if (f < 0)
+		{
+			f += (pseqdesc->numframes - 1);
+		}
+	}
+	else
+	{
+		if (f >= pseqdesc->numframes - 1.001)
+		{
+			f = pseqdesc->numframes - 1.001;
+		}
+		if (f < 0.0)
+		{
+			f = 0.0;
+		}
+	}
+	return f;
 }
 
 void R_StudioSetupBones( void )
