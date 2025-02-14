@@ -1,6 +1,7 @@
 // r_trans.c - transparent objects
 
 #include "quakedef.h"
+#include "r_studio.h"
 #include "r_trans.h"
 
 qboolean r_intentities;
@@ -197,6 +198,10 @@ void R_DrawTEntitiesOnList( void )
 			break;
 
 		// TODO: Implement
+
+		case mod_studio:
+			R_StudioDrawModel(STUDIO_RENDER | STUDIO_EVENTS);
+			break;
 		}
 	}
 

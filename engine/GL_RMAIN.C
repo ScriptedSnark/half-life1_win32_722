@@ -1,6 +1,7 @@
 // r_main.c
 
 #include "quakedef.h"
+#include "r_studio.h"
 #include "r_trans.h"
 #include "shake.h"
 
@@ -416,7 +417,10 @@ void R_DrawEntitiesOnList( void )
 				break;
 
 			case mod_studio:
-				// TODO: Implement
+				if (currententity->index > 0 && currententity->index <= cl.maxclients)
+					R_StudioDrawPlayer(STUDIO_RENDER | STUDIO_EVENTS, &cl.frames[cl.parsecount & UPDATE_MASK].playerstate[currententity->index - 1]);
+				else
+					R_StudioDrawModel(STUDIO_RENDER | STUDIO_EVENTS);
 				break;
 
 			default:
