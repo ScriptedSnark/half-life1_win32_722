@@ -27,6 +27,15 @@ int				r_amodels_drawn;
 int				r_smodels_total;				// cookie
 #endif
 
+#if !defined( GLQUAKE )
+int				r_smodels_total;				// cookie
+
+// TODO: Implement
+#endif
+
+void R_StudioTransformVector( vec_t* in, vec_t* out );
+int SignbitsForPlane( mplane_t* out );
+
 #if defined( GLQUAKE )
 /*
 ===========
@@ -37,7 +46,67 @@ Checks if entity's bbox is in the view frustum
 */
 qboolean R_StudioCheckBBox( void )
 {
-	// TODO: Implement
+	mplane_t	plane;
+	vec3_t		mins, maxs;
+	int			i;
+	mstudioseqdesc_t* pseqdesc;
+
+	// Fake bboxes for models
+	static vec3_t gFakeHullMins = { -16, -16, -16 };
+	static vec3_t gFakeHullMaxs = { 16, 16, 16 };
+
+	// check if we have valid mins\maxs
+	if (!VectorCompare(vec3_origin, pstudiohdr->bbmin))
+	{
+		// clipping bounding box
+		VectorAdd(currententity->origin, pstudiohdr->bbmin, mins);
+		VectorAdd(currententity->origin, pstudiohdr->bbmax, maxs);
+	}
+	else if (!VectorCompare(vec3_origin, pstudiohdr->min))
+	{
+		// movement bounding box
+		VectorAdd(currententity->origin, pstudiohdr->min, mins);
+		VectorAdd(currententity->origin, pstudiohdr->max, maxs);
+	}
+	else
+	{
+		// fake bounding box
+		VectorAdd(currententity->origin, gFakeHullMins, mins);
+		VectorAdd(currententity->origin, gFakeHullMaxs, maxs);
+	}
+
+	// check sequence range
+	if (currententity->sequence >= pstudiohdr->numseq)
+		currententity->sequence = 0;
+
+	pseqdesc = (mstudioseqdesc_t*)((byte*)pstudiohdr + pstudiohdr->seqindex) + currententity->sequence;
+
+// compute a full bounding box
+	for (i = 0; i < 8; i++)
+	{
+		vec3_t p1, p2;
+		p1[0] = (i & 1) ? pseqdesc->bbmin[0] : pseqdesc->bbmax[0];
+		p1[1] = (i & 2) ? pseqdesc->bbmin[1] : pseqdesc->bbmax[1];
+		p1[2] = (i & 4) ? pseqdesc->bbmin[2] : pseqdesc->bbmax[2];
+
+		R_StudioTransformVector(p1, p2);
+
+		if (mins[0] > p2[0]) mins[0] = p2[0];
+		if (maxs[0] < p2[0]) maxs[0] = p2[0];
+		if (mins[1] > p2[1]) mins[1] = p2[1];
+		if (maxs[1] < p2[1]) maxs[1] = p2[1];
+		if (mins[2] > p2[2]) mins[2] = p2[2];
+		if (maxs[2] < p2[2]) maxs[2] = p2[2];
+	}
+
+	VectorCopy(vpn, plane.normal);
+	plane.dist = DotProduct(plane.normal, r_origin);
+	plane.type = PLANE_ANYZ;
+	plane.signbits = SignbitsForPlane(&plane);
+
+	if (BoxOnPlaneSide(mins, maxs, &plane) == 2)
+		return FALSE;
+
 	return TRUE;
 }
 #else
@@ -55,14 +124,51 @@ qboolean R_StudioCheckBBox( void )
 }
 #endif
 
-// TODO: Implement
-
 // Get number of body variations
 int R_StudioBodyVariations( model_t* model )
 {
-	// TODO: Implement
-	return 0;
+	studiohdr_t* pstudiohdr;
+	mstudiobodyparts_t* pbodypart;
+	int		i, count;
+
+	if (model->type != mod_studio)
+		return 0;
+
+	pstudiohdr = (studiohdr_t*)Mod_Extradata(model);
+	if (!pstudiohdr)
+		return 0;
+
+	count = 1;
+
+	pbodypart = (mstudiobodyparts_t*)((byte*)pstudiohdr + pstudiohdr->bodypartindex);
+	for (i = 0; i < pstudiohdr->numbodyparts; i++, pbodypart++)
+	{
+		count *= pbodypart->nummodels;
+	}
+
+	return count;
 }
+
+/*
+================
+R_StudioTransformVector
+================
+*/
+#if !defined( GLQUAKE )
+void R_StudioTransformVector( vec_t* in, vec_t* out )
+{
+	out[0] = DotProduct(in, aliastransform[0]) + aliastransform[0][3];
+	out[1] = DotProduct(in, aliastransform[1]) + aliastransform[1][3];
+	out[2] = DotProduct(in, aliastransform[2]) + aliastransform[2][3];
+}
+#else
+void R_StudioTransformVector( vec_t* in, vec_t* out )
+{
+	out[0] = DotProduct(in, rotationmatrix[0]) + rotationmatrix[0][3];
+	out[1] = DotProduct(in, rotationmatrix[1]) + rotationmatrix[1][3];
+	out[2] = DotProduct(in, rotationmatrix[2]) + rotationmatrix[2][3];
+}
+#endif
 
 // TODO: Implement
 
