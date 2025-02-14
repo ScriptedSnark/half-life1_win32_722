@@ -7,7 +7,13 @@
 
 int		R_StudioBodyVariations( struct model_s* model );
 
+void	R_StudioDynamicLight( cl_entity_t* ent, alight_t* plight );
+void	R_StudioEntityLight( alight_t* plight );
+
 int		R_StudioDrawModel( int flags );
-int		R_StudioDrawPlayer( int flags, struct player_state_s* pplayer );
+int		R_StudioDrawPlayer( int flags, player_state_t* pplayer );
+
+void	R_StudioClientEvents( void );
+void	R_StudioRenderFinal( void );
 
 #endif // R_STUDIO_H

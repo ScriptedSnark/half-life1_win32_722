@@ -19,7 +19,7 @@ typedef struct alight_s
 	int			ambientlight;	// clip at 128
 	int			shadelight;		// clip at 192 - ambientlight
 	vec3_t		color;
-	float*		plightvec;
+	float* plightvec;
 } alight_t;
 
 void GL_BeginRendering( int* x, int* y, int* width, int* height );
