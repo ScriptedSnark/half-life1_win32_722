@@ -5,11 +5,11 @@
 #pragma once
 #endif
 
-float	RandomFloat( float flLow, float flHigh );
-int32	RandomLong( int32 lLow, int32 lHigh );
-
-// TODO: Implement
+msurface_t* SurfaceAtPoint( model_t* pModel, mnode_t* node, vec_t* start, vec_t* end );
 
 struct mnode_s* PVSNode( struct mnode_s* node, vec_t* emins, vec_t* emaxs );
+
+float	RandomFloat( float flLow, float flHigh );
+int32	RandomLong( int32 lLow, int32 lHigh );
 
 #endif // PR_CMDS_H

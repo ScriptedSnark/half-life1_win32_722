@@ -471,6 +471,12 @@ extern	cvar_t	lookstrafe;
 extern	cvar_t	sensitivity;
 
 extern	cvar_t	cl_skyname;
+extern	cvar_t	cl_skycolor_r;
+extern	cvar_t	cl_skycolor_g;
+extern	cvar_t	cl_skycolor_b;
+extern	cvar_t	cl_skyvec_x;
+extern	cvar_t	cl_skyvec_y;
+extern	cvar_t	cl_skyvec_z;
 
 extern	cvar_t	cl_printplayers;
 

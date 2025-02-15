@@ -89,7 +89,7 @@ extern cl_entity_t	r_worldentity;
 extern	qboolean	r_cache_thrash;		// compatability
 extern	vec3_t		modelorg, r_entorigin;
 extern cl_entity_t* currententity;
-extern	int			r_visframecount;	// ??? what difs?
+extern	int			r_visframecount;
 extern	int			r_framecount;
 extern	mplane_t	frustum[4];
 extern	int		c_brush_polys, c_alias_polys;
@@ -223,6 +223,8 @@ float CalcFov( float fov_x, float width, float height );
 void R_MarkLights( dlight_t* light, int bit, mnode_t* node );
 void R_AnimateLight( void );
 void R_RenderDlights( void );
+colorVec R_LightPoint( vec_t* p );
+colorVec R_LightVec( vec_t* start, vec_t* end );
 
 //
 // gl_refrag.c

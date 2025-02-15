@@ -5,6 +5,10 @@
 #pragma once
 #endif
 
+// Additional studio flags for client-side models
+#define STUDIO_AMBIENT_LIGHT		0x100	// force to use ambient shading 
+#define STUDIO_FORCE_SKYLIGHT		0x400	// always grab lightvalues from the sky settings (even if sky is invisible)
+
 int		R_StudioBodyVariations( struct model_s* model );
 
 void	R_StudioDynamicLight( cl_entity_t* ent, alight_t* plight );

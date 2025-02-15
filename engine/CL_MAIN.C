@@ -33,6 +33,12 @@ cvar_t	lookstrafe = { "lookstrafe", "0", TRUE };
 cvar_t	sensitivity = { "sensitivity", "3", TRUE };
 
 cvar_t	cl_skyname = { "cl_skyname", "desert", TRUE };
+cvar_t	cl_skycolor_r = { "cl_skycolor_r", "0" };
+cvar_t	cl_skycolor_g = { "cl_skycolor_g", "0" };
+cvar_t	cl_skycolor_b = { "cl_skycolor_b", "0" };
+cvar_t	cl_skyvec_x = { "cl_skyvec_x", "0" };
+cvar_t	cl_skyvec_y = { "cl_skyvec_y", "0" };
+cvar_t	cl_skyvec_z = { "cl_skyvec_z", "0" };
 
 // TODO: Implement
 
@@ -1359,8 +1365,12 @@ void CL_Init( void )
 	Cvar_RegisterVariable(&cl_nolerp);
 
 	Cvar_RegisterVariable(&cl_skyname);
-
-	// TODO: Implement
+	Cvar_RegisterVariable(&cl_skycolor_r);
+	Cvar_RegisterVariable(&cl_skycolor_g);
+	Cvar_RegisterVariable(&cl_skycolor_b);
+	Cvar_RegisterVariable(&cl_skyvec_x);
+	Cvar_RegisterVariable(&cl_skyvec_y);
+	Cvar_RegisterVariable(&cl_skyvec_z);
 
 	Cvar_RegisterVariable(&lookspring);
 	Cvar_RegisterVariable(&lookstrafe);

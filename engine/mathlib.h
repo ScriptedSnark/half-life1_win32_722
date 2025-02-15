@@ -117,3 +117,21 @@ void VectorTransform( const vec_t* in1, float(*in2)[4], vec_t* out );
 void VectorMatrix( vec_t* forward, vec_t* right, vec_t* up );
 
 float	anglemod( float a );
+
+
+
+#define BOX_ON_PLANE_SIDE(emins, emaxs, p)	\
+	(((p)->type < 3)?						\
+	(										\
+		((p)->dist <= (emins)[(p)->type])?	\
+			1								\
+		:									\
+		(									\
+			((p)->dist >= (emaxs)[(p)->type])?\
+				2							\
+			:								\
+				3							\
+		)									\
+	)										\
+	:										\
+		BoxOnPlaneSide( (emins), (emaxs), (p)))

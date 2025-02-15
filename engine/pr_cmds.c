@@ -3,7 +3,116 @@
 
 #include "quakedef.h"
 
-int r_visframecount;
+// TODO: Implement
+
+// Returns surface instance by specified position
+msurface_t* SurfaceAtPoint( model_t* pModel, mnode_t* node, vec_t* start, vec_t* end )
+{
+	float		front, back, frac;
+	int			side;
+	mplane_t* plane;
+	vec3_t		mid;
+	msurface_t* surf;
+	int			s, t, ds, dt;
+	int			i;
+	mtexinfo_t* tex;
+
+	if (node->contents < 0)
+		return NULL;
+
+	plane = node->plane;
+	front = DotProduct(start, plane->normal) - plane->dist;
+	back = DotProduct(end, plane->normal) - plane->dist;
+
+	// test the front side first
+	side = front < 0;
+
+	// If they're both on the same side of the plane, don't bother to split
+	// just check the appropriate child
+	if ((back < 0.0) == side)
+		return SurfaceAtPoint(pModel, node->children[side], start, end);
+
+	// calculate mid point
+	frac = front / (front - back);
+
+	mid[0] = start[0] + (end[0] - start[0]) * frac;
+	mid[1] = start[1] + (end[1] - start[1]) * frac;
+	mid[2] = start[2] + (end[2] - start[2]) * frac;
+
+	// go down front side
+	surf = SurfaceAtPoint(pModel, node->children[side], start, mid);
+	if (surf)
+		return surf;
+
+	if ((back < 0.0) == side)
+		return NULL;
+
+	// check for impact on this node
+	for (i = 0; i < node->numsurfaces; i++)
+	{
+		surf = &pModel->surfaces[node->firstsurface + i];
+		tex = surf->texinfo;
+
+		s = DotProduct(mid, tex->vecs[0]) + tex->vecs[0][3];
+		t = DotProduct(mid, tex->vecs[1]) + tex->vecs[1][3];
+
+		if (s < surf->texturemins[0] || t < surf->texturemins[1])
+			continue;
+
+		ds = s - surf->texturemins[0];
+		dt = t - surf->texturemins[1];
+
+		// Check this surface to see if there's an intersection
+		if (ds > surf->extents[0] || dt > surf->extents[1])
+			continue;
+
+		return surf;
+	}
+
+	// go down back side
+	surf = SurfaceAtPoint(pModel, node->children[!side], mid, end);
+	return surf;
+}
+
+// TODO: Implement
+
+/*
+=================
+PVSNode
+
+Check the box in PVS and get node
+=================
+*/
+mnode_t* PVSNode( mnode_t* node, vec_t* emins, vec_t* emaxs )
+{
+	mplane_t* splitplane;
+	int sides;
+	mnode_t* splitNode;
+
+	if (node->visframe != r_visframecount)
+		return NULL;
+
+	if (node->contents < 0)
+		return node->contents != CONTENT_SOLID ? node : NULL;
+
+	splitplane = node->plane;
+
+	sides = BOX_ON_PLANE_SIDE(emins, emaxs, splitplane);
+
+	if (sides & 1)
+	{
+		splitNode = PVSNode(node->children[0], emins, emaxs);
+		if (splitNode)
+			return splitNode;
+	}
+
+	if (sides & 2)
+		return PVSNode(node->children[1], emins, emaxs);
+
+	return NULL;
+}
+
+// TODO: Implement
 
 #define IA	16807
 #define IM	2147483647
@@ -125,49 +234,3 @@ int32 RandomLong( int32 lLow, int32 lHigh )
 }
 
 // TODO: Implement
-
-struct mnode_s* PVSNode(struct mnode_s* node, vec_t* emins, vec_t* emaxs)
-{
-	mplane_t *splitplane;
-	int sides;
-	mnode_t *splitNode;
-
-	if (node->visframe != r_visframecount)
-		return NULL;
-
-	if (node->contents < 0)
-		return node->contents == CONTENT_SOLID ? NULL : node;
-
-
-	splitplane = node->plane;
-	if (splitplane->type >= 3u)
-	{
-		sides = BoxOnPlaneSide(emins, emaxs, splitplane);
-	}
-	else
-	{
-		if (splitplane->dist > emins[splitplane->type])
-		{
-			if (splitplane->dist < emaxs[splitplane->type])
-				sides = 3;
-			else
-				sides = 2;
-		}
-		else
-		{
-			sides = 1;
-		}
-	}
-
-	if (sides & 1)
-	{
-		splitNode = PVSNode(node->children[0], emins, emaxs);
-		if (splitNode)
-			return splitNode;
-	}
-
-	if (sides & 2)
-		return PVSNode(node->children[1], emins, emaxs);
-
-	return NULL;
-}

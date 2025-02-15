@@ -1,8 +1,9 @@
 // r_studio.c: routines for setting up to draw 3DStudio models 
 
 #include "quakedef.h"
-#include "r_studio.h"
+#include "pr_cmds.h"
 #include "CL_TENT.H"
+#include "r_studio.h"
 
 // Pointer to header block for studio model data
 studiohdr_t* pstudiohdr;
@@ -21,6 +22,9 @@ float			lighttransform[MAXSTUDIOBONES][3][4];
 // Do interpolation?
 int r_dointerp = 1;
 
+// TODO: Implement
+
+extern cvar_t v_direct;
 
 // TODO: Implement
 
@@ -986,7 +990,189 @@ int R_StudioDrawPlayer( int flags, player_state_t* pplayer )
 // Apply lighting effects to a model
 void R_StudioDynamicLight( cl_entity_t* ent, alight_t* plight )
 {
-	// TODO: Implement
+	int			lnum;
+	vec3_t		dist; // distance between dlight and entity origin
+	colorVec	down;
+	vec3_t		light;
+	float		total;
+	float		r, add;
+	vec3_t		uporigin, upend;
+	float		floor;
+	vec3_t		color;
+
+	// fullbright mode, set max brightness and go away
+	if (r_fullbright.value == 1.0)
+	{
+		plight->shadelight = 0;
+		plight->ambientlight = 192;
+		plight->plightvec[0] = 0.0;
+		plight->plightvec[1] = 0.0;
+		plight->plightvec[2] = -1.0;
+		plight->color[0] = 1.0;
+		plight->color[1] = 1.0;
+		plight->color[2] = 1.0;
+		return;
+	}
+
+	//
+	// setup ambient lighting
+	light[1] = 0.0;
+	light[0] = 0.0;
+	light[2] = 1.0;
+
+	if (!(ent->effects & EF_INVLIGHT))
+		light[2] = -1.0;
+
+	VectorCopy(ent->origin, uporigin);
+	uporigin[2] -= light[2] * 8.0;
+
+	down.r = down.g = down.b = down.a = 0;
+
+	// check sky color values
+	if ((cl_skycolor_r.value + cl_skycolor_g.value + cl_skycolor_b.value) != 0)
+	{
+		vec3_t end;
+		msurface_t* psurf;
+
+		end[0] = ent->origin[0] - cl_skyvec_x.value * 8192.0;
+		end[1] = ent->origin[1] - cl_skyvec_y.value * 8192.0;
+		end[2] = ent->origin[2] - cl_skyvec_z.value * 8192.0;
+
+		psurf = SurfaceAtPoint(cl.worldmodel, cl.worldmodel->nodes, uporigin, end);
+		if ((ent->model->flags & STUDIO_FORCE_SKYLIGHT) || (psurf && (psurf->flags & SURF_DRAWSKY)))
+		{
+			down.r = cl_skycolor_r.value;
+			down.g = cl_skycolor_g.value;
+			down.b = cl_skycolor_b.value;
+			light[0] = cl_skyvec_x.value;
+			light[1] = cl_skyvec_y.value;
+			light[2] = cl_skyvec_z.value;
+		}
+	}
+
+	// see if the model is not illuminated by the sky 
+	if ((down.r + down.g + down.b) == 0)
+	{
+		colorVec gcolor;
+		float grad[4];
+
+		VectorScale(light, 2048.0, upend);
+		VectorAdd(upend, uporigin, upend);
+
+		down = R_LightVec(uporigin, upend);
+
+		uporigin[0] -= 16.0;
+		uporigin[1] -= 16.0;
+		upend[0] -= 16.0;
+		upend[1] -= 16.0;
+		gcolor = R_LightVec(uporigin, upend);
+		grad[0] = (float)(gcolor.r + gcolor.g + gcolor.b) / 768.0;
+
+		uporigin[0] += 32.0;
+		upend[0] += 32.0;
+		gcolor = R_LightVec(uporigin, upend);
+		grad[1] = (float)(gcolor.r + gcolor.g + gcolor.b) / 768.0;
+
+		uporigin[1] += 32.0;
+		upend[1] += 32.0;
+		gcolor = R_LightVec(uporigin, upend);
+		grad[2] = (float)(gcolor.r + gcolor.g + gcolor.b) / 768.0;
+
+		uporigin[0] -= 32.0;
+		upend[0] -= 32.0;
+		gcolor = R_LightVec(uporigin, upend);
+		grad[3] = (float)(gcolor.r + gcolor.g + gcolor.b) / 768.0;
+
+		// calc light direction
+		light[0] = grad[0] - grad[1] - grad[2] + grad[3];
+		light[1] = grad[0] + grad[1] - grad[2] - grad[3];
+		VectorNormalize(light);
+	}
+
+	// Set floor light
+	currententity->cvFloorColor.r = down.r;
+	currententity->cvFloorColor.g = down.g;
+	currententity->cvFloorColor.b = down.b;
+	currententity->cvFloorColor.a = down.a;
+
+	color[0] = down.r;
+	color[1] = down.g;
+	color[2] = down.b;
+
+	// intentsity
+	floor = max(max(color[0], color[1]), color[2]);
+	if (floor == 0.0)
+		floor = 1.0;
+
+	VectorScale(light, floor, light);
+
+	//
+	// add dynamic lights
+
+	for (lnum = 0; lnum < MAX_DLIGHTS; lnum++)
+	{
+		dlight_t* dl;
+
+		dl = &cl_dlights[lnum];
+
+		// it's dead already, so just skip
+		if (dl->die < cl.time)
+			continue;
+
+		VectorSubtract(ent->origin, dl->origin, dist);
+
+		r = Length(dist);
+		add = (dl->radius - r); // squared radius
+		if (add > 0.0)
+		{
+			floor += add;
+
+			if (r > 1.0)
+				VectorScale(dist, add / r, dist);
+			else
+				VectorScale(dist, add, dist);
+
+			VectorAdd(light, dist, light);
+
+			color[0] += dl->color.r * (add / 256.0);
+			color[1] += dl->color.g * (add / 256.0);
+			color[2] += dl->color.b * (add / 256.0);
+		}
+	}
+
+	if (ent->model->flags & STUDIO_AMBIENT_LIGHT)
+		total = 0.6;
+	else
+		total = v_direct.value;
+
+	VectorScale(light, total, light);
+
+	plight->shadelight = Length(light);
+	plight->ambientlight = (floor - plight->shadelight);
+
+	floor = max(max(color[0], color[1]), color[2]);
+	if (floor == 0.0)
+	{
+		plight->color[0] = 1.0;
+		plight->color[1] = 1.0;
+		plight->color[2] = 1.0;
+	}
+	else
+	{
+		plight->color[0] = color[0] * (1.0 / floor);
+		plight->color[1] = color[1] * (1.0 / floor);
+		plight->color[2] = color[2] * (1.0 / floor);
+	}
+
+	// clamp the lighting, so it doesn't "overbright" too much
+	if (plight->ambientlight > 128)
+		plight->ambientlight = 128;
+
+	if ((plight->ambientlight + plight->shadelight) > 255)
+		plight->shadelight = 255 - plight->ambientlight;
+
+	VectorNormalize(light);
+	VectorCopy(light, plight->plightvec);
 }
 
 // Apply entity lighting
