@@ -1139,7 +1139,6 @@ Create visible entities in the correct position
 for all current players
 =============
 */
-extern int cam_thirdperson;
 void CL_LinkPlayers( void )
 {
 	int				j;

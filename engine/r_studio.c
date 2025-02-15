@@ -2,6 +2,7 @@
 
 #include "quakedef.h"
 #include "r_studio.h"
+#include "CL_TENT.H"
 
 // Pointer to header block for studio model data
 studiohdr_t* pstudiohdr;
@@ -996,9 +997,98 @@ void R_StudioEntityLight( alight_t* plight )
 
 // TODO: Implement
 
+/*
+=========================
+R_StudioClientEvents
+
+The entity's studio model description indicated an event was
+fired during this frame, handle the event by it's tag ( e.g., muzzleflash, sound )
+=========================
+*/
 void R_StudioClientEvents( void )
 {
-	// TODO: Implement
+	int i;
+	mstudioevent_t* pevent;
+	mstudioseqdesc_t* pseqdesc;
+	mstudioattachment_t* pattachment;
+	float		flStart, flEnd;
+	float		flCurTime = 0.0, flLastTime = 0.0;
+
+	pseqdesc = (mstudioseqdesc_t*)((byte*)pstudiohdr + pstudiohdr->seqindex) + currententity->sequence;
+
+	// calculate attachment points
+	pattachment = (mstudioattachment_t*)((byte*)pstudiohdr + pstudiohdr->attachmentindex);
+	for (i = 0; i < pstudiohdr->numattachments; i++)
+	{
+		VectorTransform(pattachment[i].org, lighttransform[pattachment[i].bone], currententity->attachment[i]);
+	}
+
+	for (i = 0; i < 4; i++)
+	{
+		VectorCopy(currententity->origin, currententity->attachment[i]);
+	}
+
+	if (cl.time == cl.oldtime)
+		return;
+
+	if (flCurTime != cl.time)
+	{
+		flLastTime = flCurTime;
+		flCurTime = cl.time;
+	}
+
+	// EF_MUZZLEFLASH - do simple small light effect on attachment 0
+	if (currententity->effects & EF_MUZZLEFLASH)
+	{
+		dlight_t* el;
+
+		el = CL_AllocElight(0);
+		VectorCopy(currententity->attachment[0], el->origin);
+		el->radius = 16.0;
+		el->decay = 320.0;
+		el->color.r = 255;
+		el->color.g = 192;
+		el->color.b = 64;
+		el->die = cl.time + 0.05; // die in a couple of frames
+
+		currententity->effects &= ~EF_MUZZLEFLASH;
+	}
+
+	if (pseqdesc->numevents)
+	{
+		pevent = (mstudioevent_t*)((byte*)pstudiohdr + pseqdesc->eventindex);
+
+		flEnd = CL_StudioEstimateFrame(pseqdesc);
+		flStart = flEnd - (flCurTime - flLastTime) * pseqdesc->fps * currententity->framerate;
+
+		if (currententity->sequencetime == currententity->animtime)
+		{
+			if (!(pseqdesc->flags & STUDIO_LOOPING))
+				flStart = -0.01;
+		}
+
+		// Fire events
+		for (i = 0; i < pseqdesc->numevents; i++, pevent++)
+		{
+			// client event numbers start at 5000 (e.g. 5001 is R_MuzzleFlash on entity attachment 0)
+			if (pevent->event < 5000)
+				continue;
+			if (pevent->frame <= flStart || pevent->frame > flEnd)
+				continue;
+
+			switch (pevent->event)
+			{
+			case 5001:
+				R_MuzzleFlash(currententity->attachment[0], lighttransform[pattachment->bone], atoi(pevent->options));
+				break;
+			case 5002:
+				R_SparkEffect(currententity->attachment[0], atoi(pevent->options), -100, 100);
+				break;
+			default:
+				break;
+			}
+		}
+	}
 }
 
 // TODO: Implement

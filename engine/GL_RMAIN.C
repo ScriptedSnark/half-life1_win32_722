@@ -473,7 +473,34 @@ void R_DrawViewModel( void )
 
 void R_PreDrawViewModel( void )
 {
-	// TODO: Implement
+	currententity = &cl.viewent;
+
+	// Don't draw if it's disabled
+	if (!r_drawviewmodel.value)
+		return;
+
+	// Don't draw if we are in a third person mode
+	if (cam_thirdperson || chase_active.value || envmap || !r_drawentities.value)
+		return;
+
+	if (cl.stats[STAT_HEALTH] <= 0 || !currententity->model || cl.viewentity > cl.maxclients)
+		return;
+
+	if (cl.spectator)
+		return;
+
+	if (cl.viewent.model->type != mod_studio)
+		return;
+
+	if (cl.weaponstarttime == 0.0)
+		cl.weaponstarttime = cl.time;
+
+	cl.viewent.frame = 0.0;
+	cl.viewent.framerate = 1.0;
+	cl.viewent.sequence = cl.weaponsequence;
+	cl.viewent.animtime = cl.weaponstarttime;
+
+	R_StudioDrawModel(STUDIO_EVENTS);
 }
 
 /*

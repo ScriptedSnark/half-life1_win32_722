@@ -1111,7 +1111,7 @@ R_MuzzleFlash
 Play muzzle flash
 ===============
 */
-void R_MuzzleFlash( float* pos1, int rand, int type )
+void R_MuzzleFlash( float* pos1, float (*light)[4], int type )
 {
 	TEMPENTITY* pTemp;
 	int index;

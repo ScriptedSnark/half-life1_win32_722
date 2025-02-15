@@ -138,6 +138,14 @@ void AngleMatrix( const vec_t* angles, float(*matrix)[4] )
 	matrix[2][3] = 0.0f;
 }
 
+void VectorTransform( const vec_t* in1, float(*in2)[4], vec_t* out )
+{
+	out[0] = in1[0] * (*in2)[0] + in1[1] * (*in2)[1] + in1[2] * (*in2)[2] + (*in2)[3];
+	out[1] = in1[0] * (*in2)[4] + in1[1] * (*in2)[5] + in1[2] * (*in2)[6] + (*in2)[7];
+	out[2] = in1[0] * (*in2)[8] + in1[1] * (*in2)[9] + in1[2] * (*in2)[10] + (*in2)[11];
+}
+
+
 int VectorCompare( const vec_t* v1, const vec_t* v2 )
 {
 	int i;

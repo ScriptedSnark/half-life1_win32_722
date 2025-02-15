@@ -112,7 +112,7 @@ int BoxOnPlaneSide( vec_t * emins, vec_t * emaxs, struct mplane_s* p );
 
 
 void AngleMatrix( const vec_t* angles, float(*matrix)[4] );
-
+void VectorTransform( const vec_t* in1, float(*in2)[4], vec_t* out );
 
 void VectorMatrix( vec_t* forward, vec_t* right, vec_t* up );
 

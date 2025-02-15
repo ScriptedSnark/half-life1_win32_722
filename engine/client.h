@@ -599,6 +599,7 @@ void CL_PredictMove( void );
 
 extern	int		autocam;
 extern int spec_track; // player# of who we are tracking
+extern int cam_thirdperson;
 
 //
 // cl_parse.c
