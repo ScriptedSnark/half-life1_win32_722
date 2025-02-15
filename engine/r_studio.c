@@ -611,7 +611,57 @@ R_StudioCalcRotations
 */
 void R_StudioCalcRotations( vec3_t* pos, vec4_t* q, mstudioseqdesc_t* pseqdesc, mstudioanim_t* panim, float f )
 {
-	// TODO: Implement
+	int					i;
+	int					frame;
+	mstudiobone_t* pbone;
+
+	float				s;
+	float				adj[MAXSTUDIOCONTROLLERS];
+	float				dadt;
+
+	if (f > pseqdesc->numframes - 1)
+	{
+		f = 0;	// bah, fix this bug with changing sequences too fast
+	}
+
+	frame = (int)f;
+
+	// Con_DPrintf("%d %.4f %.4f %.4f %.4f %d\n", currententity->sequence, cl.time, currententity->animtime, currententity->frame, f, frame);
+
+	// Con_DPrintf("%f %f %f\n", currententity->angles[ROLL], currententity->angles[PITCH], currententity->angles[YAW]);
+
+	// Con_DPrintf("frame %d %d\n", frame1, frame2);
+
+
+	dadt = CL_StudioEstimateInterpolant();
+	s = (f - frame);
+
+	// add in programtic controllers
+	pbone = (mstudiobone_t*)((byte*)pstudiohdr + pstudiohdr->boneindex);
+
+	R_StudioCalcBoneAdj(dadt, adj, currententity->controller, currententity->prevcontroller, currententity->mouth.mouthopen);
+
+	for (i = 0; i < pstudiohdr->numbones; i++, pbone++, panim++)
+	{
+		R_StudioCalcBoneQuaterion(frame, s, pbone, panim, adj, q[i]);
+
+		R_StudioCalcBonePosition(frame, s, pbone, panim, adj, pos[i]);
+		// if (0 && i == 0)
+		//	Con_DPrintf("%d %d %d %d\n", currententity->sequence, frame, j, k);
+	}
+
+	if (pseqdesc->motiontype & STUDIO_X)
+	{
+		pos[pseqdesc->motionbone][0] = 0.0;
+	}
+	if (pseqdesc->motiontype & STUDIO_Y)
+	{
+		pos[pseqdesc->motionbone][1] = 0.0;
+	}
+	if (pseqdesc->motiontype & STUDIO_Z)
+	{
+		pos[pseqdesc->motionbone][2] = 0.0;
+	}
 }
 
 /*
