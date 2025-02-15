@@ -706,7 +706,26 @@ R_StudioSlerpBones
 */
 void R_StudioSlerpBones( vec4_t* q1, vec3_t* pos1, vec4_t* q2, vec3_t* pos2, float s )
 {
-	// TODO: Implement
+	int			i;
+	vec4_t		q3;
+	float		s1;
+
+	if (s < 0) s = 0;
+	else if (s > 1.0) s = 1.0;
+
+	s1 = 1.0 - s;
+
+	for (i = 0; i < pstudiohdr->numbones; i++)
+	{
+		QuaternionSlerp(q1[i], q2[i], s, q3);
+		q1[i][0] = q3[0];
+		q1[i][1] = q3[1];
+		q1[i][2] = q3[2];
+		q1[i][3] = q3[3];
+		pos1[i][0] = pos1[i][0] * s1 + pos2[i][0] * s;
+		pos1[i][1] = pos1[i][1] * s1 + pos2[i][1] * s;
+		pos1[i][2] = pos1[i][2] * s1 + pos2[i][2] * s;
+	}
 }
 
 float CL_StudioEstimateFrame( mstudioseqdesc_t* pseqdesc )
