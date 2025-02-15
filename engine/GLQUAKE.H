@@ -180,6 +180,8 @@ extern	int		mirrortexturenum;	// quake texturenum, not gltexturenum
 extern	qboolean mirror;
 extern	mplane_t* mirror_plane;
 
+extern	vec3_t		r_plightvec;
+
 extern	float	r_world_matrix[16];
 extern	float	r_base_world_matrix[16];
 extern	float	gProjectionMatrix[16];

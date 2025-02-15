@@ -3,12 +3,18 @@
 #include "quakedef.h"
 #include "pr_cmds.h"
 #include "CL_TENT.H"
+#include "customentity.h"
+#include "r_local.h"
 #include "r_studio.h"
 
 // Pointer to header block for studio model data
 studiohdr_t* pstudiohdr;
 
 // TODO: Implement
+
+vec3_t			r_colormix;
+colorVec		r_icolormix;
+vec3_t			r_blightvec[MAXSTUDIOBONES];	// light vectors in bone reference frames
 
 // Model to world transformation
 float			rotationmatrix[3][4];
@@ -29,6 +35,28 @@ extern cvar_t v_direct;
 // TODO: Implement
 
 
+
+// TODO: Implement
+
+// Chrome and light data
+
+int				chrome[MAXSTUDIOVERTS][2];		// texture coords for surface normals
+int				g_NormalIndex[MAXSTUDIOVERTS];
+int				chromeage[MAXSTUDIOBONES];		// last time chrome vectors were updated
+vec3_t			r_chromeup[MAXSTUDIOBONES];		// chrome vector "up" in bone reference frames
+vec3_t			r_chromeright[MAXSTUDIOBONES];	// chrome vector "right" in bone reference frames
+#define MAXLOCALLIGHTS 3
+int				numlights;
+dlight_t*		locallight[MAXLOCALLIGHTS];
+int				locallinearlight[MAXLOCALLIGHTS][3];
+float			locallightR2[MAXLOCALLIGHTS];
+float			lightpos[MAXSTUDIOVERTS][3][4];
+vec_t			lightbonepos[MAXSTUDIOBONES][3][3];
+int				lightage[MAXSTUDIOBONES];					// last time lights were updated
+
+#if defined( GLQUAKE )
+auxvert_t* pauxverts;
+#endif
 
 // TODO: Implement
 
@@ -287,7 +315,13 @@ void R_StudioSetUpTransform( int trivial_accept )
 	rotationmatrix[2][3] = modelpos[2];
 }
 
-// TODO: Implement
+// rotate by the inverse of the matrix
+void VectorIRotate( vec_t* in1, float(*in2)[4], vec_t* out )
+{
+	out[0] = in1[0] * in2[0][0] + in1[1] * in2[1][0] + in1[2] * in2[2][0];
+	out[1] = in1[0] * in2[0][1] + in1[1] * in2[1][1] + in1[2] * in2[2][1];
+	out[2] = in1[0] * in2[0][2] + in1[1] * in2[1][2] + in1[2] * in2[2][2];
+}
 
 void AngleQuaternion( vec_t* angles, vec_t* quaternion )
 {
@@ -912,7 +946,26 @@ outputs:
 */
 void R_StudioSetupLighting( alight_t* plighting )
 {
-	// TODO: Implement
+	int i;
+
+	r_ambientlight = plighting->ambientlight;
+	r_shadelight = plighting->shadelight;
+
+	VectorCopy(plighting->plightvec, r_plightvec);
+
+	for (i = 0; i < pstudiohdr->numbones; i++)
+	{
+		VectorIRotate(r_plightvec, lighttransform[i], r_blightvec[i]);
+	}
+
+	// the colorVec acceps 0-FFFFF range of colors, scale it with 192 and 255 respectively (C0 and FF)
+	r_icolormix.r = (int)(plighting->color[0] * 0xC0FF) & 0xFF00;
+	r_icolormix.g = (int)(plighting->color[1] * 0xC0FF) & 0xFF00;
+	r_icolormix.b = (int)(plighting->color[2] * 0xC0FF) & 0xFF00;
+
+	r_colormix[0] = plighting->color[0];
+	r_colormix[1] = plighting->color[1];
+	r_colormix[2] = plighting->color[2];
 }
 
 // TODO: Implement
@@ -1178,7 +1231,93 @@ void R_StudioDynamicLight( cl_entity_t* ent, alight_t* plight )
 // Apply entity lighting
 void R_StudioEntityLight( alight_t* plight )
 {
-	// TODO: Implement
+	int		i, j, k;
+	dlight_t* el;
+	vec3_t	mid, pos;
+	float	dist2, f;
+	float	radius;
+	float	lstrength[MAXLOCALLIGHTS];
+	float	minstrength;
+
+	VectorCopy(currententity->origin, pos);
+
+	lstrength[0] = 0.0;
+	lstrength[1] = 0.0;
+	lstrength[2] = 0.0;
+
+	minstrength = 1000000.0;
+
+	j = 0;
+	numlights = 0; // clear previous elights
+
+	for (i = 0; i < MAX_ELIGHTS; i++)
+	{
+		el = &cl_elights[i];
+
+		if (el->die <= cl.time || el->radius <= 0.0)
+			continue;
+		
+		// Beam entities
+		if (BEAMENT_ENTITY(el->key) == currententity->index)
+		{
+			if (BEAMENT_ATTACHMENT(el->key))
+			{
+				VectorCopy(currententity->attachment[BEAMENT_ATTACHMENT(el->key)], el->origin);
+			}
+			else
+			{
+				VectorCopy(currententity->origin, el->origin);
+			}
+		}
+
+		VectorSubtract(pos, el->origin, mid);
+
+		f = DotProduct(mid, mid);
+		radius = el->radius * el->radius; // squared radius
+
+		if (f > radius)
+			dist2 = (radius / f);
+		else
+			dist2 = 1.0;
+
+		if (dist2 > 0.004)
+		{
+			int att;
+			if (j < 3)
+			{
+				att = j;
+			}
+			else
+			{
+				att = -1;
+				for (k = 0; k < j; k++)
+				{
+					if (lstrength[k] < minstrength && lstrength[k] < dist2)
+					{
+						att = k;
+						minstrength = lstrength[k];
+					}
+				}
+			}
+
+			if (att != -1)
+			{
+				numlights = j;
+				lstrength[att] = dist2;
+				locallight[att] = el;
+				locallightR2[att] = radius;
+
+				locallinearlight[att][0] = lineargammatable[el->color.r * 4];
+				locallinearlight[att][1] = lineargammatable[el->color.g * 4];
+				locallinearlight[att][2] = lineargammatable[el->color.b * 4];
+
+				if (j <= att)
+					j = att + 1;
+			}
+		}
+	}
+
+	numlights = j;
 }
 
 // TODO: Implement
