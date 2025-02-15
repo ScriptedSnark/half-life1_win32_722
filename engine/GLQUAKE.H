@@ -127,25 +127,24 @@ extern	cvar_t	r_speeds;
 extern	cvar_t	r_fullbright;
 extern	cvar_t	r_decals;
 extern	cvar_t	r_lightmap;
+extern	cvar_t	r_shadows;
 
-
-
-extern	cvar_t	r_novis;
 
 
 
 extern	cvar_t	r_mirroralpha;
 extern	cvar_t	r_wateralpha;
 extern	cvar_t	r_dynamic;
+extern	cvar_t	r_novis;
+
 
 extern	cvar_t	r_wadtextures;
 
 extern	cvar_t	gl_clear;
 extern	cvar_t	gl_cull;
 extern	cvar_t	gl_texsort;
-
-
-
+extern	cvar_t	gl_smoothmodels;
+extern	cvar_t	gl_affinemodels;
 extern	cvar_t	gl_flashblend;
 
 

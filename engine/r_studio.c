@@ -2,9 +2,11 @@
 
 #include "quakedef.h"
 #include "pr_cmds.h"
+#include "view.h"
 #include "CL_TENT.H"
 #include "customentity.h"
 #include "r_local.h"
+#include "r_triangle.h"
 #include "r_studio.h"
 
 // Pointer to header block for studio model data
@@ -25,16 +27,32 @@ float			lighttransform[MAXSTUDIOBONES][3][4];
 
 // TODO: Implement
 
+// Vert data, position and lighting
+auxvert_t		auxverts[MAXSTUDIOVERTS];
+vec3_t			lightvalues[MAXSTUDIOVERTS];
+
+// TODO: Implement
+
 // Do interpolation?
 int r_dointerp = 1;
 
 // TODO: Implement
 
-extern cvar_t v_direct;
+extern	vec3_t	shadevector;
 
 // TODO: Implement
 
 
+
+
+
+
+
+// TODO: Implement
+
+// Pointers to current body part and submodel
+mstudiobodyparts_t* pbodypart;
+mstudiomodel_t* psubmodel;
 
 // TODO: Implement
 
@@ -933,6 +951,20 @@ void R_StudioSetupBones( void )
 
 // TODO: Implement
 
+void R_StudioDrawHulls( void )
+{
+	// TODO: Implement
+}
+
+// TODO: Implement
+
+void R_StudioDrawBones( void )
+{
+	// TODO: Implement
+}
+
+// TODO: Implement
+
 /*
 ===========
 R_StudioSetupLighting
@@ -968,7 +1000,30 @@ void R_StudioSetupLighting( alight_t* plighting )
 	r_colormix[2] = plighting->color[2];
 }
 
-// TODO: Implement
+/*
+====================
+R_StudioSetupModel
+
+Based on the body part, figure out which mesh it should be using
+====================
+*/
+void R_StudioSetupModel( int bodypart )
+{
+	int index;
+
+	if (bodypart > pstudiohdr->numbodyparts)
+	{
+		Con_DPrintf("R_StudioSetupModel: no such bodypart %d\n", bodypart);
+		bodypart = 0;
+	}
+	
+	pbodypart = (mstudiobodyparts_t*)((byte*)pstudiohdr + pstudiohdr->bodypartindex) + bodypart;
+
+	index = currententity->body / pbodypart->base;
+	index = index % pbodypart->nummodels;
+
+	psubmodel = (mstudiomodel_t*)((byte*)pstudiohdr + pbodypart->modelindex) + index;
+}
 
 /*
 ====================
@@ -1193,7 +1248,7 @@ void R_StudioDynamicLight( cl_entity_t* ent, alight_t* plight )
 		}
 	}
 
-	if (ent->model->flags & STUDIO_AMBIENT_LIGHT)
+	if (ent->model->flags & STUDIO_DYNAMIC_LIGHT)
 		total = 0.6;
 	else
 		total = v_direct.value;
@@ -1320,8 +1375,6 @@ void R_StudioEntityLight( alight_t* plight )
 	numlights = j;
 }
 
-// TODO: Implement
-
 /*
 =========================
 R_StudioClientEvents
@@ -1416,8 +1469,6 @@ void R_StudioClientEvents( void )
 	}
 }
 
-// TODO: Implement
-
 #if !defined( GLQUAKE )
 // TODO: Implement
 
@@ -1435,11 +1486,8 @@ void R_StudioRenderFinal( void )
 #endif
 
 vec3_t* pvlightvalues;
-int			pvlightvalues_size;
 
 #if defined( GLQUAKE )
-void GLR_StudioDrawShadow( void );
-
 /*
 ================
 R_StudioRenderFinal
@@ -1449,10 +1497,151 @@ Finilize studio model rendering
 */
 void R_StudioRenderFinal( void )
 {
+	int		i;
+	float	an = 0.0;
+
+	pauxverts = auxverts;
+	pvlightvalues = lightvalues;
+
+	shadevector[0] = cos(an);
+	shadevector[1] = sin(an);
+	shadevector[2] = 1.0;
+	VectorNormalize(shadevector);
+
+	GL_DisableMultitexture();
+	qglPushMatrix();
+
+	if (gl_smoothmodels.value)
+		qglShadeModel(GL_SMOOTH);
+
+	qglTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+
+	if (gl_affinemodels.value)
+		qglHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_FASTEST);
+
+	if (r_drawentities.value == 2)
+	{
+		R_StudioDrawBones();
+	}
+	else if (r_drawentities.value == 3)
+	{
+		R_StudioDrawHulls();
+	}
+	else if (r_drawentities.value == 4)
+	{
+		tri_GL_RenderMode(kRenderTransAdd);
+		R_StudioDrawHulls();
+		tri_GL_RenderMode(kRenderNormal);
+	}
+	else
+	{
+		for (i = 0; i < pstudiohdr->numbodyparts; i++)
+		{
+			R_StudioSetupModel(i);
+
+			if (r_dointerp)
+			{
+				// interpolation messes up bounding boxes
+				currententity->trivial_accept = 0;
+			}
+
+			if (currententity->rendermode != kRenderNormal)
+			{
+				if (currententity->rendermode == kRenderTransColor)
+				{
+					qglBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+					qglTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_ALPHA);
+				}
+				else if (currententity->rendermode == kRenderTransAdd)
+				{
+					qglTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+					qglBlendFunc(GL_ONE, GL_ONE);
+					qglColor4f(r_blend, r_blend, r_blend, 1);
+					qglDepthMask(GL_FALSE);
+				}
+				else
+				{
+					qglTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+					qglBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+					qglColor4f(1, 1, 1, r_blend);
+					qglDepthMask(GL_TRUE);
+				}
+
+				qglEnable(GL_BLEND);
+			}
+
+			R_StudioDrawPoints();
+
+			qglDepthMask(GL_TRUE);
+
+			if (r_shadows.value && currententity->rendermode != kRenderTransAdd)
+			{
+				if (!(currententity->model->flags & STUDIO_DYNAMIC_LIGHT))
+				{
+					float color;
+
+					color = 1.0 - (r_blend * 0.5);
+
+					qglDisable(GL_TEXTURE_2D);
+					qglBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+					qglEnable(GL_BLEND);
+
+					qglColor4f(0, 0, 0, 1.0 - color);
+
+					if (!gl_ztrick.value || gldepthmin < 0.5)
+						qglDepthFunc(GL_LESS);
+					else
+						qglDepthFunc(GL_GREATER);
+
+					GLR_StudioDrawShadow();
+
+					if (!gl_ztrick.value || gldepthmin < 0.5)
+						qglDepthFunc(GL_LEQUAL);
+					else
+						qglDepthFunc(GL_GEQUAL);
+
+					qglEnable(GL_TEXTURE_2D);
+
+					qglDisable(GL_BLEND);
+
+					qglColor4f(1, 1, 1, 1);
+
+					if (gl_smoothmodels.value)
+						qglShadeModel(GL_SMOOTH);
+				}
+			}
+		}
+	}
+
+	if (currententity->rendermode != kRenderNormal)
+		qglDisable(GL_BLEND);
+
+	qglTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+
+	qglShadeModel(GL_FLAT);
+
+	if (gl_affinemodels.value)
+		qglHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
+
+	qglPopMatrix();
+}
+
+/*
+================
+R_StudioDrawPoints
+
+================
+*/
+void R_StudioDrawPoints( void )
+{
 	// TODO: Implement
 }
 
-// TODO: Implement
+void GLR_StudioDrawShadow( void )
+{
+	// TODO: Implement
+}
 #endif
 
 // TODO: Implement

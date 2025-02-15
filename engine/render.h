@@ -62,6 +62,8 @@ typedef struct cl_entity_s
 
 	// TODO: Implement
 
+	int				trivial_accept;
+
 	struct mnode_s* topnode;		// for bmodels, first world node that splits bmodel, or NULL if not split
 
 	int				movetype;

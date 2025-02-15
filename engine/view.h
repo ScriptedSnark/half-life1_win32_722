@@ -5,6 +5,8 @@
 #pragma once
 #endif
 
+extern cvar_t		v_direct;
+
 extern byte			texgammatable[256];
 extern int 			lightgammatable[1024];
 extern int			lineargammatable[1024];

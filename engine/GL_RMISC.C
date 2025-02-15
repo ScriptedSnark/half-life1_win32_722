@@ -9,8 +9,9 @@ cvar_t	r_speeds = { "r_speeds", "0" };
 cvar_t	r_fullbright = { "r_fullbright", "0" };
 cvar_t	r_decals = { "r_decals", "1" };
 cvar_t	r_lightmap = { "r_lightmap", "0" };
+cvar_t	r_shadows = { "r_shadows", "0" };
 
-cvar_t	r_novis = { "r_novis", "0" };
+
 
 
 
@@ -18,15 +19,16 @@ cvar_t	r_novis = { "r_novis", "0" };
 cvar_t	r_mirroralpha = { "r_mirroralpha", "1" };
 cvar_t	r_wateralpha = { "r_wateralpha", "1" };
 cvar_t	r_dynamic = { "r_dynamic", "1" };
+cvar_t	r_novis = { "r_novis", "0" };
+
 
 cvar_t	r_wadtextures = { "r_wadtextures", "0" };
 
 cvar_t	gl_clear = { "gl_clear", "0" };
 cvar_t	gl_cull = { "gl_cull", "1" };
 cvar_t	gl_texsort = { "gl_texsort", "1" };
-
-
-
+cvar_t	gl_smoothmodels = { "gl_smoothmodels", "1" };
+cvar_t	gl_affinemodels = { "gl_affinemodels", "0" };
 cvar_t	gl_flashblend = { "gl_flashblend", "0" };
 
 
@@ -164,12 +166,15 @@ void R_Init( void )
 	Cvar_RegisterVariable(&r_novis);
 	Cvar_RegisterVariable(&r_speeds);
 	Cvar_RegisterVariable(&r_wadtextures);
+	Cvar_RegisterVariable(&r_shadows);
 
 	// TODO: Implement
 
 	Cvar_RegisterVariable(&gl_clear);
 	Cvar_RegisterVariable(&gl_texsort);
 	Cvar_RegisterVariable(&gl_cull);
+	Cvar_RegisterVariable(&gl_smoothmodels);
+	Cvar_RegisterVariable(&gl_affinemodels);
 
 	// TODO: Implement
 
