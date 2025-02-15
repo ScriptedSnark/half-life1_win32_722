@@ -5,6 +5,7 @@
 #pragma once
 #endif
 
+extern cvar_t		v_lambert;
 extern cvar_t		v_direct;
 
 extern byte			texgammatable[256];

@@ -53,6 +53,7 @@ extern	vec3_t	shadevector;
 // Pointers to current body part and submodel
 mstudiobodyparts_t* pbodypart;
 mstudiomodel_t* psubmodel;
+mstudiomesh_t* pmesh;
 
 // TODO: Implement
 
@@ -76,7 +77,9 @@ int				lightage[MAXSTUDIOBONES];					// last time lights were updated
 auxvert_t* pauxverts;
 #endif
 
-// TODO: Implement
+// Software's drawstyle for debugging
+// the studio model
+int				drawstyle;
 
 #if defined( GLQUAKE )
 int				r_ambientlight;					// ambient world light
@@ -963,7 +966,250 @@ void R_StudioDrawBones( void )
 	// TODO: Implement
 }
 
-// TODO: Implement
+
+/*
+====================
+R_StudioTransformAuxVert
+
+====================
+*/
+void R_StudioTransformAuxVert( auxvert_t* av, int bone, vec_t* vert )
+{
+	av->fv[0] = DotProduct(bonetransform[bone][0], vert)
+		+ bonetransform[bone][0][3];
+	av->fv[1] = DotProduct(bonetransform[bone][1], vert)
+		+ bonetransform[bone][1][3];
+	av->fv[2] = DotProduct(bonetransform[bone][2], vert)
+		+ bonetransform[bone][2][3];
+}
+
+/*
+====================
+R_StudioLighting
+
+====================
+*/
+void R_StudioLighting( float* lv, int bone, int flags, vec_t* normal )
+{
+	float illum;
+	float lightcos;
+
+	illum = r_ambientlight;
+
+	if ((flags & STUDIO_NF_FLATSHADE) && drawstyle != 1)
+	{
+		illum += r_shadelight * 0.8;
+	}
+	else
+	{
+		float r;
+		if (bone == -1)
+			lightcos = DotProduct(normal, r_plightvec);
+		else
+			lightcos = DotProduct(normal, r_blightvec[bone]); // -1 colinear, 1 opposite
+
+		if (lightcos > 1)
+			lightcos = 1;
+
+		r = v_lambert.value;
+
+		if (r < 1.0)
+		{
+			lightcos = (r - lightcos) / (r + 1.0);
+
+			if (lightcos > 0.0)
+				illum += r_shadelight * lightcos;
+		}
+		else
+		{
+			illum += r_shadelight;
+			lightcos = (lightcos + (r - 1.0)) / r; 		// do modified hemispherical lighting
+
+			if (lightcos > 0.0)
+				illum -= r_shadelight * lightcos;
+		}
+
+		if (illum <= 0)
+			illum = 0;
+	}
+
+	if (illum > 255)
+		illum = 255;
+
+#if defined( GLQUAKE )
+	*lv = lightgammatable[(int)illum * 4] / 1023.0;	// Light from 0 to 1.0
+#else
+	*lv = lightgammatable[(int)illum * 4] * 64.0;	// Software lighting
+#endif
+}
+
+/*
+================
+R_LightStrength
+
+================
+*/
+void R_LightStrength( int bone, float* vert, float(*light)[4] )
+{
+	int	i;
+
+	if (lightage[bone] != r_smodels_total)
+	{
+		for (i = 0; i < numlights; i++)
+		{
+			vec3_t lpos;
+			lpos[0] = locallight[i]->origin[0] - lighttransform[bone][0][3];
+			lpos[1] = locallight[i]->origin[1] - lighttransform[bone][1][3];
+			lpos[2] = locallight[i]->origin[2] - lighttransform[bone][2][3];
+			VectorIRotate(lpos, lighttransform[bone], lightbonepos[bone][i]);
+		}
+
+		lightage[bone] = r_smodels_total;
+	}
+
+	for (i = 0; i < numlights; i++)
+	{
+		VectorSubtract(vert, lightbonepos[bone][i], light[i]);
+		light[i][3] = 0.0;
+	}
+}
+
+/*
+====================
+R_LightLambert
+
+Lambert studio lighting
+
+Designed to prevent the rear of a studio model losing its shape and looking too flat
+The Lambert lighting is completely non-physical, it gives a purely percieved visual
+enhancement and is an example of a forgiving lighting model
+====================
+*/
+#if !defined( GLQUAKE )
+// Software Lambert lighting, use a mixed color
+void R_LightLambert( float(*light)[4], float* normal, int* lambert )
+{
+	// TODO: Implement
+}
+#else
+// GL Lambert lighting
+void R_LightLambert( float(*light)[4], float* normal, float* src, float* lambert )
+{
+	int		i;
+	float	adjr, adjg, adjb;
+	float	c;
+
+	adjr = 0.0;
+	adjg = 0.0;
+	adjb = 0.0;
+
+	for (i = 0; i < numlights; i++)
+	{
+		float r2, r;
+
+		r = -DotProduct(normal, light[i]);		
+		if (r > 0.0)
+		{
+			if (light[i][3] == 0.0)
+			{
+				r2 = DotProduct(light[i], light[i]);
+				if (r2 > 0.0)
+					light[i][3] = locallightR2[i] / (r2 * sqrt(r2));
+				else
+					light[i][3] = 1.0;
+			}
+
+			c = r * light[i][3];
+			adjr += locallinearlight[i][0] * c;
+			adjg += locallinearlight[i][1] * c;
+			adjb += locallinearlight[i][2] * c;
+		}
+	}
+
+	// No light at all
+	if (adjr == 0.0 && adjg == 0.0 && adjb == 0.0)
+	{
+		lambert[0] = src[0];
+		lambert[1] = src[1];
+		lambert[2] = src[2];
+		return;
+	}
+
+	//
+	// Apply light effect
+	//
+	int j;
+	j = adjr + lineargammatable[(int)(src[0] * 1023.0)];
+	if (j > 1023)
+		lambert[0] = 1.0;	
+	else
+		lambert[0] = screengammatable[j] / 1023.0;
+
+	j = adjg + lineargammatable[(int)(src[1] * 1023.0)];
+	if (j > 1023)
+		lambert[1] = 1.0;
+	else
+		lambert[1] = screengammatable[j] / 1023.0;
+
+	j = adjb + lineargammatable[(int)(src[2] * 1023.0)];
+	if (j > 1023)
+		lambert[2] = 1.0;
+	else
+		lambert[2] = screengammatable[j] / 1023.0;
+}
+#endif
+
+/*
+================
+R_StudioChrome
+
+================
+*/
+void R_StudioChrome( int* pchrome, int bone, vec_t* normal )
+{
+	float n;
+
+	if (chromeage[bone] != r_smodels_total)
+	{
+		// calculate vectors from the viewer to the bone. This roughly adjusts for position
+		vec3_t chromeupvec;		// chrome t vector in world reference frame
+		vec3_t chromerightvec;	// chrome s vector in world reference frame
+		vec3_t tmp;				// vector pointing at bone in world reference frame
+
+		VectorScale(r_origin, -1.0, tmp);
+
+		tmp[0] += lighttransform[bone][0][3];
+		tmp[1] += lighttransform[bone][1][3];
+		tmp[2] += lighttransform[bone][2][3];
+
+		VectorNormalize(tmp);
+		CrossProduct(tmp, vright, chromeupvec);
+		VectorNormalize(chromeupvec);
+		CrossProduct(chromeupvec, tmp, chromerightvec);
+		VectorNormalize(chromerightvec);
+
+		VectorIRotate(chromeupvec, lighttransform[bone], r_chromeup[bone]);
+		VectorIRotate(chromerightvec, lighttransform[bone], r_chromeright[bone]);
+
+		chromeage[bone] = r_smodels_total;
+	}
+
+	// calc s coord
+	n = DotProduct(normal, r_chromeright[bone]);
+#if defined( GLQUAKE )
+	pchrome[0] = (n + 1.0) * (32.0 * 1024.0);
+#else
+	pchrome[0] = (n + 1.0) * (2.0 * 1024.0 * 1024.0);
+#endif
+
+	// calc t coord
+	n = DotProduct(normal, r_chromeup[bone]);
+#if defined( GLQUAKE )
+	pchrome[1] = (n + 1.0) * (32.0 * 1024.0);
+#else
+	pchrome[1] = (n + 1.0) * (2.0 * 1024.0 * 1024.0);
+#endif
+}
 
 /*
 ===========
@@ -1635,7 +1881,181 @@ R_StudioDrawPoints
 */
 void R_StudioDrawPoints( void )
 {
-	// TODO: Implement
+	int					i, j;
+	byte* pvertbone;
+	byte* pnormbone;
+	vec3_t* pstudioverts;
+	vec3_t* pstudionorms;
+	mstudiotexture_t* ptexture;
+	auxvert_t* av;
+	float* lv;
+	vec3_t				fl;
+	float				lv_tmp;
+	short* pskinref;
+	int					flags;
+
+	pvertbone = ((byte*)pstudiohdr + psubmodel->vertinfoindex);
+	pnormbone = ((byte*)pstudiohdr + psubmodel->norminfoindex);
+	ptexture = (mstudiotexture_t*)((byte*)pstudiohdr + pstudiohdr->textureindex);
+
+	pmesh = (mstudiomesh_t*)((byte*)pstudiohdr + psubmodel->meshindex);
+
+	pstudioverts = (vec3_t*)((byte*)pstudiohdr + psubmodel->vertindex);
+	pstudionorms = (vec3_t*)((byte*)pstudiohdr + psubmodel->normindex);
+
+	pskinref = (short*)((byte*)pstudiohdr + pstudiohdr->skinindex);
+	if (currententity->skin != 0 && currententity->skin < pstudiohdr->numskinfamilies)
+		pskinref += (currententity->skin * pstudiohdr->numskinref);
+
+	for (i = 0; i < psubmodel->numverts; i++)
+	{
+		av = &pauxverts[i];
+		R_StudioTransformAuxVert(av, pvertbone[i], pstudioverts[i]);
+	}
+
+	pstudioverts = (vec3_t*)((byte*)pstudiohdr + psubmodel->vertindex);
+	pvertbone = ((byte*)pstudiohdr + psubmodel->vertinfoindex);
+	for (i = 0; i < psubmodel->numverts; i++)
+	{
+		R_LightStrength(pvertbone[i], pstudioverts[i], lightpos[i]);
+	}
+
+//
+// clip and draw all triangles
+//
+	lv = (float*)pvlightvalues;
+	for (j = 0; j < psubmodel->nummesh; j++)
+	{
+		int k;
+		flags = ptexture[pskinref[pmesh[j].skinref]].flags;
+		if (r_fullbright.value >= 2)
+			flags &= ~(STUDIO_NF_FLATSHADE | STUDIO_NF_CHROME);
+
+		if (currententity->rendermode == kRenderTransAdd)
+		{
+			for (k = 0; k < pmesh[j].numnorms; k++, lv += 3)
+			{
+				for (k = 0; k < pmesh[j].numnorms; k++, lv += 3)
+				{
+					lv[0] = r_blend;
+					lv[1] = r_blend;
+					lv[2] = r_blend;
+
+					if (flags & STUDIO_NF_CHROME)
+						R_StudioChrome(chrome[((byte*)lv - (byte*)pvlightvalues) / sizeof(vec3_t)], *pnormbone, (float*)pstudionorms);
+				}
+			}
+		}
+		else
+		{
+			for (k = 0; k < pmesh[j].numnorms; k++, lv += 3, pstudionorms++, pnormbone++)
+			{
+				R_StudioLighting(&lv_tmp, *pnormbone, flags, (float*)pstudionorms);
+
+				if (flags & STUDIO_NF_CHROME)
+					R_StudioChrome(chrome[((byte*)lv - (byte*)pvlightvalues) / sizeof(vec3_t)], *pnormbone, (float*)pstudionorms);
+
+				lv[0] = lv_tmp * r_colormix[0];
+				lv[1] = lv_tmp * r_colormix[1];
+				lv[2] = lv_tmp * r_colormix[2];
+			}
+		}
+	}
+
+	qglCullFace(GL_FRONT);
+
+	pstudionorms = (vec3_t*)((byte*)pstudiohdr + psubmodel->normindex);
+	for (j = 0; j < psubmodel->nummesh; j++)
+	{
+		float s, t;
+		short* ptricmds;
+
+		pmesh = (mstudiomesh_t*)((byte*)pstudiohdr + psubmodel->meshindex) + j;
+		ptricmds = (short*)((byte*)pstudiohdr + pmesh->triindex);
+
+		c_alias_polys += pmesh->numtris;
+
+
+		flags = ptexture[pskinref[pmesh->skinref]].flags;
+		if (r_fullbright.value >= 2)
+		{
+			flags &= ~(STUDIO_NF_FLATSHADE | STUDIO_NF_CHROME);
+
+			R_TriangleSpriteTexture(cl_sprite_white, 0);
+
+			s = 1.0 / 256;
+			t = 1.0 / 256;
+		}
+		else
+		{
+			s = 1.0 / ptexture[pskinref[pmesh->skinref]].width;
+			t = 1.0 / ptexture[pskinref[pmesh->skinref]].height;
+
+			GL_Bind(ptexture[pskinref[pmesh->skinref]].index);
+		}
+
+		if (flags & STUDIO_NF_CHROME)
+		{
+			s *= 1.0 / 1024;
+			t *= 1.0 / 1024;
+
+			while (i = *(ptricmds++))
+			{
+				if (i < 0)
+				{
+					qglBegin(GL_TRIANGLE_FAN);
+					i = -i;
+				}
+				else
+				{
+					qglBegin(GL_TRIANGLE_STRIP);
+				}
+
+				for (; i > 0; i--, ptricmds += 4)
+				{
+					qglTexCoord2f(chrome[ptricmds[1]][0] * s, chrome[ptricmds[1]][1] * t);
+
+					lv = pvlightvalues[ptricmds[1]];
+					R_LightLambert(lightpos[ptricmds[0]], pstudionorms[ptricmds[1]], lv, fl);
+					qglColor4f(fl[0], fl[1], fl[2], r_blend);
+
+					av = &pauxverts[ptricmds[0]];
+					qglVertex3f(av->fv[0], av->fv[1], av->fv[2]);
+				}
+
+				qglEnd();
+			}
+		}
+		else
+		{
+			while (i = *(ptricmds++))
+			{
+				if (i < 0)
+				{
+					qglBegin(GL_TRIANGLE_FAN);
+					i = -i;
+				}
+				else
+				{
+					qglBegin(GL_TRIANGLE_STRIP);
+				}
+
+				for (; i > 0; i--, ptricmds += 4)
+				{
+					qglTexCoord2f(ptricmds[2] * s, ptricmds[3] * t);
+
+					lv = pvlightvalues[ptricmds[1]];
+					R_LightLambert(lightpos[ptricmds[0]], pstudionorms[ptricmds[1]], lv, fl);
+					qglColor4f(fl[0], fl[1], fl[2], r_blend);
+
+					av = &pauxverts[ptricmds[0]];
+					qglVertex3f(av->fv[0], av->fv[1], av->fv[2]);
+				}
+
+				qglEnd();
+			}
+		}
+	}
 }
 
 void GLR_StudioDrawShadow( void )
