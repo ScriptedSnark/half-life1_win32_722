@@ -471,7 +471,69 @@ R_DrawViewModel
 */
 void R_DrawViewModel( void )
 {
-	// TODO: Implement
+	float lightvec[3];
+	lightvec[0] = -1;
+	lightvec[1] = 0;
+	lightvec[2] = 0;
+
+	colorVec	c;
+	float		/*add,*/ oldShadows;
+
+	currententity = &cl.viewent;
+
+	if (!r_drawviewmodel.value)
+	{
+		c = R_LightPoint(currententity->origin);
+		cl.light_level = (c.r + c.g + c.b) / 3;
+		return;
+	}
+
+	// Don't draw if we are in a third person mode
+	if (cam_thirdperson || chase_active.value || envmap || !r_drawentities.value)
+	{
+		c = R_LightPoint(currententity->origin);
+		cl.light_level = (c.r + c.g + c.b) / 3;
+		return;
+	}
+
+	if (cl.stats[STAT_HEALTH] <= 0 || !currententity->model || cl.viewentity > cl.maxclients || cl.spectator)
+	{
+		c = R_LightPoint(currententity->origin);
+		cl.light_level = (c.r + c.g + c.b) / 3;
+		return;
+	}
+
+	qglDepthRange(gldepthmin, gldepthmin + (gldepthmax - gldepthmin) * 0.3);
+
+	switch (currententity->model->type)
+	{
+	case mod_brush:
+		R_DrawBrushModel(currententity);
+		break;
+
+	case mod_alias:
+		// TODO: Implement
+		break;
+
+	case mod_studio:
+		if (cl.weaponstarttime == 0.0)
+			cl.weaponstarttime = cl.time;
+		
+		currententity->frame = 0.0;
+		currententity->framerate = 1.0;
+		currententity->sequence = cl.weaponsequence;
+		currententity->animtime = cl.weaponstarttime;
+
+		cl.light_level = 128;
+
+		oldShadows = r_shadows.value;
+		r_shadows.value = 0.0;
+		R_StudioDrawModel(STUDIO_RENDER);
+		r_shadows.value = oldShadows;
+		break;
+	}
+
+	qglDepthRange(gldepthmin, gldepthmax);
 }
 
 void R_PreDrawViewModel( void )
@@ -486,10 +548,7 @@ void R_PreDrawViewModel( void )
 	if (cam_thirdperson || chase_active.value || envmap || !r_drawentities.value)
 		return;
 
-	if (cl.stats[STAT_HEALTH] <= 0 || !currententity->model || cl.viewentity > cl.maxclients)
-		return;
-
-	if (cl.spectator)
+	if (cl.stats[STAT_HEALTH] <= 0 || !currententity->model || cl.viewentity > cl.maxclients || cl.spectator)
 		return;
 
 	if (cl.viewent.model->type != mod_studio)
