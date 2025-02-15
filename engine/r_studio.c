@@ -284,6 +284,28 @@ void R_StudioSetUpTransform( int trivial_accept )
 
 // TODO: Implement
 
+void AngleQuaternion( vec_t* angles, vec_t* quaternion )
+{
+	float		angle;
+	float		sr, sp, sy, cr, cp, cy;
+
+	// FIXME: rescale the inputs to 1/2 angle
+	angle = angles[2] * 0.5;
+	sy = sin(angle);
+	cy = cos(angle);
+	angle = angles[1] * 0.5;
+	sp = sin(angle);
+	cp = cos(angle);
+	angle = angles[0] * 0.5;
+	sr = sin(angle);
+	cr = cos(angle);
+
+	quaternion[0] = sr * cp * cy - cr * sp * sy; // X
+	quaternion[1] = cr * sp * cy + sr * cp * sy; // Y
+	quaternion[2] = cr * cp * sy - sr * sp * cy; // Z
+	quaternion[3] = cr * cp * cy + sr * sp * sy; // W
+}
+
 void QuaternionMatrix( vec_t* quaternion, float(*matrix)[4] )
 {
 	matrix[0][0] = 1.0 - 2.0 * quaternion[1] * quaternion[1] - 2.0 * quaternion[2] * quaternion[2];
@@ -299,7 +321,62 @@ void QuaternionMatrix( vec_t* quaternion, float(*matrix)[4] )
 	matrix[2][2] = 1.0 - 2.0 * quaternion[0] * quaternion[0] - 2.0 * quaternion[1] * quaternion[1];
 }
 
-// TODO: Implement
+float	omega, cosom, sinom, sclp, sclq;
+void QuaternionSlerp( vec_t* p, vec_t* q, float t, vec_t* qt )
+{
+	int i;
+	
+	// decide if one of the quaternions is backwards
+	float a = 0;
+	float b = 0;
+
+	for (i = 0; i < 4; i++)
+	{
+		a += (p[i] - q[i]) * (p[i] - q[i]);
+		b += (p[i] + q[i]) * (p[i] + q[i]);
+	}
+	if (a > b)
+	{
+		for (i = 0; i < 4; i++)
+		{
+			q[i] = -q[i];
+		}
+	}
+
+	cosom = p[0] * q[0] + p[1] * q[1] + p[2] * q[2] + p[3] * q[3];
+
+	if ((1.0 + cosom) > 0.000001)
+	{
+		if ((1.0 - cosom) > 0.000001)
+		{
+			omega = acos(cosom);
+			sinom = sin(omega);
+			sclp = sin((1.0 - t) * omega) / sinom;
+			sclq = sin(t * omega) / sinom;
+		}
+		else
+		{
+			sclp = 1.0 - t;
+			sclq = t;
+		}
+		for (i = 0; i < 4; i++) {
+			qt[i] = sclp * p[i] + sclq * q[i];
+		}
+	}
+	else
+	{
+		qt[0] = -q[1];
+		qt[1] = q[0];
+		qt[2] = -q[3];
+		qt[3] = q[2];
+		sclp = sin((1.0 - t) * (0.5 * M_PI));
+		sclq = sin(t * (0.5 * M_PI));
+		for (i = 0; i < 3; i++)
+		{
+			qt[i] = sclp * p[i] + sclq * qt[i];
+		}
+	}
+}
 
 /*
 ====================
@@ -310,17 +387,205 @@ Compute bone adjustments ( bone controllers )
 */
 void R_StudioCalcBoneAdj( float dadt, float* adj, const unsigned char* pcontroller1, const unsigned char* pcontroller2, unsigned char mouthopen )
 {
-	// TODO: Implement
+	int					i, j;
+	float				value;
+	mstudiobonecontroller_t* pbonecontroller;
+
+	pbonecontroller = (mstudiobonecontroller_t*)((byte*)pstudiohdr + pstudiohdr->bonecontrollerindex);
+
+	for (j = 0; j < pstudiohdr->numbonecontrollers; j++)
+	{
+		i = pbonecontroller[j].index;
+		if (i <= 3)
+		{
+			// check for 360% wrapping
+			if (pbonecontroller[j].type & STUDIO_RLOOP)
+			{
+				if (abs(pcontroller1[i] - pcontroller2[i]) > 128)
+				{
+					int a, b;
+					a = (pcontroller1[j] + 128) % 256;
+					b = (pcontroller2[j] + 128) % 256;
+					value = ((a * dadt) + (b * (1 - dadt)) - 128) * (360.0 / 256.0) + pbonecontroller[j].start;
+				}
+				else
+				{
+					value = (pcontroller1[i] * dadt + (pcontroller2[i]) * (1.0 - dadt)) * (360.0 / 256.0) + pbonecontroller[j].start;
+				}
+			}
+			else
+			{
+				value = (pcontroller1[i] * dadt + pcontroller2[i] * (1.0 - dadt)) / 255.0;
+				if (value < 0) value = 0;
+				if (value > 1.0) value = 1.0;
+				value = (1.0 - value) * pbonecontroller[j].start + value * pbonecontroller[j].end;
+			}
+			//Con_DPrintf("%d %d %f : %f\n", currententity->controller[j], currententity->prevcontroller[j], value, dadt);
+		}
+		else
+		{
+			// mouth hardcoded at controller 4
+			value = mouthopen / 64.0;
+			if (value > 1.0) value = 1.0;
+			value = (1.0 - value) * pbonecontroller[j].start + value * pbonecontroller[j].end;
+			//Con_DPrintf("%d %f\n", mouthopen, value);
+		}
+		switch (pbonecontroller[j].type & STUDIO_TYPES)
+		{
+		case STUDIO_XR:
+		case STUDIO_YR:
+		case STUDIO_ZR:
+			adj[j] = value * (M_PI / 180.0);
+			break;
+		case STUDIO_X:
+		case STUDIO_Y:
+		case STUDIO_Z:
+			adj[j] = value;
+			break;
+		}
+	}
 }
 
 void R_StudioCalcBoneQuaterion( int frame, float s, mstudiobone_t* pbone, mstudioanim_t* panim, float* adj, float* q )
 {
-	// TODO: Implement
+	int					j, k;
+	vec4_t				q1, q2;
+	vec3_t				angle1, angle2;
+	mstudioanimvalue_t* panimvalue;
+
+	for (j = 0; j < 3; j++)
+	{
+		if (panim->offset[j + 3] == 0)
+		{
+			angle2[j] = angle1[j] = pbone->value[j + 3]; // default;
+		}
+		else
+		{
+			panimvalue = (mstudioanimvalue_t*)((byte*)panim + panim->offset[j + 3]);
+			k = frame;
+			// DEBUG
+			if (panimvalue->num.total < panimvalue->num.valid)
+				k = 0;
+			while (panimvalue->num.total <= k)
+			{
+				k -= panimvalue->num.total;
+				panimvalue += panimvalue->num.valid + 1;
+				// DEBUG
+				if (panimvalue->num.total < panimvalue->num.valid)
+					k = 0;
+			}
+			// Bah, missing blend!
+			if (panimvalue->num.valid > k)
+			{
+				angle1[j] = panimvalue[k + 1].value;
+
+				if (panimvalue->num.valid > k + 1)
+				{
+					angle2[j] = panimvalue[k + 2].value;
+				}
+				else
+				{
+					if (panimvalue->num.total > k + 1)
+						angle2[j] = angle1[j];
+					else
+						angle2[j] = panimvalue[panimvalue->num.valid + 2].value;
+				}
+			}
+			else
+			{
+				angle1[j] = panimvalue[panimvalue->num.valid].value;
+				if (panimvalue->num.total > k + 1)
+				{
+					angle2[j] = angle1[j];
+				}
+				else
+				{
+					angle2[j] = panimvalue[panimvalue->num.valid + 2].value;
+				}
+			}
+			angle1[j] = pbone->value[j + 3] + angle1[j] * pbone->scale[j + 3];
+			angle2[j] = pbone->value[j + 3] + angle2[j] * pbone->scale[j + 3];
+		}
+
+		if (pbone->bonecontroller[j + 3] != -1)
+		{
+			angle1[j] += adj[pbone->bonecontroller[j + 3]];
+			angle2[j] += adj[pbone->bonecontroller[j + 3]];
+		}
+	}
+
+	if (!VectorCompare(angle1, angle2))
+	{
+		AngleQuaternion(angle1, q1);
+		AngleQuaternion(angle2, q2);
+		QuaternionSlerp(q1, q2, s, q);
+	}
+	else
+	{
+		AngleQuaternion(angle1, q);
+	}
 }
 
 void R_StudioCalcBonePosition( int frame, float s, mstudiobone_t* pbone, mstudioanim_t* panim, float* adj, float* pos )
 {
-	// TODO: Implement
+	int					j, k;
+	mstudioanimvalue_t* panimvalue;
+
+	for (j = 0; j < 3; j++)
+	{
+		pos[j] = pbone->value[j]; // default;
+		if (panim->offset[j] != 0)
+		{
+			panimvalue = (mstudioanimvalue_t*)((byte*)panim + panim->offset[j]);
+			/*
+			if (i == 0 && j == 0)
+				Con_DPrintf("%d  %d:%d  %f\n", frame, panimvalue->num.valid, panimvalue->num.total, s);
+			*/
+
+			k = frame;
+			// DEBUG
+			if (panimvalue->num.total < panimvalue->num.valid)
+				k = 0;
+			// find span of values that includes the frame we want
+			while (panimvalue->num.total <= k)
+			{
+				k -= panimvalue->num.total;
+				panimvalue += panimvalue->num.valid + 1;
+				// DEBUG
+				if (panimvalue->num.total < panimvalue->num.valid)
+					k = 0;
+			}
+			// if we're inside the span
+			if (panimvalue->num.valid > k)
+			{
+				// and there's more data in the span
+				if (panimvalue->num.valid > k + 1)
+				{
+					pos[j] += (panimvalue[k + 1].value * (1.0 - s) + s * panimvalue[k + 2].value) * pbone->scale[j];
+				}
+				else
+				{
+					pos[j] += panimvalue[k + 1].value * pbone->scale[j];
+				}
+			}
+			else
+			{
+				// are we at the end of the repeating values section and there's another section with data?
+				if (panimvalue->num.total <= k + 1)
+				{
+					pos[j] += (panimvalue[panimvalue->num.valid].value * (1.0 - s) + s * panimvalue[panimvalue->num.valid + 2].value) * pbone->scale[j];
+				}
+				else
+				{
+					pos[j] += panimvalue[panimvalue->num.valid].value * pbone->scale[j];
+				}
+			}
+		}
+		if (pbone->bonecontroller[j] != -1)
+		{
+			pos[j] += adj[pbone->bonecontroller[j]];
+		}
+	}
 }
 
 float CL_StudioEstimateInterpolant( void )
