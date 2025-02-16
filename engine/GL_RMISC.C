@@ -21,7 +21,7 @@ cvar_t	r_wateralpha = { "r_wateralpha", "1" };
 cvar_t	r_dynamic = { "r_dynamic", "1" };
 cvar_t	r_novis = { "r_novis", "0" };
 
-
+cvar_t	r_traceglow = { "r_traceglow", "0" };
 cvar_t	r_wadtextures = { "r_wadtextures", "0" };
 
 cvar_t	gl_clear = { "gl_clear", "0" };
@@ -167,8 +167,8 @@ void R_Init( void )
 	Cvar_RegisterVariable(&r_speeds);
 	Cvar_RegisterVariable(&r_wadtextures);
 	Cvar_RegisterVariable(&r_shadows);
-
 	// TODO: Implement
+	Cvar_RegisterVariable(&r_traceglow);
 
 	Cvar_RegisterVariable(&gl_clear);
 	Cvar_RegisterVariable(&gl_texsort);

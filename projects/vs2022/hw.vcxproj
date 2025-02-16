@@ -58,6 +58,7 @@
     <ClCompile Include="..\..\engine\opengl2d3d.c" />
     <ClCompile Include="..\..\engine\pe_export.c" />
     <ClCompile Include="..\..\engine\pmove.c" />
+    <ClCompile Include="..\..\engine\pmovetst.c" />
     <ClCompile Include="..\..\engine\profile.c" />
     <ClCompile Include="..\..\engine\pr_cmds.c" />
     <ClCompile Include="..\..\engine\qgl.c" />

@@ -2,6 +2,31 @@
 #if !defined( PMOVE_H )
 #define PMOVE_H
 
+#define PM_NORMAL			0x00000000
+#define PM_STUDIO_IGNORE	0x00000001		// Skip studio models
+#define PM_STUDIO_BOX		0x00000002		// Use boxes for non-complex studio models (even in traceline)
+#define PM_GLASS_IGNORE		0x00000004		// Ignore entities with non-normal rendermode
+
+typedef struct
+{
+	vec3_t	normal;
+	float	dist;
+} pmplane_t;
+
+typedef struct
+{
+	qboolean	allsolid;	      // if true, plane is not valid
+	qboolean	startsolid;	      // if true, the initial point was in a solid area
+	qboolean	inopen, inwater;  // End point is in empty space or in water
+	float		fraction;		  // time completed, 1.0 = didn't hit anything
+	vec3_t		endpos;			  // final position
+	pmplane_t	plane;		      // surface normal at impact
+	int			ent;			  // entity at impact
+	vec3_t      deltavelocity;    // Change in player's velocity caused by impact.  
+								  // Only run on server.
+	int         hitgroup;
+} pmtrace_t;
+
 typedef struct
 {
 	// TODO: Implement
@@ -73,5 +98,7 @@ typedef struct movevars_s
 extern	movevars_t		movevars;
 extern	playermove_t	pmove;
 extern	int		onground;
+
+pmtrace_t PM_PlayerTrace( vec_t* start, vec_t* end, int traceFlags );
 
 #endif // PMOVE_H

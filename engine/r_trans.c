@@ -1,6 +1,7 @@
 // r_trans.c - transparent objects
 
 #include "quakedef.h"
+#include "pmove.h"
 #include "r_studio.h"
 #include "r_trans.h"
 
@@ -58,8 +59,36 @@ void R_DestroyObjects( void )
 
 float GlowBlend( cl_entity_t* pEntity )
 {
-	// TODO: Implement
-    return 1.0;
+	vec3_t tmp;
+	float dist, brightness;
+	pmtrace_t trace;
+
+	VectorSubtract(r_entorigin, r_origin, tmp);
+	dist = Length(tmp);
+
+	pmove.usehull = 2;
+	if (r_traceglow.value)
+		trace = PM_PlayerTrace(r_origin, r_entorigin, PM_GLASS_IGNORE);
+	else
+		trace = PM_PlayerTrace(r_origin, r_entorigin, PM_GLASS_IGNORE | PM_STUDIO_IGNORE);
+
+	if ((1.0 - trace.fraction) * dist > 8.0)
+		return 0.0;
+
+	if (pEntity->renderfx == kRenderFxNoDissipation)
+	{
+		return pEntity->renderamt * (1.0 / 255.0);
+	}
+
+	// UNDONE: Tweak these magic numbers (19000 - falloff & 200 - sprite size)
+	brightness = 19000.0 / (dist * dist);
+	if (brightness < 0.05)
+		brightness = 0.05;
+	if (brightness > 1.0)
+		brightness = 1.0;
+
+	pEntity->scale = dist * (1.0 / 200.0);
+	return brightness;
 }
 
 /*

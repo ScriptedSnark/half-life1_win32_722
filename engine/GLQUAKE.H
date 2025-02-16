@@ -137,7 +137,7 @@ extern	cvar_t	r_wateralpha;
 extern	cvar_t	r_dynamic;
 extern	cvar_t	r_novis;
 
-
+extern	cvar_t	r_traceglow;
 extern	cvar_t	r_wadtextures;
 
 extern	cvar_t	gl_clear;
