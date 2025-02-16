@@ -231,6 +231,8 @@ extern	unsigned short* host_basepal;
 extern	unsigned char*	host_colormap;
 extern	int			host_framecount;	// incremented every frame, never reset
 extern	double		realtime;			// not bounded in any way, changed at
+
+extern	cvar_t		host_speeds;
 // start of every frame, never reset
 
 
@@ -243,6 +245,7 @@ int Host_Init( quakeparms_t* parms );
 DLL_EXPORT void Host_Shutdown( void );
 void Host_Error( char* error, ... );
 void Host_EndGame( char* message, ... );
+void Host_Quit_f( void );
 void Host_ShutdownServer( qboolean crash );
 void Host_DeallocateDynamicData( void );
 void Host_ReallocateDynamicData( void );

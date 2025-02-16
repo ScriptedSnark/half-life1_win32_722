@@ -3,10 +3,6 @@
 #pragma warning( disable : 4229 )  // mgraph gets this
 #pragma warning( disable : 4996 )  // GetVersionExA
 
-#ifndef KEEP_XWHITEYS_SHIT_OUT_OF_HERE
-#include "dummyfile.h"
-#endif //!KEEP_XWHITEYS_SHIT_OUT_OF_HERE
-
 #include <windows.h>
 #include <direct.h>
 

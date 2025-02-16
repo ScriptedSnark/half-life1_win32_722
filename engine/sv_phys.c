@@ -22,6 +22,11 @@ solid_edge items only clip against bsp models.
 
 cvar_t sv_gravity = { "sv_gravity", "800", FALSE, TRUE };
 
+void SV_Physics( void )
+{
+	
+}
+
 // TODO: Implement
 
 void SV_SetMoveVars( void )

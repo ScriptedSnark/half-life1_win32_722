@@ -74,6 +74,7 @@
     <ClCompile Include="..\..\engine\sv_phys.c" />
     <ClCompile Include="..\..\engine\sv_send.c" />
     <ClCompile Include="..\..\engine\sv_upld.c" />
+    <ClCompile Include="..\..\engine\sv_user.c" />
     <ClCompile Include="..\..\engine\sys_win.c" />
     <ClCompile Include="..\..\engine\textures.c" />
     <ClCompile Include="..\..\engine\tmessage.c" />

@@ -94,6 +94,10 @@ void Host_InitCommands( void )
 {
 	// TODO: Implement
 
+	Cmd_AddCommand("quit", Host_Quit_f);
+	Cmd_AddCommand("exit", Host_Quit_f);
+
+	// TODO: Implement
 
 	Cmd_AddCommand("connect", Host_Connect_f);
 

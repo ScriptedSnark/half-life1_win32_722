@@ -29,3 +29,25 @@ void SV_FlushRedirect( void )
 {
 	// TODO: Implement
 }
+
+/*
+=================
+SV_SendBan
+=================
+*/
+void SV_SendBan( void )
+{
+	// TODO: Implement
+}
+
+/*
+=================
+SV_FilterPacket
+=================
+*/
+qboolean SV_FilterPacket( void )
+{
+	// TODO: Implement
+
+	return FALSE;
+}

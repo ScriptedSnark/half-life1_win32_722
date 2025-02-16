@@ -53,8 +53,9 @@
 #define	M2A_MOTD				'h'
 
 
-
-
+// Challenge response from master
+#define M2A_CHALLENGE			's'
+								//'s' + challenge value
 
 #define PORT_CLIENT		"27005"     // Must use atoi to convert to integer
 #define PORT_SERVER		"27015"     //  "
@@ -130,13 +131,13 @@
 //
 // client to server
 //
-#define	clc_bad					0
+#define	clc_bad					0		// immediately drop client when received
+#define clc_nop					1		// used to pad messages, ignored by the server entirely
 #define	clc_move				3		// [[usercmd_t]
 #define	clc_stringcmd			4		// [string] message
 #define	clc_delta				5		// [byte] sequence number, requests delta compression of message
-
-
-
+#define clc_tmove				6		// teleport request, spectator only
+#define clc_upload				7		// teleport request, spectator only
 #define clc_resourcelist		8
 
 

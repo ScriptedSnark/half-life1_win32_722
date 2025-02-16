@@ -7,6 +7,18 @@
 
 #define	MAX_SIGNON_BUFFERS	16
 
+typedef struct
+{
+	double	active;
+	double	idle;
+	int		count;
+	int		packets;
+
+	double	latched_active;
+	double	latched_idle;
+	int		latched_packets;
+} svstats_t;
+
 typedef struct server_static_s
 {
 	// TODO: Implement
@@ -21,7 +33,9 @@ typedef struct server_static_s
 										// used to check late spawns (e.g., when d/l'ing lots of
 										// data)
 
-	
+	// TODO: Implement
+
+	svstats_t stats;
 } server_static_t;
 
 //=============================================================================
@@ -105,39 +119,136 @@ typedef struct
 
 } server_t;
 
+typedef enum
+{
+	cs_free,		// can be reused for a new connection
+	cs_connected,	// has been assigned to a client_t, but not in game yet
+	cs_spawned		// client is fully in game
+} client_state_t;
+
+typedef struct
+{
+	// received from client
+
+	// Time world sample was sent to client.
+	double				senttime;
+	// Realtime when client ack'd the update.
+	float				ping_time;
+	 // Internal lag (i.e., local client should = 0 ping)
+	float				frame_time;
+	// State of entities this frame from the POV of the client.
+	packet_entities_t	entities;
+} client_frame_t;
+
 // client_t
 typedef struct client_s
 {
-	qboolean active;					// false = client is free
-	qboolean spawned;					// false = don't send datagrams
+	qboolean active;	// false = client is free
+	qboolean spawned;	// false = don't send datagrams
 
+	qboolean connected; // On server, getting data.
+	//FF:    ^^^ this can be client_state_t, but I'm unsure.
 
-	// TODO: Implement
+	qboolean uploading; // true = uploading a file to the server
 
+	int spec_track; // the player we are tracking in spectator mode
 
 	//===== NETWORK ============
 	netchan_t netchan;					// The client's net connection.
 
+	int chokecount; // the amount of packets we couldn't transmit to the client
+
+	int delta_sequence;	// -1 = no compression.  This is where the server is creating the
+										// compressed info from.
+
+	// TODO: Implement
+	//FF: one field (four bytes)
+
+	qboolean privileged; // can execute any host command
+
+	qboolean sendsignon; // only valid before spawned
+
+	qboolean spectator;	 // non-interactive
+
+	qboolean fakeclient; // JAC: This client is a fake player controlled by the game DLL
+
+	// TODO: Implement
+	//FF: 12 bytes (vec3_t?)
+
+	usercmd_t lastcmd; // for filling in big drops and partial predictions
+
+	// TODO: Implement
+	//FF: one field (four bytes)
+
+	double localtime; // of last message
+
+	// TODO: Implement
+	//FF: 52 bytes
+
+	float maxspeed; // localized maxspeed
+
+	// TODO: Implement
+	//FF: one field (four bytes), probably "entgravity"
+
+	// the datagram is written to after every frame, but only cleared
+	// when it is sent out to the client.  overflow is tolerated.
+	sizebuf_t datagram;
+	byte datagram_buf[MAX_DATAGRAM];
+
+	double connection_started;	// the time this client has started receiving messages from us
+
+	qboolean send_message;		// set on frames a datagram arived on
+
+	client_frame_t frames[UPDATE_BACKUP]; // updates can be deltad from here
+
+	edict_t *edict; // EDICT_NUM(clientnum+1)
+
+	const edict_t *pViewEntity; // View Entity (camera or the client itself)
+
+	char hashedcdkey[33];
+
+	char name[32];	// for printing to other people
+
+	int colors;
+
+	int saverestoredatasize; // the amount this client's edict is taking in our SAVERESTOREDATA
+
+	FILE *download;			// file being downloaded
+	int downloadsize;		// total bytes
+	int downloadcount;		// bytes sent
+	qboolean downloading;	// true = client is downloading a file
+	CRC32_t downloadingCRC; // CRC32 of the file we are downloading
+
+	resource_t resourcesonhand; // Head of resources accounted for list
+	resource_t resourcesneeded; // Head of resources to download list
+
+	FILE *upload; // file being uploaded (by the client)
+	resource_t *uploadingresource; //the resource we're trying to retrieve from the client (e.g. spray)
+
+	char uploadfn[MAX_QPATH];
 
 	// TODO: Implement
 
-
-	double rate;						// seconds / byte
-
-	// TODO: Implement
-
-	resource_t resourcesonhand;			// Head of resources accounted for list
-	resource_t resourcesneeded;			// Head of resources to download list
+	int uploadcount;
+	qboolean bUploading;
 
 	// TODO: Implement
 
-	customization_t customdata;			// Head of custom client data list
-
+	int uploadsize;
 
 	// TODO: Implement
 
+	float flLastUploadTime;
 
+	// TODO: Implement
+
+	int numuploads;
+
+	qboolean uploaddoneregistering;
+
+	customization_t customdata;
 } client_t;
+
 
 
 //============================================================================
@@ -166,6 +277,9 @@ extern float		scr_centertime_off;
 extern	server_static_t	svs;				// persistant server info
 extern	server_t		sv;					// local server
 
+extern	client_t		*host_client;
+
+extern	edict_t			*sv_player;
 
 
 extern	jmp_buf 	host_abortserver;
@@ -179,9 +293,13 @@ extern	jmp_buf 	host_abortserver;
 
 //===========================================================
 
+//
 // sv_main.c
+//
 void SV_Init( void );
+void SV_ReadPackets( void );
 void SV_CheckTimeouts( void );
+void SV_DropClient( client_t* drop, qboolean crash );
 
 void SV_DeallocateDynamicData( void );
 
@@ -189,9 +307,10 @@ void SV_BroadcastPrintf( char* fmt, ... );
 
 void SV_ClearChannel( qboolean forceclear );
 
-void SV_ClearResourceLists( client_t* cl );
-
+void SV_QueryMovevarsChanged( void );
 int SV_SpawnServer( qboolean bIsDemo, char* server, char* startspot );
+
+void Master_Heartbeat( void );
 
 //
 // sv_send.c
@@ -203,12 +322,29 @@ typedef enum
 	RD_PACKET
 } redirect_t;
 extern redirect_t	sv_redirected;
+void SV_SendClientMessages( void );
 void SV_FlushRedirect( void );
+void SV_SendBan( void );
+qboolean SV_FilterPacket( void );
+
+//
+// sv_user.c
+//
+void SV_ExecuteClientMessage( client_t* cl );
 
 //
 // sv_phys.c
 //
-
+// TODO: Implement
+void SV_Physics( void );
+// TODO: Implement
 void SV_SetMoveVars( void );
+
+//
+// sv_upld.c
+//
+void SV_ClearResourceLists( client_t* cl );
+void SV_RequestMissingResourcesFromClients( void );
+void SV_ParseResourceList( void );
 
 #endif // SERVER_H

@@ -46,9 +46,6 @@ int			host_hunklevel;
 
 int			minimum_memory;
 
-
-
-
 client_t* host_client;			// current client
 
 jmp_buf 	host_abortserver;
@@ -494,6 +491,37 @@ cvar_t	sk_player_leg3 = { "sk_player_leg3","1" };
 
 cvar_t	developer = { "developer", "0" };
 
+/*
+==================
+Host_Quit_f
+
+Shutdown the engine/program as soon as possible
+
+NOTE: The game must be shutdown before a new game can start,
+before a game can load, and before the system can be shutdown.
+==================
+*/
+void Host_Quit_f( void )
+{
+	if (Cmd_Argc() == 1)
+	{
+		giActive = DLL_CLOSE;
+
+		// disconnect if we are connected
+		if (cls.state)
+			CL_Disconnect();
+
+		// shutdown the server
+		Host_ShutdownServer(FALSE);
+
+		// exit the game
+		Sys_Quit();
+	}
+
+	// either argc isn't 1 or we haven't quitted, well just pause then
+	giActive = DLL_PAUSED;
+	giStateInfo = 4;
+}
 
 void Profile_Init( void );
 
@@ -1420,7 +1448,42 @@ Host_ServerFrame
 */
 void Host_ServerFrame( void )
 {
-	// TODO: Implement
+	if (host_speeds.value)
+		Sys_FloatTime();
+
+	gGlobalVariables.frametime = host_frametime;
+
+// get packets
+	SV_ReadPackets();
+
+	if (host_speeds.value)
+		Sys_FloatTime();
+
+	// Move other things around and think if enough time has passed
+	if (!sv.paused && (svs.maxclients > 1 || key_dest == key_game && (cls.state == ca_active || cls.state == ca_dedicated)))
+		SV_Physics();
+
+	if (host_speeds.value)
+		Sys_FloatTime();
+
+	// Send the results of movement and physics to the clients
+	SV_QueryMovevarsChanged();
+	SV_SendClientMessages();
+
+	if (host_speeds.value)
+		Sys_FloatTime();
+
+	SV_RequestMissingResourcesFromClients();
+
+	// Send a heartbeat to the master if needed
+	Master_Heartbeat();
+
+	// Kill self if sv.time is greater than host_killtime
+	if (host_killtime.value && sv.time > host_killtime.value)
+		Host_Quit_f();
+
+	if (host_speeds.value)
+		Sys_FloatTime();
 }
 
 void Master_RequestHeartbeat( adrlist_t* p )
