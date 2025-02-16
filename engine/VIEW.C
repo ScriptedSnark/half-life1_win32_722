@@ -595,10 +595,10 @@ void V_CalcRefdef( void )
 		+ scr_ofsy.value * right[i]
 		+ scr_ofsz.value * up[i];
 
-
-	// TODO: Implement
-
-
+	if (cam_thirdperson)
+	{
+		// TODO: Implement
+	}
 
 	// Give gun our viewangles
 	VectorCopy(cl.viewangles, cl.viewent.angles);
@@ -677,7 +677,13 @@ void V_CalcRefdef( void )
 	else
 		oldz = cl.simorg[2];
 
-	// TODO: Implement
+	if (cam_thirdperson)
+	{
+		// TODO: Implement
+	}
+
+	if (chase_active.value)
+		Chase_Update();
 
 	// override all previous settings if the viewent isn't the client
 	if (cl.viewentity > cl.maxclients)
