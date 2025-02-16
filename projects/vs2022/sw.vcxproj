@@ -130,6 +130,7 @@
     <ClCompile Include="..\..\engine\vid_win.c" />
     <ClCompile Include="..\..\engine\VIEW.C" />
     <ClCompile Include="..\..\engine\wad.c" />
+    <ClCompile Include="..\..\engine\world.c" />
     <ClCompile Include="..\..\engine\zone.c" />
   </ItemGroup>
   <ItemGroup>
@@ -138,6 +139,7 @@
     <MASM Include="..\..\engine\sys_wina.asm">
       <FileType>Document</FileType>
     </MASM>
+    <MASM Include="..\..\engine\worlda.asm" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>

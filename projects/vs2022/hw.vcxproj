@@ -173,6 +173,7 @@
     <MASM Include="..\..\engine\sys_wina.asm">
       <FileType>Document</FileType>
     </MASM>
+    <MASM Include="..\..\engine\worlda.asm" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\.editorconfig" />
