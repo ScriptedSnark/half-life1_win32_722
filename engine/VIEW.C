@@ -3,6 +3,7 @@
 #include "quakedef.h"
 #include "r_local.h"
 #include "pmove.h"
+#include "pr_cmds.h"
 #include "shake.h"
 
 /*
@@ -796,7 +797,70 @@ UNDONE: Feedback a bit of this into the view model position.  It shakes too much
 */
 void V_CalcShake( void )
 {
-	// TODO: Implement
+	float	frametime;
+	int		i;
+	float	fraction, freq;
+
+	if ((cl.time > gVShake.time) ||
+		gVShake.duration <= 0 ||
+		gVShake.amplitude <= 0 ||
+		gVShake.frequency <= 0)
+	{
+		if (gVShake.time != 0.0)
+		{
+			gVShake.time = 0.0;
+			VectorCopy(vec3_origin, gVShake.appliedOffset);
+			gVShake.appliedAngle = 0.0;
+		}
+		return;
+	}
+
+	frametime = cl.time - cl.oldtime;
+
+	if (cl.time > gVShake.nextShake)
+	{
+		// Higher frequency means we recalc the extents more often and perturb the display again
+		gVShake.nextShake = cl.time + (gVShake.duration / gVShake.frequency);
+
+		// Compute random shake extents (the shake will settle down from this)
+		for (i = 0; i < 3; i++)
+		{
+			gVShake.offset[i] = RandomFloat(-gVShake.amplitude, gVShake.amplitude);
+		}
+
+		gVShake.angle = RandomFloat(-gVShake.amplitude * 0.25, gVShake.amplitude * 0.25);
+	}
+
+	// Ramp down amplitude over duration (fraction goes from 1 to 0 linearly with slope 1/duration)
+	fraction = (cl.time - gVShake.time) / gVShake.duration;
+
+	// Ramp up frequency over duration
+	if (fraction)
+	{
+		freq = (gVShake.frequency / fraction) * gVShake.frequency;
+	}
+	else
+	{
+		freq = 0.0;
+	}
+
+	// square fraction to approach zero more quickly
+	fraction *= fraction;
+
+	// Sine wave that slowly settles to zero
+	fraction = fraction * sin(cl.time * freq);
+
+	// Add to view origin
+	for (i = 0; i < 3; i++)
+	{
+		gVShake.appliedOffset[i] = gVShake.offset[i] * fraction;
+	}
+
+	// Add to roll
+	gVShake.appliedAngle = gVShake.angle * fraction;
+
+	// Drop amplitude a bit, less for higher frequency shakes
+	gVShake.amplitude -= gVShake.amplitude * (frametime / (gVShake.duration * gVShake.frequency));
 }
 
 /*
@@ -814,6 +878,33 @@ void V_ApplyShake( float* origin, float* angles, float factor )
 
 	if (angles)
 		angles[ROLL] += gVShake.appliedAngle * factor;
+}
+
+/*
+=================
+V_ScreenShake
+
+Message hook to parse ScreenShake messages
+=================
+*/
+int V_ScreenShake( const char* pszName, int iSize, void* pbuf )
+{
+	ScreenShake* pShake = (ScreenShake*)pbuf;
+	float amplitude;
+
+	gVShake.duration = pShake->duration / 4096.0;
+	gVShake.time = gVShake.duration + cl.time;
+
+	amplitude = pShake->amplitude / 4096.0;
+
+	// Don't overwrite larger existing shake unless we are told to
+	if (gVShake.amplitude < amplitude)
+		gVShake.amplitude = amplitude;
+
+	gVShake.nextShake = 0; // apply immediately
+	gVShake.frequency = pShake->frequency / 256.0;
+
+	return 1;
 }
 
 /*
@@ -945,8 +1036,7 @@ void V_Init( void )
 	Cvar_RegisterVariable(&v_lambert);
 	Cvar_RegisterVariable(&v_direct);
 
-	// TODO: Implement
-	
+	HookServerMsg("ScreenShake", V_ScreenShake);
 	HookServerMsg("ScreenFade", V_ScreenFade);
 }
 
