@@ -76,7 +76,7 @@
     <ClCompile Include="..\..\engine\sys_win.c" />
     <ClCompile Include="..\..\engine\textures.c" />
     <ClCompile Include="..\..\engine\tmessage.c" />
-    <ClCompile Include="..\..\engine\view.c" />
+    <ClCompile Include="..\..\engine\VIEW.C" />
     <ClCompile Include="..\..\engine\wad.c" />
     <ClCompile Include="..\..\engine\world.c" />
     <ClCompile Include="..\..\engine\zone.c" />

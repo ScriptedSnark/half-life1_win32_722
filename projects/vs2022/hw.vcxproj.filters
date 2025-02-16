@@ -90,7 +90,7 @@
     <ClCompile Include="..\..\engine\world.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\engine\view.c">
+    <ClCompile Include="..\..\engine\VIEW.C">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\engine\sv_send.c">
