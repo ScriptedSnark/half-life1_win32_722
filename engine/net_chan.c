@@ -99,7 +99,7 @@ void Net_Rate_f( void )
 	{
 		if (client && client->active && client->spawned)
 		{
-			client->rate = fNewRate;
+			client->netchan.rate = fNewRate;
 		}
 	}
 }

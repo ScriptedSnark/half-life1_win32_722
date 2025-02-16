@@ -119,13 +119,6 @@ typedef struct
 
 } server_t;
 
-typedef enum
-{
-	cs_free,		// can be reused for a new connection
-	cs_connected,	// has been assigned to a client_t, but not in game yet
-	cs_spawned		// client is fully in game
-} client_state_t;
-
 typedef struct
 {
 	// received from client

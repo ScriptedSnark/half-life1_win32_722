@@ -51,3 +51,13 @@ qboolean SV_FilterPacket( void )
 
 	return FALSE;
 }
+
+/*
+=======================
+SV_SendClientMessages
+=======================
+*/
+void SV_SendClientMessages( void )
+{
+	// TODO: Implement
+}
