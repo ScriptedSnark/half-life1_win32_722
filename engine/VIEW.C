@@ -27,9 +27,9 @@ cvar_t	cl_rollangle = { "cl_rollangle", "2.0" };
 cvar_t	cl_bobcycle = { "cl_bobcycle", "0.8" };
 cvar_t	cl_bob = { "cl_bob", "0.01" };
 cvar_t	cl_bobup = { "cl_bobup", "0.5" };
+cvar_t	cl_waterdist = { "cl_waterdist", "4" };
 
-
-
+cvar_t	v_kicktime = { "v_kicktime", "0.5" };
 
 
 cvar_t	v_dark = { "v_dark", "0" };
@@ -47,9 +47,7 @@ byte		ramps[3][256];
 float		v_blend[4];		// rgba 0.0 - 1.0
 #endif	// GLQUAKE
 
-
-// TODO: Implement
-
+float	v_dmg_time, v_dmg_roll, v_dmg_pitch;
 
 vec3_t	v_forward, v_right, v_up;
 
@@ -480,7 +478,12 @@ void V_CalcViewRoll( void )
 
 	r_refdef.viewangles[ROLL] += side;
 
-	// TODO: Implement
+	if (v_dmg_time > 0)
+	{
+		r_refdef.viewangles[ROLL] += v_dmg_time / v_kicktime.value * v_dmg_roll;
+		r_refdef.viewangles[PITCH] += v_dmg_time / v_kicktime.value * v_dmg_pitch;
+		v_dmg_time -= host_frametime;
+	}
 
 	if (cl.stats[STAT_HEALTH] <= 0)
 	{
@@ -881,9 +884,13 @@ void V_Init( void )
 	Cvar_RegisterVariable(&scr_ofsz);
 	Cvar_RegisterVariable(&cl_rollspeed);
 	Cvar_RegisterVariable(&cl_rollangle);
+
 	Cvar_RegisterVariable(&cl_bob);
 	Cvar_RegisterVariable(&cl_bobcycle);
 	Cvar_RegisterVariable(&cl_bobup);
+	Cvar_RegisterVariable(&cl_waterdist);
+
+	Cvar_RegisterVariable(&v_kicktime);
 
 	// TODO: Implement
 	
