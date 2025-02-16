@@ -30,7 +30,15 @@ cvar_t	cl_bobup = { "cl_bobup", "0.5" };
 cvar_t	cl_waterdist = { "cl_waterdist", "4" };
 
 cvar_t	v_kicktime = { "v_kicktime", "0.5" };
-
+cvar_t	v_kickroll = { "v_kickroll", "0.6" };
+cvar_t	v_kickpitch = { "v_kickpitch", "0.6" };
+cvar_t	v_iyaw_cycle = { "v_iyaw_cycle", "2" };
+cvar_t	v_iroll_cycle = { "v_iroll_cycle", "0.5" };
+cvar_t	v_ipitch_cycle = { "v_ipitch_cycle", "1" };
+cvar_t	v_iyaw_level = { "v_iyaw_level", "0.3" };
+cvar_t	v_iroll_level = { "v_iroll_level", "0.1" };
+cvar_t	v_ipitch_level = { "v_ipitch_level", "0.3" };
+cvar_t	v_idlescale = { "v_idlescale", "0" };
 
 cvar_t	v_dark = { "v_dark", "0" };
 cvar_t	crosshair = { "crosshair", "0", TRUE };
@@ -228,12 +236,27 @@ void V_DriftPitch( void )
 	}	
 }
 
-cvar_t v_gamma = { "gamma", "2.5", TRUE };		// monitor gamma
-cvar_t v_brightness = { "brightness", "0.0", TRUE };	// low level light adjustment
-cvar_t v_lightgamma = { "lightgamma", "2.5" };
-cvar_t v_texgamma = { "texgamma", "2.0" };		// source gamma of textures
-cvar_t v_lambert = { "lambert", "1.5" };
-cvar_t v_direct = { "direct", "0.9" };
+
+/*
+==============================================================================
+
+						PALETTE FLASHES
+
+==============================================================================
+*/
+
+
+cshift_t	cshift_empty = { { 130, 80, 50 }, 0 };
+cshift_t	cshift_water = { { 130, 80, 50 }, 128 };
+cshift_t	cshift_slime = { { 0, 25, 5 }, 150 };
+cshift_t	cshift_lava = { { 255, 80, 0 }, 150 };
+
+cvar_t		v_gamma = { "gamma", "2.5", TRUE };		// monitor gamma
+cvar_t		v_brightness = { "brightness", "0.0", TRUE };	// low level light adjustment
+cvar_t		v_lightgamma = { "lightgamma", "2.5" };
+cvar_t		v_texgamma = { "texgamma", "2.0" };		// source gamma of textures
+cvar_t		v_lambert = { "lambert", "1.5" };
+cvar_t		v_direct = { "direct", "0.9" };
 
 void BuildGammaTable( float g )
 {
@@ -444,8 +467,14 @@ V_CalcGunAngle
 ==================
 */
 void V_CalcGunAngle( void )
-{
-	// TODO: Implement
+{	
+	cl.viewent.angles[YAW] = r_refdef.viewangles[YAW] + cl.crosshairangle[YAW];
+	cl.viewent.angles[PITCH] = -r_refdef.viewangles[PITCH] + cl.crosshairangle[PITCH] * 0.25;
+	cl.viewent.angles[ROLL] -= v_idlescale.value * sin(cl.time * v_iroll_cycle.value) * v_iroll_level.value;
+
+	// don't apply all of the v_ipitch to prevent normally unseen parts of viewmodel from coming into view.	
+	cl.viewent.angles[PITCH] -= v_idlescale.value * sin(cl.time * v_ipitch_cycle.value) * v_ipitch_level.value;
+	cl.viewent.angles[YAW] -= v_idlescale.value * sin(cl.time * v_iyaw_cycle.value) * v_iyaw_level.value;
 }
 
 // TODO: Implement
@@ -874,9 +903,14 @@ void V_Init( void )
 
 	Cvar_RegisterVariable(&v_centermove);
 	Cvar_RegisterVariable(&v_centerspeed);
+	Cvar_RegisterVariable(&v_iyaw_cycle);
+	Cvar_RegisterVariable(&v_iroll_cycle);
+	Cvar_RegisterVariable(&v_ipitch_cycle);
+	Cvar_RegisterVariable(&v_iyaw_level);
+	Cvar_RegisterVariable(&v_iroll_level);
+	Cvar_RegisterVariable(&v_ipitch_level);
+	Cvar_RegisterVariable(&v_idlescale);
 
-	// TODO: Implement
-	
 	Cvar_RegisterVariable(&v_dark);
 	Cvar_RegisterVariable(&crosshair);
 	Cvar_RegisterVariable(&scr_ofsx);
@@ -891,9 +925,9 @@ void V_Init( void )
 	Cvar_RegisterVariable(&cl_waterdist);
 
 	Cvar_RegisterVariable(&v_kicktime);
+	Cvar_RegisterVariable(&v_kickroll);
+	Cvar_RegisterVariable(&v_kickpitch);
 
-	// TODO: Implement
-	
 	BuildGammaTable(2.5);
 
 	Cvar_RegisterVariable(&v_gamma);
@@ -906,8 +940,6 @@ void V_Init( void )
 	// TODO: Implement
 	
 	HookServerMsg("ScreenFade", V_ScreenFade);
-
-	// TODO: Implement
 }
 
 /*
