@@ -10,7 +10,7 @@ server_static_t	svs;
 // TODO: Implement
 
 
-char* pr_strings = NULL, * gNullString = "";
+char* pr_strings = NULL, *gNullString = "";
 globalvars_t gGlobalVariables;
 
 char	localmodels[MAX_MODELS][5];			// inline model names for precache
@@ -31,7 +31,302 @@ int			sv_decalnamecount;
 float g_LastScreenUpdateTime;
 float scr_centertime_off;
 
+cvar_t sv_password = { "sv_password", "" };
+cvar_t sv_spectator_password = { "sv_spectator_password", "" };
+cvar_t sv_maxspectators = { "sv_maxspectators", "8", FALSE, TRUE };
+
 cvar_t sv_cheats = { "sv_cheats", "0", FALSE, TRUE };
+
+/*
+================
+SV_RejectConnection
+
+Rejects connection request and sends back a message
+================
+*/
+void SV_RejectConnection( netadr_t* adr, char* reason )
+{
+	SZ_Clear(&net_message);
+	MSG_WriteLong(&net_message, 0xFFFFFFFF);
+	MSG_WriteByte(&net_message, S2C_CONNREJECT);
+	MSG_WriteString(&net_message, reason);
+	NET_SendPacket(NS_SERVER, net_message.cursize, net_message.data, *adr);
+	SZ_Clear(&net_message);
+}
+
+// TODO: Implement
+
+
+// MAX_CHALLENGES is made large to prevent a denial
+//  of service attack that could cycle all of them
+//  out before legitimate users connected
+#define	MAX_CHALLENGES	1024
+typedef struct
+{
+	netadr_t    adr;       // Address where challenge value was sent to.
+	int			challenge; // To connect, adr IP address must respond with this #
+	int			time;      // # is valid for only a short duration.
+} challenge_t;
+
+challenge_t	g_rg_sv_challenges[MAX_CHALLENGES];	// to prevent spoofed IPs from connecting
+
+/*
+================
+SV_ConnectClient
+
+Initializes a client_t for a new net connection.  This will only be called
+once for a player each game, not once for each level change.
+================
+*/
+void SV_ConnectClient( void )
+{
+	char*		s;
+	int			i, nChallengeValue;
+	netadr_t	adr;
+	client_t*	cl;
+	char		name[128];
+	int			nCDKeyLength, cKeyUsages;
+	char		rgszCDKey[512];
+	qboolean	bSpectator = FALSE;
+	int			clients, spectators;
+	edict_t*	ent;
+	int			edictnum;
+
+	cKeyUsages = 0;
+
+	adr = net_from;
+	s = Cmd_Argv(1); //proto version
+	if (atoi(s) != PROTOCOL_VERSION)
+	{
+		SV_RejectConnection(&adr, "Bad protocol\n");
+		return;
+	}
+	if (Cmd_Argc() < 8)
+	{
+		SV_RejectConnection(&adr, "Insufficient connection info\n");
+		return;
+	}
+
+	s = Cmd_Argv(2); //challenge
+	nChallengeValue = atoi(s);
+	if (!NET_IsLocalAddress(adr))
+	{
+		for (i = 0; i < MAX_CHALLENGES; i++)
+		{
+			if (NET_CompareClassBAdr(net_from, g_rg_sv_challenges[i].adr))
+			{
+				// FIXME:  Compare time gap and don't allow too long.
+				if (nChallengeValue == g_rg_sv_challenges[i].challenge)
+					break;		// good
+				SV_RejectConnection(&adr, "Bad challenge.\n");
+				return;
+			}
+		}
+		if (i == MAX_CHALLENGES)
+		{
+			SV_RejectConnection(&adr, "No challenge for your address.\n");
+			return;
+		}
+	}
+
+	//check if the client is reconnecting
+	for (i = 0, cl = svs.clients; i < svs.maxclientslimit; i++, cl++)
+	{
+		if (cl->active || cl->spawned || cl->connected)
+		{
+			if (NET_CompareAdr(cl->netchan.remote_address, adr))
+			{
+				Con_Printf("%s:reconnect\n", NET_AdrToString(cl->netchan.remote_address));
+				SV_DropClient(cl, FALSE);
+			}
+		}
+	}
+
+	s = Cmd_Argv(3);
+	memset(name, 0, sizeof(name));
+	if (s)
+	{
+		strncpy(name, s, sizeof(name));
+		name[sizeof(name) - 1] = 0;
+	}
+	else
+	{
+		strcpy(name, "unconnected");
+	}
+	s = Cmd_Argv(4);
+	if (!s || !s[0])
+	{
+		SV_RejectConnection(&adr, "Invalid connection.\n");
+		return;
+	}
+
+	i = atoi(s);
+	if (i <= 0)
+	{
+		SV_RejectConnection(&adr, "Invalid connection.\n");
+		return;
+	}
+	if (i > 2)
+	{
+		SV_RejectConnection(&adr, "Invalid connection.\n");
+		return;
+	}
+	s = Cmd_Argv(5); //cd key hash
+	if (!s || !s[0])
+	{
+		SV_RejectConnection(&adr, "Invalid connection.\n");
+		return;
+	}
+
+	nCDKeyLength = atoi(s);
+	if (nCDKeyLength <= 0)
+	{
+		SV_RejectConnection(&adr, "Invalid connection.\n");
+		return;
+	}
+	if (nCDKeyLength > 1024)
+	{
+		SV_RejectConnection(&adr, "Invalid connection.\n");
+		return;
+	}
+
+	s = Cmd_Argv(6); //the cd key itself
+	if (!s)
+	{
+		SV_RejectConnection(&adr, "Invalid connection protocol.\n");
+		return;
+	}
+	memset(rgszCDKey, 0, sizeof(rgszCDKey));
+	strcpy(rgszCDKey, s);
+	if (i != 2)
+	{
+		SV_RejectConnection(&adr, "Invalid connection protocol.\n");
+		return;
+	}
+
+	// HASHED CD KEY VALIDATION
+	if (strlen(rgszCDKey) != 32 || nCDKeyLength != 32)
+	{
+		SV_RejectConnection(&adr, "Invalid CD Key.\n");
+		return;
+	}
+	for (i = 0, cl = svs.clients; i < svs.maxclientslimit; i++, cl++)
+	{
+		if ((cl->active || cl->spawned || cl->connected) && !_strnicmp(rgszCDKey, cl->hashedcdkey, sizeof(cl->hashedcdkey) - 1))
+			++cKeyUsages;
+	}
+	if (cKeyUsages >= 5)
+	{
+		SV_RejectConnection(&adr, "CD Key already in use.\n");
+		return;
+	}
+
+	if (Cmd_Argc() >= 8) //the player has specified a password
+	{
+		s = Cmd_Argv(7); //server password
+		if (s[0])
+		{
+			if (sv_password.string[0] && _strcmpi(sv_password.string, "none") != 0 && strcmp(sv_password.string, s) != 0)
+			{
+				Con_Printf("%s:  password failed\n", NET_AdrToString(net_from));
+				SV_RejectConnection(&net_from, "Invalid server password.\n");
+				return;
+			}
+		}
+	}
+	if (Cmd_Argc() >= 9) //the player has specified a spectator password
+	{
+		s = Cmd_Argv(8);
+		if (s[0])
+		{
+			if (sv_spectator_password.string[0] && _strcmpi(sv_spectator_password.string, "none") != 0 && strcmp(sv_spectator_password.string, s) != 0)
+			{
+				Con_Printf("%s:spectator password failed\n", NET_AdrToString(net_from));
+				SV_RejectConnection(&net_from, "Invalid spectator password.\n");
+				return;
+			}
+			bSpectator = TRUE;
+		}
+	}
+
+	spectators = 0;
+	clients = 0;
+	SV_CountPlayers(&clients, &spectators);
+	clients -= spectators;
+	if (bSpectator && spectators >= sv_maxspectators.value)
+	{
+		Con_Printf("%s:No space for spectator\n", NET_AdrToString(net_from));
+		SV_RejectConnection(&net_from, "No more spectators allowed.\n");
+		return;
+	}
+
+	// find a free client
+	for (i = 0, cl = svs.clients; i < svs.maxclients; i++, cl++)
+	{
+		if (!cl->active && !cl->spawned && !cl->connected)
+			break;
+	}
+	if (i == svs.maxclients)
+	{
+		SV_RejectConnection(&net_from, "Server is full.");
+		return;
+	}
+
+////////////////////////////////////////////////
+// Client can connect
+//
+
+	// Store off the potential client number
+	edictnum = i + 1;
+	ent = EDICT_NUM(edictnum);
+	host_client = cl;
+	SV_ClearResourceLists(cl);
+	memset(cl, 0, sizeof(*cl));
+	cl->resourcesneeded.pPrev = &cl->resourcesneeded;
+	cl->resourcesneeded.pNext = &cl->resourcesneeded;
+	cl->resourcesonhand.pPrev = &cl->resourcesonhand;
+	cl->resourcesonhand.pNext = &cl->resourcesonhand;
+	// Set up the network channel.
+	Netchan_Setup(1, &cl->netchan, adr);
+
+	// Tell client connection worked.
+	Netchan_OutOfBandPrint(NS_SERVER, adr, "%c", S2C_CONNECTION);
+
+	if (_strcmpi(NET_AdrToString(adr), "loopback") != 0)
+	{
+		if (bSpectator)
+		{
+			Con_DPrintf("Spectator %s connected\nAdr: %s\n", name, NET_AdrToString(adr));
+		}
+		else
+		{
+			Con_DPrintf("Client %s connected\nAdr: %s\n", name, NET_AdrToString(adr));
+		}
+	} else {
+		Con_DPrintf("Local connection.\n");
+	}
+
+	// Set up client structure.
+	strcpy(cl->name, name);
+	strncpy(cl->hashedcdkey, rgszCDKey, sizeof(cl->hashedcdkey) - 1);
+	cl->hashedcdkey[sizeof(cl->hashedcdkey) - 1] = 0;
+	cl->active = FALSE;
+	cl->spawned = FALSE;
+	cl->uploading = FALSE;
+	cl->edict = ent;
+	cl->maxspeed = 0.0;
+	cl->spectator = bSpectator;
+	cl->connected = TRUE;
+	if (bSpectator)
+		cl->edict->v.flags |= FL_SPECTATOR;
+	cl->datagram.allowoverflow = TRUE;
+	cl->datagram.maxsize = MAX_DATAGRAM;
+	cl->privileged = FALSE;
+	cl->datagram.data = cl->datagram_buf;
+
+	if (!sv.loadgame)
+		gEntityInterface.pfnParmsNewLevel();
+}
 
 /*
 ================
@@ -40,7 +335,7 @@ SVC_Ping
 Just responds with an acknowledgement
 ================
 */
-void SVC_Ping(void)
+void SVC_Ping( void )
 {
 	char	data;
 
@@ -54,7 +349,7 @@ void SVC_Ping(void)
 SVC_Heartbeat
 ================
 */
-void SVC_Heartbeat(void)
+void SVC_Heartbeat( void )
 {
 	// TODO: Implement
 	MSG_ReadLong();
@@ -98,6 +393,10 @@ void SV_ConnectionlessPacket( void )
 	else if (c[0] == M2A_CHALLENGE && (c[1] == 0 || c[1] == '\n'))
 	{
 		SVC_Heartbeat();
+	}
+	else if (!strcmp(c, "connect"))
+	{
+		SV_ConnectClient();
 	}
 
 	// TODO: Implement
@@ -208,15 +507,52 @@ General initialization of the server
 */
 void SV_Init( void )
 {
+	Cvar_RegisterVariable(&sv_password);
+
 	// TODO: Implement
 	
 	Cvar_RegisterVariable(&sv_gravity);
 
 	// TODO: Implement
 
+	Cvar_RegisterVariable(&sv_spectator_password);
+	Cvar_RegisterVariable(&sv_maxspectators);
+
+	// TODO: Implement
+
 	Cvar_RegisterVariable(&sv_cheats);
 
 	// TODO: Implement
+}
+
+/*
+==================
+void SV_CountPlayers
+
+Counts number of connections.  Clients includes regular connections, while spectators counts the spectators count.
+==================
+*/
+void SV_CountPlayers( int* clients, int* spectators )
+{
+	int			i;
+	client_t*	cl;
+
+	*clients = 0;
+	if (spectators)
+		*spectators = 0;
+
+	for (i = 0, cl = svs.clients; i < svs.maxclients; i++, cl++)
+	{
+		if (cl->active || cl->spawned || cl->connected)
+		{
+			(*clients)++;
+			if (cl->spectator)
+			{
+				if (spectators)
+					(*spectators)++;
+			}
+		}
+	}
 }
 
 void SV_ClearChannel( qboolean forceclear )

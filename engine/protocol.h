@@ -26,8 +26,8 @@
 // Send a userid, client remote address, is this server secure and engine build number
 #define S2C_CONNECTION			'B'
 
-
-
+// Special protocol for rejected connections.
+#define S2C_CONNREJECT			'l' 
 
 // Response to server info requests
 #define S2A_INFO				'C' // + Address, hostname, map, gamedir, gamedescription, active players, maxplayers, protocol

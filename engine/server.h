@@ -54,7 +54,7 @@ typedef struct
 	qboolean	active;				// false if only a net client
 	qboolean	paused;				// are we paused?
 
-	// TODO: Implement
+	qboolean	loadgame;			// handle connections specially
 
 	double		time;
 
@@ -292,6 +292,7 @@ extern	jmp_buf 	host_abortserver;
 void SV_Init( void );
 void SV_ReadPackets( void );
 void SV_CheckTimeouts( void );
+void SV_CountPlayers( int* clients, int* spectators );
 void SV_DropClient( client_t* drop, qboolean crash );
 
 void SV_DeallocateDynamicData( void );
