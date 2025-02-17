@@ -1,6 +1,7 @@
 // sv_main.c -- server main program
 
 #include "quakedef.h"
+#include "pr_cmds.h"
 #include "decal.h"
 
 server_t		sv;
@@ -346,6 +347,82 @@ void SVC_Ping( void )
 
 /*
 ================
+SVC_GetChallenge
+================
+*/
+void SVC_GetChallenge( void )
+{
+	int		i, oldest, oldestTime = INT_MAX;
+	char	data[9]; // -1 mark + S2C_CHALLENGE + challenge value
+
+	for (i = 0; i < MAX_CHALLENGES; i++)
+	{
+		if (NET_CompareClassBAdr(net_from, g_rg_sv_challenges[i].adr))
+			break;
+		if (g_rg_sv_challenges[i].time < oldestTime)
+		{
+			oldestTime = g_rg_sv_challenges[i].time;
+			oldest = i;
+		}
+	}
+
+	if (i == MAX_CHALLENGES)
+	{
+		i = oldest;
+		g_rg_sv_challenges[i].challenge = RandomLong(0, 0xFFFF) | (RandomLong(0, 0xFFFF) << 16);
+		g_rg_sv_challenges[i].adr = net_from;
+		g_rg_sv_challenges[i].time = (int) realtime;
+	}
+
+	sprintf(data, "%c%c%c%c%c", 255, 255, 255, 255, S2C_CHALLENGE);
+	(*(int*)&data[5]) = BigLong(g_rg_sv_challenges[i].challenge);
+	NET_SendPacket(NS_SERVER, sizeof(data), data, net_from);
+}
+
+/*
+================
+SVC_Info
+================
+*/
+void SVC_Info( void )
+{
+	sizebuf_t	sb;
+	char		buf[2048];
+	int			i, cNumActiveClients;
+	client_t*	cl;
+
+	cNumActiveClients = 0;
+	sb.data = buf;
+
+	if (sv.active && svs.maxclients > 1 
+		&& (noip.value || !NET_CompareClassBAdr(net_local_adr, net_from))
+#ifdef _WIN32
+		&& (noipx.value || !NET_CompareClassBAdr(net_local_ipx_adr, net_from))
+#endif //_WIN32
+		)
+	{
+		for (i = 0, cl = svs.clients; i < svs.maxclients; i++, cl++)
+		{
+			if (cl->active)
+				cNumActiveClients++;
+		}
+
+		MSG_WriteLong(&sb, 0xFFFFFFFF); // -1 mark
+		MSG_WriteByte(&sb, S2A_INFO);
+		MSG_WriteString(&sb, NET_AdrToString(net_local_adr));
+		MSG_WriteString(&sb, host_name.string);
+		MSG_WriteString(&sb, sv.name);
+		MSG_WriteString(&sb, com_gamedir);
+		MSG_WriteString(&sb, gEntityInterface.pfnGetGameDescription());
+		MSG_WriteByte(&sb, cNumActiveClients);
+		MSG_WriteByte(&sb, svs.maxclients);
+		MSG_WriteByte(&sb, 7); // TODO: Wtf is 7?
+		NET_SendPacket(NS_SERVER, sb.cursize, sb.data, net_from);
+	}
+}
+
+/*
+================
 SVC_Heartbeat
 ================
 */
@@ -393,6 +470,10 @@ void SV_ConnectionlessPacket( void )
 	else if (c[0] == M2A_CHALLENGE && (c[1] == 0 || c[1] == '\n'))
 	{
 		SVC_Heartbeat();
+	}
+	else if (!strcmp(c, "getchallenge"))
+	{
+		SVC_GetChallenge();
 	}
 	else if (!strcmp(c, "connect"))
 	{

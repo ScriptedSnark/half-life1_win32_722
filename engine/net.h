@@ -128,6 +128,13 @@ typedef struct netchan_s
 
 extern	int	net_drop;		// packets dropped before this one
 
+extern cvar_t noip;    // Disable IP Support
+
+#ifdef _WIN32
+extern cvar_t noipx;    // Disable IPX Support
+extern netadr_t net_local_ipx_adr;
+#endif //_WIN32
+
 // Initialize subsystem
 void	Netchan_Init( void );
 void	Netchan_Transmit( netchan_t* chan, int length, byte* data );

@@ -61,6 +61,7 @@
     <ClCompile Include="..\..\engine\pmovetst.c" />
     <ClCompile Include="..\..\engine\profile.c" />
     <ClCompile Include="..\..\engine\pr_cmds.c" />
+    <ClCompile Include="..\..\engine\pr_edict.c" />
     <ClCompile Include="..\..\engine\qgl.c" />
     <ClCompile Include="..\..\engine\R_PART.C" />
     <ClCompile Include="..\..\engine\r_studio.c" />
