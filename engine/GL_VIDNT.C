@@ -21,6 +21,9 @@ cvar_t	gl_ztrick = { "gl_ztrick", "1" };
 
 cvar_t	vid_d3d = { "vid_d3d", "0" };
 
+// TODO: Implement
+
+cvar_t	_windowed_mouse = { "_windowed_mouse", "0", TRUE };
 
 // TODO: Implement
 
@@ -390,10 +393,14 @@ int VID_Init( word* palette )
 {
 	// TODO: Implement
 
+	Cvar_RegisterVariable(&_windowed_mouse);
+
 	Cvar_RegisterVariable(&gl_ztrick);
 	Cvar_RegisterVariable(&vid_d3d);
 
 	// TODO: Implement
+
+
 
 	Cmd_AddCommand("gl_log", GLimp_EnableLogging);
 

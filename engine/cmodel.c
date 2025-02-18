@@ -56,13 +56,13 @@ byte* Mod_LeafPVS( mleaf_t* leaf, model_t* model )
 	if (leaf == model->leafs)
 		return mod_novis;
 
-	if (!gPVS)
+	if (gPVS)
 	{
-		return Mod_DecompressVis(leaf->compressed_vis, model);
+		int leafnum = leaf - model->leafs;
+		return CM_LeafPVS(leafnum);
 	}
 
-	int leafnum = leaf - model->leafs;
-	return CM_LeafPVS(leafnum);
+	return Mod_DecompressVis(leaf->compressed_vis, model);
 }
 
 void CM_DecompressPVS( byte* in, byte* decompressed, int byteCount )

@@ -54,10 +54,10 @@ jmp_buf		host_enddemo;
 unsigned short* host_basepal;
 unsigned char* host_colormap;
 
-void SV_ClearClientStates(void);
-void Master_Shutdown(void);
+void SV_ClearClientStates( void );
+void Master_Shutdown( void );
 
-void Host_NextDemo(void);
+void CL_NextDemo( void );
 
 cvar_t	maxfps = { "maxfps", "72.0" };
 
@@ -560,7 +560,7 @@ void Host_EndGame( char* message, ... )
 
 		cls.demonum = oldn;
 
-		Host_NextDemo();
+		CL_NextDemo();
 		longjmp(host_enddemo, 1);
 	}
 
