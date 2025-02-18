@@ -234,3 +234,12 @@ int32 RandomLong( int32 lLow, int32 lHigh )
 }
 
 // TODO: Implement
+
+int PF_IsMapValid_I( char *mapname )
+{
+	FILE*	pfMap;
+	char	cBuf[MAX_OSPATH];
+
+	sprintf(cBuf, "maps/%.32s.bsp", mapname);
+	return COM_FindFile(cBuf, NULL, &pfMap) > -1;
+}

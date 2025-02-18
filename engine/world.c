@@ -19,6 +19,20 @@ void SV_ClearWorld( void )
 	// TODO: Implement
 }
 
+/*
+===============
+SV_UnlinkEdict
+
+===============
+*/
+void SV_UnlinkEdict( edict_t* ent )
+{
+	if (!ent->area.prev)
+		return;		// not linked in anywhere
+	RemoveLink(&ent->area);
+	ent->area.prev = ent->area.next = NULL;
+}
+
 void SV_LinkEdict( edict_t *ent, qboolean touch_triggers )
 {
 	// TODO: Implement

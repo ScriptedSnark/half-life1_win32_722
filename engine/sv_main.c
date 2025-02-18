@@ -367,7 +367,7 @@ SVC_GetChallenge
 */
 void SVC_GetChallenge( void )
 {
-	int		i, oldest, oldestTime = INT_MAX;
+	int		i, oldest, oldestTime = 0x7FFFFFFF; //INT_MAX
 	char	data[9]; // -1 mark + S2C_CHALLENGE + challenge value
 
 	for (i = 0; i < MAX_CHALLENGES; i++)
@@ -728,6 +728,102 @@ void SV_ReallocateDynamicData( void )
 // TODO: Implement
 
 /*
+================
+SV_CreateBaseline
+
+================
+*/
+void SV_CreateBaseline( void )
+{
+	int				i;
+	edict_t*		svent;
+	int				entnum;
+
+	if (!sv.num_edicts)
+		return;
+
+	for (entnum = 0; entnum < sv.num_edicts; entnum++)
+	{
+		// get the current server version
+		svent = &sv.edicts[entnum];
+		if (svent->free)
+			continue;
+		if (entnum > svs.maxclients && !svent->v.modelindex)
+			continue;
+
+		svent->baseline.entityType = ENTITY_NORMAL;
+		if ((svent->v.flags & FL_CUSTOMENTITY) != 0)
+			svent->baseline.entityType = ENTITY_BEAM;
+
+		//
+		// create entity baseline
+		//
+		VectorCopy(svent->v.origin, svent->baseline.origin);
+		VectorCopy(svent->v.angles, svent->baseline.angles);
+		VectorCopy(svent->v.mins, svent->baseline.mins);
+		VectorCopy(svent->v.maxs, svent->baseline.maxs);
+		svent->baseline.skin = svent->v.skin;
+		svent->baseline.frame = svent->v.frame;
+		svent->baseline.scale = svent->v.scale;
+		svent->baseline.solid = svent->v.solid;
+
+		if (entnum > 0 && entnum <= svs.maxclients)
+		{
+			svent->baseline.colormap = entnum;
+			svent->baseline.modelindex = SV_ModelIndex("models/player.mdl");
+		}
+		else
+		{
+			svent->baseline.colormap = 0;
+			svent->baseline.modelindex =
+				SV_ModelIndex(pr_strings + svent->v.model);
+		}
+
+		svent->baseline.rendermode = svent->v.rendermode;
+		svent->baseline.renderamt = svent->v.renderamt;
+		svent->baseline.rendercolor.r = svent->v.rendercolor[0];
+		svent->baseline.rendercolor.g = svent->v.rendercolor[1];
+		svent->baseline.rendercolor.b = svent->v.rendercolor[2];
+		svent->baseline.renderfx = svent->v.renderfx;
+
+		SV_FlushSignon();
+
+		//
+		// add to the message
+		//
+		MSG_WriteByte(&sv.signon, svc_spawnbaseline);
+		MSG_WriteShort(&sv.signon, entnum);
+
+		MSG_WriteByte(&sv.signon, svent->baseline.entityType);
+		MSG_WriteShort(&sv.signon, svent->baseline.modelindex);
+		MSG_WriteByte(&sv.signon, svent->baseline.sequence);
+		MSG_WriteByte(&sv.signon, svent->baseline.frame);
+
+		if (svent->baseline.entityType != ENTITY_NORMAL)
+			MSG_WriteByte(&sv.signon, svent->baseline.scale);
+		else
+			MSG_WriteWord(&sv.signon, svent->baseline.scale * 256);
+
+		MSG_WriteByte(&sv.signon, svent->baseline.colormap);
+		MSG_WriteShort(&sv.signon, svent->baseline.skin);
+		MSG_WriteByte(&sv.signon, svent->baseline.solid);
+
+		for (i = 0; i < 3; i++)
+		{
+			MSG_WriteCoord(&sv.signon, svent->baseline.origin[i]);
+			MSG_WriteAngle(&sv.signon, svent->baseline.angles[i]);
+		}
+
+		MSG_WriteByte(&sv.signon, svent->v.rendermode);
+		MSG_WriteByte(&sv.signon, svent->v.renderamt);
+		MSG_WriteByte(&sv.signon, svent->v.rendercolor[0]);
+		MSG_WriteByte(&sv.signon, svent->v.rendercolor[1]);
+		MSG_WriteByte(&sv.signon, svent->v.rendercolor[2]);
+		MSG_WriteByte(&sv.signon, svent->v.renderfx);
+	}
+}
+
+/*
 =================
 SV_BroadcastCommand
 
@@ -822,6 +918,139 @@ void SV_QueryMovevarsChanged( void )
 			if (cl->active || cl->spawned || cl->connected)
 				SV_WriteMovevarsToClient(&cl->netchan.message);
 		}
+	}
+}
+
+/*
+================
+SV_SendServerinfo
+
+Sends the first message from the server to a connected client.
+This will be sent on the initial connection and upon each server load.
+================
+*/
+void SV_SendServerinfo( client_t *client )
+{
+	client_t*		cl;
+	char			message[2048];
+	int				i;
+
+	if (developer.value == 0 && svs.maxclients <= 1)
+	{
+		cl = client;
+	}
+	else
+	{
+		cl = client;
+		MSG_WriteByte(&client->netchan.message, svc_print);
+		sprintf(message, "%c\nBUILD %d SERVER (%i CRC)\nServer # %i\n", 2, build_number(), 0, svs.spawncount);
+		MSG_WriteString(&client->netchan.message, message);
+	}
+
+	MSG_WriteByte(&cl->netchan.message, svc_serverinfo);
+	MSG_WriteLong(&cl->netchan.message, PROTOCOL_VERSION);
+	MSG_WriteLong(&cl->netchan.message, svs.spawncount);
+	MSG_WriteLong(&cl->netchan.message, sv.worldmapCRC);
+	MSG_WriteLong(&cl->netchan.message, sv.clientSideDllCRC);
+	MSG_WriteByte(&cl->netchan.message, svs.maxclients);
+	i = NUM_FOR_EDICT(cl->edict) - 1;
+	if (cl->spectator)
+		i |= PN_SPECTATOR;
+	MSG_WriteByte(&cl->netchan.message, i);
+
+	if (!coop.value && deathmatch.value)
+		MSG_WriteByte(&client->netchan.message, GAME_DEATHMATCH);
+	else
+		MSG_WriteByte(&client->netchan.message, GAME_COOP);
+
+	sprintf(message, pr_strings + sv.edicts->v.message);
+
+	MSG_WriteString(&client->netchan.message, message);
+
+	SV_WriteMovevarsToClient(&host_client->netchan.message);
+
+// send music
+	MSG_WriteByte(&client->netchan.message, svc_cdtrack);
+	MSG_WriteByte(&client->netchan.message, gGlobalVariables.cdAudioTrack);
+	MSG_WriteByte(&client->netchan.message, gGlobalVariables.cdAudioTrack);
+
+// set view	
+	MSG_WriteByte(&client->netchan.message, svc_setview);
+	MSG_WriteShort(&client->netchan.message, NUM_FOR_EDICT(client->edict));
+
+	MSG_WriteByte(&client->netchan.message, svc_resourcerequest);
+	MSG_WriteLong(&client->netchan.message, svs.spawncount);
+	MSG_WriteLong(&client->netchan.message, 0);
+
+	client->connected = TRUE;
+	client->sendsignon = TRUE;
+	client->spawned = FALSE;
+}
+
+/*
+================
+SV_ActivateServer
+
+================
+*/
+void SV_ActivateServer( qboolean runPhysics )
+{
+	int			i;
+	UserMsg*	pMsg;
+
+	Cvar_Set("sv_newunit", "0");
+
+	// Activate the DLL server code
+	gEntityInterface.pfnServerActivate(sv.edicts, sv.num_edicts, svs.maxclients);
+
+	sv.active = TRUE;
+	// all setup is completed, any further precache statements are errors
+	sv.state = ss_active;
+
+	if (runPhysics)
+	{
+		// run two frames to allow everything to settle
+		host_frametime = 0.1;
+		SV_Physics();
+	}
+	else
+	{
+		host_frametime = 0.001;
+	}
+
+	SV_Physics();
+
+	// create a baseline for more efficient communications
+	SV_CreateBaseline();
+
+	sv.signon_buffer_size[sv.num_signon_buffers - 1] = sv.signon.cursize;
+
+	SV_CreateResourceList();
+
+	// Send serverinfo to all connected clients
+	for (i = 0, host_client = svs.clients; i < svs.maxclients; i++, host_client++)
+	{
+		if (host_client->active || host_client->connected)
+		{
+			SV_SendServerinfo(host_client);
+			if (sv_gpUserMsgs)
+			{
+				pMsg = sv_gpNewUserMsgs;
+				sv_gpNewUserMsgs = sv_gpUserMsgs;
+				SV_SendUserReg(&host_client->netchan.message);
+				sv_gpNewUserMsgs = pMsg;
+			}
+		}
+	}
+
+	// Tell what kind of server has been started.
+	if (svs.maxclients > 1)
+	{
+		Con_DPrintf("%i player server started\n", svs.maxclients);
+	}
+	else
+	{
+		Con_DPrintf("Game started\n");
 	}
 }
 
@@ -1031,4 +1260,16 @@ int SV_SpawnServer( qboolean bIsDemo, char* server, char* startspot )
 	SV_SetMoveVars();
 
 	return 1;
+}
+
+/*
+================
+SV_LoadEntities
+
+Load up the entities from the bsp
+=======
+*/
+void SV_LoadEntities( void )
+{
+	ED_LoadFromFile(sv.worldmodel->entities);
 }

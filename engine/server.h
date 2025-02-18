@@ -70,6 +70,9 @@ typedef struct
 	CRC32_t			clientSideDllCRC;	// The dll that this server is expecting clients to be using.
 										// To prevent cheating with hacked client dlls
 
+	resource_t		resources[MAX_RESOURCES];
+
+	int				num_resources;
 
 	// TODO: Implement
 
@@ -331,6 +334,8 @@ void SV_BroadcastPrintf( char* fmt, ... );
 void SV_ClearChannel( qboolean forceclear );
 
 void SV_QueryMovevarsChanged( void );
+
+void SV_ActivateServer( qboolean runPhysics );
 int SV_SpawnServer( qboolean bIsDemo, char* server, char* startspot );
 
 void Master_Heartbeat( void );
@@ -345,10 +350,12 @@ typedef enum
 	RD_PACKET
 } redirect_t;
 extern redirect_t	sv_redirected;
-void SV_SendClientMessages( void );
+void SV_InactivateClients( void );
 void SV_FlushRedirect( void );
+void SV_SendUserReg( sizebuf_t* sb );
 void SV_SendBan( void );
 qboolean SV_FilterPacket( void );
+void SV_SendClientMessages( void );
 
 //
 // sv_user.c
@@ -366,6 +373,10 @@ void SV_SetMoveVars( void );
 //
 // sv_upld.c
 //
+int SV_ModelIndex( char* name );
+void SV_FlushSignon( void );
+void SV_AddResource( resourcetype_t type, const char *name, int size, byte flags, int index );
+void SV_CreateResourceList( void );
 void SV_ClearResourceLists( client_t* cl );
 void SV_RequestMissingResourcesFromClients( void );
 void SV_ParseResourceList( void );

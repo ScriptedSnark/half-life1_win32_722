@@ -648,6 +648,10 @@
 #define TE_BOUNCE_SHELL		1
 #define TE_BOUNCE_SHOTSHELL	2
 
+// Spawnflags
+
+#define SF_DECAL_NOTINDEATHMATCH	2048
+
 // Rendering constants
 enum 
 {	

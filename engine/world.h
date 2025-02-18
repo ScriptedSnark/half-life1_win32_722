@@ -8,6 +8,11 @@
 void SV_ClearWorld( void );
 // called after the world model has been loaded, before linking any entities
 
+void SV_UnlinkEdict( edict_t* ent );
+// call before removing an entity, and before trying to move one,
+// so it doesn't clip against itself
+// flags ent->v.modified
+
 void SV_LinkEdict( edict_t* ent, qboolean touch_triggers );
 // Needs to be called any time an entity changes origin, mins, maxs, or solid
 // flags ent->v.modified

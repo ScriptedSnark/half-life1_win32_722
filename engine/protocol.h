@@ -165,6 +165,12 @@
 // defaults for clientinfo messages
 #define	DEFAULT_VIEWHEIGHT	22
 
+
+// game types sent by serverinfo
+// these determine which intermission screen plays
+#define	GAME_COOP			0
+#define	GAME_DEATHMATCH		1
+
 //==============================================
 
 // playerinfo flags from server

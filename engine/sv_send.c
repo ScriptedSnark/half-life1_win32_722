@@ -22,6 +22,32 @@ redirect_t	sv_redirected;
 
 /*
 ==================
+SV_InactivateClients
+
+Prepare for level transition, etc.
+==================
+*/
+void SV_InactivateClients( void )
+{
+	int			i;
+	client_t*	cl;
+
+	for (i = 0, cl = svs.clients; i < svs.maxclients; i++, cl++)
+	{
+		if (cl->active || cl->connected || cl->spawned)
+		{
+			SZ_Clear(&cl->netchan.message);
+			cl->active = FALSE;
+			cl->connected = TRUE;
+			cl->spawned = FALSE;
+			COM_ClearCustomizationList(&cl->customdata, FALSE);
+			cl->maxspeed = 0;
+		}
+	}
+}
+
+/*
+==================
 SV_FlushRedirect
 ==================
 */
@@ -72,6 +98,27 @@ qboolean SV_FilterPacket( void )
 
 	return FALSE;
 }
+
+/*
+=======================
+SV_CleanupEnts
+
+Send datagram to the client who need one
+=======================
+*/
+void SV_CleanupEnts( void )
+{
+	int			i;
+	edict_t*	ent;
+
+	for (i = 0, ent = sv.edicts; i < sv.max_edicts; i++, ent++)
+	{
+		ent->v.effects &= ~EF_MUZZLEFLASH;
+		ent->v.effects &= ~EF_NOINTERP;
+	}
+}
+
+// TODO: Implement
 
 /*
 =======================
@@ -215,11 +262,13 @@ void SV_SendClientMessages(void)
 	// update frags, names, etc
 	SV_UpdateToReliableMessages();
 
+#ifndef SWDS
 	nReliableBytesSent = 0;
 	nDatagramBytesSent = 0;
 	nReliables = 0;
 	nDatagrams = 0;
 	bUnreliableOverflow = FALSE;
+#endif //SWDS
 
 	if (g_LastScreenUpdateTime <= sv.time)
 	{
@@ -273,4 +322,12 @@ void SV_SendClientMessages(void)
 			}
 		}
 	}
+
+	// TODO: Implement (this is related to SCR_NetGraph)
+	/*sub_DFC0FA0(nReliableBytesSent, nReliables, FALSE);
+	sub_DFC0FA0(nDatagramBytesSent, !bUnreliableOverflow ? nDatagrams : (MAX_MSGLEN + 1), TRUE);*/
+	bAddDeltaFlag = FALSE;
+
+	// Allow game .dll to run code, including unsetting EF_MUZZLEFLASH and EF_NOINTERP on effects fields
+	SV_CleanupEnts();
 }

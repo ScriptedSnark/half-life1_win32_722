@@ -491,38 +491,6 @@ cvar_t	sk_player_leg3 = { "sk_player_leg3","1" };
 
 cvar_t	developer = { "developer", "0" };
 
-/*
-==================
-Host_Quit_f
-
-Shutdown the engine/program as soon as possible
-
-NOTE: The game must be shutdown before a new game can start,
-before a game can load, and before the system can be shutdown.
-==================
-*/
-void Host_Quit_f( void )
-{
-	if (Cmd_Argc() == 1)
-	{
-		giActive = DLL_CLOSE;
-
-		// disconnect if we are connected
-		if (cls.state)
-			CL_Disconnect();
-
-		// shutdown the server
-		Host_ShutdownServer(FALSE);
-
-		// exit the game
-		Sys_Quit();
-	}
-
-	// either argc isn't 1 or we haven't quitted, well just pause then
-	giActive = DLL_PAUSED;
-	giStateInfo = 4;
-}
-
 void Profile_Init( void );
 
 /*
