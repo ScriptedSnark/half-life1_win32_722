@@ -258,14 +258,42 @@ extern	cvar_t	sv_cheats;
 
 
 extern	cvar_t	sv_gravity;
+extern	cvar_t	sv_friction;
+extern	cvar_t	sv_edgefriction;
+extern	cvar_t	sv_stopspeed;
+extern	cvar_t	sv_maxspeed;
+extern	cvar_t	sv_accelerate;
+extern	cvar_t	sv_stepsize;
+extern	cvar_t	sv_clipmode;
+extern	cvar_t	sv_bounce;
+extern	cvar_t	sv_airmove;
+extern	cvar_t	sv_spectatormaxspeed;
+extern	cvar_t	sv_airaccelerate;
+extern	cvar_t	sv_wateraccelerate;
+extern	cvar_t	sv_waterfriction;
 
 
 
+
+extern	cvar_t	sv_zmax;
+extern	cvar_t	sv_wateramp;
+extern	cvar_t	sv_skyname;
+extern	cvar_t	sv_maxvelocity;
 
 
 extern float		g_LastScreenUpdateTime;
 extern float		scr_centertime_off;
 
+extern qboolean		bAddDeltaFlag;
+
+extern UserMsg* sv_gpNewUserMsgs;
+extern UserMsg* sv_gpUserMsgs;
+
+extern int		nReliableBytesSent;
+extern int		nDatagramBytesSent;
+extern int		nReliables;
+extern int		nDatagrams;
+extern qboolean bUnreliableOverflow;
 
 extern	server_static_t	svs;				// persistant server info
 extern	server_t		sv;					// local server
@@ -292,6 +320,7 @@ extern	jmp_buf 	host_abortserver;
 void SV_Init( void );
 void SV_ReadPackets( void );
 void SV_CheckTimeouts( void );
+void SV_FullClientUpdate( client_t* cl, sizebuf_t* sb );
 void SV_CountPlayers( int* clients, int* spectators );
 void SV_DropClient( client_t* drop, qboolean crash );
 

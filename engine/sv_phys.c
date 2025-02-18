@@ -1,6 +1,7 @@
 // sv_phys.c
 
 #include "quakedef.h"
+#include "pmove.h"
 
 /*
 
@@ -21,6 +22,19 @@ solid_edge items only clip against bsp models.
 */
 
 cvar_t sv_gravity = { "sv_gravity", "800", FALSE, TRUE };
+cvar_t sv_friction = { "sv_friction", "4", FALSE, TRUE };
+cvar_t sv_edgefriction;
+cvar_t sv_stopspeed = { "sv_stopspeed", "100", FALSE, TRUE };
+cvar_t sv_maxspeed;
+cvar_t sv_accelerate;
+cvar_t sv_stepsize = { "sv_stepsize", "18", FALSE, TRUE };
+cvar_t sv_clipmode = { "sv_clipmode", "0", FALSE, TRUE };
+cvar_t sv_bounce = { "sv_bounce", "1", FALSE, TRUE };
+cvar_t sv_airmove = { "sv_airmove", "1", FALSE, TRUE };
+cvar_t sv_spectatormaxspeed = { "sv_spectatormaxspeed", "500", FALSE, TRUE };
+cvar_t sv_airaccelerate = { "sv_airaccelerate", "10", FALSE, TRUE };
+cvar_t sv_wateraccelerate = { "sv_wateraccelerate", "10", FALSE, TRUE };
+cvar_t sv_waterfriction = { "sv_waterfriction", "1", FALSE, TRUE };
 
 void SV_Physics( void )
 {
@@ -31,5 +45,21 @@ void SV_Physics( void )
 
 void SV_SetMoveVars( void )
 {
-	// TODO: Implement
+	movevars.gravity = sv_gravity.value;
+	movevars.stopspeed = sv_stopspeed.value;
+	movevars.maxspeed = sv_maxspeed.value;
+	movevars.spectatormaxspeed = sv_spectatormaxspeed.value;
+	movevars.accelerate = sv_accelerate.value;
+	movevars.airaccelerate = sv_airaccelerate.value;
+	movevars.wateraccelerate = sv_wateraccelerate.value;
+	movevars.friction = sv_friction.value;
+	movevars.edgefriction = sv_edgefriction.value;
+	movevars.waterfriction = sv_waterfriction.value;
+	movevars.bounce = sv_bounce.value;
+	movevars.stepsize = sv_stepsize.value;
+	movevars.maxvelocity = sv_maxvelocity.value;
+	movevars.zmax = sv_zmax.value;
+	movevars.entgravity = 1.0;
+	movevars.waveHeight = sv_wateramp.value;
+	strcpy(movevars.skyName, sv_skyname.string);
 }

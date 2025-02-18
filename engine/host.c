@@ -1266,8 +1266,51 @@ if (crash = true), don't bother sending signofs
 */
 void SV_DropClient( client_t *cl, qboolean crash )
 {
-	// TODO: Implement
+	if (!crash)
+	{
+		// add the disconnect
+		if (!cl->fakeclient)
+			MSG_WriteByte(&cl->netchan.message, svc_disconnect);
+
+		if (cl->edict && cl->spawned)
+		{
+			if (cl->spectator)
+				gEntityInterface.pfnSpectatorDisconnect(cl->edict);
+			else
+				gEntityInterface.pfnClientDisconnect(cl->edict);
+		}
+
+		if (cl->download)
+		{
+			COM_FreeFile(cl->download);
+			cl->download = 0;
+		}
+		if (cl->upload)
+		{
+			fclose(cl->upload);
+			cl->upload = 0;
+		}
+
+		if (cl->spectator)
+			Sys_Printf("Dropped %s (spectator) from server\n", cl->name);
+		else
+			Sys_Printf("Dropped %s from server\n", cl->name);
+	}
+
+// free the client (the body stays around)
+	cl->active = FALSE;
+	cl->connected = FALSE;
+	cl->spawned = FALSE;
+	cl->name[0] = 0;
+	cl->connection_started = realtime;
+	cl->maxspeed = 0;
+
+	net_activeconnections--;
+
+// send notification to all other clients
+	SV_FullClientUpdate(cl, &sv.reliable_datagram);
 }
+
 
 /*
 ==================

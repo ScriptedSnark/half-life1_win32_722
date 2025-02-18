@@ -45,4 +45,6 @@ extern	int			clearnotify;
 extern	cvar_t		scr_viewsize;
 extern	float		scr_fov_value;
 
+extern cvar_t		scr_graphmean;
+
 #endif // SCREEN_H

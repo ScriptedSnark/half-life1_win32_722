@@ -44,6 +44,8 @@ extern	sizebuf_t	net_message;
 
 extern	cvar_t	host_name;
 
+extern int		net_activeconnections;
+
 // Net graph
 void		NET_InitColors( void );
 
