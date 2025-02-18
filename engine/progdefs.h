@@ -39,7 +39,7 @@ typedef struct
 } globalvars_t;
 
 
-typedef struct
+typedef struct entvars_s
 {
 	string_t	classname;
 	string_t	globalname;

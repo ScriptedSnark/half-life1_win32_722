@@ -2,6 +2,9 @@
 
 #include "quakedef.h"
 
+static	areanode_t	sv_areanodes[AREA_NODES];
+static	int			sv_numareanodes;
+
 // TODO: Implement
 
 int SV_HullPointContents( hull_t* hull, int num, vec_t* p );
@@ -33,9 +36,147 @@ void SV_UnlinkEdict( edict_t* ent )
 	ent->area.prev = ent->area.next = NULL;
 }
 
-void SV_LinkEdict( edict_t *ent, qboolean touch_triggers )
+/*
+====================
+SV_TouchLinks
+====================
+*/
+void SV_TouchLinks( edict_t *ent, areanode_t *node )
 {
 	// TODO: Implement
+}
+
+
+/*
+===============
+SV_FindTouchedLeafs
+
+===============
+*/
+void SV_FindTouchedLeafs( edict_t *ent, mnode_t *node, int *topnode )
+{
+	mplane_t*	splitplane;
+	mleaf_t*	leaf;
+	int			sides;
+	int			leafnum;
+
+	if (node->contents == CONTENTS_SOLID)
+		return;
+
+	// add an efrag if the node is a leaf
+
+	if (node->contents < 0)
+	{
+		if (ent->num_leafs > (MAX_ENT_LEAFS - 1))
+		{
+			// continue counting leafs,
+			// so we know how many it's overrun
+			ent->num_leafs = (MAX_ENT_LEAFS + 1);
+		}
+		else
+		{
+			leaf = (mleaf_t *)node;
+			leafnum = leaf - sv.worldmodel->leafs - 1;
+			ent->leafnums[ent->num_leafs] = leafnum;
+			ent->num_leafs++;
+		}
+		return;
+	}
+
+	// NODE_MIXED
+
+	splitplane = node->plane;
+	sides = BOX_ON_PLANE_SIDE(ent->v.absmin, ent->v.absmax, splitplane);
+
+	if (sides == 3 && *topnode == -1)
+	{
+		*topnode = node - sv.worldmodel->nodes;
+	}
+
+// recurse down the contacted sides
+	if (sides & 1) 
+		SV_FindTouchedLeafs(ent, node->children[0], topnode);
+	if (sides & 2) 
+		SV_FindTouchedLeafs(ent, node->children[1], topnode);
+}
+
+/*
+===============
+SV_LinkEdict
+
+===============
+*/
+void SV_LinkEdict( edict_t *ent, qboolean touch_triggers )
+{
+	areanode_t*		node;
+	int				topnode;
+
+	if (ent->area.prev)
+		SV_UnlinkEdict(ent);	// unlink from old position
+
+	if (ent == sv.edicts)
+		return;		// don't add the world
+
+	if (ent->free)
+		return;
+
+	gEntityInterface.pfnSetAbsBox(ent);
+
+	if (ent->v.movetype == MOVETYPE_FOLLOW && ent->v.aiment)
+	{
+		ent->num_leafs = ent->v.aiment->num_leafs;
+		memcpy(ent->leafnums, ent->v.aiment->leafnums, sizeof(ent->leafnums));
+	}
+	else
+	{
+// link to PVS leafs
+		ent->num_leafs = 0;
+		topnode = -1;
+
+		if (ent->v.modelindex)
+			SV_FindTouchedLeafs(ent, sv.worldmodel->nodes, &topnode);
+
+		if (ent->num_leafs > Q_ARRAYSIZE(ent->leafnums))
+		{
+			ent->num_leafs = -1;
+			ent->leafnums[0] = topnode;
+		}
+	}
+
+	if (ent->v.solid || ent->v.skin < -1)
+	{
+		if (ent->v.solid != SOLID_BSP || sv.models[ent->v.modelindex] || strlen(pr_strings + ent->v.model))
+		{
+			// find the first node that the ent's box crosses
+			node = sv_areanodes;
+			while (1)
+			{
+				if (node->axis == -1)
+					break;
+				if (ent->v.absmin[node->axis] > node->dist)
+					node = node->children[0];
+				else if (ent->v.absmax[node->axis] < node->dist)
+					node = node->children[1];
+				else
+					break;		// crosses the node
+			}
+
+// link it in	
+
+			if (ent->v.solid == SOLID_TRIGGER)
+				InsertLinkBefore(&ent->area, &node->trigger_edicts);
+			else
+				InsertLinkBefore(&ent->area, &node->solid_edicts);
+
+// if touch_triggers, touch all entities at this node and decend for more
+			if (touch_triggers)
+				SV_TouchLinks(ent, sv_areanodes);
+		}
+		else
+		{
+			Con_DPrintf("Inserted %s with no model\n", pr_strings + ent->v.classname);
+		}
+	}
 }
 
 // TODO: Implement

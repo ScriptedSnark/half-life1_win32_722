@@ -100,6 +100,12 @@ void ED_LoadFromFile( char* data );
 edict_t* EDICT_NUM( int n );
 int NUM_FOR_EDICT( const edict_t* e );
 
+void SuckOutClassname( char* data, edict_t* ent );
+
+void ReleaseEntityDLLFields( edict_t* ent );
+void InitEntityDLLFields( edict_t* ent );
+void FreeEntPrivateData( edict_t* ent );
+
 #define	EDICT_TO_PROG(e) ((byte*)e - (byte*)sv.edicts)
 #define PROG_TO_EDICT(e) ((edict_t*)((byte*)sv.edicts + e))
 

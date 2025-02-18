@@ -3,64 +3,6 @@
 
 #include "world.h"
 
-edict_t* EDICT_NUM( int n )
-{
-	if (n < 0 ||
-		n >= sv.max_edicts)
-		Sys_Error("EDICT_NUM: bad number %i", n);
-	return &sv.edicts[n];
-}
-
-int NUM_FOR_EDICT( const edict_t* e )
-{
-	int		b;
-
-	b = e - sv.edicts;
-
-	if (b < 0 || b >= sv.num_edicts)
-		Sys_Error("NUM_FOR_EDICT: bad pointer");
-	return b;
-}
-
-// TODO: Implement
-
-/*
-================
-ReleaseEntityDLLFields
-
-================
-*/
-void FreeEntPrivateData( edict_t* ent );
-void ReleaseEntityDLLFields( edict_t* ent )
-{
-	FreeEntPrivateData(ent);
-}
-
-/*
-================
-InitEntityDLLFields
-
-================
-*/
-void InitEntityDLLFields( edict_t* ent )
-{
-	ent->v.pContainingEntity = ent;
-}
-
-/*
-================
-FreeEntPrivateData
-
-================
-*/
-void FreeEntPrivateData( edict_t* ent )
-{
-	if (ent->pvPrivateData)
-		free(ent->pvPrivateData);
-
-	ent->pvPrivateData = NULL;
-}
-
 /*
 =================
 ED_ClearEdict
@@ -171,7 +113,71 @@ void ED_Free( edict_t* ed )
 	ed->freetime = sv.time;
 }
 
-// TODO: Implement
+/*
+=============
+ED_Count
+
+For debugging
+=============
+*/
+void ED_Count( void )
+{
+	int		i;
+	edict_t	*ent;
+	int		active, models, solid, step;
+
+	active = models = solid = step = 0;
+	for (i = 0; i < sv.num_edicts; i++)
+	{
+		ent = &sv.edicts[i];
+		if (ent->free)
+			continue;
+		active++;
+		if (ent->v.solid)
+			solid++;
+		if (ent->v.model)
+			models++;
+		if (ent->v.movetype == MOVETYPE_STEP)
+			step++;
+	}
+
+	Con_Printf("num_edicts:%3i\n", sv.num_edicts);
+	Con_Printf("active    :%3i\n", active);
+	Con_Printf("view      :%3i\n", models);
+	Con_Printf("touch     :%3i\n", solid);
+	Con_Printf("step      :%3i\n", step);
+}
+
+/*
+=============
+ED_NewString
+=============
+*/
+char* ED_NewString( const char* string )
+{
+	char*	new, *new_p;
+	int		i, l;
+
+	l = strlen(string) + 1;
+	new = Hunk_Alloc(l);
+	new_p = new;
+
+	for (i = 0; i < l; i++)
+	{
+		if (string[i] == '\\' && i < l - 1)
+		{
+			i++;
+			if (string[i] == 'n')
+				*new_p++ = '\n';
+			else
+				*new_p++ = '\\';
+		}
+		else
+			*new_p++ = string[i];
+	}
+
+	return new;
+}
 
 /*
 ====================
@@ -182,9 +188,112 @@ ed should be a properly initialized empty edict.
 Used for initial level load and for savegames.
 ====================
 */
-char *ED_ParseEdict( char *data, edict_t *ent )
+char *ED_ParseEdict(char *data, edict_t *ent)
 {
-	// TODO: Implement
+	ENTITYINIT		pfnEntityInit;
+	qboolean		init;
+	KeyValueData	kvd;
+	char			keyname[256];
+	int				n;
+	char*			className;
+	float			f;
+
+// clear it
+	if (ent != sv.edicts)	// hack
+		memset(&ent->v, 0, sizeof(ent->v));
+
+	InitEntityDLLFields(ent);
+	SuckOutClassname(data, ent);
+
+	init = FALSE;
+
+	pfnEntityInit = GetEntityInit(pr_strings + ent->v.classname);
+	if (pfnEntityInit)
+	{
+		pfnEntityInit(&ent->v);
+		init = TRUE;
+	}
+	else
+	{
+		pfnEntityInit = GetEntityInit("custom");
+		if (pfnEntityInit)
+		{
+			pfnEntityInit(&ent->v);
+			kvd.szValue = pr_strings + ent->v.classname;
+			kvd.szClassName = "custom";
+			kvd.szKeyName = "customclass";
+			kvd.fHandled = FALSE;
+			gEntityInterface.pfnKeyValue(ent, &kvd);
+			init = TRUE;
+		}
+		else
+		{
+			Con_Printf("Can't init %s\n", &pr_strings[ent->v.classname]);
+		}
+	}
+
+// go through all the dictionary pairs
+	while (1)
+	{
+	// parse key
+		data = COM_Parse(data);
+		if (com_token[0] == '}')
+		{
+			break;
+		}
+		if (!data)
+			Sys_Error("ED_ParseEntity: EOF without closing brace");
+		strcpy(keyname, com_token);
+
+		// Remove tail spaces
+		for (n = strlen(keyname) - 1; n >= 0 && keyname[n] == ' '; n--)
+		{
+			keyname[n] = 0;
+		}
+
+	// parse value	
+		data = COM_Parse(data);
+		if (!data)
+			Sys_Error("ED_ParseEntity: EOF without closing brace");
+		if (com_token[0] == '}')
+			Sys_Error("ED_ParseEntity: closing brace without data");
+
+		className = pr_strings + ent->v.classname;
+
+		if (!className || strcmp(className, com_token) != 0)
+		{
+			if (!strcmp(keyname, "angle"))
+			{
+				f = atof(com_token);
+				if (f < 0)
+				{
+					if (f == -1)
+						sprintf(com_token, "-90 0 0");
+					else
+						sprintf(com_token, "90 0 0");
+				}
+				else
+				{
+					sprintf(com_token, "%f %f %f", ent->v.angles[0], f	, ent->v.angles[2]);
+				}
+// anglehack is to allow QuakeEd to write single scalar angles
+// and allow them to be turned into vectors. (FIXME...)
+				strcpy(keyname, "angles");
+			}
+
+			kvd.szClassName = pr_strings + ent->v.classname;
+			kvd.szKeyName = keyname;
+			kvd.szValue = com_token;
+			kvd.fHandled = FALSE;
+			gEntityInterface.pfnKeyValue(ent, &kvd);
+		}
+	}
+
+	if (init == FALSE)
+	{
+		ent->free = TRUE;
+		ent->serialnumber++;
+	}
 
 	return NULL;
 }
@@ -269,3 +378,108 @@ void ED_LoadFromFile( char* data )
 
 	Con_DPrintf("%i entities inhibited\n", inhibit);
 }
+
+/*
+===============
+PR_LoadProgs
+===============
+*/
+void PR_LoadProgs(void)
+{
+	;
+}
+
+edict_t* EDICT_NUM( int n )
+{
+	if (n < 0 ||
+		n >= sv.max_edicts)
+		Sys_Error("EDICT_NUM: bad number %i", n);
+	return &sv.edicts[n];
+}
+
+int NUM_FOR_EDICT( const edict_t* e )
+{
+	int		b;
+
+	b = e - sv.edicts;
+
+	if (b < 0 || b >= sv.num_edicts)
+		Sys_Error("NUM_FOR_EDICT: bad pointer");
+	return b;
+}
+
+/*
+===============
+SuckOutClassname
+===============
+*/
+void SuckOutClassname( char* data, edict_t* ent )
+{
+	char*			s;
+	KeyValueData	kvd;
+	char			c[256];
+
+	while (1)
+	{
+		s = COM_Parse(data);
+
+		if (com_token[0] == '}')
+			break;
+
+		strcpy(c, com_token);
+
+		data = COM_Parse(s);
+		if (!strcmp(c, "classname"))
+		{
+			kvd.szKeyName = c;
+			kvd.szClassName = NULL;
+			kvd.szValue = com_token;
+			kvd.fHandled = FALSE;
+
+			gEntityInterface.pfnKeyValue(ent, &kvd);
+
+			if (!kvd.fHandled)
+				Host_Error("SuckOutClassname: parse error");
+
+			return;
+		}
+	}
+}
+
+/*
+================
+ReleaseEntityDLLFields
+
+================
+*/
+void ReleaseEntityDLLFields( edict_t* ent )
+{
+	FreeEntPrivateData(ent);
+}
+
+/*
+================
+InitEntityDLLFields
+
+================
+*/
+void InitEntityDLLFields( edict_t* ent )
+{
+	ent->v.pContainingEntity = ent;
+}
+
+/*
+================
+FreeEntPrivateData
+
+================
+*/
+void FreeEntPrivateData( edict_t* ent )
+{
+	if (ent->pvPrivateData)
+		free(ent->pvPrivateData);
+
+	ent->pvPrivateData = NULL;
+}
+
+// TODO: Implement

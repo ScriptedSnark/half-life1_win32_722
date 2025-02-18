@@ -337,6 +337,7 @@ void SV_QueryMovevarsChanged( void );
 
 void SV_ActivateServer( qboolean runPhysics );
 int SV_SpawnServer( qboolean bIsDemo, char* server, char* startspot );
+void SV_LoadEntities( void );
 
 void Master_Heartbeat( void );
 
