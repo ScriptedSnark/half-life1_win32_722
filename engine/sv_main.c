@@ -2,6 +2,7 @@
 
 #include "quakedef.h"
 #include "pr_cmds.h"
+#include "pmove.h"
 #include "decal.h"
 
 server_t		sv;
@@ -25,18 +26,32 @@ decalname_t	sv_decalnames[MAX_BASE_DECALS];
 
 int			sv_decalnamecount;
 
+UserMsg* sv_gpNewUserMsgs;
+UserMsg* sv_gpUserMsgs;
 
+int		nReliableBytesSent = 0;
+int		nDatagramBytesSent = 0;
+int		nReliables = 0;
+int		nDatagrams = 0;
+qboolean bUnreliableOverflow = FALSE;
 
 // TODO: Implement
 
 float g_LastScreenUpdateTime;
 float scr_centertime_off;
 
+qboolean bAddDeltaFlag = FALSE;
+
 cvar_t sv_password = { "sv_password", "" };
 cvar_t sv_spectator_password = { "sv_spectator_password", "" };
 cvar_t sv_maxspectators = { "sv_maxspectators", "8", FALSE, TRUE };
 
 cvar_t sv_cheats = { "sv_cheats", "0", FALSE, TRUE };
+
+cvar_t sv_zmax = { "sv_zmax", "4096" };
+cvar_t sv_wateramp = { "sv_wateramp", "0" };
+cvar_t sv_skyname = { "sv_skyname", "desert" };
+cvar_t sv_maxvelocity = { "sv_maxvelocity", "2000" };
 
 /*
 ================
@@ -580,6 +595,37 @@ void SV_CheckTimeouts( void )
 // TODO: Implement
 
 /*
+===================
+SV_FullClientUpdate
+
+Writes all update values to a sizebuf
+===================
+*/
+void SV_FullClientUpdate( client_t* cl, sizebuf_t* sb )
+{
+	int			i, nClientNum;
+	client_t*	client;
+
+	for (i = 0, client = svs.clients; i < svs.maxclients; i++, client++)
+	{
+		// skip inactive, fake clients, and the specified client
+		if (!client->active || client->fakeclient || cl == client)
+			continue;
+
+		MSG_WriteByte(sb, svc_updatename);
+		nClientNum = cl - svs.clients;
+		if (!cl->active && !cl->spawned && cl->name[0] == 0)
+			nClientNum |= PN_SPECTATOR;
+		MSG_WriteByte(sb, nClientNum);
+		MSG_WriteString(sb, cl->name);
+
+		MSG_WriteByte(sb, svc_updatecolors);
+		MSG_WriteByte(sb, cl - svs.clients);
+		MSG_WriteByte(sb, 0);
+	}
+}
+
+/*
 ==================
 SV_Init
 
@@ -593,15 +639,31 @@ void SV_Init( void )
 	// TODO: Implement
 	
 	Cvar_RegisterVariable(&sv_gravity);
+	Cvar_RegisterVariable(&sv_friction);
+	Cvar_RegisterVariable(&sv_edgefriction);
+	Cvar_RegisterVariable(&sv_stopspeed);
+	Cvar_RegisterVariable(&sv_maxspeed);
+	Cvar_RegisterVariable(&sv_accelerate);
+	Cvar_RegisterVariable(&sv_stepsize);
+	Cvar_RegisterVariable(&sv_clipmode);
+	Cvar_RegisterVariable(&sv_bounce);
+	Cvar_RegisterVariable(&sv_airmove);
+	Cvar_RegisterVariable(&sv_airaccelerate);
+	Cvar_RegisterVariable(&sv_wateraccelerate);
+	Cvar_RegisterVariable(&sv_waterfriction);
 
 	// TODO: Implement
-
+	Cvar_RegisterVariable(&sv_zmax);
+	Cvar_RegisterVariable(&sv_wateramp);
+	Cvar_RegisterVariable(&sv_skyname);
+	Cvar_RegisterVariable(&sv_maxvelocity);
 	Cvar_RegisterVariable(&sv_spectator_password);
 	Cvar_RegisterVariable(&sv_maxspectators);
 
 	// TODO: Implement
 
 	Cvar_RegisterVariable(&sv_cheats);
+	Cvar_RegisterVariable(&sv_spectatormaxspeed);
 
 	// TODO: Implement
 }
@@ -695,6 +757,35 @@ void SV_SendReconnect( void )
 
 /*
 ================
+SV_WriteMovevarsToClient
+
+Send the movevars to the specified client's netchan
+================
+*/
+void SV_WriteMovevarsToClient( sizebuf_t* sb )
+{
+	MSG_WriteByte(sb, svc_newmovevars);
+	MSG_WriteFloat(sb, movevars.gravity);
+	MSG_WriteFloat(sb, movevars.stopspeed);
+	MSG_WriteFloat(sb, movevars.maxspeed);
+	MSG_WriteFloat(sb, movevars.spectatormaxspeed);
+	MSG_WriteFloat(sb, movevars.accelerate);
+	MSG_WriteFloat(sb, movevars.airaccelerate);
+	MSG_WriteFloat(sb, movevars.wateraccelerate);
+	MSG_WriteFloat(sb, movevars.friction);
+	MSG_WriteFloat(sb, movevars.edgefriction);
+	MSG_WriteFloat(sb, movevars.waterfriction);
+	MSG_WriteFloat(sb, movevars.entgravity);
+	MSG_WriteFloat(sb, movevars.bounce);
+	MSG_WriteFloat(sb, movevars.stepsize);
+	MSG_WriteFloat(sb, movevars.maxvelocity);
+	MSG_WriteFloat(sb, movevars.zmax);
+	MSG_WriteFloat(sb, movevars.waveHeight);
+	MSG_WriteString(sb, movevars.skyName);
+}
+
+/*
+================
 SV_QueryMovevarsChanged
 
 Tell all the clients about new movevars, if any
@@ -702,8 +793,36 @@ Tell all the clients about new movevars, if any
 */
 void SV_QueryMovevarsChanged( void )
 {
-	//FF: Move me
-	// TODO: Implement
+	// TODO: FF: Move me
+
+	int			i;
+	client_t*	cl;
+
+	if (movevars.maxspeed != sv_maxspeed.value
+	  || movevars.gravity != sv_gravity.value
+	  || movevars.stopspeed != sv_stopspeed.value
+	  || sv_spectatormaxspeed.value != movevars.spectatormaxspeed
+	  || movevars.accelerate != sv_accelerate.value
+	  || movevars.airaccelerate != sv_airaccelerate.value
+	  || movevars.wateraccelerate != sv_wateraccelerate.value
+	  || movevars.friction != sv_friction.value
+	  || movevars.edgefriction != sv_edgefriction.value
+	  || movevars.waterfriction != sv_waterfriction.value
+	  || movevars.entgravity != 1
+	  || movevars.bounce != sv_bounce.value
+	  || movevars.stepsize != sv_stepsize.value
+	  || movevars.maxvelocity != sv_maxvelocity.value
+	  || movevars.zmax != sv_zmax.value
+	  || movevars.waveHeight != sv_wateramp.value
+	  || strcmp(sv_skyname.string, movevars.skyName) != 0)
+	{
+		SV_SetMoveVars();
+		for (i = 0, cl = svs.clients; i < svs.maxclients; i++, cl++)
+		{
+			if (cl->active || cl->spawned || cl->connected)
+				SV_WriteMovevarsToClient(&cl->netchan.message);
+		}
+	}
 }
 
 /*
