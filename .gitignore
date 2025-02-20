@@ -410,3 +410,4 @@ FodyWeavers.xsd
 /engine/GLDebug
 /engine/GLRelease
 *.RES
+*.mdp
