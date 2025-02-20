@@ -1593,11 +1593,12 @@ Sets com_filesize and one of handle or file
 FILETIME gFileTime;
 int COM_FindFile( char* filename, int* phFile, FILE** file )
 {
-	searchpath_t* search;
-	char            netpath[MAX_OSPATH];
-	pack_t* pak;
-	int                     i = -1;
-	int                     findtime;
+	searchpath_t*	search;
+	char			netpath[MAX_OSPATH];
+	pack_t*			pak;
+	int				i = -1;
+	int				findtime;
+	HANDLE			hfile;
 
 	if (file && phFile)
 		Sys_Error("COM_FindFile: both phFile and file set");
@@ -1658,7 +1659,7 @@ int COM_FindFile( char* filename, int* phFile, FILE** file )
 			if (findtime == -1)
 				continue;
 
-			HANDLE hfile = CreateFile(netpath, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, 128, NULL);
+			hfile = CreateFile(netpath, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, 128, NULL);
 			if (hfile != INVALID_HANDLE_VALUE)
 			{
 				GetFileTime(hfile, NULL, NULL, &gFileTime);
@@ -1972,11 +1973,11 @@ then loads and adds pak1.pak pak2.pak ...
 */
 void COM_AddGameDirectory( char* dir )
 {
-	int                             i;
-	searchpath_t* search;
-	pack_t* pak;
+	int						i;
+	searchpath_t*			search;
+	pack_t*					pak;
 	char                    pakfile[MAX_OSPATH];
-
+	HANDLE					hfile;
 	strcpy(com_gamedir, dir);
 
 //
@@ -2001,7 +2002,7 @@ void COM_AddGameDirectory( char* dir )
 		search->next = com_searchpaths;
 		com_searchpaths = search;
 
-		HANDLE hfile = CreateFile(pakfile, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, 128, NULL);
+		hfile = CreateFile(pakfile, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, 128, NULL);
 		if (hfile != INVALID_HANDLE_VALUE)
 		{
 			GetFileTime(hfile, NULL, NULL, &search->filetime);
@@ -2366,6 +2367,12 @@ byte* LoadBMP16( FILE* fin, qboolean is15bit )
 	{	
 		int nPalette;
 		byte* pPalette;
+		int nImage8;
+		byte* pImage8;
+		int SizeOfRow8;
+		int SizeOfRow16;
+		int TrueHeight;
+		int nImage16;
 
 		// Figure out how many entires are actually in the table
 		if (bmih.biClrUsed)
@@ -2381,14 +2388,11 @@ byte* LoadBMP16( FILE* fin, qboolean is15bit )
 			return pImage16;
 		}
 
-		int nImage8;
-		byte* pImage8;
-
 		// Calculate the size of each row in the image data for 8-bit and 16-bit images
-		int SizeOfRow8 = (((bmih.biWidth * 8) + 7) / 8 + 3) & ~3;
-		int SizeOfRow16 = (((bmih.biWidth * 16) + 7) / 8 + 3) & ~3;
-		int TrueHeight = abs(bmih.biHeight);
-		int nImage16 = SizeOfRow16 * TrueHeight;
+		SizeOfRow8 = (((bmih.biWidth * 8) + 7) / 8 + 3) & ~3;
+		SizeOfRow16 = (((bmih.biWidth * 16) + 7) / 8 + 3) & ~3;
+		TrueHeight = abs(bmih.biHeight);
+		nImage16 = SizeOfRow16 * TrueHeight;
 
 		// Calculate the size of the image data in bytes for 8-bit and 16-bit images
 		nImage8 = bmih.biSizeImage;
@@ -2634,8 +2638,14 @@ COM_ClearCustomizationList
 */
 void COM_ClearCustomizationList( customization_t* pHead, qboolean bCleanDecals )
 {
-	customization_t* pNext, * pCurrent;
-	int i;
+	customization_t *pNext, *pCurrent;
+	int				i;
+	cachewad_t		*pWad;
+#if defined ( GLQUAKE )
+	cacheentry_t	*pic;
+#else
+	cachepic_t		*pic;
+#endif
 
 	pCurrent = pHead->pNext;
 	while (pCurrent)
@@ -2656,13 +2666,7 @@ void COM_ClearCustomizationList( customization_t* pHead, qboolean bCleanDecals )
 						R_DecalRemoveAll(-1 - pCurrent->resource.playernum);
 					}
 
-					cachewad_t* pWad = (cachewad_t*)pCurrent->pInfo;
-
-#if defined ( GLQUAKE )
-					cacheentry_t* pic;
-#else
-					cachepic_t* pic;
-#endif
+					pWad = (cachewad_t*)pCurrent->pInfo;
 
 					free(pWad->lumps);
 

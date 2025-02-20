@@ -252,9 +252,10 @@ qboolean NET_StringToSockaddr( char* s, struct sockaddr* sadr )
 	// IPX support
 	if (strlen(s) >= 23 && s[8] == ':' && s[21] == ':')
 	{
+		int i;
 		sadr->sa_family = AF_IPX;
 		val = 0;
-		for (int i = 0; i < 20; i += 2)
+		for (i = 0; i < 20; i += 2)
 		{
 			// Convert from hexademical represantation to sockaddr
 			char temp[3] = { s[i], s[i + 1], '\0' };
@@ -1160,8 +1161,9 @@ NET_Init
 */
 void NET_Init( void )
 {
-	int i;
+	int		i;
 	int		r;
+	int		hPort;
 
 	r = WSAStartup(MAKEWORD(1, 1), &winsockdata);
 
@@ -1195,7 +1197,7 @@ void NET_Init( void )
 
 	// Parameters.
 
-	int hPort = COM_CheckParm("-port");
+	hPort = COM_CheckParm("-port");
 	if (hPort)
 	{
 		Cvar_SetValue("hostport", atof(com_argv[hPort + 1]));

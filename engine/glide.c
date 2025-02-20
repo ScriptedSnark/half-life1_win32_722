@@ -2,7 +2,7 @@
 #include <windows.h>
 #include "winsani_out.h"
 
-#include <quakedef.h>
+#include "quakedef.h"
 
 /*
 ** basic data types
@@ -117,6 +117,8 @@ unsigned int GlideStats(void)
 	GRIDLE grSstIdle;
 	TRISTATS grTriStats;
 	TRISTATSRESET grResetTriStats;
+	GrSstPerfStats_t stats;
+	FxU32 trisProcessed;
 
 	GlideLoad();
 
@@ -136,10 +138,8 @@ unsigned int GlideStats(void)
 
 	grSstIdle();
 
-	GrSstPerfStats_t stats;
 	grSstPerfStats(&stats);
 
-	FxU32 trisProcessed;
 	grTriStats(&trisProcessed, NULL);
 
 	grSstResetPerfStats();

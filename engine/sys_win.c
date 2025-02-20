@@ -675,6 +675,7 @@ DLL_EXPORT int GameInit( char* lpCmdLine, unsigned char* pMem, int iSize, exefun
 {
 	quakeparms_t	parms;
 	static	char	cwd[1024];
+	OSVERSIONINFO	vinfo;
 
 	host_initialized = FALSE;
 
@@ -725,7 +726,6 @@ DLL_EXPORT int GameInit( char* lpCmdLine, unsigned char* pMem, int iSize, exefun
 	Launcher_ValidateClientCertificate		= pef->Launcher_ValidateClientCertificate;
 
 	// Check that we are running on Win32
-	OSVERSIONINFO vinfo;
 	vinfo.dwOSVersionInfoSize = sizeof(vinfo);
 
 	if (!GetVersionEx(&vinfo))
@@ -1310,11 +1310,12 @@ void LoadEntityDLLs( char* szBaseDir )
 	}
 	else
 	{
+		struct _finddata_t findData;
+		int findfn;
 		// Load the game .dll
 		sprintf(szDllWildcard, "%s\\%s\\*.dll", szBaseDir, "valve\\dlls");
 
-		struct _finddata_t findData;
-		intptr_t findfn = _findfirst(szDllWildcard, &findData);
+		findfn = _findfirst(szDllWildcard, &findData);
 		if (findfn != -1)
 		{
 			do
@@ -1348,6 +1349,8 @@ void LoadThisDll( char* szDllFilename )
 {
 	HMODULE hDLL;
 	extensiondll_t* pextdll;
+	typedef void (DLLEXPORT* PFN_GiveFnptrsToDll)(enginefuncs_t*, globalvars_t*);
+	PFN_GiveFnptrsToDll pfnGiveFnptrsToDll;
 
 	hDLL = LoadLibrary(szDllFilename);
 
@@ -1357,8 +1360,7 @@ void LoadThisDll( char* szDllFilename )
 		return;
 	}
 
-	typedef void (DLLEXPORT* PFN_GiveFnptrsToDll)(enginefuncs_t*, globalvars_t*);
-	PFN_GiveFnptrsToDll pfnGiveFnptrsToDll = (PFN_GiveFnptrsToDll)GetProcAddress(hDLL, "GiveFnptrsToDll");
+	pfnGiveFnptrsToDll = (PFN_GiveFnptrsToDll)GetProcAddress(hDLL, "GiveFnptrsToDll");
 
 	if (!pfnGiveFnptrsToDll)
 	{

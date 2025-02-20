@@ -471,13 +471,13 @@ R_DrawViewModel
 */
 void R_DrawViewModel( void )
 {
-	float lightvec[3];
+	float		lightvec[3];
+	colorVec	c;
+	float		/*add,*/ oldShadows;
+
 	lightvec[0] = -1;
 	lightvec[1] = 0;
 	lightvec[2] = 0;
-
-	colorVec	c;
-	float		/*add,*/ oldShadows;
 
 	currententity = &cl.viewent;
 

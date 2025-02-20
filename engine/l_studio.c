@@ -18,14 +18,15 @@ Mod_LoadStudioModel
 void Mod_LoadStudioModel( model_t* mod, void* buffer )
 {
 	int					i;
-	byte* pin, * pout;
-	studiohdr_t* phdr;
-	mstudiotexture_t* ptexture;
-	byte* block;
+	byte				*pin, *pout;
+	studiohdr_t*		phdr;
+	mstudiotexture_t*	ptexture;
+	byte*				block;
 	int					total;
 	int					version;
 	int					mark;
-
+	char				name[256];
+	byte*				pal;
 	pin = (byte*)buffer;
 
 	phdr = (studiohdr_t*)pin;
@@ -46,9 +47,6 @@ void Mod_LoadStudioModel( model_t* mod, void* buffer )
 
 	block = (byte*)Hunk_AllocName(phdr->length, loadname);
 	memcpy(block, phdr, phdr->length);
-
-	char name[256];
-	byte* pal;
 
 	ptexture = (mstudiotexture_t*)((byte*)block + phdr->textureindex);
 	for (i = 0; i < phdr->numtextures; i++, ptexture++)

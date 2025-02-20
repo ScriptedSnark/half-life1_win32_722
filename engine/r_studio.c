@@ -1098,6 +1098,7 @@ void R_LightLambert( float(*light)[4], float* normal, float* src, float* lambert
 	int		i;
 	float	adjr, adjg, adjb;
 	float	c;
+	int		j;
 
 	adjr = 0.0;
 	adjg = 0.0;
@@ -1138,7 +1139,6 @@ void R_LightLambert( float(*light)[4], float* normal, float* src, float* lambert
 	//
 	// Apply light effect
 	//
-	int j;
 	j = adjr + lineargammatable[(int)(src[0] * 1023.0)];
 	if (j > 1023)
 		lambert[0] = 1.0;	

@@ -1227,11 +1227,12 @@ void R_DrawBrushModel( cl_entity_t* e )
 	{
 		for (k = 0; k < MAX_DLIGHTS; k++)
 		{
+			vec3_t saveOrigin;
+
 			if ((cl_dlights[k].die < cl.time) ||
 				(!cl_dlights[k].radius))
 				continue;
 
-			vec3_t saveOrigin;
 			VectorCopy(cl_dlights[k].origin, saveOrigin);
 			VectorSubtract(cl_dlights[k].origin, e->origin, cl_dlights[k].origin);
 
@@ -2113,13 +2114,12 @@ int DecalListCreate( DECALLIST* pList )
 	for (i = 0; i < MAX_DECALS; i++)
 	{
 		decal_t* decal = &gDecalPool[i];
+		decal_t* pdecals;
+		texture_t* ptexture;
 
 		// Decal is in use and is not a custom decal
 		if (!decal->psurface || (decal->flags & FDECAL_CUSTOM))
 			continue;
-
-		decal_t* pdecals;
-		texture_t* ptexture;
 
 		// compute depth
 		pdecals = decal->psurface->pdecals;

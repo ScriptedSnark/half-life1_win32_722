@@ -340,10 +340,11 @@ Draw_Init
 */
 void Draw_Init( void )
 {
-	int		i;
-	qpic_t* cb;
-	glpic_t* gl;
-	unsigned char* pPal;
+	int				i;
+	qpic_t*			cb;
+	glpic_t*		gl;
+	unsigned char*	pPal;
+	float			prev;
 
 	Draw_CacheWadInit("cached.wad", 16, &menu_wad);
 	menu_wad.tempWad = TRUE;
@@ -390,7 +391,7 @@ void Draw_Init( void )
 	gl->tl = 0;
 	gl->th = 1;
 
-	float prev = gl_round_down.value;
+	prev = gl_round_down.value;
 	gl_round_down.value = 0.0;
 
 	// now turn them into textures
@@ -1549,10 +1550,10 @@ void GL_Upload16( unsigned char* data, int width, int height, qboolean mipmap, i
 	}
 	else if (iType == TEX_TYPE_NONE)
 	{
+		unsigned char r, g, b, * ppix;
+
 		if (s & 3)
 			Sys_Error("GL_Upload16: s&3");
-
-		unsigned char r, g, b, * ppix;
 
 		if (gl_dither.value)
 		{
@@ -1697,11 +1698,11 @@ GL_PaletteAdd
 */
 short GL_PaletteAdd( unsigned char* pPal, qboolean isSky )
 {
-	if (!qglColorTableEXT)
-		return -1;
-	
 	int i, tag;
 	int limit;
+
+	if (!qglColorTableEXT)
+		return -1;
 
 	i = 0;
 	limit = 350;
@@ -2270,10 +2271,10 @@ void* Draw_CacheGet( cachewad_t* wad, int index )
 	{
 		char name[16];
 		char clean[16];
+		lumpinfo_t* pLump;
 		COM_FileBase(pic->name, name);
 		W_CleanupName(name, clean);
 
-		lumpinfo_t* pLump;
 		for (i = 0, pLump = wad->lumps; i < wad->lumpCount; i++, pLump++)
 		{
 			if (!strcmp(clean, pLump->name))

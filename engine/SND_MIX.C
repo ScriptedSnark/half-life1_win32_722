@@ -677,6 +677,8 @@ void S_PaintChannels( int endtime )
 
 	while (paintedtime < endtime)
 	{
+		int i, j;
+		int count2x;
 		// mix a full 'paintbuffer' of sound
 
 		// clamp at paintbuffer size
@@ -707,8 +709,7 @@ void S_PaintChannels( int endtime )
 
 		// upsample by 2x, optionally using interpolation
 
-		int i, j;
-		int count2x = count << 1;
+		count2x = count << 1;
 
 		if (!hisound.value)
 			SX_RoomFX(count, TRUE, TRUE);

@@ -721,8 +721,8 @@ char* MD5_Print( unsigned char* hash )
 	for (i = 0; i < 16; i++)
 	{
 		c = (unsigned char)hash[i];
-		snprintf( szChunk, sizeof( szChunk ), "%02x", c );
-		strncat( szReturn, szChunk, sizeof( szReturn ) - strlen( szReturn ) - 1 );
+		sprintf( szChunk, "%02x", c );
+		strcat( szReturn, szChunk );
 	}
 
 	return szReturn;

@@ -566,6 +566,9 @@ channel_t* SND_PickDynamicChannel( int entnum, int entchannel,
 	int ch_idx;
 	int first_to_die;
 	int life_left;
+#if defined (__USEA3D)
+	int ch_first_3d;
+#endif
 
 	if (entchannel == CHAN_STREAM && SND_FStreamIsPlaying(sfx))
 		return NULL;
@@ -575,8 +578,6 @@ channel_t* SND_PickDynamicChannel( int entnum, int entchannel,
 	life_left = 0x7fffffff;
 
 #if defined (__USEA3D)
-	int ch_first_3d;
-
 	ch_first_3d = -1;
 #endif
 

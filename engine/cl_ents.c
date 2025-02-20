@@ -913,14 +913,15 @@ extern int parsecountmod;
 extern double parsecounttime;
 void CL_ParsePlayerinfo( void )
 {
-	int			msec;
-	int			flags;
-	player_info_t* info;
+	int				msec;
+	int				flags;
+	player_info_t*	info;
 	player_state_t* state;
-	int			num;
-	int			i;
-	cl_entity_t* ent;
-	qboolean	spectator = FALSE;
+	int				num;
+	int				i;
+	cl_entity_t*	ent;
+	qboolean		spectator = FALSE;
+	int				stub1;
 
 	num = MSG_ReadByte();
 	if (num & PN_SPECTATOR)
@@ -941,7 +942,7 @@ void CL_ParsePlayerinfo( void )
 
 	flags = state->flags = MSG_ReadLong();
 
-	int stub1 = MSG_ReadLong(); // TODO: Implement (state + 144) =
+	stub1 = MSG_ReadLong(); // TODO: Implement (state + 144) =
 	state->messagenum = cl.parsecount;
 	state->origin[0] = MSG_ReadCoord();
 	state->origin[1] = MSG_ReadCoord();

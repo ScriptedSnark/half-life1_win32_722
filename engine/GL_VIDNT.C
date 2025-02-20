@@ -411,10 +411,14 @@ int VID_Init( word* palette )
 
 void VID_TakeSnapshot(const char* pFilename)
 {
-	HANDLE fp;
-	BITMAPFILEHEADER hdr;
-	BITMAPINFOHEADER bi;
-	int imageSize = 3 * vid.height * vid.width;
+	HANDLE				fp;
+	BITMAPFILEHEADER	hdr;
+	BITMAPINFOHEADER	bi;
+	int					imageSize = 3 * vid.height * vid.width;
+	DWORD				dwWritten;
+	byte				*hp;
+	byte				b;
+	int					i;
 
 	fp = CreateFile(pFilename, GENERIC_READ | GENERIC_WRITE, 0, 0, 2u, 0x80u, 0);
 	if (fp == (HANDLE)-1)
@@ -426,7 +430,6 @@ void VID_TakeSnapshot(const char* pFilename)
 	hdr.bfReserved2 = 0;
 	hdr.bfOffBits = sizeof(hdr) + sizeof(bi);
 
-	DWORD dwWritten;
 	if (!WriteFile(fp, &hdr.bfType, sizeof(hdr), &dwWritten, 0))
 		Sys_Error("Couldn't write file header to snapshot.\n");
 
@@ -445,16 +448,15 @@ void VID_TakeSnapshot(const char* pFilename)
 	if (!WriteFile(fp, &bi, sizeof(bi), &dwWritten, 0))
 		Sys_Error("Couldn't write bitmap header to snapshot.\n");
 
-	byte *hp = (byte *)malloc(imageSize);
+	hp = (byte *)malloc(imageSize);
 	if (!hp)
 		Sys_Error("Couldn't allocate bitmap header to snapshot.\n");
 
 	if ( gGLHardwareType != GL_HW_3Dfx || !GlideReadPixels(0, 0, vid.width, vid.height, (word *)hp) )
 		qglReadPixels(0, 0, vid.width, vid.height, GL_RGB, GL_UNSIGNED_BYTE, hp);
 
-	byte b;
 	// swap rgb to bgr
-	for ( int i = sizeof(hdr) + sizeof(bi); i < imageSize; i += sizeof(byte) * sizeof(RGBTRIPLE) )
+	for ( i = sizeof(hdr) + sizeof(bi); i < imageSize; i += sizeof(byte) * sizeof(RGBTRIPLE) )
 	{
 		b = hp[i];
 		hp[i] = hp[i + 2];
@@ -472,13 +474,13 @@ void VID_TakeSnapshot(const char* pFilename)
 
 void VID_WriteBuffer( const char* pFilename )
 {
-	static char szFileName[256];
-	static HANDLE hFile;
-
-	int imageSize = 3 * vid.height * vid.width;
-
-	WORD frameHeader[3];
-	int blockHeader[2];
+	static char		szFileName[256];
+	static HANDLE	hFile;
+	int				imageSize = 3 * vid.height * vid.width;
+	WORD			frameHeader[3];
+	int				blockHeader[2];
+	DWORD			dwWritten;
+	void*			pFrameData;
 
 	frameHeader[0] = vid.width;
 	frameHeader[1] = vid.height;
@@ -503,14 +505,13 @@ void VID_WriteBuffer( const char* pFilename )
 
 	SetFilePointer( hFile, 0, NULL, FILE_END );
 
-	void* pFrameData = malloc( imageSize );
+	pFrameData = malloc( imageSize );
 	if ( !pFrameData )
 		Sys_Error("Couldn't allocate frame buffer.\n");
 
 	if ( gGLHardwareType != GL_HW_3Dfx || !GlideReadPixels(0, 0, vid.width, vid.height, pFrameData) )
 		qglReadPixels( 0, 0, vid.width, vid.height, GL_RGB, GL_UNSIGNED_BYTE, pFrameData );
 
-	DWORD dwWritten;
 	if (!WriteFile(hFile, blockHeader, sizeof(blockHeader), &dwWritten, NULL) )
 		Sys_Error("Couldn't write block header.\n");
 

@@ -244,7 +244,7 @@ void R_FizzEffect( cl_entity_t* pent, int modelIndex, int density )
 	TEMPENTITY* pTemp;
 	model_t* model;
 	int				i, width, depth, count, frameCount;
-	float			maxHeight, speed, xspeed, yspeed;
+	float			maxHeight, speed, xspeed, yspeed, zspeed;
 	vec3_t			origin;
 
 	if (!pent->model || !modelIndex)
@@ -282,7 +282,7 @@ void R_FizzEffect( cl_entity_t* pent, int modelIndex, int density )
 		pTemp->x = origin[0];
 		pTemp->y = origin[1];
 
-		float zspeed = RandomLong(80, 140);
+		zspeed = RandomLong(80, 140);
 		pTemp->entity.baseline.origin[0] = xspeed;
 		pTemp->entity.baseline.origin[1] = yspeed;
 		pTemp->entity.baseline.origin[2] = zspeed;
@@ -360,7 +360,7 @@ void R_BubbleTrail( vec_t* start, vec_t* end, float height, int modelIndex, int 
 	TEMPENTITY* pTemp;
 	model_t* model;
 	int					i, frameCount;
-	float				dist, angle;
+	float				dist, angle, zspeed;
 	vec3_t				origin;
 
 	if (!modelIndex)
@@ -388,7 +388,7 @@ void R_BubbleTrail( vec_t* start, vec_t* end, float height, int modelIndex, int 
 		pTemp->y = origin[1];
 		angle = RandomLong(-3, 3);
 
-		float zspeed = RandomLong(80, 140);
+		zspeed = RandomLong(80, 140);
 		pTemp->entity.baseline.origin[0] = speed * cos(angle);
 		pTemp->entity.baseline.origin[1] = speed * sin(angle);
 		pTemp->entity.baseline.origin[2] = zspeed;
@@ -1036,6 +1036,8 @@ Create sprite smoke
 */
 void R_Sprite_Smoke( TEMPENTITY* pTemp, float scale )
 {
+	int iColor;
+
 	if (!pTemp)
 		return;
 
@@ -1043,7 +1045,7 @@ void R_Sprite_Smoke( TEMPENTITY* pTemp, float scale )
 	pTemp->entity.renderfx = kRenderFxNone;
 	pTemp->entity.renderamt = 255;
 	pTemp->entity.baseline.origin[2] = 30;
-	int iColor = RandomLong(20, 35);
+	iColor = RandomLong(20, 35);
 	pTemp->entity.rendercolor.r = iColor;
 	pTemp->entity.rendercolor.g = iColor;
 	pTemp->entity.rendercolor.b = iColor;
@@ -2110,9 +2112,9 @@ Initialize temp entities
 */
 void CL_TempEntInit( void )
 {
-	memset(gTempEnts, 0, sizeof(gTempEnts));
-
 	int i;
+
+	memset(gTempEnts, 0, sizeof(gTempEnts));
 
 	for (i = 0; i < MAX_TEMP_ENTITIES; i++)
 	{
@@ -2674,9 +2676,10 @@ int CL_FxBlend( cl_entity_t* ent )
 	case kRenderFxHologram:
 		{
 			vec3_t tmp;
+			float dist;
 			VectorSubtract(ent->origin, r_origin, tmp);
 
-			float dist = DotProduct(vpn, tmp);
+			dist = DotProduct(vpn, tmp);
 			if (ent->renderfx == kRenderFxDistort)
 				dist = 1.0;
 

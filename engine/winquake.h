@@ -9,7 +9,10 @@
 #define CINTERFACE
 
 #include <ddraw.h>
+// ScriptedSnark: MSVC++ 4.2 doesn't have MMEAPI
+#if (_MSC_VER != 1020)
 #include <mmeapi.h>
+#endif
 #include <dsound.h>
 
 extern LPDIRECTSOUND pDS;

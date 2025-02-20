@@ -407,3 +407,6 @@ FodyWeavers.xsd
 /engine/GL_Debug/hw.lib
 
 **/DeployPath.user.ini
+/engine/GLDebug
+/engine/GLRelease
+*.RES

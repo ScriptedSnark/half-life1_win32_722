@@ -652,6 +652,7 @@ void CL_Connect_f( void )
 {
 	char* server;
 	char name[128], * p;
+	int num;
 
 	cls.spectator = FALSE;
 
@@ -685,7 +686,7 @@ void CL_Connect_f( void )
 	else
 		strcpy(cls.trueaddress, "0");
 
-	int num = atoi(server);  // In case it's an index.
+	num = atoi(server);  // In case it's an index.
 
 
 	// TODO: Implement
