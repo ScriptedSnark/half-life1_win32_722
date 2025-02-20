@@ -1,0 +1,3 @@
+# Force CRLF for Windows files:
+*.mak text eol=crlf
+*.mdp text eol=crlf
