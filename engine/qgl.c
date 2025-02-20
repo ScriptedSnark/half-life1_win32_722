@@ -3010,7 +3010,7 @@ void QGL_Shutdown( void )
 #pragma warning (disable : 4113 4133 4047 )
 #define GPA( a ) GetProcAddress( glw_state.hinstOpenGL, a )
 
-#if (_MSC_VER != 1020)
+#if (_MSC_VER == 1020)
 #pragma optimize( "", off )
 #endif
 
@@ -3425,7 +3425,7 @@ HINSTANCE QGL_Init( char* pdllname )
 	return glw_state.hinstOpenGL;
 }
 
-#if (_MSC_VER != 1020)
+#if (_MSC_VER == 1020)
 #pragma optimize( "", on )
 #endif
 
