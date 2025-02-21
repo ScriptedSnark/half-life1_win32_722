@@ -270,17 +270,84 @@ Alias models are position independent, so the cache manager can move them.
 ==============================================================================
 */
 
+typedef struct
+{
+	int					firstpose;
+	int					numposes;
+	float				interval;
+	trivertx_t			bboxmin;
+	trivertx_t			bboxmax;
+	int					frame;
+	char				name[16];
+} maliasframedesc_t;
+
+typedef struct
+{
+	trivertx_t			bboxmin;
+	trivertx_t			bboxmax;
+	int					frame;
+} maliasgroupframedesc_t;
+
+typedef struct
+{
+	int						numframes;
+	int						intervals;
+	maliasgroupframedesc_t	frames[1];
+} maliasgroup_t;
+
+// !!! if this is changed, it must be changed in asm_draw.h too !!!
+typedef struct mtriangle_s {
+	int					facesfront;
+	int					vertindex[3];
+} mtriangle_t;
 
 
-// TODO: Implement
+#define	MAX_SKINS	32
+typedef struct {
+	int					ident;
+	int					version;
+	vec3_t				scale;
+	vec3_t				scale_origin;
+	float				boundingradius;
+	vec3_t				eyeposition;
+	int					numskins;
+	int					skinwidth;
+	int					skinheight;
+	int					numverts;
+	int					numtris;
+	int					numframes;
+	synctype_t			synctype;
+	int					flags;
+	float				size;
 
+	int					numposes;
+	int					poseverts;
+	int					posedata;	// numposes*poseverts trivert_t
+	int					commands;	// gl command list with embedded s/t
+	int					gl_texturenum[MAX_SKINS];
+	maliasframedesc_t	frames[1];	// variable sized
+} aliashdr_t;
 
+#define	MAXALIASVERTS		1024
+#define	MAXALIASFRAMES		256
+#define	MAXALIASTRIS		2048
+extern	aliashdr_t* pheader;
+extern	stvert_t	stverts[MAXALIASVERTS];
+extern	mtriangle_t	triangles[MAXALIASTRIS];
+extern	trivertx_t* poseverts[MAXALIASFRAMES];
 
 //===================================================================
 
 //
 // Whole model
 //
+
+typedef enum {
+	mod_brush,
+	mod_sprite,
+	mod_alias,
+	mod_studio
+} modtype_t;
 
 #define	EF_ROCKET	1			// leave a trail
 #define	EF_GRENADE	2			// leave a trail
@@ -290,14 +357,6 @@ Alias models are position independent, so the cache manager can move them.
 #define	EF_ZOMGIB	32			// small blood trail
 #define	EF_TRACER2	64			// orange split trail + rotate
 #define	EF_TRACER3	128			// purple trail
-
-typedef enum modtype_e
-{
-	mod_brush,
-	mod_sprite,
-	mod_alias,
-	mod_studio
-} modtype_t;
 
 // values for model_t's needload
 #define NL_PRESENT		0

@@ -1253,6 +1253,100 @@ ALIAS MODELS
 ==============================================================================
 */
 
+aliashdr_t* pheader;
+
+stvert_t	stverts[MAXALIASVERTS];
+mtriangle_t	triangles[MAXALIASTRIS];
+
+// a pose is a single set of vertexes.  a frame may be
+// an animating sequence of poses
+trivertx_t* poseverts[MAXALIASFRAMES];
+int			posenum;
+
+byte		player_8bit_texels[320 * 200];
+
+/*
+=================
+Mod_LoadAliasFrame
+=================
+*/
+void* Mod_LoadAliasFrame( void* pin, maliasframedesc_t* frame )
+{
+	trivertx_t* pframe, * pinframe;
+	int				i, j;
+	daliasframe_t* pdaliasframe;
+
+	pdaliasframe = (daliasframe_t*)pin;
+
+	strcpy(frame->name, pdaliasframe->name);
+	frame->firstpose = posenum;
+	frame->numposes = 1;
+
+	for (i = 0; i < 3; i++)
+	{
+	// these are byte values, so we don't have to worry about
+	// endianness
+		frame->bboxmin.v[i] = pdaliasframe->bboxmin.v[i];
+		frame->bboxmax.v[i] = pdaliasframe->bboxmax.v[i];
+	}
+
+	pinframe = (trivertx_t*)(pdaliasframe + 1);
+
+	poseverts[posenum] = pinframe;
+	posenum++;
+
+	pinframe += pheader->numverts;
+
+	return (void*)pinframe;
+}
+
+
+/*
+=================
+Mod_LoadAliasGroup
+=================
+*/
+void* Mod_LoadAliasGroup( void* pin, maliasframedesc_t* frame )
+{
+	daliasgroup_t* pingroup;
+	int					i, numframes;
+	daliasinterval_t* pin_intervals;
+	void* ptemp;
+
+	pingroup = (daliasgroup_t*)pin;
+
+	numframes = LittleLong(pingroup->numframes);
+
+	frame->firstpose = posenum;
+	frame->numposes = numframes;
+
+	for (i = 0; i < 3; i++)
+	{
+	// these are byte values, so we don't have to worry about endianness
+		frame->bboxmin.v[i] = pingroup->bboxmin.v[i];
+		frame->bboxmax.v[i] = pingroup->bboxmax.v[i];
+	}
+
+	pin_intervals = (daliasinterval_t*)(pingroup + 1);
+
+	frame->interval = LittleFloat(pin_intervals->interval);
+
+	pin_intervals += numframes;
+
+	ptemp = (void*)pin_intervals;
+
+	for (i = 0; i < numframes; i++)
+	{
+		poseverts[posenum] = (trivertx_t*)((daliasframe_t*)ptemp + 1);
+		posenum++;
+
+		ptemp = (trivertx_t*)((daliasframe_t*)ptemp + 1) + pheader->numverts;
+	}
+
+	return ptemp;
+}
+
+//=========================================================
 
 
 // TODO: Implement
