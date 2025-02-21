@@ -68,8 +68,8 @@ void LoadThisDll( char* szDllFilename );
 // Releases all entity dlls
 void ReleaseEntityDlls( void );
 
-const char* NameForFunction( uint32 function );
-uint32 FunctionFromName( const char* pName );
+char* NameForFunction( uint32 function );
+uint32 FunctionFromName( char* pName );
 
 typedef long LONG;
 

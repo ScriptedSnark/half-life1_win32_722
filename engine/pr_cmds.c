@@ -203,7 +203,7 @@ float RandomFloat( float flLow, float flHigh )
 #define MAX_RANDOM_RANGE 0x7FFFFFFFUL
 
 // Generate a random long number in the range [ lLow, lHigh ]
-int32 RandomLong( int32 lLow, int32 lHigh )
+int RandomLong( long lLow, long lHigh )
 {
 	uint32 maxAcceptable;
 	uint32 x;

@@ -20,7 +20,7 @@ typedef struct GameInfo_s
 	unsigned char	ip[4];
 	unsigned short	port;
 
-	qboolean	channel;
+	qboolean	inchannel;
 
 	// client
 	char		szStatus[64];

@@ -1272,8 +1272,8 @@ Mod_LoadAliasFrame
 */
 void* Mod_LoadAliasFrame( void* pin, maliasframedesc_t* frame )
 {
-	trivertx_t* pframe, * pinframe;
-	int				i, j;
+	trivertx_t* pinframe;
+	int				i;
 	daliasframe_t* pdaliasframe;
 
 	pdaliasframe = (daliasframe_t*)pin;

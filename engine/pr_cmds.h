@@ -10,8 +10,8 @@ msurface_t* SurfaceAtPoint( model_t* pModel, mnode_t* node, vec_t* start, vec_t*
 struct mnode_s* PVSNode( struct mnode_s* node, vec_t* emins, vec_t* emaxs );
 
 float	RandomFloat( float flLow, float flHigh );
-int32	RandomLong( int32 lLow, int32 lHigh );
+int		RandomLong( long lLow, long lHigh );
 
-int PF_IsMapValid_I(char* mapname);
+int PF_IsMapValid_I( char* mapname );
 
 #endif // PR_CMDS_H

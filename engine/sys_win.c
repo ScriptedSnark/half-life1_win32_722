@@ -2,6 +2,7 @@
 
 #include "quakedef.h"
 #include "winquake.h"
+#include "pr_cmds.h"
 #include "exefuncs.h"
 #include "gameinfo.h"
 #include "profile.h"
@@ -834,9 +835,9 @@ DLL_EXPORT int GetGameInfo( struct GameInfo_s* pGI, char* pszChannel )
 	}
 
 #if 0 // TODO: Implement
-	if (pszChannel && pszChannel[0] && sub_1007A250(pszChannel))
+	if (pszChannel && pszChannel[0] && SV_CheckChannel(pszChannel))
 	{
-		gi.channel = TRUE;
+		gi.inchannel = TRUE;
 	}
 #endif
 
@@ -846,34 +847,34 @@ DLL_EXPORT int GetGameInfo( struct GameInfo_s* pGI, char* pszChannel )
 	memset(gi.szStatus, 0, sizeof(gi.szStatus));
 	switch (cls.state)
 	{
-		case ca_active:
-			sprintf(gi.szStatus, "Currently in a game");
-			break;
-		case ca_disconnected:
-			sprintf(gi.szStatus, "Disconnected");
-			break;
-		case ca_uninitialized:
-			if (cls.dl.download)
-			{
-				sprintf(gi.szStatus, "Downloading %s, %i percent complete", cls.dl.filename, cls.dl.percent);
-			}
-			else
-			{
-				sprintf(gi.szStatus, "Initializing and downloading");
-			}
-			break;
-		case ca_connected:
-			sprintf(gi.szStatus, "Connected to server");
-			break;
-		case ca_connecting:
-			sprintf(gi.szStatus, "Connecting");
-			break;
-		case ca_dedicated:
-			sprintf(gi.szStatus, "Running dedicated server");
-			break;
-		default:
-			sprintf(gi.szStatus, "?");
-			break;
+	case ca_active:
+		sprintf(gi.szStatus, "Currently in a game");
+		break;
+	case ca_disconnected:
+		sprintf(gi.szStatus, "Disconnected");
+		break;
+	case ca_uninitialized:
+		if (cls.dl.download)
+		{
+			sprintf(gi.szStatus, "Downloading %s, %i percent complete", cls.dl.filename, cls.dl.percent);
+		}
+		else
+		{
+			sprintf(gi.szStatus, "Initializing and downloading");
+		}
+		break;
+	case ca_connected:
+		sprintf(gi.szStatus, "Connected to server");
+		break;
+	case ca_connecting:
+		sprintf(gi.szStatus, "Connecting");
+		break;
+	case ca_dedicated:
+		sprintf(gi.szStatus, "Running dedicated server");
+		break;
+	default:
+		sprintf(gi.szStatus, "?");
+		break;
 	}
 
 	memcpy(pGI, &gi, sizeof(GameInfo_t));
@@ -1083,28 +1084,28 @@ static enginefuncs_t g_engfuncsExportedToDlls =
 	NULL,	// TODO: Implement
 	NULL,	// TODO: Implement
 	NULL,	// TODO: Implement
+	FunctionFromName,
+	NameForFunction,
+	NULL,	// TODO: Implement
+	Cmd_Args,
+	Cmd_Argv,
+	Cmd_Argc,
+	NULL,	// TODO: Implement
+	CRC32_Init,
+	CRC32_ProcessBuffer,
+	NULL,	// TODO: Implement
+	CRC32_Final,
+	RandomLong,
+	RandomFloat,
 	NULL,	// TODO: Implement
 	NULL,	// TODO: Implement
 	NULL,	// TODO: Implement
+	COM_LoadFileForMe,
+	COM_FreeFile,
 	NULL,	// TODO: Implement
-	NULL,	// TODO: Implement
-	NULL,	// TODO: Implement
-	NULL,	// TODO: Implement
-	NULL,	// TODO: Implement
-	NULL,	// TODO: Implement
-	NULL,	// TODO: Implement
-	NULL,	// TODO: Implement
-	NULL,	// TODO: Implement
-	NULL,	// TODO: Implement
-	NULL,	// TODO: Implement
-	NULL,	// TODO: Implement
-	NULL,	// TODO: Implement
-	NULL,	// TODO: Implement
-	NULL,	// TODO: Implement
-	NULL,	// TODO: Implement
-	NULL,	// TODO: Implement
-	NULL,	// TODO: Implement
-	NULL,	// TODO: Implement
+	COM_CompareFileTime,
+	COM_GetGameDir,
+	Cvar_RegisterVariable,
 	NULL,	// TODO: Implement
 	NULL,	// TODO: Implement
 	NULL,	// TODO: Implement
@@ -1137,7 +1138,7 @@ DISPATCHFUNCTION GetDispatch( char* pname )
 	return NULL;
 }
 
-const char* FindAddressInTable( extensiondll_t* pDll, uint32 function )
+char* FindAddressInTable( extensiondll_t* pDll, uint32 function )
 {
 	int	i;
 
@@ -1150,7 +1151,7 @@ const char* FindAddressInTable( extensiondll_t* pDll, uint32 function )
 	return NULL;
 }
 
-uint32 FindNameInTable( extensiondll_t* pDll, const char* pName )
+uint32 FindNameInTable( extensiondll_t* pDll, char* pName )
 {
 	int	i;
 
@@ -1164,7 +1165,7 @@ uint32 FindNameInTable( extensiondll_t* pDll, const char* pName )
 }
 
 // Gets the index of an exported function
-uint32 FunctionFromName( const char* pName )
+uint32 FunctionFromName( char* pName )
 {
 	int	i;
 	uint32 function;
@@ -1183,10 +1184,10 @@ uint32 FunctionFromName( const char* pName )
 }
 
 // Gets the name of an exported function
-const char* NameForFunction( uint32 function )
+char* NameForFunction( uint32 function )
 {
 	int i;
-	const char* pName;
+	char* pName;
 
 	for (i = 0; i < g_iextdllMac; i++)
 	{
