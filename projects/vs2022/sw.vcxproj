@@ -12,7 +12,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\common\const.h" />
-    <ClInclude Include="..\..\common\crc.h" />
     <ClInclude Include="..\..\common\dll_state.h" />
     <ClInclude Include="..\..\common\exefuncs.h" />
     <ClInclude Include="..\..\common\platform.h" />

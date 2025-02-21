@@ -1310,7 +1310,7 @@ void CL_CreateResourceList( void )
 	}
 	else
 	{
-		MD5_Hash_File(rgucMD5_hash, szFileName, FALSE, FALSE, NULL);
+		MD5_Hash_File(rgucMD5_hash, szFileName);
 	}
 
 	if (nSize)

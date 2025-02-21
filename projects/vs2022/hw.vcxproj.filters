@@ -248,9 +248,6 @@
     <ClInclude Include="..\..\common\const.h">
       <Filter>Header Files\common</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\common\crc.h">
-      <Filter>Header Files\common</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\engine\cvar.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -330,9 +327,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\engine\protocol.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\engine\crc.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\engine\pr_cmds.h">
@@ -489,6 +483,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\engine\r_studio.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\engine\crc.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

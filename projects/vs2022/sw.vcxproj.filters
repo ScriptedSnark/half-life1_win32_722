@@ -36,9 +36,6 @@
     <ClInclude Include="..\..\common\const.h">
       <Filter>Header Files\common</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\common\crc.h">
-      <Filter>Header Files\common</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\engine\server.h">
       <Filter>Header Files</Filter>
     </ClInclude>

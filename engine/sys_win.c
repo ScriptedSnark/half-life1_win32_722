@@ -1093,7 +1093,7 @@ static enginefuncs_t g_engfuncsExportedToDlls =
 	NULL,	// TODO: Implement
 	CRC32_Init,
 	CRC32_ProcessBuffer,
-	NULL,	// TODO: Implement
+	CRC32_ProcessByte,
 	CRC32_Final,
 	RandomLong,
 	RandomFloat,
