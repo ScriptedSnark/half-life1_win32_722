@@ -1348,10 +1348,111 @@ void* Mod_LoadAliasGroup( void* pin, maliasframedesc_t* frame )
 
 //=========================================================
 
+/*
+===============
+Mod_FloodFillSkin
 
-// TODO: Implement
+Fill background pixels so mipmapping doesn't have haloes - Ed
+===============
+*/
+
+typedef struct
+{
+	short		x, y;
+} floodfill_t;
 
 
+// must be a power of 2
+#define FLOODFILL_FIFO_SIZE 0x1000
+#define FLOODFILL_FIFO_MASK (FLOODFILL_FIFO_SIZE - 1)
+
+#define FLOODFILL_STEP( off, dx, dy ) \
+{ \
+	if (pos[off] == fillcolor) \
+	{ \
+		pos[off] = 255; \
+		fifo[inpt].x = x + (dx), fifo[inpt].y = y + (dy); \
+		inpt = (inpt + 1) & FLOODFILL_FIFO_MASK; \
+	} \
+	else if (pos[off] != 255) fdc = pos[off]; \
+}
+
+void Mod_FloodFillSkin( byte* skin, int skinwidth, int skinheight )
+{
+	byte				fillcolor = *skin; // assume this is the pixel to fill
+	floodfill_t			fifo[FLOODFILL_FIFO_SIZE];
+	int					inpt = 0, outpt = 0;
+	int					filledcolor = -1;
+
+	if (filledcolor == -1)
+	{
+		filledcolor = 0;
+	}
+
+	// can't fill to filled color or to transparent color (used as visited marker)
+	if ((fillcolor == filledcolor) || (fillcolor == 255))
+	{
+		//Con_Printf("not filling skin from %d to %d\n", fillcolor, filledcolor);
+		return;
+	}
+
+	fifo[inpt].x = 0, fifo[inpt].y = 0;
+	inpt = (inpt + 1) & FLOODFILL_FIFO_MASK;
+
+	while (outpt != inpt)
+	{
+		int			x = fifo[outpt].x, y = fifo[outpt].y;
+		int			fdc = filledcolor;
+		byte* pos = &skin[x + skinwidth * y];
+
+		outpt = (outpt + 1) & FLOODFILL_FIFO_MASK;
+
+		if (x > 0)				FLOODFILL_STEP(-1, -1, 0);
+		if (x < skinwidth - 1)	FLOODFILL_STEP(1, 1, 0);
+		if (y > 0)				FLOODFILL_STEP(-skinwidth, 0, -1);
+		if (y < skinheight - 1)	FLOODFILL_STEP(skinwidth, 0, 1);
+		skin[x + skinwidth * y] = fdc;
+	}
+}
+
+/*
+===============
+Mod_LoadAllSkins
+===============
+*/
+void* Mod_LoadAllSkins( int numskins, daliasskintype_t* pskintype )
+{
+	int		i;
+	char	name[32];
+	int		s;
+	byte* skin;
+
+	skin = (byte*)(pskintype + 1);
+
+	if (numskins < 1 || numskins > MAX_SKINS)
+		Sys_Error("Mod_LoadAliasModel: Invalid # of skins: %d\n", numskins);
+
+	s = pheader->skinwidth * pheader->skinheight;
+
+	for (i = 0; i < numskins; i++)
+	{
+		Mod_FloodFillSkin(skin, pheader->skinwidth, pheader->skinheight);
+
+		// save 8 bit texels for the player model to remap
+		// save 8 bit texels for the player model to remap
+		if (!strcmp(loadmodel->name, "progs/player.mdl"))
+		{
+			if (s > sizeof(player_8bit_texels))
+				Sys_Error("Player skin too large");
+			memcpy(player_8bit_texels, (byte*)(pskintype + 1), s);
+		}
+		sprintf(name, "%s_%i", loadmodel->name, i);
+		pheader->gl_texturenum[i] = GL_LoadTexture(name, GLT_STUDIO, pheader->skinwidth, pheader->skinheight, (byte*)(pskintype + 1), TRUE, TEX_TYPE_NONE, NULL);
+		pskintype = (daliasskintype_t*)((byte*)(pskintype + 1) + s);
+	}
+
+	return (void*)pskintype;
+}
 
 //=========================================================================
 
@@ -1362,7 +1463,161 @@ Mod_LoadAliasModel
 */
 void Mod_LoadAliasModel( model_t* mod, void* buffer )
 {
-	// TODO: Implement
+	int					i, j;
+	mdl_t* pinmodel;
+	stvert_t* pinstverts;
+	dtriangle_t* pintriangles;
+	int					version, numframes;
+	int					size;
+	daliasframetype_t* pframetype;
+	daliasskintype_t* pskintype;
+	int					start, end, total;
+
+	start = Hunk_LowMark();
+
+	pinmodel = (mdl_t*)buffer;
+
+	version = LittleLong(pinmodel->version);
+	if (version != ALIAS_VERSION)
+		Sys_Error("%s has wrong version number (%i should be %i)",
+			mod->name, version, ALIAS_VERSION);
+
+//
+// allocate space for a working header, plus all the data except the frames,
+// skin and group info
+//
+	size = sizeof(aliashdr_t)
+		+ (LittleLong(pinmodel->numframes) - 1) *
+		sizeof(pheader->frames[0]);
+	pheader = (aliashdr_t*)Hunk_AllocName(size, loadname);
+
+	mod->flags = LittleLong(pinmodel->flags);
+
+//
+// endian-adjust and copy the data, starting with the alias model header
+//
+	pheader->boundingradius = LittleFloat(pinmodel->boundingradius);
+	pheader->numskins = LittleLong(pinmodel->numskins);
+	pheader->skinwidth = LittleLong(pinmodel->skinwidth);
+	pheader->skinheight = LittleLong(pinmodel->skinheight);
+
+	if (pheader->skinheight > MAX_LBM_HEIGHT)
+		Sys_Error("model %s has a skin taller than %d", mod->name,
+			MAX_LBM_HEIGHT);
+
+	pheader->numverts = LittleLong(pinmodel->numverts);
+
+	if (pheader->numverts <= 0)
+		Sys_Error("model %s has no vertices", mod->name);
+
+	if (pheader->numverts > MAXALIASVERTS)
+		Sys_Error("model %s has too many vertices", mod->name);
+
+	pheader->numtris = LittleLong(pinmodel->numtris);
+
+	if (pheader->numtris <= 0)
+		Sys_Error("model %s has no triangles", mod->name);
+
+	pheader->numframes = LittleLong(pinmodel->numframes);
+	numframes = pheader->numframes;
+	if (numframes < 1)
+		Sys_Error("Mod_LoadAliasModel: Invalid # of frames: %d\n", numframes);
+
+	pheader->size = LittleFloat(pinmodel->size) * ALIAS_BASE_SIZE_RATIO;
+	mod->synctype = LittleLong(pinmodel->synctype);
+	mod->numframes = pheader->numframes;
+
+	for (i = 0; i < 3; i++)
+	{
+		pheader->scale[i] = LittleFloat(pinmodel->scale[i]);
+		pheader->scale_origin[i] = LittleFloat(pinmodel->scale_origin[i]);
+		pheader->eyeposition[i] = LittleFloat(pinmodel->eyeposition[i]);
+	}
+
+
+//
+// load the skins
+//
+	pskintype = (daliasskintype_t*)&pinmodel[1];
+	pskintype = (daliasskintype_t*)Mod_LoadAllSkins(pheader->numskins, pskintype);
+
+//
+// load base s and t vertices
+//
+	pinstverts = (stvert_t*)pskintype;
+
+	for (i = 0; i < pheader->numverts; i++)
+	{
+		stverts[i].onseam = LittleLong(pinstverts[i].onseam);
+		stverts[i].s = LittleLong(pinstverts[i].s);
+		stverts[i].t = LittleLong(pinstverts[i].t);
+	}
+
+//
+// load triangle lists
+//
+	pintriangles = (dtriangle_t*)&pinstverts[pheader->numverts];
+
+	for (i = 0; i < pheader->numtris; i++)
+	{
+		triangles[i].facesfront = LittleLong(pintriangles[i].facesfront);
+
+		for (j = 0; j < 3; j++)
+		{
+			triangles[i].vertindex[j] =
+				LittleLong(pintriangles[i].vertindex[j]);
+		}
+	}
+
+//
+// load the frames
+//
+	posenum = 0;
+	pframetype = (daliasframetype_t*)&pintriangles[pheader->numtris];
+
+	for (i = 0; i < numframes; i++)
+	{
+		aliasframetype_t	frametype;
+
+		frametype = LittleLong(pframetype->type);
+
+		if (frametype == ALIAS_SINGLE)
+		{
+			pframetype = (daliasframetype_t*)
+				Mod_LoadAliasFrame(pframetype + 1, &pheader->frames[i]);
+		}
+		else
+		{
+			pframetype = (daliasframetype_t*)
+				Mod_LoadAliasGroup(pframetype + 1, &pheader->frames[i]);
+		}
+	}
+
+	pheader->numposes = posenum;
+
+	mod->type = mod_alias;
+
+// FIXME: do this right
+	mod->mins[0] = mod->mins[1] = mod->mins[2] = -16;
+	mod->maxs[0] = mod->maxs[1] = mod->maxs[2] = 16;
+
+	//
+	// build the draw lists
+	//
+	GL_MakeAliasModelDisplayLists(mod, pheader);
+
+//
+// move the complete, relocatable alias model to the cache
+//	
+	end = Hunk_LowMark();
+	total = end - start;
+
+	Cache_Alloc(&mod->cache, total, loadname);
+	if (!mod->cache.data)
+		return;
+	memcpy(mod->cache.data, pheader, total);
+
+	Hunk_FreeToLowMark(start);
 }
 
 //=============================================================================
@@ -1413,19 +1668,19 @@ void* Mod_LoadSpriteFrame( void* pin, mspriteframe_t** ppframe, int framenum )
 	// Get the sprite texture type
 	switch (gSpriteTextureFormat)
 	{
-		case SPR_NORMAL:
-		case SPR_ADDITIVE:
-			textureType = TEX_TYPE_NONE;
-			break;
-		case SPR_INDEXALPHA:
-			textureType = TEX_TYPE_ALPHA_GRADIENT;
-			break;
-		case SPR_ALPHTEST:
-			textureType = TEX_TYPE_ALPHA;
-			break;
-		default:
-			textureType = TEX_TYPE_ALPHA_GRADIENT;
-			break;
+	case SPR_NORMAL:
+	case SPR_ADDITIVE:
+		textureType = TEX_TYPE_NONE;
+		break;
+	case SPR_INDEXALPHA:
+		textureType = TEX_TYPE_ALPHA_GRADIENT;
+		break;
+	case SPR_ALPHTEST:
+		textureType = TEX_TYPE_ALPHA;
+		break;
+	default:
+		textureType = TEX_TYPE_ALPHA_GRADIENT;
+		break;
 	}
 
 	if (gSpriteMipMap)
@@ -1576,4 +1831,21 @@ void Mod_LoadSpriteModel( model_t* mod, void* buffer )
 	mod->type = mod_sprite;
 }
 
-// TODO: Implement
+//=============================================================================
+
+/*
+================
+Mod_Print
+================
+*/
+void Mod_Print( void )
+{
+	int		i;
+	model_t* mod;
+
+	Con_Printf("Cached models:\n");
+	for (i = 0, mod = mod_known; i < mod_numknown; i++, mod++)
+	{
+		Con_Printf("%8p : %s\n", mod->cache.data, mod->name);
+	}
+}

@@ -34,6 +34,7 @@
     <ClCompile Include="..\..\engine\glHud.c" />
     <ClCompile Include="..\..\engine\glide.c" />
     <ClCompile Include="..\..\engine\GL_DRAW.C" />
+    <ClCompile Include="..\..\engine\GL_MESH.C" />
     <ClCompile Include="..\..\engine\GL_MODEL.C" />
     <ClCompile Include="..\..\engine\gl_refrag.c" />
     <ClCompile Include="..\..\engine\gl_rlight.c" />

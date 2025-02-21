@@ -232,6 +232,10 @@ colorVec R_LightVec( vec_t* start, vec_t* end );
 //
 void R_StoreEfrags( efrag_t** ppefrag );
 
+//
+// gl_mesh.c
+//
+void GL_MakeAliasModelDisplayLists( model_t* m, aliashdr_t* hdr );
 
 //
 // gl_rsurf.c

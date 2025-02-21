@@ -30,6 +30,28 @@ m*_t structures are in-memory
 #define	MAXLIGHTMAPS		4
 #define	PLANE_ANYZ			5
 
+#define ALIAS_Z_CLIP_PLANE	5
+
+// flags in finalvert_t.flags
+#define ALIAS_LEFT_CLIP				0x0001
+#define ALIAS_TOP_CLIP				0x0002
+#define ALIAS_RIGHT_CLIP			0x0004
+#define ALIAS_BOTTOM_CLIP			0x0008
+#define ALIAS_Z_CLIP				0x0010
+#define ALIAS_ONSEAM				0x0020
+#define ALIAS_XY_CLIP_MASK			0x000F
+
+#define	ZISCALE	((float)0x8000)
+
+#define CACHE_SIZE	32		// used to align key data structures
+
+#define ALIAS_MODEL_VERSION		0x006
+
+#define ALIAS_BASE_SIZE_RATIO		(1.0 / 11.0)
+// normalizing factor so player model works out to about
+//  1 pixel per triangle
+#define MAX_LBM_HEIGHT			480
+#define MAX_ALIAS_MODEL_VERTS	2000
 
 typedef struct msurface_s msurface_t;
 typedef struct decal_s decal_t;
@@ -464,5 +486,7 @@ void Mod_MarkClient( model_t* pModel );
 mleaf_t* Mod_PointInLeaf( vec_t* p, model_t* model );
 
 model_t* Mod_LoadModel( model_t* mod, qboolean crash );
+
+void Mod_Print( void );
 
 #endif // GL_MODEL_H
