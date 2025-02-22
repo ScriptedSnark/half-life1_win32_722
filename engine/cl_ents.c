@@ -1290,6 +1290,84 @@ void CL_LinkPlayers( void )
 	CL_PlayerFlashlight();
 }
 
+//======================================================================
+
+/*
+===============
+CL_SetSolid
+
+Builds all the pmove physents for the current frame
+===============
+*/
+void CL_SetSolidEntities( void )
+{
+	int		i;
+	frame_t* frame;
+	packet_entities_t* pak;
+	entity_state_t* state;
+	physent_t* pe;
+	model_t* model;
+
+	pmove.physents[0].model = cl.worldmodel;
+	VectorCopy(vec3_origin, pmove.physents[0].origin);
+	pmove.physents[0].info = 0;
+	pmove.numphysent = 1;
+
+	frame = &cl.frames[parsecountmod];
+	pak = &frame->packet_entities;
+
+	for (i = 0; i < pak->num_entities; i++)
+	{
+		state = &pak->entities[i];
+
+		if (!state->modelindex)
+			continue;
+
+		model = cl.model_precache[state->modelindex];
+		if (!model)
+			continue;
+
+		if (state->solid == SOLID_TRIGGER)
+			continue;
+		if (state->solid == SOLID_NOT && state->skin >= CONTENTS_EMPTY)
+			continue;
+
+		if (model->hulls[1].firstclipnode || model->type == mod_studio)
+		{
+			pe = &pmove.physents[pmove.numphysent];
+			if (model->type == mod_studio)
+			{
+				pe->model = NULL;
+				pe->studiomodel = cl.model_precache[state->modelindex];
+			}
+			else
+			{
+				pe->studiomodel = NULL;
+				pe->model = model;
+			}
+
+			VectorCopy(state->origin, pe->origin);
+			VectorCopy(state->angles, pe->angles);
+
+			VectorCopy(state->mins, pe->mins);
+			VectorCopy(state->maxs, pe->maxs);
+
+			pe->solid = state->solid;
+			pe->skin = state->skin;
+			pe->rendermode = state->rendermode;
+
+			pe->frame = state->frame;
+			pe->sequence = state->sequence;
+			memcpy(pe->controller, state->controller, 4);
+			memcpy(pe->blending, state->blending, 2);
+
+			pmove.numphysent++;
+		}
+	}
+}
+
+// TODO: Implement
+
 /*
 ==================
 CL_SetUpPlayerPrediction

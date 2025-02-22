@@ -9,6 +9,9 @@
 #include "r_triangle.h"
 #include "r_studio.h"
 
+// Hulls & planes
+#define STUDIO_NUM_HULLS	128
+
 // Pointer to header block for studio model data
 studiohdr_t* pstudiohdr;
 
@@ -35,6 +38,11 @@ vec3_t			lightvalues[MAXSTUDIOVERTS];
 
 // Do interpolation?
 int r_dointerp = 1;
+
+//
+// Global studio hull/clipnode/plane data to
+// copy the cached ones
+int				studio_hull_hitgroup[STUDIO_NUM_HULLS];
 
 // TODO: Implement
 
@@ -953,6 +961,11 @@ void R_StudioSetupBones( void )
 }
 
 // TODO: Implement
+
+int SV_HitgroupForStudioHull( int index )
+{
+	return studio_hull_hitgroup[index];
+}
 
 void R_StudioDrawHulls( void )
 {

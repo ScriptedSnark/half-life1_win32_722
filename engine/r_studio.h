@@ -21,4 +21,6 @@ void	R_StudioRenderFinal( void );
 void	GLR_StudioDrawShadow( void );
 void	R_StudioDrawPoints( void );
 
+int		SV_HitgroupForStudioHull( int index );
+
 #endif // R_STUDIO_H

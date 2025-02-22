@@ -1490,4 +1490,6 @@ void CL_ParseServerMessage( void )
 	SHOWNET("END OF MESSAGE");
 
 	// TODO: Implement
+
+	CL_SetSolidEntities();
 }

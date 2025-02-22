@@ -585,6 +585,7 @@ void CL_SetSolidPlayers( int playernum );
 void CL_SetUpPlayerPrediction( qboolean dopred );
 void CL_EmitEntities( void );
 void CL_ParsePacketEntities( qboolean delta );
+void CL_SetSolidEntities( void );
 void CL_ParsePlayerinfo( void );
 
 

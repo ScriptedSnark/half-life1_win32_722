@@ -68,9 +68,9 @@ float GlowBlend( cl_entity_t* pEntity )
 
 	pmove.usehull = 2;
 	if (r_traceglow.value)
-		trace = PM_PlayerTrace(r_origin, r_entorigin, PM_GLASS_IGNORE);
+		trace = PM_PlayerMove(r_origin, r_entorigin, PM_GLASS_IGNORE);
 	else
-		trace = PM_PlayerTrace(r_origin, r_entorigin, PM_GLASS_IGNORE | PM_STUDIO_IGNORE);
+		trace = PM_PlayerMove(r_origin, r_entorigin, PM_GLASS_IGNORE | PM_STUDIO_IGNORE);
 
 	if ((1.0 - trace.fraction) * dist > 8.0)
 		return 0.0;

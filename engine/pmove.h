@@ -115,6 +115,6 @@ extern	movevars_t		movevars;
 extern	playermove_t	pmove;
 extern	int		onground;
 
-pmtrace_t PM_PlayerTrace( vec_t* start, vec_t* end, int traceFlags );
+pmtrace_t PM_PlayerMove( vec_t* start, vec_t* end, int traceFlags );
 
 #endif // PMOVE_H
