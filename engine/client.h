@@ -538,10 +538,10 @@ void CL_ClearResourceLists( void );
 
 
 #define			MAX_VISEDICTS	512
-extern	int				cl_numvisedicts, cl_oldnumvisedicts, cl_numbeamentities;
-extern	cl_entity_t*	cl_visedicts, * cl_oldvisedicts, * cl_newvisedicts;
-extern	cl_entity_t		cl_visedicts_list[2][MAX_VISEDICTS];
-extern	cl_entity_t*	cl_beamentities[MAX_BEAMENTS];
+extern	int		cl_numvisedicts, cl_oldnumvisedicts, cl_numbeamentities;
+extern	cl_entity_t* cl_visedicts, * cl_newvisedicts;
+extern	cl_entity_t	cl_visedicts_list[2][MAX_VISEDICTS];
+extern	cl_entity_t* cl_beamentities[MAX_BEAMENTS];
 
 // TODO: Implement
 
@@ -598,10 +598,10 @@ void CL_PredictUsercmd( player_state_t* from, player_state_t* to, usercmd_t* u, 
 //
 // cl_cam.c
 //
-#define CAM_NONE	0
-#define CAM_TRACK	1
-// TODO: Implement
-//FF: valve added at least two new values (2 and 3), need to know what do these do
+#define CAM_NONE		0
+#define CAM_TRACK		1
+#define CAM_FIRSTPERSON	2
+#define CAM_TOPDOWN		3
 
 extern	int		autocam;
 extern int spec_track; // player# of who we are tracking

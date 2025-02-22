@@ -1631,12 +1631,12 @@ fired during this frame, handle the event by it's tag ( e.g., muzzleflash, sound
 */
 void R_StudioClientEvents( void )
 {
-	int i;
+	int				i;
 	mstudioevent_t* pevent;
 	mstudioseqdesc_t* pseqdesc;
 	mstudioattachment_t* pattachment;
-	float		flStart, flEnd;
-	float		flCurTime = 0.0, flLastTime = 0.0;
+	float			flStart, flEnd;
+	static float	flCurTime = 0.0, flLastTime = 0.0;
 
 	pseqdesc = (mstudioseqdesc_t*)((byte*)pstudiohdr + pstudiohdr->seqindex) + currententity->sequence;
 
@@ -1647,7 +1647,7 @@ void R_StudioClientEvents( void )
 		VectorTransform(pattachment[i].org, lighttransform[pattachment[i].bone], currententity->attachment[i]);
 	}
 
-	for (i = 0; i < 4; i++)
+	for (; i < 4; i++)
 	{
 		VectorCopy(currententity->origin, currententity->attachment[i]);
 	}

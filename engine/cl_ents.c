@@ -8,9 +8,9 @@
 
 int cl_playerindex; // player index
 
-int				cl_numvisedicts, cl_oldnumvisedicts, cl_numbeamentities;
-cl_entity_t*	cl_visedicts, * cl_oldvisedicts, *cl_newvisedicts;
-cl_entity_t		cl_visedicts_list[2][MAX_VISEDICTS];
+int			cl_numvisedicts, cl_oldnumvisedicts, cl_numbeamentities;
+cl_entity_t* cl_visedicts, * cl_newvisedicts;
+cl_entity_t	cl_visedicts_list[2][MAX_VISEDICTS];
 
 int packet_flags[166];
 
