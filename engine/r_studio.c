@@ -1668,8 +1668,8 @@ void R_StudioClientEvents( void )
 
 		el = CL_AllocElight(0);
 		VectorCopy(currententity->attachment[0], el->origin);
-		el->radius = 16.0;
-		el->decay = 320.0;
+		el->radius = 16;
+		el->decay = 320;
 		el->color.r = 255;
 		el->color.g = 192;
 		el->color.b = 64;

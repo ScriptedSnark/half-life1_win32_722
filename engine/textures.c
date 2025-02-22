@@ -103,7 +103,7 @@ qboolean TEX_InitFromWad( char* path )
 
 		texfile = fopen(wadPath, "rb");
 		texfiles[nTexFiles] = texfile;
-		if (!texfile)
+		if (!texfiles[nTexFiles])
 		{
 			COM_FileBase(pszWadFile, wadName);
 			sprintf(wadPath, "valve/%s", wadName);
@@ -111,7 +111,7 @@ qboolean TEX_InitFromWad( char* path )
 
 			texfile = fopen(wadPath, "rb");
 			texfiles[nTexFiles] = texfile;
-			if (!texfile)
+			if (!texfiles[nTexFiles])
 			{
 				Sys_Error("WARNING: couldn't open %s\n", wadPath);
 				return FALSE;
@@ -146,7 +146,7 @@ qboolean TEX_InitFromWad( char* path )
 		}
 
 		// next wad file
-		pszWadFile = strtok(0, ";");
+		pszWadFile = strtok(NULL, ";");
 	}
 
 	qsort(lumpinfo, nTexLumps, sizeof(texlumpinfo_t), lump_sorter);

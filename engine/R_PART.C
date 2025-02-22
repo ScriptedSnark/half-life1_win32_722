@@ -2922,7 +2922,9 @@ void R_BeamDraw( BEAM* pbeam, float frametime )
 			start = &cl_entities[BEAMENT_ENTITY(pbeam->startEntity)];
 			if (start->model)
 			{
-				float* attachmentPoint = R_GetAttachmentPoint(BEAMENT_ENTITY(pbeam->startEntity), BEAMENT_ATTACHMENT(pbeam->startEntity));
+				float* attachmentPoint;
+
+				attachmentPoint = R_GetAttachmentPoint(BEAMENT_ENTITY(pbeam->startEntity), BEAMENT_ATTACHMENT(pbeam->startEntity));
 				VectorCopy(attachmentPoint, pbeam->source);
 
 				pbeam->flags |= FBEAM_STARTVISIBLE;
@@ -2941,7 +2943,9 @@ void R_BeamDraw( BEAM* pbeam, float frametime )
 			end = &cl_entities[BEAMENT_ENTITY(pbeam->endEntity)];
 			if (end->model)
 			{
-				float* attachmentPoint = R_GetAttachmentPoint(BEAMENT_ATTACHMENT(pbeam->endEntity), BEAMENT_ATTACHMENT(pbeam->endEntity));
+				float* attachmentPoint;
+
+				attachmentPoint = R_GetAttachmentPoint(BEAMENT_ENTITY(pbeam->endEntity), BEAMENT_ATTACHMENT(pbeam->endEntity));
 				VectorCopy(attachmentPoint, pbeam->target);
 
 				pbeam->flags |= FBEAM_ENDVISIBLE;
