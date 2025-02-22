@@ -12,6 +12,8 @@ int				cl_numvisedicts, cl_oldnumvisedicts, cl_numbeamentities;
 cl_entity_t*	cl_visedicts, * cl_oldvisedicts, *cl_newvisedicts;
 cl_entity_t		cl_visedicts_list[2][MAX_VISEDICTS];
 
+int packet_flags[166];
+
 /*
 =========================================================================
 
@@ -718,17 +720,15 @@ CL_LinkPacketEntities
 */
 void CL_LinkPacketEntities( void )
 {
-	// TODO: Reimplement
-
-	cl_entity_t* ent, * newent, nullent;
+	cl_entity_t* ent, * ent2, nullent;
 	packet_entities_t* pack;
 	entity_state_t* s1, * s2;
 	float				f;
 	model_t* model;
 	vec3_t				old_origin;
 	float				autorotate;
-	int					i;
 	int					pnum;
+	int					flags;
 	dlight_t* dl;
 
 	pack = &cl.frames[cls.netchan.incoming_sequence & UPDATE_MASK].packet_entities;
@@ -756,18 +756,16 @@ void CL_LinkPacketEntities( void )
 		ent = &cl_visedicts[cl_numvisedicts];
 		cl_numvisedicts++;
 
-		newent = &cl_entities[s1->number];
+		ent2 = &cl_entities[s1->number];
 
-		memcpy(ent, newent, sizeof(cl_entity_t));
-		memcpy(&nullent, newent, sizeof(nullent));
+		memcpy(ent, ent2, sizeof(cl_entity_t));
+		memcpy(&nullent, ent2, sizeof(cl_entity_t));
 
-		// set index
-		ent->index = s1->number;
-
-		// set model
-		model = ent->model;
+		flags = packet_flags[ent->index >> 3] & (1 << (ent->index & 7));
 
 		CL_ProcessEntityUpdate(ent, s1, TRUE);
+
+		model = ent->model;
 
 		if (s1->entityType != ENTITY_NORMAL)
 		{
@@ -821,8 +819,7 @@ void CL_LinkPacketEntities( void )
 			}
 		}
 
-		// TODO: Implement
-		// what is that flag
+		// TODO: Implement (figure out the flag)
 		if ((s1->flags & 0x200000) && ent->lastmove < cl.time)
 		{
 			ent->movetype = MOVETYPE_STEP;
@@ -832,18 +829,23 @@ void CL_LinkPacketEntities( void )
 			ent->movetype = MOVETYPE_NONE;
 		}
 
-		if (FALSE)
+		if (flags)
 		{
-			// TODO: Implement
+			if (ent->effects & EF_NOINTERP)
+			{
+				ent->prevsequence = ent->sequence;
+				ent->animtime = cl.time;
+				ent->prevanimtime = cl.time;
+				VectorCopy(ent->origin, ent->prevorigin);
+				VectorCopy(ent->angles, ent->prevangles);
+			}
 		}
 		else
 		{
 			ent->resetlatched = TRUE;
-
 			ent->prevsequence = ent->sequence;
 			ent->animtime = cl.time;
 			ent->prevanimtime = cl.time;
-
 			VectorCopy(ent->origin, ent->prevorigin);
 			VectorCopy(ent->angles, ent->prevangles);
 		}
@@ -857,13 +859,9 @@ void CL_LinkPacketEntities( void )
 			{
 				dl = CL_AllocDlight(ent->index);
 				VectorCopy(ent->origin, dl->origin);
-				dl->origin[2] += 16.0;
-				dl->color.r = 250;
-				dl->color.g = 250;
-				dl->color.b = 250;
-				dl->radius = RandomFloat(400.0, 431.0);
-
-				// die on next frame
+				dl->origin[2] += 16;
+				dl->color.r = dl->color.g = dl->color.b = 250;
+				dl->radius = RandomFloat(400, 431);
 				dl->die = cl.time + 0.001;
 			}
 
@@ -871,12 +869,8 @@ void CL_LinkPacketEntities( void )
 			{
 				dl = CL_AllocDlight(ent->index);
 				VectorCopy(ent->origin, dl->origin);
-				dl->color.r = 100;
-				dl->color.g = 100;
-				dl->color.b = 100;
+				dl->color.r = dl->color.g = dl->color.b = 100;
 				dl->radius = RandomFloat(200.0, 231.0);
-
-				// die on next frame
 				dl->die = cl.time + 0.001;
 			}
 		}
@@ -887,18 +881,35 @@ void CL_LinkPacketEntities( void )
 
 			dl = CL_AllocDlight(ent->index);
 			VectorCopy(ent->origin, dl->origin);
-			dl->color.r = 100;
-			dl->color.g = 100;
-			dl->color.b = 100;
-			dl->radius = 200.0;
-
-			// die on next frame
+			dl->color.r = dl->color.g = dl->color.b = 100;
+			dl->radius = 200;
 			dl->die = cl.time + 0.001;
 		}
 
 		if (model)
 		{
-			// TODO: Implement
+			if (flags & EF_ROCKET)
+			{
+				R_RocketTrail(old_origin, ent->origin, 0);
+
+				dl = CL_AllocDlight(ent->index);
+				VectorCopy(ent->origin, dl->origin);
+				dl->color.r = dl->color.g = dl->color.b = 200;
+				dl->radius = 200;
+				dl->die = cl.time + 0.01;
+			}
+			else if (ent->model->flags & EF_GRENADE)
+				R_RocketTrail(old_origin, ent->origin, 1);
+			else if (ent->model->flags & EF_GIB)
+				R_RocketTrail(old_origin, ent->origin, 2);
+			else if (ent->model->flags & EF_ZOMGIB)
+				R_RocketTrail(old_origin, ent->origin, 4);
+			else if (ent->model->flags & EF_TRACER)
+				R_RocketTrail(old_origin, ent->origin, 3);
+			else if (ent->model->flags & EF_TRACER2)
+				R_RocketTrail(old_origin, ent->origin, 5);
+			else if (flags & EF_TRACER3)
+				R_RocketTrail(old_origin, ent->origin, 6);
 		}
 
 		memcpy(&cl_entities[ent->index], ent, sizeof(cl_entity_t));
@@ -1322,20 +1333,15 @@ Made up of: clients, packet_entities, nails, and tents
 */
 void CL_EmitEntities( void )
 {
-	int j;
-
-	int numvisedict;
-	cl_entity_t* visedict;
-	cl_entity_t* lerp;
+	int i, j;
+	cl_entity_t* ent, * slot;
 
 	if (cls.state != ca_active)
 	{
 		cl_oldnumvisedicts = 0;
 		cl_numvisedicts = 0;
 		cl_numbeamentities = 0;
-		// TODO: Implement
-		//memset(dword_E06C5B8, 0, sizeof(dword_E06C5B8));
-		//FF: this thing is probably used for interpolation and/or latchedvars
+		memset(packet_flags, 0, sizeof(packet_flags));
 		return;
 	}
 
@@ -1350,31 +1356,36 @@ void CL_EmitEntities( void )
 		cls.skipdemomessage = FALSE;
 	}
 
-	// TODO: Implement
-	//if (cls.demorecording)
-		// sub_E012F00( ); // <-- this is probably CL_WriteDLLUpdate but without client data
+	//if (cls.demorecording) TODO: Implement
+	//	CL_WriteUpdate();
 
 	cl_oldnumvisedicts = cl_numvisedicts;
-	cl_newvisedicts = visedict = cl_visedicts_list[(cls.netchan.incoming_sequence + 1) & 1];
+	slot = cl_visedicts_list[(cls.netchan.incoming_sequence + 1) & 1];
+	cl_newvisedicts = slot;
+
+	memset(packet_flags, 0, sizeof(packet_flags));
 
 	if (cl_numvisedicts > 0)
 	{
 		cl_newvisedicts = cl_visedicts_list[(cls.netchan.incoming_sequence + 1) & 1];
 
-		for (numvisedict = cl_numvisedicts; numvisedict != 0; --numvisedict, ++visedict)
+		for (i = 0; i < cl_numvisedicts; i++, ++slot)
 		{
-			lerp = &cl_entities[visedict->index];
+			if (slot->index <= 0)
+				continue;
 
-			// TODO: Implement
+			ent = &cl_entities[slot->index];
 
-			lerp->prevframe = visedict->prevframe;
+			packet_flags[slot->index >> 3] |= 1 << (slot->index & 7);
 
-			if (visedict->index > cl.maxclients)
-				lerp->frame = visedict->frame;
+			ent->prevframe = slot->prevframe;
+
+			if (slot->index > cl.maxclients)
+				ent->frame = slot->frame;
 
 			for (j = 0; j < 4; j++)
 			{
-				VectorCopy(visedict->origin, lerp->attachment[j]);
+				VectorCopy(slot->origin, ent->attachment[j]);
 			}
 		}
 	}
