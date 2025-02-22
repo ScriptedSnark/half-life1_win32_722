@@ -888,7 +888,7 @@ void CL_LinkPacketEntities( void )
 
 		if (model)
 		{
-			if (flags & EF_ROCKET)
+			if (ent->model->flags & EF_ROCKET)
 			{
 				R_RocketTrail(old_origin, ent->origin, 0);
 
@@ -908,7 +908,7 @@ void CL_LinkPacketEntities( void )
 				R_RocketTrail(old_origin, ent->origin, 3);
 			else if (ent->model->flags & EF_TRACER2)
 				R_RocketTrail(old_origin, ent->origin, 5);
-			else if (flags & EF_TRACER3)
+			else if (ent->model->flags & EF_TRACER3)
 				R_RocketTrail(old_origin, ent->origin, 6);
 		}
 
@@ -1169,6 +1169,7 @@ void CL_LinkPlayers( void )
 	cl_entity_t*	ent;
 	int				msec;
 	int				oldphysent;
+	int				flags;
 	dlight_t*		dl;
 
 	vec_t			previous_x, previous_y, previous_z;
@@ -1209,10 +1210,12 @@ void CL_LinkPlayers( void )
 				break;		// object list is full
 
 			ent = &cl_visedicts[cl_numvisedicts];
-			++cl_numvisedicts;
+			cl_numvisedicts++;
 
 			memcpy(ent, &cl_entities[j + 1], sizeof(cl_entity_t));
 			ent->index = j + 1;
+
+			flags = packet_flags[ent->index >> 3] & (1 << (ent->index & 7));
 
 			// only predict half the move to minimize overruns
 			msec = 500 * (playertime - state->state_time);
@@ -1232,8 +1235,7 @@ void CL_LinkPlayers( void )
 				oldphysent = pmove.numphysent;
 				CL_SetSolidPlayers(j);
 
-				// TODO: Implement
-				//CL_PredictUsercmd(state, &exact, &state->command, FALSE);
+				CL_PredictUsercmd(state, &exact, &state->command, FALSE);
 
 				pmove.numphysent = oldphysent;
 				VectorCopy(exact.origin, ent->origin);
@@ -1247,9 +1249,7 @@ void CL_LinkPlayers( void )
 			else
 				ent->scoreboard = 0;
 
-			// TODO: Implement
-			//FF: the dword_E06C5B8 bitvector was used for the first condition
-			if (FALSE || (ent->effects & EF_NOINTERP) != 0)
+			if (!flags || (ent->effects & EF_NOINTERP))
 			{
 				ent->prevsequence = ent->sequence;
 				ent->animtime = cl.time;
@@ -1287,8 +1287,7 @@ void CL_LinkPlayers( void )
 		}
 	}
 
-	// TODO: Implement
-	//FF: last function call to an unknown subroutine
+	CL_PlayerFlashlight();
 }
 
 /*
@@ -1369,7 +1368,7 @@ void CL_EmitEntities( void )
 	{
 		cl_newvisedicts = cl_visedicts_list[(cls.netchan.incoming_sequence + 1) & 1];
 
-		for (i = 0; i < cl_numvisedicts; i++, ++slot)
+		for (i = 0; i < cl_numvisedicts; i++, slot++)
 		{
 			if (slot->index <= 0)
 				continue;

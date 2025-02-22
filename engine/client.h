@@ -593,7 +593,7 @@ void CL_ParsePlayerinfo( void );
 //
 void CL_InitPrediction( void );
 void CL_PredictMove( void );
-
+void CL_PredictUsercmd( player_state_t* from, player_state_t* to, usercmd_t* u, qboolean spectator );
 
 //
 // cl_cam.c
