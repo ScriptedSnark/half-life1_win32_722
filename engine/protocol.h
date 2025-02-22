@@ -222,10 +222,20 @@
 #define	CM_IMPULSE	(1<<7)
 
 //==============================================
-#define	U_REMOVE	(1<<4)		// REMOVE this entity, don't add it
-#define	U_CUSTOM	(1<<13)		// Custom entity data (beams)
+
+// if the high bit of the servercmd is set, the low bits are fast update flags:
+#define	U_MOREBITS		(1<<0)
+#define	U_ORIGIN1		(1<<1)
+#define	U_ORIGIN2		(1<<2)
+#define	U_ORIGIN3		(1<<3)
+#define	U_REMOVE		(1<<4)		// REMOVE this entity, don't add it
+#define U_EVENMOREBITS	(1<<8)
+#define	U_CUSTOM		(1<<13)		// Custom entity data (beams)
+
+#define U_LONGENTITY	(1<<15)
 
 
+#define U_YETMOREBITS	(1<<23)
 
 
 //==============================================

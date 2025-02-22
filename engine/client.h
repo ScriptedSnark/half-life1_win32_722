@@ -541,7 +541,7 @@ void CL_ClearResourceLists( void );
 extern	int				cl_numvisedicts, cl_oldnumvisedicts, cl_numbeamentities;
 extern	cl_entity_t*	cl_visedicts, * cl_oldvisedicts, * cl_newvisedicts;
 extern	cl_entity_t		cl_visedicts_list[2][MAX_VISEDICTS];
-extern	cl_entity_t		cl_beamentities[MAX_BEAMENTS];
+extern	cl_entity_t*	cl_beamentities[MAX_BEAMENTS];
 
 // TODO: Implement
 

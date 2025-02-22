@@ -4,6 +4,7 @@
 #include "pr_cmds.h"
 #include "cl_tent.h"
 #include "pmove.h"
+#include "customentity.h"
 
 int cl_playerindex; // player index
 
@@ -28,29 +29,33 @@ Parse delta flags
 */
 int CL_ReadDeltaFlags( int* flags, int* bboxflags )
 {
-	// TODO: Refactor
+	int			bits, bboxbits;
+	int			num;
 
-	int v2;
-	int Byte;
-	int num;
+	bboxbits = 0;
 
-	v2 = 0;
-	Byte = MSG_ReadByte();
-	if ((Byte & 1) != 0)
-		Byte |= MSG_ReadByte() << 8;
-	if ((Byte & 0x100) != 0)
-		Byte |= MSG_ReadByte() << 16;
-	if ((Byte & 0x800000) != 0)
-		Byte |= MSG_ReadByte() << 24;
+	bits = MSG_ReadByte();
 
-	if (Byte < 0)
-		v2 = MSG_ReadByte();
-	if ((Byte & 0x8000) != 0)
+	if (bits & U_MOREBITS)
+		bits |= MSG_ReadByte() << 8;
+
+	if (bits & U_EVENMOREBITS)
+		bits |= MSG_ReadByte() << 16;
+
+	if (bits & U_YETMOREBITS)
+		bits |= MSG_ReadByte() << 24;
+
+	if (bits < 0)
+		bboxbits = MSG_ReadByte();
+
+	if (bits & U_LONGENTITY)
 		num = MSG_ReadShort();
 	else
 		num = MSG_ReadByte();
-	*flags = Byte;
-	*bboxflags = v2;
+
+	*flags = bits;
+	*bboxflags = bboxbits;
+
 	return num;
 }
 
@@ -64,88 +69,79 @@ Can go from either a baseline or a previous packet_entity
 int	custombitcounts[32];	/// just for protocol profiling
 void CL_ParseCustomEntity( entity_state_t* from, entity_state_t* to, int bits, int custombits, int number )
 {
-	// TODO: Refactor
-
-	int v5; // ecx
-	int Short; // eax
-	float Byte; // [esp+Ch] [ebp-4h]
-	float v8; // [esp+Ch] [ebp-4h]
-	float v9; // [esp+Ch] [ebp-4h]
-	float v10; // [esp+Ch] [ebp-4h]
-	float v11; // [esp+Ch] [ebp-4h]
+	int			i;
 
 	// set everything to the state we are delta'ing from
 	*to = *from;
 
-	v5 = 0;
-	to->entityType = 1;
+	to->entityType = ENTITY_BEAM;
 	to->number = number;
-	do
+
+	// count the bits for net profiling
+	for (i = 0; i < 32; i++)
 	{
-		if (((1 << v5) & bits) != 0)
-			++custombitcounts[v5];
-		++v5;
-	} while (v5 < 32);
+		if (bits & (1 << i))
+			custombitcounts[i]++;
+	}
 
 	to->flags = bits;
 
-	if ((bits & 2) != 0)
+	if (bits & U_BEAM_STARTX)
 		to->origin[0] = MSG_ReadCoord();
-	if ((bits & 4) != 0)
+
+	if (bits & U_BEAM_STARTY)
 		to->origin[1] = MSG_ReadCoord();
-	if ((bits & 8) != 0)
+
+	if (bits & U_BEAM_STARTZ)
 		to->origin[2] = MSG_ReadCoord();
-	if ((bits & 0x20) != 0)
+
+	if (bits & U_BEAM_ENDX)
 		to->angles[0] = MSG_ReadCoord();
-	if ((bits & 0x40) != 0)
+
+	if (bits & U_BEAM_ENDY)
 		to->angles[1] = MSG_ReadCoord();
-	if ((bits & 0x80) != 0)
+
+	if (bits & U_BEAM_ENDZ)
 		to->angles[2] = MSG_ReadCoord();
 
-	if ((bits & 0x200) != 0)
+	if (bits & U_BEAM_ENTS)
 	{
 		to->sequence = MSG_ReadShort();
 		to->skin = MSG_ReadShort();
 	}
 
-	if ((bits & 1024) != 0)
+	if (bits & U_BEAM_TYPE)
 		to->rendermode = MSG_ReadByte();
 
-	if ((bits & 2048) != 0)
+	if (bits & U_BEAM_MODEL)
 	{
-		Short = MSG_ReadShort();
-		to->modelindex = Short;
-		if (Short >= 512)
+		to->modelindex = MSG_ReadShort();
+		if (to->modelindex >= MAX_MODELS)
 			Host_Error("CL_ParseCustomEntity: bad model number");
 	}
-	if ((bits & 4096) != 0)
-	{
-		Byte = (float)MSG_ReadByte();
-		v8 = Byte * 0.1;
-		to->scale = v8;
-	}
-	if ((bits & 0x4000) != 0)
+
+	if (bits & U_BEAM_WIDTH)
+		to->scale = MSG_ReadByte() * 0.1;
+
+	if (bits & U_BEAM_NOISE)
 		to->body = MSG_ReadByte();
-	if ((bits & 0x10000) != 0)
+
+	if (bits & U_BEAM_RENDER)
 	{
 		to->rendercolor.r = MSG_ReadByte();
 		to->rendercolor.g = MSG_ReadByte();
 		to->rendercolor.b = MSG_ReadByte();
 		to->renderfx = MSG_ReadByte();
 	}
-	if ((bits & 0x20000) != 0)
+
+	if (bits & U_BEAM_BRIGHTNESS)
 		to->renderamt = MSG_ReadByte();
-	if ((bits & 0x80000) != 0)
-	{
-		v9 = (float)MSG_ReadByte();
-		to->frame = v9;
-	}
-	if ((bits & 0x40000) != 0)
-	{
-		v10 = (float)MSG_ReadByte();
-		v11 = v10 * 0.1;
-		to->animtime = v11;
-	}
+
+	if (bits & U_BEAM_FRAME)
+		to->frame = MSG_ReadByte();
+
+	if (bits & U_BEAM_SCROLL)
+		to->animtime = MSG_ReadByte() * 0.1;
 }
 
 /*
@@ -155,11 +151,12 @@ CL_ParseDelta
 Can go from either a baseline or a previous packet_entity
 ==================
 */
-int	deltabitcounts[32];	/// just for protocol profiling
+int	bitcounts[32];	/// just for protocol profiling
 void CL_ParseDelta( entity_state_t* from, entity_state_t* to, int bits, int bboxbits, int number )
 {
+	int			i;
+
 	int v5; // ecx
-	int i; // ecx
 	int Byte; // ebp
 	double v8; // st7
 	float v11; // [esp+10h] [ebp-Ch]
@@ -175,20 +172,22 @@ void CL_ParseDelta( entity_state_t* from, entity_state_t* to, int bits, int bbox
 	// set everything to the state we are delta'ing from
 	*to = *from;
 
-	v5 = 0;
-	to->entityType = 0;
+	to->entityType = ENTITY_NORMAL;
 	to->number = number;
+
+	// count the bits for net profiling
+	v5 = 0;
 	do
 	{
 		if (((1 << v5) & bits) != 0)
-			++deltabitcounts[v5];
+			++bitcounts[v5];
 		++v5;
 	} while (v5 < 32);
 
 	for (i = 0; i < 8; ++i)
 	{
 		if (((1 << i) & bboxbits) != 0)
-			++deltabitcounts[i + 32];
+			++bitcounts[i + 32];
 	}
 
 	to->flags = bits;
@@ -577,10 +576,12 @@ void CL_PrintEntity( cl_entity_t* ent )
 	Con_DPrintf("T %.2f", cl.time);
 	Con_DPrintf(":Gap %.2f\n", cl.time - ent->animtime);
 	Con_DPrintf("#%i", ent->index);
+
 	if (ent->model)
 		Con_DPrintf(":%s\n", ent->model->name);
 	else
 		Con_DPrintf(":?\n");
+
 	Con_DPrintf("AT %4.2f ST %4.2f S %i F %4.1f\n", ent->animtime, ent->sequencetime, ent->sequence, ent->frame);
 	Con_DPrintf("PA %4.2f PS %i FR %.1f\n", ent->prevanimtime, ent->prevsequence, ent->framerate);
 	Con_DPrintf("C0 %i:%i BL %i:%i\n", ent->controller[0], ent->prevcontroller[0], ent->blending[0], ent->prevblending[0]);
@@ -588,34 +589,38 @@ void CL_PrintEntity( cl_entity_t* ent )
 	Con_DPrintf("PO: %.0f %.0f %.0f\n", ent->prevorigin[0], ent->prevorigin[1], ent->prevorigin[2]);
 	Con_DPrintf("RM:  %i RA: %i RX: %i PF %4.2f\n", ent->rendermode, ent->renderamt, ent->renderfx, ent->prevframe);
 	Con_DPrintf("MT: %i:", ent->movetype);
-	if ((ent->effects & EF_NOINTERP) != 0)
+
+	if (ent->effects & EF_NOINTERP)
 		Con_DPrintf("NoInterp ");
-	if ((ent->effects & EF_NODRAW) != 0)
+	if (ent->effects & EF_NODRAW)
 		Con_DPrintf("NoDraw ");
-	if ((ent->effects & EF_LIGHT) != 0)
+	if (ent->effects & EF_LIGHT)
 		Con_DPrintf("Light ");
-	if ((ent->effects & EF_BRIGHTFIELD) != 0)
+	if (ent->effects & EF_BRIGHTFIELD)
 		Con_DPrintf("BFLD ");
-	if ((ent->effects & EF_MUZZLEFLASH) != 0)
+	if (ent->effects & EF_MUZZLEFLASH)
 		Con_DPrintf("MUZ ");
-	if ((ent->effects & EF_BRIGHTLIGHT) != 0)
+	if (ent->effects & EF_BRIGHTLIGHT)
 		Con_DPrintf("BLT ");
-	if ((ent->effects & EF_DIMLIGHT) != 0)
+	if (ent->effects & EF_DIMLIGHT)
 		Con_DPrintf("Dim ");
-	if ((ent->effects & EF_INVLIGHT) != 0)
+	if (ent->effects & EF_INVLIGHT)
 		Con_DPrintf("Inv ");
+
 	if (ent->resetlatched)
 		Con_DPrintf("F ");
+
 	Con_DPrintf("\n");
 }
 
 /*
-===============
-CL_UpdateEntity
+==================
+CL_ProcessEntityUpdate
 
-===============
+Update entity data after new frame
+==================
 */
-void CL_UpdateEntity( cl_entity_t* ent, entity_state_t* state, qboolean sync )
+void CL_ProcessEntityUpdate( cl_entity_t* ent, entity_state_t* state, qboolean sync )
 {
 	ent->index = state->number;
 
@@ -715,7 +720,7 @@ void CL_LinkPacketEntities( void )
 {
 	// TODO: Reimplement
 
-	cl_entity_t* ent, * ent2, nullent;
+	cl_entity_t* ent, * newent, nullent;
 	packet_entities_t* pack;
 	entity_state_t* s1, * s2;
 	float				f;
@@ -751,10 +756,10 @@ void CL_LinkPacketEntities( void )
 		ent = &cl_visedicts[cl_numvisedicts];
 		cl_numvisedicts++;
 
-		ent2 = &cl_entities[s1->number];
+		newent = &cl_entities[s1->number];
 
-		memcpy(ent, ent2, sizeof(cl_entity_t));
-		memcpy(&nullent, ent2, sizeof(nullent));
+		memcpy(ent, newent, sizeof(cl_entity_t));
+		memcpy(&nullent, newent, sizeof(nullent));
 
 		// set index
 		ent->index = s1->number;
@@ -762,15 +767,13 @@ void CL_LinkPacketEntities( void )
 		// set model
 		model = ent->model;
 
-		CL_UpdateEntity(ent, s1, TRUE);
+		CL_ProcessEntityUpdate(ent, s1, TRUE);
 
 		if (s1->entityType != ENTITY_NORMAL)
 		{
 			ent->movetype = s1->modelindex;
 			if (model && model->type != mod_sprite)
-			{
 				Sys_Error("Bad model on beam");
-			}
 
 			ent->prevsequence = ent->sequence;
 
@@ -786,7 +789,7 @@ void CL_LinkPacketEntities( void )
 				continue;
 			}
 
-			cl_beamentities[cl_numbeamentities + 1] = cl_entities[ent->index];
+ 			cl_beamentities[cl_numbeamentities] = &cl_entities[ent->index];
 			cl_numbeamentities++;
 			continue;
 		}
@@ -1319,6 +1322,8 @@ Made up of: clients, packet_entities, nails, and tents
 */
 void CL_EmitEntities( void )
 {
+	int j;
+
 	int numvisedict;
 	cl_entity_t* visedict;
 	cl_entity_t* lerp;
@@ -1365,12 +1370,12 @@ void CL_EmitEntities( void )
 			lerp->prevframe = visedict->prevframe;
 
 			if (visedict->index > cl.maxclients)
-			{
 				lerp->frame = visedict->frame;
-			}
 
-			// TODO: Implement
-			//FF: cl_entity_s' pad5 was used here, need to know what's that
+			for (j = 0; j < 4; j++)
+			{
+				VectorCopy(visedict->origin, lerp->attachment[j]);
+			}
 		}
 	}
 
@@ -1382,7 +1387,6 @@ void CL_EmitEntities( void )
 	cl.frame_lerp = CL_LerpPoint();
 
 	CL_LinkPlayers();
-
 	CL_LinkPacketEntities();
 
 	CL_TempEntUpdate();

@@ -34,7 +34,7 @@ particle_t* active_particles, * free_particles, * gpActiveTracers;
 particle_t* particles;
 int			r_numparticles;
 int			cl_numbeamentities;
-cl_entity_t	cl_beamentities[MAX_BEAMENTS];
+cl_entity_t* cl_beamentities[MAX_BEAMENTS];
 
 vec3_t			r_pright, r_pup, r_ppn;
 
@@ -1800,7 +1800,7 @@ void R_DrawBeamEntList( float frametime )
 
 	for (i = 0; i < cl_numbeamentities; i++)
 	{
-		ent = &cl_beamentities[i];
+		ent = cl_beamentities[i];
 
 		// Set up the beam
 		beamType = ent->rendermode & 0xF;
