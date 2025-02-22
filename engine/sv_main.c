@@ -634,6 +634,8 @@ General initialization of the server
 */
 void SV_Init( void )
 {
+	int i;
+
 	Cvar_RegisterVariable(&sv_password);
 
 	// TODO: Implement
@@ -664,6 +666,13 @@ void SV_Init( void )
 
 	Cvar_RegisterVariable(&sv_cheats);
 	Cvar_RegisterVariable(&sv_spectatormaxspeed);
+
+	// TODO: Implement
+	
+	for (i = 0; i < MAX_MODELS; i++)
+	{
+		sprintf(localmodels[i], "*%i", i);
+	}
 
 	// TODO: Implement
 }

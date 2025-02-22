@@ -440,8 +440,19 @@ void CL_Disconnect( void )
 	// TODO: Implement
 }
 
+/*
+=====================
+CL_Disconnect_f
 
-
+Disconnects user from the server
+=====================
+*/
+void CL_Disconnect_f( void )
+{
+	CL_Disconnect();
+	if (sv.active)
+		Host_ShutdownServer(FALSE);
+}
 
 // HL1 CD Key
 #define GUID_LEN 13
@@ -1178,19 +1189,6 @@ void CL_SendCmd( void )
 // TODO: Implement
 
 /*
-=====================
-CL_Disconnect_f
-
-Disconnects user from the server
-=====================
-*/
-void CL_Disconnect_f( void )
-{
-	// TODO: Implement
-}
-
-
-/*
 =================
 CL_SendResourceListBlock
 
@@ -1399,6 +1397,12 @@ void CL_Init( void )
 	// TODO: Implement
 
 	Cvar_RegisterVariable(&cl_printplayers);
+
+	// TODO: Implement
+
+	Cmd_AddCommand("disconnect", CL_Disconnect_f);
+
+	// TODO: Implement
 
 	Cmd_AddCommand("snapshot", CL_TakeSnapshot_f);
 	// TODO: Implement

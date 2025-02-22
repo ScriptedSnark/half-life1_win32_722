@@ -27,10 +27,32 @@ typedef struct
 	int         hitgroup;
 } pmtrace_t;
 
+
+#define	MAX_PHYSENTS 600 		  // Must have room for all entities in the world.
 typedef struct
 {
-	// TODO: Implement
-	
+	vec3_t			origin;               // Model's origin in world coordinates.
+	model_t*		model;		          // only for bsp models
+	model_t*		studiomodel;		  // SOLID_BBOX, but studio clip intersections.
+	vec3_t			mins, maxs;	          // only for non-bsp models
+	int				info;		          // For client or server to use to identify (index into edicts or cl_entities)
+	vec3_t			angles;               // rotated entities need this info for hull testing to work.
+
+	int				solid;				  // Triggers and func_door type WATER brushes are SOLID_NOT
+	int				skin;                 // BSP Contents for such things like fun_door water brushes.
+	int				rendermode;			  // So we can ignore glass
+
+	// Complex collision detection.
+	float			frame;
+	int				sequence;
+	byte			controller[4];
+	byte			blending[2];
+} physent_t;
+
+
+typedef struct
+{
+	int			player_index;	// So we don't try to run the PM_CheckStuck nudging too quickly.
 	qboolean	server;			// For debugging, are we running physics code on server side?
 
 	vec3_t		origin;			// Movement origin.
@@ -43,12 +65,7 @@ typedef struct
 	vec3_t		view_ofs;		// Our eye position.
 
 	int			flags;			// FL_ONGROUND, FL_DUCKING, etc.
-
-	int			usehull;
-
-	// TODO: Implement
-	
-
+	int			usehull;		// 0 = regular player hull, 1 = ducked player hull, 2 = point hull
 	float		gravity;		// Our current gravity and friction.
 	float		friction;
 	int			oldbuttons;		// Buttons last usercmd
@@ -62,15 +79,14 @@ typedef struct
 	// world state
 	// Number of entities to clip against.
 	int			numphysent;
+	physent_t	physents[MAX_PHYSENTS];
 
-	// TODO: Implement
-	
-
+	// input to run through physics.
 	usercmd_t	cmd;
-
-
-	// TODO: Implement
-
+	
+	// Trace results for objects we collided with.
+	int				numtouch;
+	pmtrace_t		touchindex[MAX_PHYSENTS];
 } playermove_t;
 
 // movevars_t                  // Physics variables.
