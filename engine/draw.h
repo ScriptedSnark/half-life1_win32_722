@@ -72,6 +72,7 @@ void	Draw_FadeScreen( void );
 void	Draw_BeginDisc( void );
 void	Draw_EndDisc( void );
 int		Draw_StringLen( char* psz );
+int		Draw_MessageCharacterAdd( int x, int y, int num, int rr, int gg, int bb );
 int		Draw_MessageFontInfo( short* pWidth );
 int		Draw_String( int x, int y, char* str );
 qpic_t* Draw_PicFromWad( char* name );

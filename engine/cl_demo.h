@@ -23,6 +23,9 @@ typedef struct demoheader_s
 } demoheader_t;
 
 
+extern client_textmessage_t tm_demomessage;
+
+
 void CL_StopPlayback( void );
 void CL_WriteDemoUpdate( void );
 void CL_WriteDLLUpdate( client_data_t* cdata );

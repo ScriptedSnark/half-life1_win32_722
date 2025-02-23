@@ -198,7 +198,7 @@ int Draw_MessageFontInfo( short* pWidth )
 	return draw_creditsfont->rowheight;
 }
 
-int Draw_MessageCharacterAdd( int x, int y, int num, int rr, int gg, int bb, unsigned int font )
+int Draw_MessageCharacterAdd( int x, int y, int num, int rr, int gg, int bb )
 {
 	int				row, col;
 	int				rowheight, charwidth;

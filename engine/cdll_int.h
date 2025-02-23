@@ -62,8 +62,8 @@ typedef struct
 	float	fadeout;
 	float	holdtime;
 	float	fxtime;
-	char* pName;
-	char* pMessage;
+	const char* pName;
+	const char* pMessage;
 } client_textmessage_t;
 
 typedef struct

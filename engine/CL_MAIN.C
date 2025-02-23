@@ -6,6 +6,7 @@
 #include "hashpak.h"
 #include "cl_demo.h"
 #include "cl_tent.h"
+#include "tmessage.h"
 
 
 // Only send this many requests before timing out.
@@ -1349,7 +1350,7 @@ void CL_Init( void )
 {
 	CL_InitInput();
 	CL_InitTEnts();
-//	TextMessageInit(); TODO: Implement
+	TextMessageInit();
 	ClientDLL_HudInit();
 	ClientDLL_HudVidInit();
 

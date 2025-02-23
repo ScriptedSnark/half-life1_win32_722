@@ -2,6 +2,8 @@
 #include "winquake.h"
 #include "pmove.h"
 
+#define PLAYER_DUCKING_MULTIPLIER 0.333
+
 cvar_t	cl_nopred = { "cl_nopred", "0" };
 cvar_t	cl_pushlatency = { "pushlatency", "-500" };
 cvar_t	cl_dumpents = { "cl_dumpents", "0" };
@@ -57,14 +59,11 @@ void CL_PredictUsercmd( player_state_t* from, player_state_t* to, usercmd_t* u, 
 	pmove.gravity = 1.0;
 	pmove.flags = from->physflags;
 
-//
-// adjust movement for ducking
-//
 	if (pmove.flags & FL_DUCKING)
 	{
-		cmd.forwardmove *= 0.333;
-		cmd.sidemove *= 0.333;
-		cmd.upmove *= 0.333;
+		cmd.forwardmove *= PLAYER_DUCKING_MULTIPLIER;
+		cmd.sidemove *= PLAYER_DUCKING_MULTIPLIER;
+		cmd.upmove *= PLAYER_DUCKING_MULTIPLIER;
 		pmove.usehull = 1;
 	}
 

@@ -1,7 +1,27 @@
 // cl_demo.c
 
 #include "quakedef.h"
+#include "tmessage.h"
 #include "cl_demo.h"
+
+// TODO: Implement
+
+char	gDemoMessageBuffer[4];
+
+client_textmessage_t tm_demomessage =
+{
+	0, // effect
+	255, 255, 255, 255,
+	255, 255, 255, 255,
+	-1.0f, // x
+	-1.0f, // y
+	0.0f, // fadein
+	0.0f, // fadeout
+	0.0f, // holdtime
+	0.0f, // fxTime,
+	DEMO_MESSAGE,  // pName message name.
+	gDemoMessageBuffer   // pMessage
+};
 
 // TODO: Implement
 
