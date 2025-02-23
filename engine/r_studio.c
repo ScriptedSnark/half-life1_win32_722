@@ -960,6 +960,92 @@ void R_StudioSetupBones( void )
 	}
 }
 
+void MatrixCopy( float(*in)[4], float(*out)[4] )
+{
+	memcpy(out, in, sizeof(float) * 3 * 4);
+}
+
+/*
+====================
+R_StudioDrawPlayer
+
+Merge bones of a child model with current one
+====================
+*/
+void R_StudioMergeBones( studiohdr_t* psubstudiohdr, model_t* psubmodel )
+{
+	int					i, j;
+	double				f;
+
+	mstudiobone_t* pbones, * psubbones;
+	mstudioseqdesc_t* pseqdesc;
+	mstudioanim_t* panim;
+
+	static float		pos[MAXSTUDIOBONES][3];
+	float				bonematrix[3][4];
+	static vec4_t		q[MAXSTUDIOBONES];
+
+	if (currententity->sequence >= pstudiohdr->numseq)
+	{
+		currententity->sequence = 0;
+	}
+
+	pseqdesc = (mstudioseqdesc_t*)((byte*)pstudiohdr + pstudiohdr->seqindex) + currententity->sequence;
+
+	f = CL_StudioEstimateFrame(pseqdesc);
+
+	if (currententity->prevframe > f)
+	{
+		//Con_DPrintf("%f %f\n", currententity->prevframe, f);
+	}
+
+	panim = R_GetAnim(psubmodel, pseqdesc);
+	R_StudioCalcRotations(pos, q, pseqdesc, panim, f);
+
+	pbones = (mstudiobone_t*)((byte*)pstudiohdr + pstudiohdr->boneindex);
+	psubbones = (mstudiobone_t*)((byte*)psubstudiohdr + psubstudiohdr->boneindex);
+
+	for (i = 0; i < pstudiohdr->numbones; i++)
+	{
+		for (j = 0; j < psubstudiohdr->numbones; j++)
+		{
+			if (_stricmp(pbones[i].name, psubbones[j].name) == 0)
+			{
+				MatrixCopy(bonetransform[j], bonetransform[i]);
+				MatrixCopy(lighttransform[j], lighttransform[i]);
+				break;
+			}
+		}
+		if (j >= psubstudiohdr->numbones)
+		{
+			QuaternionMatrix(q[i], bonematrix);
+
+			bonematrix[0][3] = pos[i][0];
+			bonematrix[1][3] = pos[i][1];
+			bonematrix[2][3] = pos[i][2];
+
+			if (pbones[i].parent == -1)
+			{
+#if defined( GLQUAKE )
+				R_ConcatTransforms(rotationmatrix, bonematrix, bonetransform[i]);
+				R_ConcatTransforms(rotationmatrix, bonematrix, lighttransform[i]);
+#else
+				R_ConcatTransforms(aliastransform, bonematrix, bonetransform[i]);
+				R_ConcatTransforms(rotationmatrix, bonematrix, lighttransform[i]);
+#endif
+
+				// Apply client-side effects to the transformation matrix
+				CL_FxTransform(currententity, bonetransform[i][0]);
+			}
+			else
+			{
+				R_ConcatTransforms(bonetransform[pbones[i].parent], bonematrix, bonetransform[i]);
+				R_ConcatTransforms(lighttransform[pbones[i].parent], bonematrix, lighttransform[i]);
+			}
+		}
+	}
+}
+
 // TODO: Implement
 
 int SV_HitgroupForStudioHull( int index )
@@ -1350,11 +1436,78 @@ R_StudioDrawPlayer
 */
 int R_StudioDrawPlayer( int flags, player_state_t* pplayer )
 {
-	// TODO: Implement
+	alight_t lighting;
+	vec3_t dir;
+
+	VectorCopy(currententity->origin, r_entorigin);
+	VectorSubtract(r_origin, r_entorigin, modelorg);
+
+	pstudiohdr = (studiohdr_t*)Mod_Extradata(currententity->model);
+
+	R_StudioSetUpTransform(0);
+
+	if (flags & STUDIO_RENDER)
+	{
+		// see if the bounding box lets us trivially reject, also sets
+		if (!R_StudioCheckBBox())
+			return 0;
+
+		r_amodels_drawn++;
+		r_smodels_total++; // render data cache cookie
+
+		if (pstudiohdr->numbodyparts == 0)
+			return 1;
+	}
+
+	R_StudioSetupBones();
+
+	if (flags & STUDIO_EVENTS)
+	{
+		R_StudioClientEvents();
+
+		// copy attachments into global entity array
+		if (currententity->index > 0)
+			memcpy(cl_entities[currententity->index].attachment, currententity->attachment, sizeof(vec3_t) * 4);
+	}
+
+	if (flags & STUDIO_RENDER)
+	{
+		lighting.plightvec = dir;
+		R_StudioDynamicLight(currententity, &lighting);
+
+		R_StudioEntityLight(&lighting);
+
+		// model and frame independant
+		R_StudioSetupLighting(&lighting);
+
+		R_StudioRenderFinal();
+
+		if (pplayer->weaponmodel)
+		{
+			studiohdr_t* saveheader;
+			model_t* pweaponmodel;
+
+			saveheader = pstudiohdr;
+			pweaponmodel = cl.model_precache[pplayer->weaponmodel];
+
+			pstudiohdr = (studiohdr_t*)Mod_Extradata(pweaponmodel);
+
+			R_StudioMergeBones(saveheader, pweaponmodel);
+
+			R_StudioRenderFinal();
+		}
+	}
+
 	return 1;
 }
 
-// Apply lighting effects to a model
+/*
+====================
+R_StudioDynamicLight
+
+Apply lighting effects to a model
+====================
+*/
 void R_StudioDynamicLight( cl_entity_t* ent, alight_t* plight )
 {
 	int			lnum;
