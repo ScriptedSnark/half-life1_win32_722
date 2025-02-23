@@ -24,14 +24,13 @@ PACKET ENTITY PARSING / LINKING
 
 /*
 ==================
-CL_ReadDeltaFlags
+CL_ParseDeltaFlags
 
-Parse delta flags
 ==================
 */
-int CL_ReadDeltaFlags( int* flags, int* bboxflags )
+int CL_ParseDeltaFlags( int* flags, int* bboxflags )
 {
-	int			bits, bboxbits;
+	int			i, bits, bboxbits;
 	int			num;
 
 	bboxbits = 0;
@@ -39,13 +38,23 @@ int CL_ReadDeltaFlags( int* flags, int* bboxflags )
 	bits = MSG_ReadByte();
 
 	if (bits & U_MOREBITS)
-		bits |= MSG_ReadByte() << 8;
+	{
+		// read in the low order bits
+		i = MSG_ReadByte();
+		bits |= i << 8;
+	}
 
 	if (bits & U_EVENMOREBITS)
-		bits |= MSG_ReadByte() << 16;
+	{
+		i = MSG_ReadByte();
+		bits |= i << 16;
+	}
 
 	if (bits & U_YETMOREBITS)
-		bits |= MSG_ReadByte() << 24;
+	{
+		i = MSG_ReadByte();
+		bits |= i << 24;
+	}
 
 	if (bits < 0)
 		bboxbits = MSG_ReadByte();
@@ -158,19 +167,6 @@ void CL_ParseDelta( entity_state_t* from, entity_state_t* to, int bits, int bbox
 {
 	int			i;
 
-	int v5; // ecx
-	int Byte; // ebp
-	double v8; // st7
-	float v11; // [esp+10h] [ebp-Ch]
-	float Word; // [esp+10h] [ebp-Ch]
-	float v13; // [esp+10h] [ebp-Ch]
-	float v14; // [esp+10h] [ebp-Ch]
-	float v15; // [esp+10h] [ebp-Ch]
-	float v16; // [esp+10h] [ebp-Ch]
-	float v17; // [esp+10h] [ebp-Ch]
-	float v18; // [esp+18h] [ebp-4h]
-	float v19; // [esp+18h] [ebp-4h]
-
 	// set everything to the state we are delta'ing from
 	*to = *from;
 
@@ -178,106 +174,104 @@ void CL_ParseDelta( entity_state_t* from, entity_state_t* to, int bits, int bbox
 	to->number = number;
 
 	// count the bits for net profiling
-	v5 = 0;
-	do
+	for (i = 0; i < 32; i++)
 	{
-		if (((1 << v5) & bits) != 0)
-			++bitcounts[v5];
-		++v5;
-	} while (v5 < 32);
+		if ((1 << i) & bits)
+			bitcounts[i]++;
+	}
 
-	for (i = 0; i < 8; ++i)
+	for (i = 0; i < 8; i++)
 	{
-		if (((1 << i) & bboxbits) != 0)
-			++bitcounts[i + 32];
+		if ((1 << i) & bboxbits)
+			bitcounts[32 + i]++;
 	}
 
 	to->flags = bits;
 
-	if ((bits & 0x800) != 0)
+	if (bits & U_MODELINDEX)
 		to->modelindex = MSG_ReadShort();
 
-	if ((bits & 0x80) != 0)
-	{
-		v11 = (double)MSG_ReadWord() / 256.0;
-		to->frame = v11;
-	}
+	if (bits & U_FRAME)
+		to->frame = MSG_ReadWord() / 256.0;
 
-	if ((bits & 0x40) != 0)
+	if (bits & U_MOVETYPE)
 		to->movetype = MSG_ReadByte();
 
-	if ((bits & 0x40000) != 0)
+	if (bits & U_COLORMAP)
 		to->colormap = MSG_ReadByte();
 
-	if ((bits & 0x80000) != 0)
+	if (bits & U_CONTENTS)
 	{
 		to->skin = MSG_ReadShort();
 		to->solid = MSG_ReadByte();
 	}
 
-	if ((bits & 0x40000000) != 0)
-	{
-		Word = (float)MSG_ReadWord();
-		to->scale = Word * 0.00390625;
-	}
+	if (bits & U_SCALE)
+		to->scale = MSG_ReadWord() / 256.0;
 
-	if ((bits & 0x4000) != 0)
+	if (bits & U_EFFECTS)
 		to->effects = MSG_ReadByte();
-	if ((bits & 2) != 0)
+
+	if (bits & U_ORIGIN1)
 		to->origin[0] = MSG_ReadCoord();
-	if ((bits & 0x200) != 0)
+
+	if (bits & U_ANGLE1)
 		to->angles[0] = MSG_ReadHiresAngle();
-	if ((bits & 4) != 0)
+
+	if (bits & U_ORIGIN2)
 		to->origin[1] = MSG_ReadCoord();
-	if ((bits & 0x20) != 0)
+
+	if (bits & U_ANGLE2)
 		to->angles[1] = MSG_ReadHiresAngle();
-	if ((bits & 8) != 0)
+
+	if (bits & U_ORIGIN3)
 		to->origin[2] = MSG_ReadCoord();
-	if ((bits & 0x400) != 0)
+
+	if (bits & U_ANGLE3)
 		to->angles[2] = MSG_ReadHiresAngle();
 
-	if ((bits & 0x1000) != 0)
+	if (bits & U_SEQUENCE)
 	{
-		Byte = MSG_ReadByte();
-		v13 = (float)(int)(__int64)(cl.time * 100.0);
-		v8 = v13;
-		v14 = (float)(unsigned __int8)(__int64)v13;
-		v15 = (v8 - v14) / 100.0;
-		v18 = v15;
-		v16 = (float)MSG_ReadByte();
-		v19 = v16 / 100.0 + v18;
+		int	sequence;
+		float animtime, delta;
 
-//		if (v10) TODO: Potential uninitialized memory, solve
-		{
-			do
-				v19 = v19 - 2.56;
-			while (v19 > cl.time + 0.1);
-		}
+		sequence = MSG_ReadByte();
 
-		to->sequence = Byte;
-		to->animtime = v19;
+		delta = (int)(cl.time * 100.0) - (byte)(cl.time * 100.0);
+
+		animtime = (MSG_ReadByte() / 100.0) + (delta / 100.0);
+		while (animtime > cl.time + 0.1)
+			animtime -= 2.56;
+
+		to->sequence = sequence;
+		to->animtime = animtime;
 	}
-	if ((bits & 0x10000) != 0)
-	{
-		v17 = (double)MSG_ReadChar() / 16.0;
-		to->framerate = v17;
-	}
-	if ((bits & 0x1000000) != 0)
+
+	if (bits & U_FRAMERATE)
+		to->framerate = MSG_ReadChar() / 16.0;
+
+	if (bits & U_CONTROLLER1)
 		to->controller[0] = MSG_ReadByte();
-	if ((bits & 0x2000000) != 0)
+
+	if (bits & U_CONTROLLER2)
 		to->controller[1] = MSG_ReadByte();
-	if ((bits & 0x4000000) != 0)
+
+	if (bits & U_CONTROLLER3)
 		to->controller[2] = MSG_ReadByte();
-	if ((bits & 0x8000000) != 0)
+
+	if (bits & U_CONTROLLER4)
 		to->controller[3] = MSG_ReadByte();
-	if ((bits & 0x10000000) != 0)
+
+	if (bits & U_BLENDING1)
 		to->blending[0] = MSG_ReadByte();
-	if ((bits & 0x20000000) != 0)
+
+	if (bits & U_BLENDING2)
 		to->blending[1] = MSG_ReadByte();
-	if ((bits & 0x400000) != 0)
+
+	if (bits & U_BODY)
 		to->body = MSG_ReadByte();
 
-	if ((bits & 0x100000) != 0)
+	if (bits & U_RENDER)
 	{
 		to->rendermode = MSG_ReadByte();
 		to->renderamt = MSG_ReadByte();
@@ -287,17 +281,22 @@ void CL_ParseDelta( entity_state_t* from, entity_state_t* to, int bits, int bbox
 		to->renderfx = MSG_ReadByte();
 	}
 
-	if ((bboxbits & 1) != 0)
+	if (bboxbits & U_BBOXMINS1)
 		to->mins[0] = MSG_ReadCoord();
-	if ((bboxbits & 2) != 0)
+
+	if (bboxbits & U_BBOXMINS2)
 		to->mins[1] = MSG_ReadCoord();
-	if ((bboxbits & 4) != 0)
+
+	if (bboxbits & U_BBOXMINS3)
 		to->mins[2] = MSG_ReadCoord();
-	if ((bboxbits & 8) != 0)
+
+	if (bboxbits & U_BBOXMAXS1)
 		to->maxs[0] = MSG_ReadCoord();
-	if ((bboxbits & 16) != 0)
+
+	if (bboxbits & U_BBOXMAXS2)
 		to->maxs[1] = MSG_ReadCoord();
-	if ((bboxbits & 32) != 0)
+
+	if (bboxbits & U_BBOXMAXS3)
 		to->maxs[2] = MSG_ReadCoord();
 }
 
@@ -323,7 +322,7 @@ void CL_FlushEntityPacket( void )
 	{
 		peeklong = *(unsigned int*)&net_message.data[msg_readcount];
 		if (peeklong)
-			num = CL_ReadDeltaFlags(&flags, &bboxflags);
+			num = CL_ParseDeltaFlags(&flags, &bboxflags);
 		else
 			num = MSG_ReadLong();
 
@@ -450,7 +449,7 @@ void CL_ParsePacketEntities( qboolean delta )
 	{
 		peeklong = *(unsigned int*)&net_message.data[msg_readcount];
 		if (peeklong)
-			num = CL_ReadDeltaFlags(&flags, &bboxflags);
+			num = CL_ParseDeltaFlags(&flags, &bboxflags);
 		else
 			num = MSG_ReadLong();
 
@@ -564,8 +563,6 @@ void CL_ParsePacketEntities( qboolean delta )
 	newp->num_entities = newindex;
 }
 
-// TODO: Implement
-
 /*
 ===============
 CL_PrintEntity
@@ -650,13 +647,8 @@ void CL_ProcessEntityUpdate( cl_entity_t* ent, entity_state_t* state, qboolean s
 	ent->rendercolor.b = state->rendercolor.b;
 	ent->renderfx = state->renderfx;
 
-	ent->controller[0] = state->controller[0];
-	ent->controller[1] = state->controller[1];
-	ent->controller[2] = state->controller[2];
-	ent->controller[3] = state->controller[3];
-
-	ent->blending[0] = state->blending[0];
-	ent->blending[1] = state->blending[1];
+	memcpy(ent->controller, state->controller, 4);
+	memcpy(ent->blending, state->blending, 2);
 
 	VectorCopy(state->origin, ent->origin);
 	VectorCopy(state->angles, ent->angles);
@@ -668,48 +660,128 @@ void CL_ProcessEntityUpdate( cl_entity_t* ent, entity_state_t* state, qboolean s
 	ent->body = state->body;
 }
 
-// TODO: Implement
+/*
+==================
+CL_Particle
+==================
+*/
+void CL_Particle( vec_t* origin, int color, float life, int zpos, int zvel )
+{
+	particle_t* p;
 
+	if (!free_particles)
+		return;
+
+	p = free_particles;
+	free_particles = p->next;
+	p->next = active_particles;
+	active_particles = p;
+
+	p->die = cl.time + life;
+	p->color = color;
+#if defined ( GLQUAKE )
+	p->packedColor = 0;
+#else
+	p->packedColor = hlRGB(host_basepal, color);
+#endif
+	p->type = pt_static;
+
+	VectorCopy(vec3_origin, p->vel);
+	p->vel[2] += zvel;
+
+	VectorCopy(origin, p->org);
+	p->org[2] += zpos;
+}
+
+/*
+===============
+CL_PlayerFlashlight
+===============
+*/
+#define FLASHLIGHT_DISTANCE		2000
 void CL_PlayerFlashlight( void )
 {
 	cl_entity_t* ent;
+	dlight_t* dl;
 
-	ent = &cl_entities[cl.playernum + 1];
+	ent = cl_entities + cl.playernum + 1;
 
 	if (ent->effects & (EF_BRIGHTLIGHT | EF_DIMLIGHT) && cl.worldmodel)
 	{
-		if (!cl.pLight || cl.pLight->key != 1)
-			cl.pLight = CL_AllocDlight(1);
+		if (cl.pLight && cl.pLight->key == 1)
+			dl = cl.pLight;
+		else
+			dl = CL_AllocDlight(1);
 
 		if (ent->effects & EF_BRIGHTLIGHT)
 		{
-			cl.pLight->color.b = 250;
-			cl.pLight->color.g = 250;
-			cl.pLight->color.r = 250;
-			cl.pLight->radius = 400;
-			VectorCopy(ent->origin, cl.pLight->origin);
-			cl.pLight->origin[2] += 16;
+			dl->color.r = dl->color.g = dl->color.b = 250;
+			dl->radius = 400;
+			VectorCopy(ent->origin, dl->origin);
+			dl->origin[2] += 16;
 		}
 		else
 		{
-			VectorCopy(ent->origin, cl.pLight->origin);
-			cl.pLight->origin[2] += cl.viewheight;
+			pmtrace_t trace;
+			vec3_t end;
+			float falloff;
 
-			// TODO: Implement
+			VectorCopy(ent->origin, dl->origin);
+			dl->origin[2] += cl.viewheight;
+			VectorMA(dl->origin, FLASHLIGHT_DISTANCE, vpn, end);
+
+			// Trace a line outward, use studio box to avoid expensive studio hull calcs
+			pmove.usehull = 2;
+			Pmove_Init();
+			trace = PM_PlayerMove(dl->origin, end, PM_STUDIO_BOX);
+
+			if (trace.ent > 0)
+			{
+				// If we hit a studio model, light it at it's origin so it lights properly (no falloff)
+				if (pmove.physents[trace.ent].studiomodel)
+				{
+					VectorCopy(pmove.physents[trace.ent].origin, trace.endpos);
+				}
+			}
+
+			VectorCopy(trace.endpos, dl->origin);
+			falloff = trace.fraction * FLASHLIGHT_DISTANCE;
+
+			if (falloff < 500)
+				falloff = 1.0;
+			else
+				falloff = 500.0 / (falloff);
+			
+			falloff *= falloff;
+			dl->radius = 80;
+			dl->color.r = dl->color.g = dl->color.b = 255 * falloff;
+#if 0
+			dlight_t* halo = CL_AllocDlight(2);
+			halo->color.r = halo->color.g = halo->color.b = 60;
+			halo->radius = 200;
+			VectorCopy(ent->origin, halo->origin);
+			halo->origin[2] += 16;
+			halo->die = cl.time + 0.2;
+#endif
 		}
+
+		cl.pLight = dl;
+		dl->die = cl.time + 0.2;
+		CL_TouchLight(dl);
 	}
 	else
 	{
 		if (cl.pLight && cl.pLight->key == 1)
-		{
 			cl.pLight->die = cl.time;
-		}
+
 		cl.pLight = NULL;
 	}
 
-	// apply muzzle to our weapon too if we have muzzle effect ourselves
+	// Add a muzzle flash to the weapon model if the player is flashing
 	if (cl_entities[cl.viewentity].effects & EF_MUZZLEFLASH)
+	{
 		cl.viewent.effects |= EF_MUZZLEFLASH;
+	}
 }
 
 /*
@@ -935,7 +1007,6 @@ void CL_ParsePlayerinfo( void )
 	int				i;
 	cl_entity_t*	ent;
 	qboolean		spectator = FALSE;
-	int				stub1;
 
 	num = MSG_ReadByte();
 	if (num & PN_SPECTATOR)
@@ -954,15 +1025,17 @@ void CL_ParsePlayerinfo( void )
 
 	// TODO: Implement
 
+	state->number = num;
+
 	flags = state->flags = MSG_ReadLong();
 
-	stub1 = MSG_ReadLong(); // TODO: Implement (state + 144) =
+	state->physflags = MSG_ReadLong();
 	state->messagenum = cl.parsecount;
 	state->origin[0] = MSG_ReadCoord();
 	state->origin[1] = MSG_ReadCoord();
 	state->origin[2] = MSG_ReadCoord();
 
-	// TODO: Implement
+	VectorSubtract(state->origin, state->prevorigin, state->predorigin);
 
 	state->frame = MSG_ReadByte();
 
@@ -970,7 +1043,7 @@ void CL_ParsePlayerinfo( void )
 	for (i = 0; i < MAX_CLIENTS; i++)
 	{
 		if (flags & (1 << i))
-			g_playerbits[i]++;
+			playerbitcounts[i]++;
 	}
 
 	// the other player's last move was likely some time
@@ -1128,23 +1201,55 @@ void CL_ParsePlayerinfo( void )
 	if (flags & PF_PING)
 		MSG_ReadShort(); // TODO: Implement (info->ping = ???)
 
-	// TODO: Implement
-
 	ent = &cl_entities[num + 1];
 
-	// TODO: Implement
+	vec3_t prevorigin, prevangles;
+	VectorCopy(ent->origin, prevorigin);
+	VectorCopy(ent->angles, prevangles);
 
 	VectorCopy(state->origin, ent->origin);
 	VectorCopy(state->viewangles, ent->angles);
-
 	// Player pitch is inverted
 	ent->angles[PITCH] /= -3.0;
 
+	ent->frame = state->frame;
+	ent->movetype = state->movetype;
+	ent->effects = state->effects;
+	ent->model = cl.model_precache[state->modelindex];
+	ent->skin = state->skinnum;
+	ent->body = state->body;
+
+	if (ent->animtime != state->animtime)
+	{
+		if (ent->sequence != state->sequence)
+		{
+			ent->sequencetime = state->animtime;
+			ent->prevsequence = ent->sequence;
+			memcpy(ent->prevseqblending, ent->blending, 2);
+			ent->sequence = state->sequence;
+		}
+
+		ent->prevanimtime = ent->animtime;
+		memcpy(ent->prevcontroller, ent->controller, 4);
+		memcpy(ent->prevblending, ent->blending, 2);
+		VectorCopy(prevorigin, ent->prevorigin);
+		VectorCopy(prevangles, ent->prevangles);
+
+		ent->animtime = state->animtime;
+	}
 
 	// TODO: Implement
-}
 
-// TODO: Implement
+	ent->rendermode = state->rendermode;
+	ent->renderamt = state->renderamt;
+	ent->rendercolor = state->rendercolor;
+	ent->renderfx = state->renderfx;
+
+	ent->framerate = state->framerate;
+
+	memcpy(ent->controller, state->controller, 4);
+	memcpy(ent->blending, state->blending, 2);
+}
 
 /*
 =============

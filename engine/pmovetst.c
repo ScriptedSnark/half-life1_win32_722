@@ -9,7 +9,41 @@ static	mplane_t	box_planes[6];
 extern vec3_t player_mins[4];
 extern vec3_t player_maxs[4];
 
-// TODO: Implement
+/*
+===================
+PM_InitBoxHull
+
+Set up the planes and clipnodes so that the six floats of a bounding box
+can just be stored out and get a proper hull_t structure.
+===================
+*/
+void PM_InitBoxHull( void )
+{
+	int		i;
+	int		side;
+
+	box_hull.clipnodes = &box_clipnodes[0];
+	box_hull.planes = &box_planes[0];
+	box_hull.firstclipnode = 0;
+	box_hull.lastclipnode = 5;
+
+	for (i = 0; i < 6; i++)
+	{
+		box_clipnodes[i].planenum = i;
+
+		side = i & 1;
+
+		box_clipnodes[i].children[side] = CONTENTS_EMPTY;
+		if (i != 5)
+			box_clipnodes[i].children[side ^ 1] = i + 1;
+		else
+			box_clipnodes[i].children[side ^ 1] = CONTENTS_SOLID;
+
+		box_planes[i].type = i >> 1;
+		box_planes[i].normal[i >> 1] = 1;
+	}
+}
+
 
 /*
 ===================
@@ -343,6 +377,7 @@ pmtrace_t PM_PlayerMove( vec_t* start, vec_t* end, int traceFlags )
 		VectorSubtract(start, offset, start_l);
 		VectorSubtract(end, offset, end_l);
 
+		// Rotate the start and end into the model's frame of reference.
 		rotated = pe->solid == SOLID_BSP && (pe->angles[0] != 0 || pe->angles[1] != 0 || pe->angles[2] != 0);
 		if (rotated)
 		{
@@ -423,9 +458,11 @@ pmtrace_t PM_PlayerMove( vec_t* start, vec_t* end, int traceFlags )
 				trace.plane.normal[2] = DotProduct(up, temp);
 			}
 
-			trace.endpos[0] = start[0] + (end[0] - start[0]) * trace.fraction;
-			trace.endpos[1] = start[1] + (end[1] - start[1]) * trace.fraction;
-			trace.endpos[2] = start[2] + (end[2] - start[2]) * trace.fraction;
+			// Compute the end position of the trace.
+
+			trace.endpos[0] = start[0] + trace.fraction * (end[0] - start[0]);
+			trace.endpos[1] = start[1] + trace.fraction * (end[1] - start[1]);
+			trace.endpos[2] = start[2] + trace.fraction * (end[2] - start[2]);
 		}
 
 	// did we clip the move?

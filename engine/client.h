@@ -89,6 +89,7 @@ typedef struct player_info_s
 
 	// TODO: Implement
 
+	float	maxspeed;
 
 	customization_t customdata;
 
@@ -225,6 +226,11 @@ typedef struct
 								// because player commands come asyncronously
 	usercmd_t	command;		// last command for prediction
 
+	byte		number;
+
+	vec3_t		prevorigin;		// last predicted origin
+	vec3_t		predorigin;		// delta
+
 	vec3_t		origin;
 	vec3_t		viewangles;		// only for demos, not from server
 	vec3_t		velocity;
@@ -235,13 +241,14 @@ typedef struct
 	int			modelindex;
 	int			frame;
 	int			skinnum;
-	int			effects;
+	int			effects;		// MUZZLE FLASH, e.g.
 
 	int			flags;			// dead, gib, etc
+	int			physflags;		// FL_ONGROUND, FL_DUCKING, etc.
 
-	float		waterjumptime;
+	float		waterjumptime;	// Amount of time left in jumping out of water cycle.
 	int			onground;		// -1 = in air, else pmove entity number
-	int			oldbuttons;
+	int			oldbuttons;		// Buttons last usercmd
 
 	// Render information
 	int			rendermode;
@@ -267,7 +274,7 @@ typedef struct
 	// Friction, for prediction.
 	float		friction;
 
-
+	byte removeme[40];
 
 } player_state_t;
 
@@ -492,7 +499,7 @@ extern	cvar_t	cl_pitchdown;
 
 extern qboolean cl_inmovie;
 
-extern int g_playerbits[MAX_CLIENTS];
+extern int playerbitcounts[MAX_CLIENTS];
 
 // TODO: Implement
 
@@ -517,6 +524,7 @@ extern int	total_data[64];
 dlight_t* CL_AllocDlight( int key );
 dlight_t* CL_AllocElight( int key );
 void	CL_DecayLights( void );
+void	CL_TouchLight( dlight_t* dl );
 
 void CL_Init( void );
 
@@ -542,6 +550,9 @@ extern	int		cl_numvisedicts, cl_oldnumvisedicts, cl_numbeamentities;
 extern	cl_entity_t* cl_visedicts, * cl_newvisedicts;
 extern	cl_entity_t	cl_visedicts_list[2][MAX_VISEDICTS];
 extern	cl_entity_t* cl_beamentities[MAX_BEAMENTS];
+
+extern	particle_t* free_particles;
+extern	particle_t* active_particles;
 
 // TODO: Implement
 
@@ -587,7 +598,7 @@ void CL_EmitEntities( void );
 void CL_ParsePacketEntities( qboolean delta );
 void CL_SetSolidEntities( void );
 void CL_ParsePlayerinfo( void );
-
+void CL_Particle( vec_t* origin, int color, float life, int zpos, int zvel );
 
 //
 // cl_pred.c
@@ -607,6 +618,8 @@ void CL_PredictUsercmd( player_state_t* from, player_state_t* to, usercmd_t* u, 
 extern	int		autocam;
 extern int spec_track; // player# of who we are tracking
 extern int cam_thirdperson;
+
+void Cam_GetTopDownPosition( vec_t* source, float* vec );
 
 //
 // cl_parse.c

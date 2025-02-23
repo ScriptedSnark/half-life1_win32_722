@@ -90,7 +90,7 @@ typedef struct
 } playermove_t;
 
 // movevars_t                  // Physics variables.
-typedef struct movevars_s
+typedef struct
 {
 	float		gravity;           // Gravity for map
 	float		stopspeed;         // Deceleration when not moving
@@ -111,9 +111,24 @@ typedef struct movevars_s
 	char		skyName[32];	   // Name of the sky map
 } movevars_t;
 
+
 extern	movevars_t		movevars;
 extern	playermove_t	pmove;
 extern	int		onground;
+extern	int		waterlevel;
+extern	int		watertype;
+
+extern	cvar_t	cl_showclip;
+extern	cvar_t	cl_printclip;
+
+extern	cvar_t	pm_nostudio;
+extern	cvar_t	pm_nocomplex;
+extern	cvar_t	pm_worldonly;
+extern	cvar_t	pm_pushfix;
+extern	cvar_t	pm_nostucktouch;
+
+void PlayerMove( qboolean server );
+void Pmove_Init( void );
 
 pmtrace_t PM_PlayerMove( vec_t* start, vec_t* end, int traceFlags );
 

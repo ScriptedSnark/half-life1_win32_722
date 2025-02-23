@@ -73,7 +73,7 @@ dlight_t		cl_elights[MAX_ELIGHTS];
 
 qboolean cl_inmovie;
 
-int g_playerbits[MAX_CLIENTS];
+int playerbitcounts[MAX_CLIENTS];
 
 /*
 =================
@@ -967,6 +967,21 @@ void CL_DecayLights( void )
 		if (dl->radius < 0)
 			dl->radius = 0;
 	}
+}
+
+/*
+===============
+CL_TouchLight
+
+===============
+*/
+void CL_TouchLight( dlight_t* dl )
+{
+	int i;
+
+	i = dl - cl_dlights;
+	if (i >= 0 && i < 32)
+		r_dlightchanged |= 1 << i;
 }
 
 // TODO: cl_input.c

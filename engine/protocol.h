@@ -205,7 +205,7 @@
 
 
 
-#define PN_SPECTATOR	(1<<7)		// extra playernum flag to determine if joined as spectator
+#define PN_SPECTATOR	(1<<7)		// extra playernum flag to determine if we joined as spectator
 
 //==============================================
 
@@ -229,14 +229,40 @@
 #define	U_ORIGIN2		(1<<2)
 #define	U_ORIGIN3		(1<<3)
 #define	U_REMOVE		(1<<4)		// REMOVE this entity, don't add it
+#define U_ANGLE2		(1<<5)
+#define	U_MOVETYPE		(1<<6)
+#define	U_FRAME			(1<<7)
 #define U_EVENMOREBITS	(1<<8)
+#define U_ANGLE1		(1<<9)
+#define U_ANGLE3		(1<<10)
+#define	U_MODELINDEX	(1<<11)
+#define	U_SEQUENCE		(1<<12)
 #define	U_CUSTOM		(1<<13)		// Custom entity data (beams)
-
+#define U_EFFECTS		(1<<14)
 #define U_LONGENTITY	(1<<15)
+#define U_FRAMERATE		(1<<16)
 
+#define U_COLORMAP		(1<<18)
+#define U_CONTENTS		(1<<19)
+#define U_RENDER		(1<<20)
 
+#define U_BODY			(1<<22)
 #define U_YETMOREBITS	(1<<23)
+#define	U_CONTROLLER1	(1<<24)
+#define	U_CONTROLLER2	(1<<25)
+#define	U_CONTROLLER3	(1<<26)
+#define	U_CONTROLLER4	(1<<27)
+#define	U_BLENDING1		(1<<28)
+#define	U_BLENDING2		(1<<29)
+#define U_SCALE			(1<<30)
 
+
+#define U_BBOXMINS1		(1<<0)
+#define U_BBOXMINS2		(1<<1)
+#define U_BBOXMINS3		(1<<2)
+#define U_BBOXMAXS1		(1<<3)
+#define U_BBOXMAXS2		(1<<4)
+#define U_BBOXMAXS3		(1<<5)
 
 //==============================================
 

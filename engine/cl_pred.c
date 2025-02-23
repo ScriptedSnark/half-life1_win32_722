@@ -4,6 +4,8 @@
 
 cvar_t	cl_nopred = { "cl_nopred", "0" };
 cvar_t	cl_pushlatency = { "pushlatency", "-500" };
+cvar_t	cl_dumpents = { "cl_dumpents", "0" };
+cvar_t	cl_showpred = { "cl_showpred", "0" };
 
 
 /*
@@ -29,8 +31,8 @@ void CL_PredictUsercmd( player_state_t* from, player_state_t* to, usercmd_t* u, 
 		return;
 	}
 
-	memcpy(&cmd, u, sizeof(usercmd_t));
-	memcpy(to, from, sizeof(player_state_t));
+	cmd = *u;
+	*to = *from;
 
 	VectorCopy(from->origin, pmove.origin);
 	VectorCopy(from->velocity, pmove.velocity);
@@ -39,12 +41,13 @@ void CL_PredictUsercmd( player_state_t* from, player_state_t* to, usercmd_t* u, 
 	VectorCopy(cmd.angles, pmove.angles);
 	// Player pitch is inverted
 	pmove.angles[PITCH] /= -3.0;
-	// Normalize YAW
-	if (pmove.angles[YAW] > 180.0)
-		pmove.angles[YAW] -= 360.0;
+	// Adjust client view angles to match values used on server.
+	if (pmove.angles[YAW] > 180.0f)
+	{
+		pmove.angles[YAW] -= 360.0f;
+	}
 	
-	// TODO: Implement
-
+	pmove.usehull = 0;
 	pmove.friction = from->friction;
 	pmove.oldbuttons = from->oldbuttons;
 	pmove.waterjumptime = from->waterjumptime;
@@ -52,17 +55,44 @@ void CL_PredictUsercmd( player_state_t* from, player_state_t* to, usercmd_t* u, 
 	pmove.dead = cl.stats[STAT_HEALTH] <= 0;
 	pmove.movetype = from->movetype;
 	pmove.gravity = 1.0;
-	pmove.flags = from->flags;
+	pmove.flags = from->physflags;
 
+//
+// adjust movement for ducking
+//
+	if (pmove.flags & FL_DUCKING)
+	{
+		cmd.forwardmove *= 0.333;
+		cmd.sidemove *= 0.333;
+		cmd.upmove *= 0.333;
+		pmove.usehull = 1;
+	}
 
-	// TODO: Implement
-	
+	if (pmove.flags & (FL_FROZEN | FL_ONTRAIN))
+	{
+		cmd.forwardmove = 0;
+		cmd.sidemove = 0;
+		cmd.upmove = 0;
+	}
 
-	memcpy(&pmove.cmd, &cmd, sizeof(pmove.cmd));
+	pmove.cmd = cmd;
+	pmove.player_index = to->number;
 
+	float maxspeed;
 
-	// TODO: Implement
+	maxspeed = cl.players[pmove.player_index].maxspeed;
+	if (maxspeed)
+	{
+		if (maxspeed >= movevars.maxspeed)
+			maxspeed = movevars.maxspeed;
+		pmove.maxspeed = maxspeed;
+	}
+	else
+	{
+		pmove.maxspeed = movevars.maxspeed;
+	}
 
+	PlayerMove(FALSE);
 
 	VectorCopy(pmove.origin, to->origin);
 	VectorCopy(pmove.velocity, to->velocity);
@@ -73,7 +103,7 @@ void CL_PredictUsercmd( player_state_t* from, player_state_t* to, usercmd_t* u, 
 	to->onground = onground;
 	to->friction = pmove.friction;
 	to->movetype = pmove.movetype;
-	to->flags = pmove.flags;
+	to->physflags = pmove.flags;
 }
 
 
@@ -119,9 +149,21 @@ void CL_PredictMove( void )
 
 	if (cl.spectator)
 	{
-		// TODO: Implement
+		if (autocam == CAM_FIRSTPERSON)
+		{
+			VectorCopy(from->playerstate[spec_track].velocity, cl.simvel);
+			VectorCopy(from->playerstate[spec_track].origin, cl.simorg);
+			return;
+		}
 
-		return;
+		if (autocam == CAM_TOPDOWN)
+		{
+			vec3_t pos;
+			Cam_GetTopDownPosition(from->playerstate[spec_track].origin, pos);
+			VectorCopy(from->playerstate[spec_track].velocity, cl.simvel);
+			VectorCopy(pos, cl.simorg);
+			return;
+		}
 	}
 
 	if (cl_nopred.value)
@@ -175,7 +217,7 @@ void CL_PredictMove( void )
 		{	// teleported, so don't lerp
 			VectorCopy(to->playerstate[cl.playernum].velocity, cl.simvel);
 			VectorCopy(to->playerstate[cl.playernum].origin, cl.simorg);
-			// TODO: Implement
+			VectorCopy(cl.simorg, to->playerstate[cl.playernum].prevorigin);
 			return;
 		}
 	}
@@ -188,7 +230,12 @@ void CL_PredictMove( void )
 			+ f * (to->playerstate[cl.playernum].velocity[i] - from->playerstate[cl.playernum].velocity[i]);
 	}
 
-	// TODO: Implement
+	VectorCopy(cl.simorg, to->playerstate[cl.playernum].prevorigin);
+
+	if (cl_showpred.value)
+	{
+		CL_Particle(cl.simorg, 10, 15, 32, -1);
+	}
 }
 
 
@@ -202,5 +249,8 @@ void CL_InitPrediction( void )
 	Cvar_RegisterVariable(&cl_pushlatency);
 	Cvar_RegisterVariable(&cl_nopred);
 
-	// TODO: Implement
+//	Cvar_RegisterVariable(&pm_nostudio);
+//	Cvar_RegisterVariable(&pm_nocomplex);
+//	Cvar_RegisterVariable(&pm_worldonly);
+//	Cvar_RegisterVariable(&pm_nostucktouch);
 }
