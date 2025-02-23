@@ -38,7 +38,7 @@ cl_entity_t* cl_beamentities[MAX_BEAMENTS];
 
 vec3_t			r_pright, r_pup, r_ppn;
 
-BEAM*		gBeams, * gpFreeBeams, * gpActiveBeams;
+BEAM* gBeams, * gpFreeBeams, * gpActiveBeams;
 
 // Forward declarations
 void R_TracerDraw( void );

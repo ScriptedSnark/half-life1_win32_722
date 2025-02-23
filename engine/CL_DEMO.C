@@ -3,6 +3,21 @@
 #include "quakedef.h"
 #include "cl_demo.h"
 
+// TODO: Implement
+
+/*
+====================
+CL_WriteDemoUpdate
+
+====================
+*/
+void CL_WriteDemoUpdate( void )
+{
+	// TODO: Implement
+}
+
+// TODO: Implement
+
 /*
 ====================
 CL_RecordHUDCommand

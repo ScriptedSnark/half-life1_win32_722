@@ -1,16 +1,27 @@
 // cl_ents.c -- entity parsing and management
 
 #include "quakedef.h"
-#include "pr_cmds.h"
+#include "cl_demo.h"
 #include "cl_tent.h"
+#include "pr_cmds.h"
 #include "pmove.h"
 #include "customentity.h"
 
 int cl_playerindex; // player index
 
 int			cl_numvisedicts, cl_oldnumvisedicts, cl_numbeamentities;
-cl_entity_t* cl_visedicts, * cl_newvisedicts;
+cl_entity_t* cl_visedicts, * cl_oldvisedicts;
 cl_entity_t	cl_visedicts_list[2][MAX_VISEDICTS];
+
+typedef struct
+{
+	int flags;
+	int physflags;
+	int index;
+	qboolean active;
+	vec3_t origin;	// predicted origin
+} predicted_player;
+predicted_player predicted_players[MAX_CLIENTS];
 
 int packet_flags[166];
 
@@ -238,7 +249,6 @@ void CL_ParseDelta( entity_state_t* from, entity_state_t* to, int bits, int bbox
 		sequence = MSG_ReadByte();
 
 		delta = (int)(cl.time * 100.0) - (byte)(cl.time * 100.0);
-
 		animtime = (MSG_ReadByte() / 100.0) + (delta / 100.0);
 		while (animtime > cl.time + 0.1)
 			animtime -= 2.56;
@@ -874,10 +884,8 @@ void CL_LinkPacketEntities( void )
 			}
 
 			ent->prevanimtime = nullent.animtime;
-
 			memcpy(ent->prevcontroller, nullent.controller, 4);
 			memcpy(ent->prevblending, nullent.blending, 2);
-
 			VectorCopy(nullent.origin, ent->prevorigin);
 			VectorCopy(nullent.angles, ent->prevangles);
 		}
@@ -891,8 +899,7 @@ void CL_LinkPacketEntities( void )
 			}
 		}
 
-		// TODO: Implement (figure out the flag)
-		if ((s1->flags & 0x200000) && ent->lastmove < cl.time)
+		if ((s1->flags & U_MONSTERMOVE) && ent->lastmove < cl.time)
 		{
 			ent->movetype = MOVETYPE_STEP;
 		}
@@ -1023,8 +1030,7 @@ void CL_ParsePlayerinfo( void )
 
 	state = &cl.frames[parsecountmod].playerstate[num];
 
-	// TODO: Implement
-
+	state->received_time = realtime;
 	state->number = num;
 
 	flags = state->flags = MSG_ReadLong();
@@ -1110,13 +1116,18 @@ void CL_ParsePlayerinfo( void )
 
 	if (flags & PF_SEQUENCE)
 	{
-		state->sequence = MSG_ReadByte();
+		int	sequence;
+		float animtime, delta;
 
-		// TODO: Implement
+		sequence = MSG_ReadByte();
 
-		MSG_ReadByte(); // TODO: Implement
+		delta = (int)(cl.time * 100.0) - (byte)(cl.time * 100.0);
+		animtime = (MSG_ReadByte() / 100.0) + (delta / 100.0);
+		while (animtime > cl.time + 0.1)
+			animtime -= 2.56;
 
-		// TODO: Implement
+		state->sequence = sequence;
+		state->animtime = animtime;
 	}
 
 	if (flags & PF_RENDER)
@@ -1199,7 +1210,7 @@ void CL_ParsePlayerinfo( void )
 	}
 
 	if (flags & PF_PING)
-		MSG_ReadShort(); // TODO: Implement (info->ping = ???)
+		info->ping = MSG_ReadShort();
 
 	ent = &cl_entities[num + 1];
 
@@ -1238,7 +1249,11 @@ void CL_ParsePlayerinfo( void )
 		ent->animtime = state->animtime;
 	}
 
-	// TODO: Implement
+	ent->colormap = info->translations;
+	if (state->modelindex == cl_playerindex)
+		ent->scoreboard = info;		// use custom skin
+	else
+		ent->scoreboard = NULL;
 
 	ent->rendermode = state->rendermode;
 	ent->renderamt = state->renderamt;
@@ -1261,38 +1276,27 @@ for all current players
 */
 void CL_LinkPlayers( void )
 {
-	int				j;
-	player_info_t	*info;
-	player_state_t	*state;
+	int				i, j;
+	player_info_t* info;
+	player_state_t* state;
 	player_state_t	exact;
 	double			playertime;
-	vec_t			lerp_factor;
-	vec_t*			start;
-	vec_t*			end;
-	vec_t*			current;
-	frame_t*		frame;
-	cl_entity_t*	ent;
+	cl_entity_t* ent;
 	int				msec;
+	frame_t* frame;
 	int				oldphysent;
 	int				flags;
-	dlight_t*		dl;
+	float			frac;
+	dlight_t* dl;
 
-	vec_t			previous_x, previous_y, previous_z;
+	frac = cl.frame_lerp;
 
-	start = cl.mvelocity[1];
-	end = cl.mvelocity[2];
-
-	lerp_factor = cl.frame_lerp;
-
-	for (current = start; current < end; current += 3) {
-		previous_x = current[-3];
-		previous_y = current[-2];
-		previous_z = current[-1];
-
-		current[0] = (previous_x - current[0]) * lerp_factor + current[0];
-		current[1] = (previous_y - current[1]) * lerp_factor + current[1];
-		current[2] = (previous_z - current[2]) * lerp_factor + current[2];
-	}
+//
+// interpolate player info
+//
+	for (i = 0; i < 3; i++)
+		cl.mvelocity[1][i] = cl.mvelocity[1][i] +
+		frac * (cl.mvelocity[0][i] - cl.mvelocity[1][i]);
 
 	playertime = realtime - cls.latency + 0.02;
 	if (playertime > realtime)
@@ -1300,95 +1304,100 @@ void CL_LinkPlayers( void )
 
 	frame = &cl.frames[cl.parsecount & UPDATE_MASK];
 
-
 	for (j = 0, info = cl.players, state = frame->playerstate; j < MAX_CLIENTS
 		; j++, info++, state++)
 	{
-		if (state->messagenum == cl.parsecount
-			&& (cam_thirdperson || cl.viewentity - j != 1 || chase_active.value != 0.0) //if we are in third person or seeing our PoV...
-			&& state->modelindex != 0 //make sure that the entity is visible...
-			&& (state->effects & EF_NODRAW) == 0 //of course, it also should not have EF_NODRAW
-			&& (cl.spectator == FALSE || autocam != 2 || spec_track != j))
+		if (state->messagenum != cl.parsecount)
+			continue;	// not present this frame
+
+		// the player object never gets added
+		if (!cam_thirdperson && cl.viewentity == j + 1 && !chase_active.value)
+			continue;
+
+		if (!state->modelindex)
+			continue;
+
+		if (state->effects & EF_NODRAW)
+			continue;
+
+		if (cl.spectator && autocam == CAM_FIRSTPERSON && spec_track == j)
+			continue;
+
+		// grab an entity to fill in
+		if (cl_numvisedicts >= MAX_VISEDICTS)
+			break;		// object list is full
+		ent = &cl_visedicts[cl_numvisedicts];
+		cl_numvisedicts++;
+
+		memcpy(ent, &cl_entities[j + 1], sizeof(cl_entity_t));
+		ent->index = j + 1;
+
+		flags = packet_flags[ent->index >> 3] & (1 << (ent->index & 7));
+		
+		// only predict half the move to minimize overruns
+		msec = 500 * (playertime - state->state_time);
+		if (cl.playernum == j || msec <= 0 || !cl_predict_players.value)
 		{
-			// grab an entity to fill in
-			if (cl_numvisedicts >= MAX_VISEDICTS)
-				break;		// object list is full
+			VectorCopy(state->origin, ent->origin);
+//Con_DPrintf("nopredict\n");
+		}
+		else
+		{
+			// predict players movement
+			if (msec > 255)
+				msec = 255;
+			state->command.msec = msec;
+//Con_DPrintf("predict: %i\n", msec);
 
-			ent = &cl_visedicts[cl_numvisedicts];
-			cl_numvisedicts++;
+			oldphysent = pmove.numphysent;
+			CL_SetSolidPlayers(j);
+			CL_PredictUsercmd(state, &exact, &state->command, FALSE);
+			pmove.numphysent = oldphysent;
+			VectorCopy(exact.origin, ent->origin);
+		}
+		
+		VectorCopy(ent->origin, ent->prevorigin);
 
-			memcpy(ent, &cl_entities[j + 1], sizeof(cl_entity_t));
-			ent->index = j + 1;
+		ent->colormap = info->translations;
+		if (state->modelindex == cl_playerindex)
+			ent->scoreboard = info;		// use custom skin
+		else
+			ent->scoreboard = NULL;
 
-			flags = packet_flags[ent->index >> 3] & (1 << (ent->index & 7));
-
-			// only predict half the move to minimize overruns
-			msec = 500 * (playertime - state->state_time);
-			if (cl.playernum == j || msec <= 0 || !cl_predict_players.value)
-			{
-				VectorCopy(state->origin, ent->origin);
-//Con_DPrintf ("nopredict\n");
-			}
-			else
-			{
-				// predict players movement
-				if (msec > 255)
-					msec = 255;
-				state->command.msec = msec;
-//Con_DPrintf ("predict: %i\n", msec);
-
-				oldphysent = pmove.numphysent;
-				CL_SetSolidPlayers(j);
-
-				CL_PredictUsercmd(state, &exact, &state->command, FALSE);
-
-				pmove.numphysent = oldphysent;
-				VectorCopy(exact.origin, ent->origin);
-			}
-
+		if (!flags || (ent->effects & EF_NOINTERP))
+		{
+			ent->prevsequence = ent->sequence;
+			ent->animtime = cl.time;
+			ent->prevanimtime = cl.time;
 			VectorCopy(ent->origin, ent->prevorigin);
+			VectorCopy(ent->angles, ent->prevangles);
+		}
 
-			ent->colormap = info->translations;
-			if (state->modelindex == cl_playerindex)
-				ent->scoreboard = info;
-			else
-				ent->scoreboard = 0;
-
-			if (!flags || (ent->effects & EF_NOINTERP))
+		if (cl.viewentity != j + 1)
+		{
+			if (ent->effects & EF_BRIGHTLIGHT)
 			{
-				ent->prevsequence = ent->sequence;
-				ent->animtime = cl.time;
-				ent->prevanimtime = cl.time;
-				VectorCopy(ent->origin, ent->prevorigin);
-				VectorCopy(ent->angles, ent->prevangles);
+				dl = CL_AllocDlight(3);
+				VectorCopy(ent->origin, dl->origin);
+				dl->origin[2] += 16;
+				dl->color.r = dl->color.g = dl->color.b = 250;
+				dl->radius = RandomFloat(400, 431);
+				dl->die = cl.time + 0.001;
 			}
 
-			if (cl.viewentity - j != 1)
+			if (ent->effects & EF_DIMLIGHT)
 			{
-				if ((ent->effects & EF_BRIGHTLIGHT) != 0)
-				{
-					dl = CL_AllocDlight(3);
-					VectorCopy(ent->origin, dl->origin);
-					dl->origin[2] = dl->origin[2] + 16.0;
-					dl->color.b = 250;
-					dl->color.g = 250;
-					dl->color.r = 250;
-					dl->radius = RandomFloat(400.0, 431.0);
-					// die on next frame
-				}
-				if ((ent->effects & EF_DIMLIGHT) != 0)
-				{
-					dl = CL_AllocDlight(3);
-					VectorCopy(ent->origin, dl->origin);
-					dl->color.b = 100;
-					dl->color.g = 100;
-					dl->color.r = 100;
-					dl->radius = RandomFloat(200.0, 231.0);
-					dl->die = cl.time + 0.001;
-				}
+				dl = CL_AllocDlight(3);
+				VectorCopy(ent->origin, dl->origin);
+				dl->color.r = dl->color.g = dl->color.b = 100;
+				dl->radius = RandomFloat(200, 231);
+				dl->die = cl.time + 0.001;
 			}
-			if (cl_printplayers.value)
-				CL_PrintEntity(ent);
+		}
+
+		if (cl_printplayers.value)
+		{
+			CL_PrintEntity(ent);
 		}
 	}
 
@@ -1471,7 +1480,33 @@ void CL_SetSolidEntities( void )
 	}
 }
 
-// TODO: Implement
+/*
+==================
+CL_GetPredictedOrigin
+
+==================
+*/
+void CL_GetPredictedOrigin( int playernum, vec_t* origin )
+{
+	predicted_player* pplayer;
+
+	if (playernum < 0 || playernum >= MAX_CLIENTS)
+	{
+		VectorCopy(vec3_origin, origin);
+		Con_DPrintf("CL_GetPredictedOrigin called with bogus player # %i\n", playernum);
+		return;
+	}
+
+	pplayer = &predicted_players[playernum];
+	if (!pplayer->active)
+	{
+		VectorCopy(vec3_origin, origin);
+		Con_DPrintf("CL_GetPredictedOrigin called on inactive player # %i\n", playernum);
+		return;
+	}
+
+	VectorCopy(pplayer->origin, origin);
+}
 
 /*
 ==================
@@ -1486,7 +1521,74 @@ This sets up the first phase.
 */
 void CL_SetUpPlayerPrediction( qboolean dopred )
 {
-	// TODO: Implement
+	int				j;
+	player_state_t* state;
+	player_state_t	exact;
+	double			playertime;
+	int				msec;
+	frame_t* frame;
+	predicted_player* pplayer;
+
+	playertime = realtime - cls.latency + 0.02;
+	if (playertime > realtime)
+		playertime = realtime;
+
+	frame = &cl.frames[cl.parsecount & UPDATE_MASK];
+
+	for (j = 0, pplayer = predicted_players, state = frame->playerstate;
+		j < MAX_CLIENTS;
+		j++, pplayer++, state++)
+	{
+		pplayer->active = FALSE;
+
+		if (state->messagenum != cl.parsecount)
+			continue;	// not present this frame
+
+		if (!state->modelindex)
+			continue;
+
+		if (state->flags & EF_NODRAW)
+			continue;
+
+		pplayer->active = TRUE;
+		pplayer->index = 1;
+		pplayer->flags = state->flags;
+		pplayer->physflags = state->physflags;
+
+		if (!(pplayer->physflags & FL_DUCKING))
+			pplayer->index = 0;
+
+		// note that the local player is special, since he moves locally
+		// we use his last predicted postition
+		if (j == cl.playernum || (cl.spectator && autocam == CAM_FIRSTPERSON && j == spec_track))
+		{
+			VectorCopy(cl.frames[cls.netchan.outgoing_sequence & UPDATE_MASK].playerstate[cl.playernum].origin,
+				pplayer->origin);
+		}
+		else
+		{
+			// only predict half the move to minimize overruns
+			msec = 500 * (playertime - state->state_time);
+			if (msec <= 0 ||
+				!cl_predict_players.value ||
+				!dopred)
+			{
+				VectorCopy(state->origin, pplayer->origin);
+	//Con_DPrintf("nopredict\n");
+			}
+			else
+			{
+				// predict players movement
+				if (msec > 255)
+					msec = 255;
+				state->command.msec = msec;
+	//Con_DPrintf("predict: %i\n", msec);
+
+				CL_PredictUsercmd(state, &exact, &state->command, FALSE);
+				VectorCopy(exact.origin, pplayer->origin);
+			}
+		}
+	}
 }
 
 /*
@@ -1501,7 +1603,39 @@ pmove must be setup with world and solid entity hulls before calling
 */
 void CL_SetSolidPlayers( int playernum )
 {
-	// TODO: Implement
+	int		j;
+	extern	vec3_t	player_mins[4];
+	extern	vec3_t	player_maxs[4];
+	predicted_player* pplayer;
+	physent_t *pent;
+
+	if (!cl_solid_players.value)
+		return;
+
+	pent = pmove.physents + pmove.numphysent;
+
+	for (j = 0, pplayer = predicted_players; j < MAX_CLIENTS; j++, pplayer++)
+	{
+		if (!pplayer->active)
+			continue;	// not present this frame
+
+		// the player object never gets added
+		if (j == playernum)
+			continue;
+
+		if (pplayer->flags & PF_DEAD)
+			continue; // dead players aren't solid
+
+		pent->model = NULL;
+		pent->skin = 0;
+		pent->solid = SOLID_BBOX;
+		VectorCopy(pplayer->origin, pent->origin);
+		VectorCopy(player_mins[pplayer->index], pent->mins);
+		VectorCopy(player_maxs[pplayer->index], pent->maxs);
+		VectorCopy(vec3_origin, pent->angles);
+		pmove.numphysent++;
+		pent++;
+	}
 }
 
 /*
@@ -1538,18 +1672,18 @@ void CL_EmitEntities( void )
 		cls.skipdemomessage = FALSE;
 	}
 
-	//if (cls.demorecording) TODO: Implement
-	//	CL_WriteUpdate();
+	if (cls.demorecording)
+		CL_WriteDemoUpdate();
 
 	cl_oldnumvisedicts = cl_numvisedicts;
 	slot = cl_visedicts_list[(cls.netchan.incoming_sequence + 1) & 1];
-	cl_newvisedicts = slot;
+	cl_oldvisedicts = slot;
 
 	memset(packet_flags, 0, sizeof(packet_flags));
 
 	if (cl_numvisedicts > 0)
 	{
-		cl_newvisedicts = cl_visedicts_list[(cls.netchan.incoming_sequence + 1) & 1];
+		cl_oldvisedicts = cl_visedicts_list[(cls.netchan.incoming_sequence + 1) & 1];
 
 		for (i = 0; i < cl_numvisedicts; i++, slot++)
 		{
@@ -1586,6 +1720,20 @@ void CL_EmitEntities( void )
 
 	if (cl.spectator)
 	{
-		//FF: sub_10020190 ~ CL_Disconnect ~ 33 C0 A3 38 15 05 0E A3 34 15 05 0E C3
+		if (autocam == CAM_FIRSTPERSON)
+		{
+			vec3_t pos;
+			Cam_GetPredictedFirstPersonOrigin(pos);
+			VectorCopy(pos, cl.viewangles);
+			VectorCopy(pos, cl.simangles);
+		}
+
+		if (autocam == CAM_TOPDOWN)
+		{
+			vec3_t pos;
+			Cam_GetPredictedTopDownOrigin(pos);
+			VectorCopy(pos, cl.viewangles);
+			VectorCopy(pos, cl.simangles);
+		}
 	}
 }

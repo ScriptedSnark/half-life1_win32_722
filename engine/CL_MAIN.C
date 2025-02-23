@@ -18,15 +18,10 @@ cvar_t	cl_name = { "_cl_name", "player", TRUE };
 cvar_t	cl_color = { "_cl_color", "0", TRUE };
 
 cvar_t	cl_timeout = { "cl_timeout", "305", TRUE };
-cvar_t	cl_shownet = { "cl_shownet", "0" };
+cvar_t	cl_shownet = { "cl_shownet", "0" };	// can be 0, 1, or 2
 cvar_t	cl_nolerp = { "cl_nolerp","0" };
-
-
-
+cvar_t	cl_stats = { "cl_stats", "0" };
 cvar_t	cl_spectator_password = { "cl_spectator_password", "0" };
-
-cvar_t	cl_predict_players = { "cl_predict_players", "1" };
-
 
 cvar_t	lookspring = { "lookspring", "0", TRUE };
 cvar_t	lookstrafe = { "lookstrafe", "0", TRUE };
@@ -40,8 +35,9 @@ cvar_t	cl_skyvec_x = { "cl_skyvec_x", "0" };
 cvar_t	cl_skyvec_y = { "cl_skyvec_y", "0" };
 cvar_t	cl_skyvec_z = { "cl_skyvec_z", "0" };
 
-// TODO: Implement
-
+cvar_t	cl_predict_players = { "cl_predict_players", "1" };
+cvar_t	cl_solid_players = { "cl_solid_players", "1" };
+cvar_t	cl_nodelta = { "cl_nodelta", "0" };
 cvar_t	cl_printplayers = { "cl_printplayers", "0" };
 
 cvar_t	m_pitch = { "m_pitch", "0.022", TRUE };
@@ -63,7 +59,7 @@ client_static_t	cls;
 client_state_t cl;
 // FIXME: put these on hunk?
 efrag_t			cl_efrags[MAX_EFRAGS];
-cl_entity_t*	cl_entities;
+cl_entity_t*	cl_entities = NULL;
 //cl_entity_t		cl_static_entities[MAX_STATIC_ENTITIES]; TODO: Implement
 lightstyle_t	cl_lightstyle[MAX_LIGHTSTYLES];
 dlight_t		cl_dlights[MAX_DLIGHTS];
@@ -984,9 +980,6 @@ void CL_TouchLight( dlight_t* dl )
 		r_dlightchanged |= 1 << i;
 }
 
-// TODO: cl_input.c
-cvar_t	cl_nodelta = { "cl_nodelta","0" };
-
 void CL_BaseMove( usercmd_t *cmd );
 int CL_ButtonBits( int bResetState );
 byte COM_BlockSequenceCRCByte( byte* base, int length, int sequence );
@@ -1361,6 +1354,7 @@ void CL_Init( void )
 	ClientDLL_HudVidInit();
 
 	Cvar_RegisterVariable(&cl_name);
+	Cvar_RegisterVariable(&cl_color);
 
 	// TODO: Implement
 	
@@ -1408,9 +1402,8 @@ void CL_Init( void )
 
 	Cvar_RegisterVariable(&cl_spectator_password);
 	Cvar_RegisterVariable(&cl_predict_players);
-
-	// TODO: Implement
-
+	Cvar_RegisterVariable(&cl_solid_players);
+	Cvar_RegisterVariable(&cl_nodelta);
 	Cvar_RegisterVariable(&cl_printplayers);
 
 	// TODO: Implement

@@ -16,8 +16,27 @@ qboolean locked = FALSE;
 int spec_track = 0; // player# of who we are tracking
 int autocam = CAM_NONE;
 
+// TODO: Implement
 
-void Cam_GetTopDownPosition( vec_t* source, float* vec )
+void Cam_GetPredictedTopDownOrigin( vec_t* vec )
 {
 	// TODO: Implement
 }
+
+// TODO: Implement
+
+void Cam_GetTopDownOrigin( vec_t* source, vec_t* vec )
+{
+	// TODO: Implement
+}
+
+void Cam_GetPredictedFirstPersonOrigin( vec_t* vec )
+{
+	// TODO: Implement
+}
+
+// TODO: Implement
+
+
+
+// TODO: Implement

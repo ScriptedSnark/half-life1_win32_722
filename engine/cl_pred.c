@@ -159,7 +159,7 @@ void CL_PredictMove( void )
 		if (autocam == CAM_TOPDOWN)
 		{
 			vec3_t pos;
-			Cam_GetTopDownPosition(from->playerstate[spec_track].origin, pos);
+			Cam_GetTopDownOrigin(from->playerstate[spec_track].origin, pos);
 			VectorCopy(from->playerstate[spec_track].velocity, cl.simvel);
 			VectorCopy(pos, cl.simorg);
 			return;

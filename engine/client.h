@@ -76,27 +76,17 @@ typedef struct player_info_s
 
 	// Name
 	char	name[MAX_SCOREBOARDNAME];
-
 	int		ping;
 
 	// skin information
 	int		color;
 
-	// TRUE if joined the game as spectator
-	qboolean spectator;
-
-	byte translations[VID_GRADES*256];
-
-	// TODO: Implement
+	int		spectator;
+	byte	translations[VID_GRADES * 256];
 
 	float	maxspeed;
 
 	customization_t customdata;
-
-
-	// TODO: Implement
-
-
 } player_info_t;
 
 //
@@ -224,6 +214,8 @@ typedef struct
 
 	double		state_time;		// not the same as the packet time,
 								// because player commands come asyncronously
+	float		received_time;	// timestamp when the state was received
+
 	usercmd_t	command;		// last command for prediction
 
 	byte		number;
@@ -266,16 +258,13 @@ typedef struct
 
 	int			weaponmodel;
 
-
+	byte pad4[8];
 
 	// If standing on conveyor, e.g.
 	vec3_t		basevelocity;
 
 	// Friction, for prediction.
 	float		friction;
-
-	byte removeme[40];
-
 } player_state_t;
 
 typedef struct
@@ -439,16 +428,8 @@ typedef struct
 
 	struct dlight_s* pLight;
 
-	// TODO: Implement
-
-
 // all player information
 	player_info_t	players[MAX_CLIENTS];
-
-
-	// TODO: Implement
-
-
 } client_state_t;
 
 
@@ -460,18 +441,9 @@ extern	cvar_t	cl_color;
 
 extern	cvar_t	cl_timeout;
 extern	cvar_t	cl_shownet;
-
-extern	cvar_t	cl_upspeed;
-extern	cvar_t	cl_forwardspeed;
-extern	cvar_t	cl_backspeed;
-extern	cvar_t	cl_sidespeed;
-
-extern	cvar_t	cl_movespeedkey;
-
-extern	cvar_t	cl_yawspeed;
-extern	cvar_t	cl_pitchspeed;
-
-extern	cvar_t	cl_predict_players;
+extern	cvar_t	cl_nolerp;
+extern	cvar_t	cl_stats;
+extern	cvar_t	cl_spectator_password;
 
 extern	cvar_t	lookspring;
 extern	cvar_t	lookstrafe;
@@ -485,6 +457,9 @@ extern	cvar_t	cl_skyvec_x;
 extern	cvar_t	cl_skyvec_y;
 extern	cvar_t	cl_skyvec_z;
 
+extern	cvar_t	cl_predict_players;
+extern	cvar_t	cl_solid_players;
+extern	cvar_t	cl_nodelta;
 extern	cvar_t	cl_printplayers;
 
 extern	cvar_t	m_pitch;
@@ -492,8 +467,26 @@ extern	cvar_t	m_yaw;
 extern	cvar_t	m_forward;
 extern	cvar_t	m_side;
 
+
+
+
+
+extern	cvar_t	cl_upspeed;
+extern	cvar_t	cl_forwardspeed;
+extern	cvar_t	cl_backspeed;
+extern	cvar_t	cl_sidespeed;
+
+extern	cvar_t	cl_movespeedkey;
+
+extern	cvar_t	cl_yawspeed;
+extern	cvar_t	cl_pitchspeed;
+
+
+
+
 extern	cvar_t	cl_pitchup;
 extern	cvar_t	cl_pitchdown;
+
 
 // TODO: Implement
 
@@ -503,7 +496,7 @@ extern int playerbitcounts[MAX_CLIENTS];
 
 // TODO: Implement
 
-extern client_static_t	cls;
+extern	client_static_t	cls;
 extern	client_state_t	cl;
 
 // FIXME, allocate dynamically
@@ -547,7 +540,7 @@ void CL_ClearResourceLists( void );
 
 #define			MAX_VISEDICTS	512
 extern	int		cl_numvisedicts, cl_oldnumvisedicts, cl_numbeamentities;
-extern	cl_entity_t* cl_visedicts, * cl_newvisedicts;
+extern	cl_entity_t* cl_visedicts, * cl_oldvisedicts;
 extern	cl_entity_t	cl_visedicts_list[2][MAX_VISEDICTS];
 extern	cl_entity_t* cl_beamentities[MAX_BEAMENTS];
 
@@ -619,7 +612,9 @@ extern	int		autocam;
 extern int spec_track; // player# of who we are tracking
 extern int cam_thirdperson;
 
-void Cam_GetTopDownPosition( vec_t* source, float* vec );
+void Cam_GetPredictedTopDownOrigin( vec_t* vec );
+void Cam_GetTopDownOrigin( vec_t* source, vec_t* vec );
+void Cam_GetPredictedFirstPersonOrigin( vec_t* vec );
 
 //
 // cl_parse.c

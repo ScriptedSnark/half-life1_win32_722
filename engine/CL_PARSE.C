@@ -912,7 +912,7 @@ void CL_ParseServerInfo( void )
 	// parse gametype
 	cl.gametype = MSG_ReadByte();
 
-	// Recieve level name
+	// receive level name
 	str = MSG_ReadString();
 	strncpy(cl.levelname, str, sizeof(cl.levelname) - 1);
 

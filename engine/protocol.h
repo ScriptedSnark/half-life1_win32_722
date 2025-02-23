@@ -185,6 +185,7 @@
 #define	PF_SKINNUM		(1<<6)
 #define	PF_EFFECTS		(1<<7)
 #define	PF_WEAPONMODEL	(1<<8)
+#define PF_DEAD			(1<<9)
 
 
 #define	PF_MOVETYPE		(1<<12)
@@ -245,7 +246,7 @@
 #define U_COLORMAP		(1<<18)
 #define U_CONTENTS		(1<<19)
 #define U_RENDER		(1<<20)
-
+#define U_MONSTERMOVE	(1<<21)
 #define U_BODY			(1<<22)
 #define U_YETMOREBITS	(1<<23)
 #define	U_CONTROLLER1	(1<<24)
@@ -255,7 +256,6 @@
 #define	U_BLENDING1		(1<<28)
 #define	U_BLENDING2		(1<<29)
 #define U_SCALE			(1<<30)
-
 
 #define U_BBOXMINS1		(1<<0)
 #define U_BBOXMINS2		(1<<1)
