@@ -228,7 +228,7 @@ char *ED_ParseEdict(char *data, edict_t *ent)
 		}
 		else
 		{
-			Con_Printf("Can't init %s\n", &pr_strings[ent->v.classname]);
+			Con_Printf("Can't init %s\n", pr_strings + ent->v.classname);
 		}
 	}
 
