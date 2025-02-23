@@ -249,8 +249,8 @@ void CL_InitPrediction( void )
 	Cvar_RegisterVariable(&cl_pushlatency);
 	Cvar_RegisterVariable(&cl_nopred);
 
-//	Cvar_RegisterVariable(&pm_nostudio);
-//	Cvar_RegisterVariable(&pm_nocomplex);
-//	Cvar_RegisterVariable(&pm_worldonly);
-//	Cvar_RegisterVariable(&pm_nostucktouch);
+	Cvar_RegisterVariable(&pm_nostudio);
+	Cvar_RegisterVariable(&pm_nocomplex);
+	Cvar_RegisterVariable(&pm_worldonly);
+	Cvar_RegisterVariable(&pm_nostucktouch);
 }
