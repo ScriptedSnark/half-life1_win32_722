@@ -351,9 +351,66 @@ void PM_CatagorizePosition( void )
 JumpButton
 =============
 */
+#define PLAYER_LONGJUMP_SPEED 350 // how fast we longjump
 void JumpButton( void )
 {
-	// TODO: Implement
+	int i;
+
+	if (pmove.server)
+		return;
+
+	if (pmove.dead)
+	{
+		pmove.oldbuttons |= IN_JUMP;	// don't jump again until released
+		return;
+	}
+
+	if (pmove.waterjumptime)
+	{
+		pmove.waterjumptime -= frametime;
+		if (pmove.waterjumptime < 0)
+			pmove.waterjumptime = 0;
+		return;
+	}
+
+	if (waterlevel >= 2)
+	{	// swimming, not jumping
+		onground = -1;
+		if (watertype == CONTENTS_WATER)
+			pmove.velocity[2] = 100;
+		else if (watertype == CONTENTS_SLIME)
+			pmove.velocity[2] = 80;
+		else
+			pmove.velocity[2] = 50;
+		return;
+	}
+
+	if (onground == -1)
+		return;		// in air, so no effect
+
+	if (pmove.oldbuttons & IN_JUMP)
+		return;		// don't pogo stick
+
+	onground = -1;
+
+	// Adjust for super long jump module
+	// UNDONE -- note this should be based on forward angles, not current velocity.
+	if (pmove.usehull == 1)
+	{
+		for (i = 0; i < 2; i++)
+		{
+			pmove.velocity[i] = pmove.velocity[i] * frametime * PLAYER_LONGJUMP_SPEED * 1.6;
+		}
+
+		pmove.velocity[2] += sqrt(2 * 800 * 56.0);
+	}
+	else
+	{
+
+		pmove.velocity[2] += sqrt(2 * 800 * 45.0);
+	}
+
+	pmove.oldbuttons |= IN_JUMP;	// don't jump again until released
 }
 
 /*
