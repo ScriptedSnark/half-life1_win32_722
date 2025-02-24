@@ -6,8 +6,8 @@ static	hull_t		box_hull;
 static	dclipnode_t	box_clipnodes[6];
 static	mplane_t	box_planes[6];
 
-extern vec3_t player_mins[4];
-extern vec3_t player_maxs[4];
+extern vec3_t player_mins[3];
+extern vec3_t player_maxs[3];
 
 /*
 ===================
@@ -103,7 +103,114 @@ int PM_HullPointContents( hull_t* hull, int num, vec_t* p )
 	return num;
 }
 
-// TODO: Implement
+/*
+==================
+PM_SimulateLinkContents
+
+==================
+*/
+int PM_SimulateLinkContents( vec_t* p, int* pIndex )
+{
+	int		i;
+	physent_t* pe;
+	vec3_t	test;
+	hull_t* hull;
+	int		num;
+	int		cont;
+
+	num = pmove.numphysent;
+
+	for (i = 1; i < num; i++)
+	{
+		pe = &pmove.physents[i];
+
+		if (pe->solid != SOLID_NOT || !pe->model)
+			continue;
+
+		VectorSubtract(p, pe->origin, test);
+
+		hull = pe->model->hulls;
+		cont = PM_HullPointContents(hull, hull[0].firstclipnode, test);
+		if (cont != CONTENTS_EMPTY)
+		{
+			if (pIndex)
+				*pIndex = pe->info;
+
+			return pe->skin;
+		}
+	}
+
+	return CONTENTS_EMPTY;
+}
+
+/*
+==================
+PM_WaterEntity
+
+==================
+*/
+int PM_PointContents( vec_t* p )
+{
+	hull_t* hull;
+	int		cont, entityContents;
+
+	hull = pmove.physents[0].model->hulls;
+
+	entityContents = PM_HullPointContents(hull, hull[0].firstclipnode, p);
+	if (entityContents <= CONTENTS_CURRENT_0 && entityContents >= CONTENTS_CURRENT_DOWN)
+		entityContents = CONTENTS_WATER;
+
+	if (entityContents == CONTENTS_SOLID)
+		return entityContents;
+
+	cont = PM_SimulateLinkContents(p, NULL);
+	if (cont != CONTENTS_EMPTY)
+		return cont;
+
+	return entityContents;	
+}
+
+/*
+==================
+PM_WaterEntity
+
+==================
+*/
+int PM_WaterEntity( vec_t* p )
+{
+	hull_t* hull;
+	int		num, entityIndex;
+	int		cont;
+
+	entityIndex = -1;
+	hull = pmove.physents[0].model->hulls;
+	num = pmove.numphysent;
+	cont = PM_HullPointContents(hull, hull[0].firstclipnode, p);
+	if (cont < CONTENTS_SOLID)
+		entityIndex = 0;
+
+	if (cont != CONTENTS_SOLID)
+		PM_SimulateLinkContents(p, &entityIndex);
+
+	return entityIndex;
+}
+
+/*
+==================
+PM_TruePointContents
+
+==================
+*/
+int PM_TruePointContents( vec_t* p )
+{
+	hull_t* hull;
+
+	hull = pmove.physents[0].model->hulls;
+	if (hull != NULL)
+		return PM_HullPointContents(hull, hull[0].firstclipnode, p);
+
+	return CONTENTS_EMPTY;
+}
 
 /*
 ===============================================================================
@@ -287,6 +394,7 @@ PM_TestPlayerPosition
 pmtrace_t g_Trace;
 int PM_TestPlayerPosition( float* pos )
 {
+	// TODO: Implement
 	return 0;
 }
 

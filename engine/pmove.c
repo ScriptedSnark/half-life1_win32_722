@@ -23,8 +23,8 @@ cvar_t	pm_worldonly = { "pm_worldonly", "0" };
 cvar_t	pm_pushfix = { "pm_pushfix", "0" };
 cvar_t	pm_nostucktouch = { "pm_nostucktouch", "0" };
 
-vec3_t	player_mins[4] = {{-16, -16, -36}, {-16, -16, -18}, {0, 0, 0}, 0};
-vec3_t	player_maxs[4] = {{16, 16, 36}, {16, 16, 18}, {0, 0, 0}, 0};
+vec3_t	player_mins[3] = {{-16, -16, -36}, {-16, -16, -18}, {0, 0, 0}};
+vec3_t	player_maxs[3] = {{16, 16, 36}, {16, 16, 18}, {0, 0, 0}};
 
 void PM_InitBoxHull( void );
 qboolean PM_AddToTouched( pmtrace_t tr, vec_t* impactvelocity );
@@ -33,7 +33,7 @@ void CreateStuckTable( void );
 
 void Pmove_Init( void )
 {
-	// TODO: Implement
+	PM_InitBoxHull();
 
 	CreateStuckTable();
 }
@@ -370,13 +370,74 @@ void CheckWaterJump( void )
 =============
 PM_CheckWater
 
-Sets pmove->waterlevel and pmove->watertype values.
 =============
 */
 qboolean PM_CheckWater( void )
 {
-	// TODO: Implement
-	return FALSE;
+	vec3_t	point;
+	int		cont;
+	int		truecont;
+	float     height;
+	float		heightover2;
+
+	// Pick a spot just above the players feet.
+	point[0] = pmove.origin[0] + (player_mins[pmove.usehull][0] + player_maxs[pmove.usehull][0]) * 0.5;
+	point[1] = pmove.origin[1] + (player_mins[pmove.usehull][1] + player_maxs[pmove.usehull][1]) * 0.5;
+	point[2] = pmove.origin[2] + player_mins[pmove.usehull][2] + 1;
+
+	// Assume that we are not in water at all.
+	waterlevel = 0;
+	watertype = CONTENTS_EMPTY;
+
+	// Grab point contents.
+	cont = PM_PointContents(point);
+	// Are we under water? (not solid and not empty?)
+	if (cont <= CONTENTS_WATER && cont > CONTENTS_TRANSLUCENT)
+	{
+		truecont = PM_TruePointContents(point);
+
+		// Set water type
+		watertype = cont;
+
+		// We are at least at level one
+		waterlevel = 1;
+
+		height = (player_mins[pmove.usehull][2] + player_maxs[pmove.usehull][2]);
+		heightover2 = height * 0.5;
+
+		// Now check a point that is at the player hull midpoint.
+		point[2] = pmove.origin[2] + heightover2;
+		cont = PM_PointContents(point);
+		// If that point is also under water...
+		if (cont <= CONTENTS_WATER && cont > CONTENTS_TRANSLUCENT)
+		{
+			// Set a higher water level.
+			waterlevel = 2;
+
+			// Now check the eye position.  (view_ofs is relative to the origin)
+			point[2] = pmove.origin[2] + pmove.view_ofs[2];
+
+			cont = PM_PointContents(point);
+			if (cont <= CONTENTS_WATER && cont > CONTENTS_TRANSLUCENT)
+				waterlevel = 3;  // In over our eyes
+		}
+
+		// Adjust velocity based on water current, if any.
+		if ((truecont <= CONTENTS_CURRENT_0) &&
+			(truecont >= CONTENTS_CURRENT_DOWN))
+		{
+			// The deeper we are, the stronger the current.
+			static vec3_t current_table[] =
+			{
+				{1, 0, 0}, {0, 1, 0}, {-1, 0, 0},
+				{0, -1, 0}, {0, 0, 1}, {0, 0, -1}
+			};
+
+			VectorMA(pmove.basevelocity, 50.0 * waterlevel, current_table[CONTENTS_CURRENT_0 - truecont], pmove.basevelocity);
+		}
+	}
+
+	return waterlevel > 1;
 }
 
 static vec3_t rgv3tStuckTable[54];
