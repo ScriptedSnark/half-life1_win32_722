@@ -433,7 +433,29 @@ PM_NoClip
 */
 void PM_NoClip( void )
 {
-	// TODO: Implement
+	int			i;
+	vec3_t		wishvel;
+	float		fmove, smove;
+//	float		currentspeed, addspeed, accelspeed;
+
+	// Copy movement amounts
+	fmove = pmove.cmd.forwardmove;
+	smove = pmove.cmd.sidemove;
+
+	VectorNormalize(forward);
+	VectorNormalize(right);
+
+	for (i = 0; i < 3; i++)       // Determine x and y parts of velocity
+	{
+		wishvel[i] = forward[i] * fmove + right[i] * smove;
+	}
+	wishvel[2] += pmove.cmd.upmove;
+
+	VectorMA(pmove.origin, frametime, wishvel, pmove.origin);
+
+	// Zero out the velocity so that we don't accumulate a huge downward velocity from
+	//  gravity, etc.
+	VectorCopy(vec3_origin, pmove.velocity);
 }
 
 void PM_WaterJump( void )
