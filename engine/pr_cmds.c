@@ -75,6 +75,14 @@ msurface_t* SurfaceAtPoint( model_t* pModel, mnode_t* node, vec_t* start, vec_t*
 
 // TODO: Implement
 
+// Sets trace vars for global servers variables
+void SV_SetGlobalTrace( trace_t* ptrace )
+{
+	// TODO: Implement
+}
+
+// TODO: Implement
+
 /*
 =================
 PVSNode

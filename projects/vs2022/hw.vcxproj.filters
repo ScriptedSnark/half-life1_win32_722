@@ -245,9 +245,6 @@
     <ClInclude Include="..\..\engine\anorms.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\common\const.h">
-      <Filter>Header Files\common</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\engine\cvar.h">
       <Filter>Header Files</Filter>
     </ClInclude>

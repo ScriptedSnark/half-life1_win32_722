@@ -130,6 +130,7 @@ extern	cvar_t	pm_nostucktouch;
 void PlayerMove( qboolean server );
 void Pmove_Init( void );
 
+int PM_TestPlayerPosition( float* pos );
 pmtrace_t PM_PlayerMove( vec_t* start, vec_t* end, int traceFlags );
 
 #endif // PMOVE_H

@@ -278,7 +278,17 @@ hull_t* PM_HullForStudioModel( model_t* pModel, vec_t* offset, float frame, int 
 	return NULL;
 }
 
-// TODO: Implement
+/*
+=================
+PM_TestPlayerPosition
+
+=================
+*/
+pmtrace_t g_Trace;
+int PM_TestPlayerPosition( float* pos )
+{
+	return 0;
+}
 
 /*
 =================

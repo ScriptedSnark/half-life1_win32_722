@@ -1,5 +1,6 @@
 #include "quakedef.h"
 #include "pmove.h"
+#include "pr_cmds.h"
 
 movevars_t		movevars;
 
@@ -28,9 +29,13 @@ vec3_t	player_maxs[4] = {{16, 16, 36}, {16, 16, 18}, {0, 0, 0}, 0};
 void PM_InitBoxHull( void );
 qboolean PM_AddToTouched( pmtrace_t tr, vec_t* impactvelocity );
 
+void CreateStuckTable( void );
+
 void Pmove_Init( void )
 {
 	// TODO: Implement
+
+	CreateStuckTable();
 }
 
 char* PM_NameForContents( int contents )
@@ -374,9 +379,115 @@ qboolean PM_CheckWater( void )
 	return FALSE;
 }
 
+static vec3_t rgv3tStuckTable[54];
+static int rgStuckLast[MAX_CLIENTS][2];
+
 void CreateStuckTable( void )
 {
-	// TODO: Implement
+	float x, y, z;
+	int idx;
+	int i;
+	float zi[3];
+
+	memset(rgv3tStuckTable, 0, 54 * sizeof(vec3_t));
+
+	idx = 0;
+	// Little Moves.
+	x = y = 0;
+	// Z moves
+	for (z = -0.125; z <= 0.125; z += 0.125)
+	{
+		rgv3tStuckTable[idx][0] = x;
+		rgv3tStuckTable[idx][1] = y;
+		rgv3tStuckTable[idx][2] = z;
+		idx++;
+	}
+	x = z = 0;
+	// Y moves
+	for (y = -0.125; y <= 0.125; y += 0.125)
+	{
+		rgv3tStuckTable[idx][0] = x;
+		rgv3tStuckTable[idx][1] = y;
+		rgv3tStuckTable[idx][2] = z;
+		idx++;
+	}
+	y = z = 0;
+	// X moves
+	for (x = -0.125; x <= 0.125; x += 0.125)
+	{
+		rgv3tStuckTable[idx][0] = x;
+		rgv3tStuckTable[idx][1] = y;
+		rgv3tStuckTable[idx][2] = z;
+		idx++;
+	}
+
+	// Remaining multi axis nudges.
+	for (x = -0.125; x <= 0.125; x += 0.250)
+	{
+		for (y = -0.125; y <= 0.125; y += 0.250)
+		{
+			for (z = -0.125; z <= 0.125; z += 0.250)
+			{
+				rgv3tStuckTable[idx][0] = x;
+				rgv3tStuckTable[idx][1] = y;
+				rgv3tStuckTable[idx][2] = z;
+				idx++;
+			}
+		}
+	}
+
+	// Big Moves.
+	x = y = 0;
+	zi[0] = 0.0f;
+	zi[1] = 1.0f;
+	zi[2] = 6.0f;
+
+	for (i = 0; i < 3; i++)
+	{
+		// Z moves
+		z = zi[i];
+		rgv3tStuckTable[idx][0] = x;
+		rgv3tStuckTable[idx][1] = y;
+		rgv3tStuckTable[idx][2] = z;
+		idx++;
+	}
+
+	x = z = 0;
+
+	// Y moves
+	for (y = -2.0f; y <= 2.0f; y += 2.0)
+	{
+		rgv3tStuckTable[idx][0] = x;
+		rgv3tStuckTable[idx][1] = y;
+		rgv3tStuckTable[idx][2] = z;
+		idx++;
+	}
+	y = z = 0;
+	// X moves
+	for (x = -2.0f; x <= 2.0f; x += 2.0f)
+	{
+		rgv3tStuckTable[idx][0] = x;
+		rgv3tStuckTable[idx][1] = y;
+		rgv3tStuckTable[idx][2] = z;
+		idx++;
+	}
+
+	// Remaining multi axis nudges.
+	for (i = 0; i < 3; i++)
+	{
+		z = zi[i];
+
+		for (x = -2.0f; x <= 2.0f; x += 2.0f)
+		{
+			for (y = -2.0f; y <= 2.0f; y += 2.0)
+			{
+				rgv3tStuckTable[idx][0] = x;
+				rgv3tStuckTable[idx][1] = y;
+				rgv3tStuckTable[idx][2] = z;
+				idx++;
+			}
+		}
+	}
 }
 
 /*
@@ -389,30 +500,151 @@ Grab a test offset for the player based on a passed in index
 */
 int GetRandomStuckOffsets( int nIndex, int server, vec_t* offset )
 {
-	// TODO: Implement
-	return 0;
+ // Last time we did a full
+	int idx;
+	idx = rgStuckLast[nIndex][server]++;
+
+	VectorCopy(rgv3tStuckTable[idx % 54], offset);
+
+	return (idx % 54);
 }
 
 void ResetStuckOffsets( int nIndex, int server )
 {
-	// TODO: Implement
+	rgStuckLast[nIndex][server] = 0;
 }
 
-/*
-=================
-NudgePosition
-
-If pmove->origin is in a solid position,
-try nudging slightly on all axis to
-allow for the cut precision of the net coordinates
-=================
-*/
 #define PM_CHECKSTUCK_MINTIME 0.05  // Don't check again too quickly.
 
+extern pmtrace_t g_Trace;
 int PM_CheckStuck( void )
 {
-	// TODO: Implement
-	return 0;
+	vec3_t	base;
+	vec3_t  offset;
+	vec3_t  test;
+	int     hitent;
+	int		idx;
+	float	fTime;
+	int i;
+
+	static float rgStuckCheckTime[MAX_CLIENTS][2]; // Last time we did a full
+	static float ft[3];
+
+	ft[0] = Sys_FloatTime();
+	hitent = PM_TestPlayerPosition(pmove.origin);
+	ft[1] = Sys_FloatTime();
+	if (hitent == -1)
+	{
+		ResetStuckOffsets(pmove.player_index, pmove.server);
+		return 0;
+	}
+
+	VectorCopy(pmove.origin, base);
+
+	// 
+	// Deal with precision error in network.
+	// 
+	if (!pmove.server)
+	{
+		// World or BSP model
+		if ((hitent == 0) ||
+			(pmove.physents[hitent].model != NULL))
+		{
+			int nReps = 0;
+			ResetStuckOffsets(pmove.player_index, pmove.server);
+			do
+			{
+				i = GetRandomStuckOffsets(pmove.player_index, pmove.server, offset);
+
+				VectorAdd(base, offset, test);
+				if (PM_TestPlayerPosition(test) == -1)
+				{
+					ResetStuckOffsets(pmove.player_index, pmove.server);
+
+					VectorCopy(test, pmove.origin);
+					return 0;
+				}
+				nReps++;
+			} while (nReps < 54);
+		}
+	}
+
+	// Only an issue on the client.
+
+	if (pmove.server)
+		idx = 0;
+	else
+		idx = 1;
+
+	fTime = Sys_FloatTime();
+	// Too soon?
+	if (rgStuckCheckTime[pmove.player_index][idx] >=
+		(fTime - PM_CHECKSTUCK_MINTIME))
+	{
+		return 1;
+	}
+	rgStuckCheckTime[pmove.player_index][idx] = fTime;
+
+	if (pmove.server)
+	{
+		if (!pmove.spectator && !pm_nostucktouch.value)
+		{
+			int info;
+			edict_t* ent;
+
+			info = pmove.physents[hitent].info;
+			ent = EDICT_NUM(info);
+			if (!(ent->v.flags & FL_SPECTATOR) && !(g_playertouch[info >> 3] & (1 << (info & 7))))
+			{
+				vec3_t vel;
+				trace_t trace;
+
+				trace.allsolid = g_Trace.allsolid;
+				trace.startsolid = g_Trace.startsolid;
+				trace.inopen = g_Trace.inopen;
+				trace.inwater = g_Trace.inwater;
+				trace.fraction = g_Trace.fraction;
+				VectorCopy(g_Trace.endpos, trace.endpos);
+				VectorCopy(g_Trace.plane.normal, trace.plane.normal);
+				trace.plane.dist = g_Trace.plane.dist;
+				trace.ent = ent;
+				trace.hitgroup = g_Trace.hitgroup;
+
+				// Save velocity
+				VectorCopy(sv_player->v.velocity, vel);
+
+				VectorCopy(pmove.velocity, sv_player->v.velocity);
+
+				SV_SetGlobalTrace(&trace);
+
+				gEntityInterface.pfnTouch(ent, sv_player);
+
+				// Restore it back
+				VectorCopy(vel, sv_player->v.velocity);
+			}
+		}
+	}
+
+	i = GetRandomStuckOffsets(pmove.player_index, pmove.server, offset);
+
+	VectorAdd(base, offset, test);
+	if ((hitent = PM_TestPlayerPosition(test)) == -1)
+	{
+		//Con_DPrintf("Nudged\n");
+
+		ResetStuckOffsets(pmove.player_index, pmove.server);
+
+		if (i >= 27)
+			VectorCopy(test, pmove.origin);
+
+		return 0;
+	}
+
+	ft[2] = Sys_FloatTime();
+
+	//VectorCopy(base, pmove->origin);
+
+	return 1;
 }
 
 /*
@@ -941,7 +1173,6 @@ qboolean PM_AddToTouched( pmtrace_t tr, vec_t* impactvelocity )
 			vec3_t vel;
 			trace_t trace;
 
-			// Convert pmtrace_t to trace_t
 			trace.allsolid = tr.allsolid;
 			trace.startsolid = tr.startsolid;
 			trace.inopen = tr.inopen;

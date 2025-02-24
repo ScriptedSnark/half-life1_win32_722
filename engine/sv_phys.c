@@ -52,6 +52,21 @@ void SV_Impact( edict_t* e1, edict_t* e2, trace_t* ptrace )
 	// TODO: Implement
 }
 
+// TODO: Implement
+
+edict_t** g_moved_edict;
+vec3_t* g_moved_from;
+byte* g_playertouch = NULL;
+
+/*
+============
+SV_PushMove
+
+============
+*/
+
+// TODO: Implement
+
 void SV_Physics( void )
 {
 	// TODO: Implement

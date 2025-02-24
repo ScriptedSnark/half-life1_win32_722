@@ -311,8 +311,9 @@ extern	jmp_buf 	host_abortserver;
 
 
 
-
-
+extern edict_t** g_moved_edict;
+extern vec3_t* g_moved_from;
+extern byte* g_playertouch;
 
 
 //===========================================================
