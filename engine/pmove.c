@@ -301,7 +301,24 @@ void PM_Friction( void )
 
 void PM_Accelerate( vec_t* wishdir, float wishspeed, float accel )
 {
-	// TODO: Implement
+	int			i;
+	float		addspeed, accelspeed, currentspeed;
+
+	if (pmove.dead)
+		return;
+	if (pmove.waterjumptime)
+		return;
+
+	currentspeed = DotProduct(pmove.velocity, wishdir);
+	addspeed = wishspeed - currentspeed;
+	if (addspeed <= 0)
+		return;
+	accelspeed = accel * frametime * wishspeed * pmove.friction;
+	if (accelspeed > addspeed)
+		accelspeed = addspeed;
+
+	for (i = 0; i < 3; i++)
+		pmove.velocity[i] += accelspeed * wishdir[i];
 }
 
 void PM_AirAccelerate( vec_t* wishdir, float wishspeed, float accel )
