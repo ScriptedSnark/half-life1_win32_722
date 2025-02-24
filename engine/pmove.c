@@ -361,9 +361,40 @@ void JumpButton( void )
 CheckWaterJump
 =============
 */
+#define WJ_HEIGHT 8
 void CheckWaterJump( void )
 {
-	// TODO: Implement
+	vec3_t	spot;
+	int		cont;
+	vec3_t	flatforward;
+
+	if (pmove.waterjumptime)
+		return;
+
+	// ZOID, don't hop out if we just jumped in
+	if (pmove.velocity[2] < -180)
+		return; // only hop out if we are moving up
+
+	// see if near an edge
+	flatforward[0] = forward[0];
+	flatforward[1] = forward[1];
+	flatforward[2] = 0.0;
+	VectorNormalize(flatforward);
+
+	VectorMA(pmove.origin, 24, flatforward, spot);
+	spot[2] += WJ_HEIGHT;
+	cont = PM_PointContents(spot);
+	if (cont != CONTENTS_SOLID)
+		return;
+	spot[2] += 24;
+	cont = PM_PointContents(spot);
+	if (cont != CONTENTS_EMPTY)
+		return;
+	// jump out of water
+	VectorScale(forward, 200, pmove.velocity);
+	pmove.velocity[2] = 225;
+	pmove.waterjumptime = 2;	// safety net
+	pmove.oldbuttons |= IN_JUMP;	// don't jump again until released
 }
 
 /*
