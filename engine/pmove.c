@@ -306,7 +306,26 @@ void PM_Accelerate( vec_t* wishdir, float wishspeed, float accel )
 
 void PM_AirAccelerate( vec_t* wishdir, float wishspeed, float accel )
 {
-	// TODO: Implement
+	int			i;
+	float		addspeed, accelspeed, currentspeed, wishspd = wishspeed;
+
+	if (pmove.dead)
+		return;
+	if (pmove.waterjumptime)
+		return;
+
+	if (wishspeed > 30)
+		wishspd = 30;
+	currentspeed = DotProduct(pmove.velocity, wishdir);
+	addspeed = wishspd - currentspeed;
+	if (addspeed <= 0)
+		return;
+	accelspeed = accel * wishspeed * frametime * pmove.friction;
+	if (accelspeed > addspeed)
+		accelspeed = addspeed;
+
+	for (i = 0; i < 3; i++)
+		pmove.velocity[i] += accelspeed * wishdir[i];
 }
 
 
