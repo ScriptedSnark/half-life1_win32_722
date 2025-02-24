@@ -21,6 +21,8 @@ solid_edge items only clip against bsp models.
 
 */
 
+// TODO: Recheck these cvars from scratch
+
 cvar_t sv_gravity = { "sv_gravity", "800", FALSE, TRUE };
 cvar_t sv_friction = { "sv_friction", "4", FALSE, TRUE };
 cvar_t sv_edgefriction = { "sv_edgefriction", "2", FALSE, TRUE };
@@ -36,9 +38,23 @@ cvar_t sv_airaccelerate = { "sv_airaccelerate", "10", FALSE, TRUE };
 cvar_t sv_wateraccelerate = { "sv_wateraccelerate", "10", FALSE, TRUE };
 cvar_t sv_waterfriction = { "sv_waterfriction", "1", FALSE, TRUE };
 
+// TODO: Implement
+
+/*
+==================
+SV_Impact
+
+Two entities have touched, so run their touch functions
+==================
+*/
+void SV_Impact( edict_t* e1, edict_t* e2, trace_t* ptrace )
+{
+	// TODO: Implement
+}
+
 void SV_Physics( void )
 {
-	
+	// TODO: Implement
 }
 
 // TODO: Implement
@@ -63,3 +79,5 @@ void SV_SetMoveVars( void )
 	movevars.waveHeight = sv_wateramp.value;
 	strcpy(movevars.skyName, sv_skyname.string);
 }
+
+// TODO: Implement

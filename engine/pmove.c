@@ -26,6 +26,7 @@ vec3_t	player_mins[4] = {{-16, -16, -36}, {-16, -16, -18}, {0, 0, 0}, 0};
 vec3_t	player_maxs[4] = {{16, 16, 36}, {16, 16, 18}, {0, 0, 0}, 0};
 
 void PM_InitBoxHull( void );
+qboolean PM_AddToTouched( pmtrace_t tr, vec_t* impactvelocity );
 
 void Pmove_Init( void )
 {
@@ -256,7 +257,16 @@ int PM_FlyMove( void )
 	return 0;
 }
 
-// TODO: Implement
+/*
+============
+PM_ApplyFriction
+
+============
+*/
+void PM_ApplyFriction( physent_t* pe )
+{
+	// TODO: Implement
+}
 
 /*
 =====================
@@ -478,21 +488,129 @@ Does not change the entities velocity at all
 */
 pmtrace_t PM_PushEntity( vec_t* push )
 {
-	// TODO: Implement
-	pmtrace_t	trace = {0};
+	pmtrace_t	trace;
+	vec3_t	end;
+
+	VectorAdd(pmove.origin, push, end);
+
+	trace = PM_PlayerMove(pmove.origin, end, PM_NORMAL);
+
+	VectorCopy(trace.endpos, pmove.origin);
+
+	// So we can run impact function afterwards.
+	if (trace.fraction < 1.0 &&
+		!trace.allsolid)
+	{
+		PM_AddToTouched(trace, pmove.velocity);
+	}
+
 	return trace;
 }
 
 /*
 ============
-PM_Physics_Toss()
+PM_Physics_Toss( void )
 
 Dead player flying through air., e.g.
 ============
 */
 void PM_Physics_Toss( void )
 {
-	// TODO: Implement
+	pmtrace_t trace;
+	vec3_t	move;
+	float	backoff;
+
+	PM_CheckWater();
+
+	if (pmove.velocity[2] > 0)
+		onground = -1;
+
+// if on ground and not moving, return.
+	if (onground != -1)
+	{
+		if (VectorCompare(pmove.basevelocity, vec3_origin) &&
+			VectorCompare(pmove.velocity, vec3_origin))
+			return;
+	}
+
+	PM_CheckVelocity();
+
+// add gravity
+	if (pmove.movetype != MOVETYPE_FLY &&
+		pmove.movetype != MOVETYPE_BOUNCEMISSILE &&
+		pmove.movetype != MOVETYPE_FLYMISSILE)
+		PM_AddGravity();
+
+// move origin
+	// Base velocity is not properly accounted for since this entity will move again after the bounce without
+	// taking it into account
+	VectorAdd(pmove.velocity, pmove.basevelocity, pmove.velocity);
+
+	PM_CheckVelocity();
+	VectorScale(pmove.velocity, frametime, move);
+	VectorSubtract(pmove.velocity, pmove.basevelocity, pmove.velocity);
+
+	trace = PM_PushEntity(move);
+
+	PM_CheckVelocity();
+
+	if (trace.allsolid)
+	{
+		// entity is trapped in another solid
+		onground = trace.ent;
+		VectorCopy(vec3_origin, pmove.velocity);
+		return;
+	}
+
+	if (trace.fraction == 1)
+	{
+		PM_CheckWater();
+		return;
+	}
+
+
+	if (pmove.movetype == MOVETYPE_BOUNCE)
+		backoff = 2.0 - pmove.friction;
+	else if (pmove.movetype == MOVETYPE_BOUNCEMISSILE)
+		backoff = 2.0;
+	else
+		backoff = 1;
+
+	PM_ClipVelocity(pmove.velocity, trace.plane.normal, pmove.velocity, backoff);
+
+	// stop if on ground
+	if (trace.plane.normal[2] > 0.7)
+	{
+		float vel;
+		vec3_t base;
+
+		VectorCopy(vec3_origin, base);
+		if (pmove.velocity[2] < movevars.gravity * frametime)
+		{
+			// we're rolling on the ground, add static friction.
+			onground = trace.ent;
+			pmove.velocity[2] = 0;
+		}
+
+		vel = DotProduct(pmove.velocity, pmove.velocity);
+
+		// Con_DPrintf("%f %f: %.0f %.0f %.0f\n", vel, trace.fraction, ent->velocity[0], ent->velocity[1], ent->velocity[2]);
+
+		if (vel < (30 * 30) || (pmove.movetype != MOVETYPE_BOUNCE && pmove.movetype != MOVETYPE_BOUNCEMISSILE))
+		{
+			onground = trace.ent;
+			VectorCopy(vec3_origin, pmove.velocity);
+		}
+		else
+		{
+			VectorScale(pmove.velocity, (1.0 - trace.fraction) * frametime * 0.9, move);
+			trace = PM_PushEntity(move);
+		}
+		VectorSubtract(pmove.velocity, base, pmove.velocity);
+	}
+
+// check for in water
+	PM_CheckWater();
 }
 
 /*
@@ -704,4 +822,75 @@ void PlayerMove( qboolean server )
 		}
 		break;
 	}
+}
+
+/*
+================
+PM_AddToTouched
+
+Add's the trace result to touch list, if contact is not already in list.
+================
+*/
+qboolean PM_AddToTouched( pmtrace_t tr, vec_t* impactvelocity )
+{
+	int i;
+
+	for (i = 0; i < pmove.numtouch; i++)
+	{
+		if (pmove.touchindex[i].ent == tr.ent)
+			break;
+	}
+	if (i != pmove.numtouch)  // Already in list.
+		return FALSE;
+
+	if (pm_pushfix.value)
+	{
+		if (pmove.server)
+		{
+			vec3_t vel;
+			trace_t trace;
+
+			// Convert pmtrace_t to trace_t
+			trace.allsolid = tr.allsolid;
+			trace.startsolid = tr.startsolid;
+			trace.inopen = tr.inopen;
+			trace.inwater = tr.inwater;
+			trace.fraction = tr.fraction;
+			VectorCopy(tr.endpos, trace.endpos);
+			VectorCopy(tr.plane.normal, trace.plane.normal);
+			trace.plane.dist = tr.plane.dist;
+			trace.ent = EDICT_NUM(pmove.physents[pmove.touchindex[i].ent].info);
+			trace.hitgroup = tr.hitgroup;
+
+			// Save velocity
+			VectorCopy(pmove.velocity, vel);
+
+			VectorCopy(impactvelocity, sv_player->v.velocity);
+
+			if (!(trace.ent->v.flags & FL_SPECTATOR) && !pmove.spectator)
+			{
+				// Run the impact function
+				SV_Impact(trace.ent, sv_player, &trace);
+			}
+
+			VectorSubtract(sv_player->v.velocity, vel, tr.deltavelocity);
+
+			// Restore it back
+			VectorCopy(vel, pmove.velocity);
+		}
+		else
+		{
+			VectorCopy(vec3_origin, tr.deltavelocity);
+		}
+	}
+	else
+	{
+		VectorCopy(impactvelocity, tr.deltavelocity);
+	}
+
+	if (pmove.numtouch >= MAX_PHYSENTS)
+		Con_DPrintf("Too many entities were touched!\n");
+
+	pmove.touchindex[pmove.numtouch++] = tr;
+	return TRUE;
 }

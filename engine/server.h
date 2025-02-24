@@ -368,6 +368,7 @@ void SV_ExecuteClientMessage( client_t* cl );
 //
 // TODO: Implement
 void SV_Physics( void );
+void SV_Impact( edict_t* e1, edict_t* e2, trace_t* ptrace );
 // TODO: Implement
 void SV_SetMoveVars( void );
 
