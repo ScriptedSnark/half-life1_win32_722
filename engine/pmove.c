@@ -27,6 +27,7 @@ vec3_t	player_mins[3] = {{-16, -16, -36}, {-16, -16, -18}, {0, 0, 0}};
 vec3_t	player_maxs[3] = {{16, 16, 36}, {16, 16, 18}, {0, 0, 0}};
 
 void PM_InitBoxHull( void );
+qboolean PM_CheckWater( void );
 qboolean PM_AddToTouched( pmtrace_t tr, vec_t* impactvelocity );
 
 void CreateStuckTable( void );
@@ -342,7 +343,42 @@ PM_CatagorizePosition
 */
 void PM_CatagorizePosition( void )
 {
-	// TODO: Implement
+	vec3_t		point;
+	pmtrace_t		tr;
+
+// if the player hull point one unit down is solid, the player
+// is on ground
+
+// see if standing on something solid	
+	point[0] = pmove.origin[0];
+	point[1] = pmove.origin[1];
+	point[2] = pmove.origin[2] - 2;
+	if (pmove.velocity[2] > 180)
+	{
+		onground = -1;
+	}
+	else
+	{
+		tr = PM_PlayerMove(pmove.origin, point, PM_NORMAL);	
+		if (tr.plane.normal[2] < 0.7)
+			onground = -1;	// too steep
+		else
+			onground = tr.ent;
+		if (onground != -1)
+		{
+			pmove.waterjumptime = 0;
+			if (!tr.startsolid && !tr.allsolid)
+				VectorCopy(tr.endpos, pmove.origin);
+		}
+
+		// standing on an entity other than the world
+		if (tr.ent > 0)
+		{
+			PM_AddToTouched(tr, pmove.velocity);
+		}
+	}
+
+	PM_CheckWater();
 }
 
 
@@ -473,7 +509,9 @@ qboolean PM_CheckWater( void )
 	point[1] = pmove.origin[1] + (player_mins[pmove.usehull][1] + player_maxs[pmove.usehull][1]) * 0.5;
 	point[2] = pmove.origin[2] + player_mins[pmove.usehull][2] + 1;
 
-	// Assume that we are not in water at all.
+//
+// get waterlevel
+//
 	waterlevel = 0;
 	watertype = CONTENTS_EMPTY;
 
