@@ -490,6 +490,11 @@ extern	cvar_t	cl_pitchdown;
 
 // TODO: Implement
 
+extern	cvar_t	cl_nopred;
+extern	cvar_t	cl_pushlatency;
+extern	cvar_t	cl_dumpents;
+extern	cvar_t	cl_showpred;
+
 extern qboolean cl_inmovie;
 
 extern int playerbitcounts[MAX_CLIENTS];
