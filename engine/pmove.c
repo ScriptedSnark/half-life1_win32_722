@@ -26,11 +26,12 @@ cvar_t	pm_nostucktouch = { "pm_nostucktouch", "0" };
 vec3_t	player_mins[3] = {{-16, -16, -36}, {-16, -16, -18}, {0, 0, 0}};
 vec3_t	player_maxs[3] = {{16, 16, 36}, {16, 16, 18}, {0, 0, 0}};
 
+void CreateStuckTable( void );
+
 void PM_InitBoxHull( void );
+void PM_Accelerate( vec_t* wishdir, float wishspeed, float accel );
 qboolean PM_CheckWater( void );
 qboolean PM_AddToTouched( pmtrace_t tr, vec_t* impactvelocity );
-
-void CreateStuckTable( void );
 
 void Pmove_Init( void )
 {
@@ -344,7 +345,141 @@ Only used by players.  Moves along the ground when player is a MOVETYPE_WALK.
 */
 void PM_WalkMove( void )
 {
-	// TODO: Implement
+	int			clip;
+	int			oldonground;
+	int i;
+
+	vec3_t		wishvel;
+	float       spd;
+	float		fmove, smove;
+	vec3_t		wishdir;
+	float		wishspeed;
+
+	vec3_t dest, start;
+	vec3_t original, originalvel;
+	vec3_t down, downvel;
+	float downdist, updist;
+
+	pmtrace_t trace;
+
+	fmove = pmove.cmd.forwardmove;
+	smove = pmove.cmd.sidemove;
+
+	forward[2] = 0;
+	right[2] = 0;
+
+	VectorNormalize(forward);
+	VectorNormalize(right);
+
+	for (i = 0; i < 2; i++)
+		wishvel[i] = forward[i] * fmove + right[i] * smove;
+	wishvel[2] = 0;
+
+	VectorCopy(wishvel, wishdir);
+	wishspeed = VectorNormalize(wishdir);
+
+//
+// clamp to server defined max speed
+//
+	if (wishspeed > pmove.maxspeed)
+	{
+		VectorScale(wishvel, pmove.maxspeed / wishspeed, wishvel);
+		wishspeed = pmove.maxspeed;
+	}
+
+	pmove.velocity[2] = 0;
+	PM_Accelerate(wishdir, wishspeed, movevars.accelerate);
+	pmove.velocity[2] = 0;
+
+	VectorAdd(pmove.velocity, pmove.basevelocity, pmove.velocity);
+
+	spd = Length(pmove.velocity);
+
+	if (spd < 1.0f)
+	{
+		VectorCopy(vec3_origin, pmove.velocity);
+		return;
+	}
+
+	//if (!pmove.velocity[0] && !pmove.velocity[1] && !pmove.velocity[2])
+	//	return;
+
+	oldonground = onground;
+
+// first try just moving to the destination	
+	dest[0] = pmove.origin[0] + pmove.velocity[0] * frametime;
+	dest[1] = pmove.origin[1] + pmove.velocity[1] * frametime;
+	dest[2] = pmove.origin[2];
+
+// first try moving directly to the next spot
+	VectorCopy(dest, start);
+	trace = PM_PlayerMove(pmove.origin, dest, PM_NORMAL);
+	if (trace.fraction == 1.0)
+	{
+		VectorCopy(trace.endpos, pmove.origin);
+		return;
+	}
+
+	if (oldonground == -1 &&
+		waterlevel == 0)
+		return;
+
+	if (pmove.waterjumptime)
+		return;
+
+// try sliding forward both on ground and up 16 pixels
+//  take the move that goes farthest
+	VectorCopy(pmove.origin, original);
+	VectorCopy(pmove.velocity, originalvel);
+
+// slide move
+	clip = PM_FlyMove();
+
+	VectorCopy(pmove.origin, down);
+	VectorCopy(pmove.velocity, downvel);
+
+	VectorCopy(original, pmove.origin);
+
+	VectorCopy(originalvel, pmove.velocity);
+
+	VectorCopy(pmove.origin, dest);
+	dest[2] += movevars.stepsize;
+
+	trace = PM_PlayerMove(pmove.origin, dest, PM_NORMAL);
+	if (!trace.startsolid && !trace.allsolid)
+		VectorCopy(trace.endpos, pmove.origin);
+
+// slide move the rest of the way.
+	clip = PM_FlyMove();
+
+// now try going back down from the end point
+//  press down the stepheight
+	VectorCopy(pmove.origin, dest);
+	dest[2] -= movevars.stepsize;
+
+	trace = PM_PlayerMove(pmove.origin, dest, PM_NORMAL);
+	if (trace.plane.normal[2] < 0.7)
+		goto usedown;
+
+	if (!trace.startsolid && !trace.allsolid)
+		VectorCopy(trace.endpos, pmove.origin);
+
+	VectorCopy(pmove.origin, up);
+
+	// decide which one went farther
+	downdist = (down[0] - original[0]) * (down[0] - original[0])
+		+ (down[1] - original[1]) * (down[1] - original[1]);
+	updist = (up[0] - original[0]) * (up[0] - original[0])
+		+ (up[1] - original[1]) * (up[1] - original[1]);
+
+	if (downdist > updist)
+	{
+usedown:
+		VectorCopy(down, pmove.origin);
+		VectorCopy(downvel, pmove.velocity);
+	}
+	else // copy z value from slide move
+		pmove.velocity[2] = downvel[2];
 }
 
 /*
