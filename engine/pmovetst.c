@@ -2,6 +2,9 @@
 #include "pmove.h"
 #include "r_studio.h"
 
+pmtrace_t g_Trace;
+int PM_global_testContents;
+
 static	hull_t		box_hull;
 static	dclipnode_t	box_clipnodes[6];
 static	mplane_t	box_planes[6];
@@ -391,11 +394,104 @@ PM_TestPlayerPosition
 
 =================
 */
-pmtrace_t g_Trace;
 int PM_TestPlayerPosition( float* pos )
 {
-	// TODO: Implement
-	return 0;
+	int		i;
+	physent_t* pe;
+	vec3_t	mins, maxs, test;
+	vec3_t	offset;
+	hull_t* hull;
+	qboolean rotated = FALSE;
+	int		j, numhulls;
+
+	// check if the player is currently inside a solid object
+	g_Trace = PM_PlayerMove(pmove.origin, pmove.origin, PM_NORMAL);
+
+	for (i = 0; i < pmove.numphysent; i++)
+	{
+		pe = &pmove.physents[i];
+		if (pe->model && pe->solid == SOLID_NOT && pe->skin != 0)
+			continue;
+
+		VectorCopy(pe->origin, offset);
+		numhulls = 1;
+
+		// get the clipping hull
+		if (pe->model)
+		{
+			switch (pmove.usehull)
+			{
+			case 0:
+				// regular
+				hull = &pe->model->hulls[1];
+				break;
+			case 1:
+				// standing
+				hull = &pe->model->hulls[3];
+				break;
+			case 2:
+				// crouching
+				hull = &pe->model->hulls[0];
+				break;
+			default:
+				hull = &pe->model->hulls[1];
+				break;
+			}
+
+			VectorSubtract(hull->clip_mins, player_mins[pmove.usehull], offset);
+			VectorAdd(offset, pe->origin, offset);
+		}
+		else
+		{
+			if (pe->studiomodel && pe->studiomodel->type == mod_studio &&
+				((pe->studiomodel->flags & STUDIO_TRACE_HITBOX) || pmove.usehull == 2))
+			{
+				hull = PM_HullForStudioModel(pe->studiomodel, offset, pe->frame, pe->sequence, pe->angles,
+					pe->origin, pe->controller, pe->blending, &numhulls);
+			}
+			else
+			{
+				VectorSubtract(pe->mins, player_maxs[pmove.usehull], mins);
+				VectorSubtract(pe->maxs, player_mins[pmove.usehull], maxs);
+				hull = PM_HullForBox(mins, maxs);
+			}
+		}
+
+		VectorSubtract(pos, offset, test);
+
+		// Rotate the start and end into the model's frame of reference.
+		rotated = pe->solid == SOLID_BSP && (pe->angles[0] != 0 || pe->angles[1] != 0 || pe->angles[2] != 0);
+		if (rotated)
+		{
+			vec3_t forward, right, up;
+			vec3_t temp;
+
+			AngleVectors(pe->angles, forward, right, up);
+
+			VectorCopy(test, temp);
+			test[0] = DotProduct(forward, temp);
+			test[1] = -DotProduct(right, temp);
+			test[2] = DotProduct(up, temp);
+		}
+
+		if (numhulls == 1)
+		{
+			PM_global_testContents = PM_HullPointContents(hull, hull->firstclipnode, test);
+			if (PM_global_testContents == CONTENTS_SOLID)
+				return i;
+		}
+		else
+		{
+			for (j = 0; j < numhulls; j++)
+			{
+				PM_global_testContents = PM_HullPointContents(&hull[j], hull[j].firstclipnode, test);
+				if (PM_global_testContents == CONTENTS_SOLID)
+					return i;
+			}
+		}
+	}
+
+	return -1;
 }
 
 /*
@@ -487,7 +583,6 @@ pmtrace_t PM_PlayerMove( vec_t* start, vec_t* end, int traceFlags )
 			{
 				VectorSubtract(pe->mins, player_maxs[pmove.usehull], mins);
 				VectorSubtract(pe->maxs, player_mins[pmove.usehull], maxs);
-
 				hull = PM_HullForBox(mins, maxs);
 			}
 		}
