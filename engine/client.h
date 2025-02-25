@@ -597,6 +597,7 @@ void CL_ParsePacketEntities( qboolean delta );
 void CL_SetSolidEntities( void );
 void CL_ParsePlayerinfo( void );
 void CL_Particle( vec_t* origin, int color, float life, int zpos, int zvel );
+void CL_PrintEntity( cl_entity_t* ent );
 
 //
 // cl_pred.c

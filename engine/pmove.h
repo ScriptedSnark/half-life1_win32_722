@@ -130,6 +130,10 @@ extern	cvar_t	pm_nostucktouch;
 void PlayerMove( qboolean server );
 void Pmove_Init( void );
 
+void PM_Accelerate( vec_t* wishdir, float wishspeed, float accel );
+qboolean PM_CheckWater( void );
+qboolean PM_AddToTouched( pmtrace_t tr, vec_t* impactvelocity );
+
 int PM_PointContents( vec_t* p );
 int PM_WaterEntity( vec_t* p );
 int PM_TruePointContents( vec_t* p );
