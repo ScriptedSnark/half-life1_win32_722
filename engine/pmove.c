@@ -316,7 +316,73 @@ Handles both ground friction and water friction
 */
 void PM_Friction( void )
 {
-	// TODO: Implement
+	float* vel;
+	float	speed, newspeed, control;
+	float	friction;
+	float	drop;
+	vec3_t	newvel;
+
+	if (pmove.waterjumptime)
+		return;
+
+	vel = pmove.velocity;
+
+	speed = sqrt(vel[0] * vel[0] + vel[1] * vel[1] + vel[2] * vel[2]);
+	if (speed < 0.1)
+	{
+		vel[0] = 0;
+		vel[1] = 0;
+		return;
+	}
+
+	drop = 0;
+
+// apply ground friction
+	if (onground != -1)
+	{
+		vec3_t start, stop;
+		pmtrace_t trace;
+
+		start[0] = stop[0] = pmove.origin[0] + vel[0] / speed * 16;
+		start[1] = stop[1] = pmove.origin[1] + vel[1] / speed * 16;
+		start[2] = pmove.origin[2] + player_mins[pmove.usehull][2];
+		stop[2] = start[2] - 34;
+
+		trace = PM_PlayerMove(start, stop, PM_NORMAL);
+
+		if (trace.fraction == 1.0)
+			friction = movevars.friction * movevars.edgefriction;
+		else
+			friction = movevars.friction;
+
+		// Grab friction value.
+		//friction = movevars.friction;      
+
+		friction *= pmove.friction;  // player friction?
+
+		// Bleed off some speed, but if we have less than the bleed
+		//  threshhold, bleed the theshold amount.
+		control = (speed <= movevars.stopspeed) ?
+			movevars.stopspeed : speed;
+		// Add the amount to t'he drop amount.
+		drop += control * friction * frametime;
+	}
+
+// apply water friction
+//	if (waterlevel)
+//		drop += speed * movevars.waterfriction * waterlevel * frametime;
+
+// scale the velocity
+	newspeed = speed - drop;
+	if (newspeed < 0)
+		newspeed = 0;
+	newspeed /= speed;
+
+	newvel[0] = vel[0] * newspeed;
+	newvel[1] = vel[1] * newspeed;
+	newvel[2] = vel[2] * newspeed;
+
+	VectorCopy(newvel, pmove.velocity);
 }
 
 
