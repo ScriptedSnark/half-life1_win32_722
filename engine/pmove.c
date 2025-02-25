@@ -239,13 +239,34 @@ int PM_ClipVelocity( vec_t* in, vec_t* normal, vec_t* out, float overbounce )
 
 void PM_AddCorrectGravity( void )
 {
-	// TODO: Implement
+	float	ent_gravity;
+
+	if (pmove.gravity)
+		ent_gravity = pmove.gravity;
+	else
+		ent_gravity = 1.0;
+
+	pmove.velocity[2] -= (ent_gravity * movevars.gravity * 0.5 * frametime);
+	pmove.velocity[2] += pmove.basevelocity[2] * frametime;
+	pmove.basevelocity[2] = 0;
+
+	PM_CheckVelocity();
 }
 
 
 void PM_FixupGravityVelocity( void )
 {
-	// TODO: Implement
+	float	ent_gravity;
+
+	if (pmove.gravity)
+		ent_gravity = pmove.gravity;
+	else
+		ent_gravity = 1.0;
+
+	// Get the correct velocity for the end of the dt 
+	pmove.velocity[2] -= (ent_gravity * movevars.gravity * frametime * 0.5);
+
+	PM_CheckVelocity();
 }
 
 /*
@@ -367,7 +388,41 @@ PM_AirMove
 */
 void PM_AirMove( void )
 {
-	// TODO: Implement
+	int			i;
+	vec3_t		wishvel;
+	float		fmove, smove;
+	vec3_t		wishdir;
+	float		wishspeed;
+
+	fmove = pmove.cmd.forwardmove;
+	smove = pmove.cmd.sidemove;
+
+	forward[2] = 0;
+	right[2] = 0;
+	VectorNormalize(forward);
+	VectorNormalize(right);
+
+	for (i = 0; i < 2; i++)
+		wishvel[i] = forward[i] * fmove + right[i] * smove;
+	wishvel[2] = 0;
+
+	VectorCopy(wishvel, wishdir);
+	wishspeed = VectorNormalize(wishdir);
+
+//
+// clamp to server defined max speed
+//
+	if (wishspeed > pmove.maxspeed)
+	{
+		VectorScale(wishvel, pmove.maxspeed / smove, wishvel);
+		wishspeed = pmove.maxspeed;
+	}
+
+	PM_AirAccelerate(wishdir, wishspeed, movevars.airaccelerate);
+
+	VectorAdd(pmove.velocity, pmove.basevelocity, pmove.velocity);
+
+	PM_FlyMove();
 }
 
 
