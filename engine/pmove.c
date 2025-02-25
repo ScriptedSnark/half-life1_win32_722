@@ -376,7 +376,89 @@ PM_WaterMove
 */
 void PM_WaterMove( void )
 {
-	// TODO: Implement
+	int		i;
+	vec3_t	wishvel;
+	float	wishspeed;
+	vec3_t	wishdir;
+	vec3_t	start, dest;
+	vec3_t  temp;
+	pmtrace_t	trace;
+
+	float speed, newspeed, addspeed, accelspeed;
+
+//
+// user intentions
+//
+	for (i = 0; i < 3; i++)
+		wishvel[i] = forward[i] * pmove.cmd.forwardmove + right[i] * pmove.cmd.sidemove;
+
+	if (!pmove.cmd.forwardmove && !pmove.cmd.sidemove && !pmove.cmd.upmove)
+		wishvel[2] -= 60;		// drift towards bottom
+	else 
+		wishvel[2] += pmove.cmd.upmove;
+
+	VectorCopy(wishvel, wishdir);
+	wishspeed = VectorNormalize(wishdir);
+	if (wishspeed > pmove.maxspeed)
+	{
+		VectorScale(wishvel, pmove.maxspeed / wishspeed, wishvel);
+		wishspeed = pmove.maxspeed;
+	}
+	wishspeed *= 0.7;
+
+	VectorAdd(pmove.velocity, pmove.basevelocity, pmove.velocity);
+// Water friction
+	VectorCopy(pmove.velocity, temp);
+	speed = VectorNormalize(temp);
+	if (speed)
+	{
+		newspeed = (1.0 - frametime * movevars.friction * pmove.friction) * speed;
+
+		if (newspeed < 0)
+			newspeed = 0;
+		VectorScale(pmove.velocity, newspeed / speed, pmove.velocity);
+	}
+	else
+		newspeed = 0;
+
+//
+// water acceleration
+//
+//	if (pmove.waterjumptime)
+//		Con_Printf("wm->%f, %f, %f\n", pmove.velocity[0], pmove.velocity[1], pmove.velocity[2]);
+
+	if (wishspeed < 0.1f)
+	{
+		return;
+	}
+
+	addspeed = wishspeed - newspeed;
+	if (addspeed > 0)
+	{
+
+		VectorNormalize(wishvel);
+		accelspeed = movevars.accelerate * wishspeed * frametime * pmove.friction;
+		if (accelspeed > addspeed)
+			accelspeed = addspeed;
+
+		for (i = 0; i < 3; i++)
+			pmove.velocity[i] += accelspeed * wishvel[i];
+	}
+
+// assume it is a stair or a slope, so press down from stepheight above
+	VectorMA(pmove.origin, frametime, pmove.velocity, dest);
+	VectorCopy(dest, start);
+	start[2] += movevars.stepsize + 1;
+	trace = PM_PlayerMove(start, dest, PM_NORMAL);
+	if (!trace.startsolid && !trace.allsolid)	// FIXME: check steep slope?
+	{	// walked up the step, so just keep result and exit
+		VectorCopy(trace.endpos, pmove.origin);
+		return;
+	}
+
+	PM_FlyMove();
+//	if (pmove.waterjumptime)
+//		Con_Printf("<-wm%f, %f, %f\n", pmove.velocity[0], pmove.velocity[1], pmove.velocity[2]);
 }
 
 
