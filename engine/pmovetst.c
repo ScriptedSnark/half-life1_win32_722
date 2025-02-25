@@ -381,11 +381,13 @@ PM_HullForStudioModel
 
 =================
 */
-hull_t* PM_HullForStudioModel( model_t* pModel, vec_t* offset, float frame, int sequence,
-	const vec_t* angles, const vec_t* origin, const unsigned char* pcontroller, const unsigned char* pblending, int* pNumHulls )
+hull_t* PM_HullForStudioModel( model_t* pModel, vec_t* offset, float frame, int sequence, const vec_t* angles, const vec_t* origin, const byte* pcontroller, const byte* pblending, int* pNumHulls )
 {
-	// TODO: Implement
-	return NULL;
+	vec3_t size;
+	VectorSubtract(player_maxs[pmove.usehull], player_mins[pmove.usehull], size);
+	VectorScale(size, 0.5, size);
+	VectorCopy(vec3_origin, offset);
+	return R_StudioHull(pModel, frame, sequence, angles, origin, size, pcontroller, pblending, pNumHulls);
 }
 
 /*

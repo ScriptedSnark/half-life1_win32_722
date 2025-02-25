@@ -21,6 +21,7 @@ void	R_StudioRenderFinal( void );
 void	GLR_StudioDrawShadow( void );
 void	R_StudioDrawPoints( void );
 
+hull_t* R_StudioHull( model_t* pModel, float frame, int sequence, const vec_t* angles, const vec_t* origin, const vec_t* size, const byte* pcontroller, const byte* pblending, int* pNumHulls );
 int		SV_HitgroupForStudioHull( int index );
 
 #endif // R_STUDIO_H

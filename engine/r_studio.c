@@ -1048,6 +1048,12 @@ void R_StudioMergeBones( studiohdr_t* psubstudiohdr, model_t* psubmodel )
 
 // TODO: Implement
 
+hull_t* R_StudioHull( model_t* pModel, float frame, int sequence, const vec_t* angles, const vec_t* origin, const vec_t* size, const byte* pcontroller, const byte* pblending, int* pNumHulls )
+{
+	// TODO: Implement
+	return NULL;
+}
+
 int SV_HitgroupForStudioHull( int index )
 {
 	return studio_hull_hitgroup[index];
