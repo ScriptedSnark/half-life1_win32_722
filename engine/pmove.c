@@ -292,7 +292,23 @@ PM_ApplyFriction
 */
 void PM_ApplyFriction( physent_t* pe )
 {
-	// TODO: Implement
+	float	d, d2;
+	vec3_t  forward, right, up;
+	vec3_t	dest;
+
+	AngleVectors(pmove.angles, forward, right, up);   // Determine movement angles
+
+	d = DotProduct(forward, pe->maxs) + 0.5;
+	if (d >= 0.0)
+		return;
+
+	d2 = DotProduct(pmove.velocity, pe->maxs) * pmove.friction;
+	VectorScale(pe->maxs, d2, dest);
+
+	pmove.velocity[0] = (pmove.velocity[0] - dest[0]) * (d + 1.0);
+	pmove.velocity[1] = (pmove.velocity[1] - dest[1]) * (d + 1.0);
+
+	PM_CheckVelocity();
 }
 
 /*
@@ -355,16 +371,12 @@ void PM_Friction( void )
 		else
 			friction = movevars.friction;
 
-		// Grab friction value.
-		//friction = movevars.friction;      
-
 		friction *= pmove.friction;  // player friction?
 
 		// Bleed off some speed, but if we have less than the bleed
 		//  threshhold, bleed the theshold amount.
 		control = (speed <= movevars.stopspeed) ?
 			movevars.stopspeed : speed;
-		// Add the amount to t'he drop amount.
 		drop += control * friction * frametime;
 	}
 
