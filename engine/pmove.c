@@ -231,10 +231,34 @@ returns the blocked flags:
 0x02 == step / wall
 ==================
 */
+#define	STOP_EPSILON	0.1
+
 int PM_ClipVelocity( vec_t* in, vec_t* normal, vec_t* out, float overbounce )
 {
-	// TODO: Implement
-	return 0;
+	float	backoff;
+	float	change;
+	float angle;
+	int		i, blocked;
+
+	angle = normal[2];
+
+	blocked = 0;
+	if (angle > 0)
+		blocked |= 1;		// floor
+	if (!angle)
+		blocked |= 2;		// step
+
+	backoff = DotProduct(in, normal) * overbounce;
+
+	for (i = 0; i < 3; i++)
+	{
+		change = normal[i] * backoff;
+		out[i] = in[i] - change;
+		if (out[i] > -STOP_EPSILON && out[i] < STOP_EPSILON)
+			out[i] = 0;
+	}
+
+	return blocked;
 }
 
 void PM_AddCorrectGravity( void )
