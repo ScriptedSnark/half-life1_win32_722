@@ -139,5 +139,6 @@ int PM_WaterEntity( vec_t* p );
 int PM_TruePointContents( vec_t* p );
 int PM_TestPlayerPosition( float* pos );
 pmtrace_t PM_PlayerMove( vec_t* start, vec_t* end, int traceFlags );
+pmtrace_t PM_PlayerMove2( vec_t* start, vec_t* end );
 
 #endif // PMOVE_H

@@ -35,4 +35,6 @@ void SV_LinkEdict( edict_t* ent, qboolean touch_triggers );
 
 qboolean SV_RecursiveHullCheck( hull_t* hull, int num, float p1f, float p2f, vec_t* p1, vec_t* p2, trace_t* trace );
 
+void SV_MoveBounds( const vec_t* start, const vec_t* mins, const vec_t* maxs, const vec_t* end, vec_t* boxmins, vec_t* boxmaxs );
+
 #endif // WORLD_H

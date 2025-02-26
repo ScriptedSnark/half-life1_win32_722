@@ -574,7 +574,7 @@ pmtrace_t PM_PlayerMove( vec_t* start, vec_t* end, int traceFlags )
 					continue;
 
 				if (pe->studiomodel->type == mod_studio &&
-					(pe->studiomodel->flags & STUDIO_TRACE_HITBOX || (pmove.usehull == 2 && !(traceFlags & PM_STUDIO_BOX))))
+					((pe->studiomodel->flags & STUDIO_TRACE_HITBOX) || (pmove.usehull == 2 && !(traceFlags & PM_STUDIO_BOX))))
 				{
 					hull = PM_HullForStudioModel(pe->studiomodel, offset, pe->frame, pe->sequence, pe->angles,
 						pe->origin, pe->controller, pe->blending, &numhulls);
@@ -641,7 +641,7 @@ pmtrace_t PM_PlayerMove( vec_t* start, vec_t* end, int traceFlags )
 				if (j == 0 || testtrace.allsolid || testtrace.startsolid || testtrace.fraction < trace.fraction)
 				{
 					qboolean remember = (trace.startsolid == FALSE);
-					memcpy(&trace, &testtrace, sizeof(trace));
+					trace = testtrace;
 
 					if (!remember)
 						trace.startsolid = TRUE;
@@ -681,7 +681,283 @@ pmtrace_t PM_PlayerMove( vec_t* start, vec_t* end, int traceFlags )
 		}
 
 	// did we clip the move?
-		if (total.fraction > (double)trace.fraction)
+		if (total.fraction > trace.fraction)
+		{
+			total = trace;
+			total.ent = i;
+		}
+	}
+
+	return total;
+}
+
+/*
+=================
+PM_MinMaxForRay
+
+=================
+*/
+void PM_MinMaxForRay( vec_t* inmin, vec_t* inmax, vec_t* outmin, vec_t* outmax )
+{
+	int i;
+
+	for (i = 0; i < 3; i++)
+	{
+		outmin[i] = (inmin[i] <= inmax[i]) ? inmin[i] : inmax[i];
+		outmax[i] = (inmin[i] >= inmax[i]) ? inmin[i] : inmax[i];
+	}
+}
+
+/*
+=================
+PM_MinMaxForRay
+
+=================
+*/
+pmtrace_t PM_Worldtrace( vec_t* start, vec_t* end )
+{
+	pmtrace_t trace;
+	vec3_t	offset;
+	vec3_t	start_l, end_l;
+	hull_t* hull;
+	physent_t* pe;
+
+// fill in a default trace
+	memset(&trace, 0, sizeof(trace));
+	trace.fraction = 1.0;
+	trace.ent = -1;
+	VectorCopy(end, trace.endpos);
+
+	pe = &pmove.physents[0];
+	if (!pe->model)
+	{
+		Con_DPrintf("No world in PM_Worldtrace!!!\n");
+		return trace;
+	}
+
+	switch (pmove.usehull)
+	{
+	case 0:
+		// regular
+		hull = &pe->model->hulls[1];
+		break;
+	case 1:
+		// standing
+		hull = &pe->model->hulls[3];
+		break;
+	case 2:
+		// crouching
+		hull = &pe->model->hulls[0];
+		break;
+	default:
+		hull = &pe->model->hulls[1];
+		break;
+	}
+
+	VectorSubtract(hull->clip_mins, player_mins[pmove.usehull], offset);
+	VectorAdd(offset, pe->origin, offset);
+
+	VectorSubtract(start, offset, start_l);
+	VectorSubtract(end, offset, end_l);
+
+// trace a line through the apropriate clipping hull
+	PM_RecursiveHullCheck(hull, hull->firstclipnode, 0, 1, start_l, end_l, &trace);
+
+	if (trace.allsolid)
+		trace.startsolid = TRUE;
+	if (trace.startsolid)
+		trace.fraction = 0;
+
+	if (trace.fraction != 1.0)
+	{
+		// Compute the end position of the trace.
+
+		trace.endpos[0] = start[0] + trace.fraction * (end[0] - start[0]);
+		trace.endpos[1] = start[1] + trace.fraction * (end[1] - start[1]);
+		trace.endpos[2] = start[2] + trace.fraction * (end[2] - start[2]);
+	}
+
+	return trace;
+}
+
+/*
+=================
+PM_PlayerMove2
+
+=================
+*/
+pmtrace_t PM_PlayerMove2( vec_t* start, vec_t* end )
+{
+	int		i;
+	pmtrace_t trace, total;
+	vec3_t	offset;
+	vec3_t	start_l, end_l;
+	hull_t* hull;
+	physent_t* pe;
+	vec3_t	mins, maxs;
+	vec3_t	boxmins, boxmaxs;
+	qboolean rotated = FALSE;
+
+	int		numhulls, j;
+
+	total = PM_Worldtrace(start, end);
+
+	if (pm_worldonly.value || total.fraction == 0.0)
+		return total;
+
+	SV_MoveBounds(start, player_mins[pmove.usehull], player_maxs[pmove.usehull], trace.endpos, boxmins, boxmaxs);
+
+	for (i = 1; i < pmove.numphysent; i++)
+	{
+		pe = &pmove.physents[i];
+
+		if (pe->model && pe->solid == SOLID_NOT && pe->skin != 0)
+			continue;
+
+		if (pm_nostudio.value && pe->studiomodel)
+			continue;
+
+		if (pm_nocomplex.value && pe->studiomodel && (pe->studiomodel->flags & STUDIO_TRACE_HITBOX))
+			continue;
+
+		// PM_HullForEntity(ent, mins, maxs, offset);
+		VectorCopy(pe->origin, offset);
+		numhulls = 1;
+
+	// get the clipping hull
+		if (pe->model)
+		{
+			switch (pmove.usehull)
+			{
+			case 0:
+				// regular
+				hull = &pe->model->hulls[1];
+				break;
+			case 1:
+				// standing
+				hull = &pe->model->hulls[3];
+				break;
+			case 2:
+				// crouching
+				hull = &pe->model->hulls[0];
+				break;
+			default:
+				hull = &pe->model->hulls[1];
+				break;
+			}
+
+			VectorSubtract(hull->clip_mins, player_mins[pmove.usehull], offset);
+			VectorAdd(offset, pe->origin, offset);
+		}
+		else
+		{
+			if (pe->studiomodel && pe->studiomodel->type == mod_studio &&
+				((pe->studiomodel->flags & STUDIO_TRACE_HITBOX) || pmove.usehull == 2))
+			{
+				hull = PM_HullForStudioModel(pe->studiomodel, offset, pe->frame, pe->sequence, pe->angles,
+					pe->origin, pe->controller, pe->blending, &numhulls);
+			}
+			else
+			{
+				VectorSubtract(pe->mins, player_maxs[pmove.usehull], mins);
+				VectorSubtract(pe->maxs, player_mins[pmove.usehull], maxs);
+				hull = PM_HullForBox(mins, maxs);
+			}
+		}
+
+		VectorSubtract(start, offset, start_l);
+		VectorSubtract(end, offset, end_l);
+
+		// Rotate the start and end into the model's frame of reference.
+		rotated = pe->solid == SOLID_BSP && (pe->angles[0] != 0 || pe->angles[1] != 0 || pe->angles[2] != 0);
+		if (rotated)
+		{
+			vec3_t forward, right, up;
+			vec3_t temp;
+
+			AngleVectors(pe->angles, forward, right, up);
+
+			VectorCopy(start_l, temp);
+			start_l[0] = DotProduct(forward, temp);
+			start_l[1] = -DotProduct(right, temp);
+			start_l[2] = DotProduct(up, temp);
+
+			VectorCopy(end_l, temp);
+			end_l[0] = DotProduct(forward, temp);
+			end_l[1] = -DotProduct(right, temp);
+			end_l[2] = DotProduct(up, temp);
+		}
+
+	// fill in a default trace
+		memset(&trace, 0, sizeof(trace));
+		trace.fraction = 1;
+		trace.allsolid = TRUE;
+//		trace.startsolid = TRUE;
+		VectorCopy(end, trace.endpos);
+
+		if (numhulls == 1)
+		{
+		// trace a line through the apropriate clipping hull
+			PM_RecursiveHullCheck(hull, hull->firstclipnode, 0, 1, start_l, end_l, &trace);
+		}
+		else
+		{
+			int closest = 0;
+			pmtrace_t testtrace;
+
+			for (j = 0; j < numhulls; j++)
+			{
+				memset(&testtrace, 0, sizeof(testtrace));
+				testtrace.fraction = 1;
+				testtrace.allsolid = TRUE;
+				VectorCopy(end, testtrace.endpos);
+
+				PM_RecursiveHullCheck(&hull[j], hull[j].firstclipnode, 0, 1, start_l, end_l, &testtrace);
+
+				if (j == 0 || testtrace.allsolid || testtrace.startsolid || testtrace.fraction < trace.fraction)
+				{
+					qboolean remember = (trace.startsolid == FALSE);
+					trace = testtrace;
+
+					if (!remember)
+						trace.startsolid = TRUE;
+
+					closest = j;
+				}
+
+				trace.hitgroup = SV_HitgroupForStudioHull(closest);
+			}
+		}
+
+		if (trace.allsolid)
+			trace.startsolid = TRUE;
+		if (trace.startsolid)
+			trace.fraction = 0;
+
+		if (trace.fraction != 1)
+		{
+			if (rotated)
+			{
+				vec3_t forward, right, up;
+				vec3_t temp;
+
+				AngleVectorsTranspose(pe->angles, forward, right, up);
+
+				VectorCopy(trace.plane.normal, temp);
+				trace.plane.normal[0] = DotProduct(forward, temp);
+				trace.plane.normal[1] = DotProduct(right, temp);
+				trace.plane.normal[2] = DotProduct(up, temp);
+			}
+
+			// Compute the end position of the trace.
+
+			trace.endpos[0] = start[0] + trace.fraction * (end[0] - start[0]);
+			trace.endpos[1] = start[1] + trace.fraction * (end[1] - start[1]);
+			trace.endpos[2] = start[2] + trace.fraction * (end[2] - start[2]);
+		}
+
+	// did we clip the move?
+		if (total.fraction > trace.fraction)
 		{
 			total = trace;
 			total.ent = i;
