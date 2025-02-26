@@ -58,8 +58,6 @@ float		v_blend[4];		// rgba 0.0 - 1.0
 
 float	v_dmg_time, v_dmg_roll, v_dmg_pitch;
 
-vec3_t	v_forward, v_right, v_up;
-
 /*
 ===============
 V_CalcRoll
@@ -72,8 +70,8 @@ float V_CalcRoll( float* angles, float* velocity )
 	float	side;
 	float	value;
 
-	AngleVectors(angles, v_forward, v_right, v_up);
-	side = DotProduct(velocity, v_right);
+	AngleVectors(angles, forward, right, up);
+	side = DotProduct(velocity, right);
 	sign = side < 0 ? -1 : 1;
 	side = fabs(side);
 
@@ -873,7 +871,7 @@ void V_RenderView( void )
 
 		r_refdef.viewangles[YAW] -= lcd_yaw.value;
 		for (i = 0; i < 3; i++)
-			r_refdef.vieworg[i] -= v_right[i] * lcd_x.value;
+			r_refdef.vieworg[i] -= right[i] * lcd_x.value;
 		R_RenderView();
 
 		vid.buffer += vid.rowbytes >> 1;
@@ -882,7 +880,7 @@ void V_RenderView( void )
 
 		r_refdef.viewangles[YAW] += lcd_yaw.value * 2;
 		for (i = 0; i < 3; i++)
-			r_refdef.vieworg[i] += 2 * v_right[i] * lcd_x.value;
+			r_refdef.vieworg[i] += 2 * right[i] * lcd_x.value;
 		R_RenderView();
 
 		vid.buffer -= vid.rowbytes >> 1;

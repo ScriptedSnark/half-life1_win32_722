@@ -501,13 +501,16 @@ extern int playerbitcounts[MAX_CLIENTS];
 
 // TODO: Implement
 
+#define MAX_TEMP_ENTITIES	350			// lightning bolts, etc
+#define	MAX_STATIC_ENTITIES	32			// torches, etc
+
 extern	client_static_t	cls;
 extern	client_state_t	cl;
 
 // FIXME, allocate dynamically
 extern	efrag_t			cl_efrags[MAX_EFRAGS];
 extern	cl_entity_t*	cl_entities;
-//extern  cl_entity_t		cl_static_entities[MAX_STATIC_ENTITIES]; TODO: Implement
+extern  cl_entity_t		cl_static_entities[MAX_STATIC_ENTITIES];
 extern	lightstyle_t	cl_lightstyle[MAX_LIGHTSTYLES];
 extern	dlight_t		cl_dlights[MAX_DLIGHTS];
 extern	dlight_t		cl_elights[MAX_ELIGHTS];

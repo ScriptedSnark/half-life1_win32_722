@@ -2309,7 +2309,7 @@ CL_AddVisibleEntity
 Adds a client entity to the list of visible entities if it's within the PVS
 =============
 */
-int CL_AddVisibleEntity( cl_entity_t* pEntity)
+int CL_AddVisibleEntity( cl_entity_t* pEntity )
 {
 	int i;
 	vec3_t mins, maxs;

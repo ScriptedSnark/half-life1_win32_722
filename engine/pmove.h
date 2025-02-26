@@ -118,6 +118,8 @@ extern	int		onground;
 extern	int		waterlevel;
 extern	int		watertype;
 
+extern	vec3_t	forward, right, up;
+
 extern	cvar_t	cl_showclip;
 extern	cvar_t	cl_printclip;
 
