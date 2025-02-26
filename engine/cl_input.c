@@ -69,9 +69,6 @@ cvar_t		cl_movespeedkey	 = { "cl_movespeedkey", "0.3" };
 cvar_t		cl_pitchup		 = { "cl_pitchup", "89" };
 cvar_t		cl_pitchdown	 = { "cl_pitchdown", "89" };
 
-// pitch, yaw, dist
-vec3_t cam_ofs;
-
 
 // In third person
 int cam_thirdperson;

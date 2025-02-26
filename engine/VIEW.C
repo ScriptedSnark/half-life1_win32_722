@@ -547,6 +547,7 @@ void V_CalcRefdef( void )
 	int				i;
 	vec3_t			angles;
 	vec3_t			forward, right, up;
+	vec3_t			camAngles;
 	float			bob, waterOffset;
 	static float oldz = 0;
 
@@ -578,7 +579,49 @@ void V_CalcRefdef( void )
 	waterOffset = 0;
 	if (cl.waterlevel >= 2)
 	{
-		// TODO: Implement
+		int		i, contents, waterDist, waterEntity;
+		vec3_t	point;
+		waterDist = cl_waterdist.value;
+
+#if defined( GLQUAKE )
+		waterEntity = PM_WaterEntity(cl.simorg);
+		if (waterEntity >= 0 && waterEntity < cl.max_edicts && cl_entities[waterEntity].model)
+		{
+			waterDist += (cl_entities[waterEntity].scale * 16);	// Add in wave height
+		}
+#else
+		waterEntity = 0;	// Don't need this in software
+#endif
+
+		VectorCopy(r_refdef.vieworg, point);
+
+		// eyes are above water, make sure we're above the waves
+		if (cl.waterlevel == 2)
+		{
+			point[2] -= waterDist;
+			for (i = 0; i < waterDist; i++)
+			{
+				contents = PM_PointContents(point);
+				if (contents > CONTENTS_WATER)
+					break;
+				point[2] += 1;
+			}
+			waterOffset = (point[2] + waterDist) - r_refdef.vieworg[2];
+		}
+		else
+		{
+			// eyes are under water.  Make sure we're far enough under
+			point[2] += waterDist;
+
+			for (i = 0; i < waterDist; i++)
+			{
+				contents = PM_PointContents(point);
+				if (contents <= CONTENTS_WATER)
+					break;
+				point[2] -= 1;
+			}
+			waterOffset = (point[2] - waterDist) - r_refdef.vieworg[2];
+		}
 	}
 
 	r_refdef.vieworg[2] += waterOffset;
@@ -598,7 +641,18 @@ void V_CalcRefdef( void )
 
 	if (cam_thirdperson)
 	{
-		// TODO: Implement
+		vec3_t camForward, camRight, camUp;
+
+		camAngles[0] = cam_ofs[0];
+		camAngles[1] = cam_ofs[1];
+		camAngles[ROLL] = 0;
+
+		AngleVectors(camAngles, camForward, camRight, camUp);
+
+		for (i = 0; i < 3; i++)
+		{
+			r_refdef.vieworg[i] += -cam_ofs[2] * camForward[i];
+		}
 	}
 
 	// Give gun our viewangles
@@ -680,7 +734,7 @@ void V_CalcRefdef( void )
 
 	if (cam_thirdperson)
 	{
-		// TODO: Implement
+		VectorCopy(camAngles, r_refdef.viewangles);
 	}
 
 	if (chase_active.value)

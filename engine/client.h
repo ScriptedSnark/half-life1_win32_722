@@ -614,9 +614,11 @@ void CL_PredictUsercmd( player_state_t* from, player_state_t* to, usercmd_t* u, 
 #define CAM_FIRSTPERSON	2
 #define CAM_TOPDOWN		3
 
+extern	vec3_t	cam_ofs;
+
 extern	int		autocam;
-extern int spec_track; // player# of who we are tracking
-extern int cam_thirdperson;
+extern	int		spec_track; // player# of who we are tracking
+extern	int		cam_thirdperson;
 
 void Cam_GetPredictedTopDownOrigin( vec_t* vec );
 void Cam_GetTopDownOrigin( vec_t* source, vec_t* vec );

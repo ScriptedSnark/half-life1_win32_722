@@ -13,6 +13,9 @@ qboolean locked = FALSE;
 
 // TODO: Implement
 
+// pitch, yaw, dist
+vec3_t cam_ofs;
+
 int spec_track = 0; // player# of who we are tracking
 int autocam = CAM_NONE;
 
