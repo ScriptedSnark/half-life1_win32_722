@@ -533,7 +533,21 @@ V_CalcIntermissionRefdef
 */
 void V_CalcIntermissionRefdef( void )
 {
-	// TODO: Implement
+	cl_entity_t* view;
+	float		old;
+
+// view is the weapon model
+	view = &cl.viewent;
+
+	VectorCopy(cl.simorg, r_refdef.vieworg);
+	VectorCopy(cl.simangles, r_refdef.viewangles);
+	view->model = NULL;
+
+// allways idle in intermission
+	old = v_idlescale.value;
+	v_idlescale.value = 1;
+	V_AddIdle();
+	v_idlescale.value = old;
 }
 
 /*
