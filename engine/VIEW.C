@@ -60,14 +60,6 @@ float	v_dmg_time, v_dmg_roll, v_dmg_pitch;
 
 vec3_t	v_forward, v_right, v_up;
 
-
-
-// TODO: Implement
-
-
-
-
-
 /*
 ===============
 V_CalcRoll
@@ -390,7 +382,26 @@ V_CalcPowerupCshift
 */
 void V_CalcPowerupCshift( void )
 {
-	// TODO: Implement
+	static float cshift1;
+	static float cshift2;
+	static float cshift3;
+	static float cshift4;
+
+	cshift1 -= host_frametime;
+	if (cshift1 <= 0)
+		cshift1 = 0;
+
+	cshift2 -= host_frametime;
+	if (cshift2 <= 0)
+		cshift2 = 0;
+
+	cshift3 -= host_frametime;
+	if (cshift3 <= 0)
+		cshift3 = 0;
+
+	cshift4 -= host_frametime;
+	if (cshift4 <= 0)
+		cshift4 = 0;
 }
 
 /*
@@ -427,7 +438,10 @@ V_UpdatePalette
 #ifdef	GLQUAKE
 void V_UpdatePalette( void )
 {
+	int		i;
 	qboolean	newFlag;
+	float	r, g, b, a;
+	int		ir, ig, ib;
 	qboolean force;
 
 	V_CalcPowerupCshift();
@@ -440,7 +454,30 @@ void V_UpdatePalette( void )
 
 	V_CalcBlend();
 
-	// TODO: Implement
+//Con_Printf("b: %4.2f %4.2f %4.2f %4.6f\n", v_blend[0],	v_blend[1],	v_blend[2],	v_blend[3]);
+
+	a = v_blend[3];
+	r = 255.0 * v_blend[0] * a;
+	g = 255.0 * v_blend[1] * a;
+	b = 255.0 * v_blend[2] * a;
+
+	a = 1.0 - a;
+	for (i = 0; i < 256; i++)
+	{
+		ir = r + i * a;
+		ig = g + i * a;
+		ib = b + i * a;
+		if (ir > 255)
+			ir = 255;
+		if (ig > 255)
+			ig = 255;
+		if (ib > 255)
+			ib = 255;
+
+		ramps[0][i] = texgammatable[ir];
+		ramps[1][i] = texgammatable[ig];
+		ramps[2][i] = texgammatable[ib];
+	}
 }
 #endif
 
@@ -478,7 +515,29 @@ void V_CalcGunAngle( void )
 	cl.viewent.angles[YAW] -= v_idlescale.value * sin(cl.time * v_iyaw_cycle.value) * v_iyaw_level.value;
 }
 
-// TODO: Implement
+/*
+==============
+V_BoundOffsets
+==============
+*/
+void V_BoundOffsets( void )
+{
+// absolutely bound refresh reletive to entity clipping hull
+// so the view can never be inside a solid wall
+
+	if (r_refdef.vieworg[0] < cl.simorg[0] - 14)
+		r_refdef.vieworg[0] = cl.simorg[0] - 14;
+	else if (r_refdef.vieworg[0] > cl.simorg[0] + 14)
+		r_refdef.vieworg[0] = cl.simorg[0] + 14;
+	if (r_refdef.vieworg[1] < cl.simorg[1] - 14)
+		r_refdef.vieworg[1] = cl.simorg[1] - 14;
+	else if (r_refdef.vieworg[1] > cl.simorg[1] + 14)
+		r_refdef.vieworg[1] = cl.simorg[1] + 14;
+	if (r_refdef.vieworg[2] < cl.simorg[2] - 22)
+		r_refdef.vieworg[2] = cl.simorg[2] - 22;
+	else if (r_refdef.vieworg[2] > cl.simorg[2] + 30)
+		r_refdef.vieworg[2] = cl.simorg[2] + 30;
+}
 
 /*
 ==============
