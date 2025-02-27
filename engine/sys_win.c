@@ -1011,10 +1011,10 @@ static enginefuncs_t g_engfuncsExportedToDlls =
 {
 	NULL,	// TODO: Implement
 	NULL,	// TODO: Implement
+	PF_setmodel_I,
 	NULL,	// TODO: Implement
 	NULL,	// TODO: Implement
-	NULL,	// TODO: Implement
-	NULL,	// TODO: Implement
+	PF_setsize_I,
 	NULL,	// TODO: Implement
 	NULL,	// TODO: Implement
 	SaveSpawnParms,

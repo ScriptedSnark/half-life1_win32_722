@@ -43,6 +43,136 @@ void PF_setorigin_I( edict_t* e, const float* org )
 }
 
 
+void SetMinMaxSize( edict_t* e, float *min, float *max, qboolean rotate )
+{
+	float* angles;
+	vec3_t	rmin, rmax;
+	float	bounds[2][3];
+	float	xvector[2], yvector[2];
+	float	a;
+	vec3_t	base, transformed;
+	int		i, j, k, l;
+
+	for (i = 0; i < 3; i++)
+		if (min[i] > max[i])
+			Host_Error("backwards mins/maxs");
+
+	rotate = FALSE;		// FIXME: implement rotation properly again
+
+	if (!rotate)
+	{
+		VectorCopy(min, rmin);
+		VectorCopy(max, rmax);
+	}
+	else
+	{
+	// find min / max for rotations
+		angles = e->v.angles;
+
+		a = angles[1] / 180 * M_PI;
+
+		xvector[0] = cos(a);
+		xvector[1] = sin(a);
+		yvector[0] = -sin(a);
+		yvector[1] = cos(a);
+
+		VectorCopy(min, bounds[0]);
+		VectorCopy(max, bounds[1]);
+
+		rmin[0] = rmin[1] = rmin[2] = 9999;
+		rmax[0] = rmax[1] = rmax[2] = -9999;
+
+		for (i = 0; i <= 1; i++)
+		{
+			base[0] = bounds[i][0];
+			for (j = 0; j <= 1; j++)
+			{
+				base[1] = bounds[j][1];
+				for (k = 0; k <= 1; k++)
+				{
+					base[2] = bounds[k][2];
+
+					// transform the point
+					transformed[0] = xvector[0] * base[0] + yvector[0] * base[1];
+					transformed[1] = xvector[1] * base[0] + yvector[1] * base[1];
+					transformed[2] = base[2];
+
+					for (l = 0; l < 3; l++)
+					{
+						if (transformed[l] < rmin[l])
+							rmin[l] = transformed[l];
+						if (transformed[l] > rmax[l])
+							rmax[l] = transformed[l];
+					}
+				}
+			}
+		}
+	}
+
+// set derived values
+	VectorCopy(min, e->v.mins);
+	VectorCopy(max, e->v.maxs);
+	VectorSubtract(max, min, e->v.size);
+
+	SV_LinkEdict(e, FALSE);
+}
+
+/*
+=================
+PF_setsize
+
+the size box is rotated by the current angle
+
+setsize (entity, minvector, maxvector)
+=================
+*/
+void PF_setsize_I( edict_t* e, float* rgflMin, float* rgflMax )
+{
+	SetMinMaxSize(e, rgflMin, rgflMax, FALSE);
+}
+
+
+/*
+===============
+PF_setmodel_I
+
+setmodel(entity, model)
+===============
+*/
+void PF_setmodel_I( edict_t* e, const char* m )
+{
+	int		i;
+	char** check;
+	model_t* mod;
+
+// check to see if model was properly precached
+	for (i = 0, check = sv.model_precache; *check; i++, check++)
+		if (!strcmp(*check, m))
+			break;
+
+	if (!*check)
+		Host_Error("no precache: %s\n", m);
+
+
+	e->v.model = m - pr_strings;
+	e->v.modelindex = i; // SV_ModelIndex(m);
+
+	mod = sv.models[(int)e->v.modelindex];  // Mod_ForName(m, TRUE);
+
+	if (mod)
+		SetMinMaxSize(e, mod->mins, mod->maxs, TRUE);
+	else
+		SetMinMaxSize(e, vec3_origin, vec3_origin, TRUE);
+}
+
+
+
+
+
+
+
+
+
 
 
 
