@@ -40,6 +40,8 @@
 #define FL_KILLME				(1<<30)	// This entity is marked for death -- This allows the engine to kill ents at the appropriate time
 #define FL_DORMANT				(1<<31)	// Entity is dormant, no updates to client
 
+// Engine's edict->spawnflags
+#define SF_NOTINDEATHMATCH		0x0800	// Do not spawn when deathmatch and loading entities from a file
 
 // Goes into globalvars_t.trace_flags
 #define FTRACE_SIMPLEBOX		(1<<0)	// Traceline with a simple box

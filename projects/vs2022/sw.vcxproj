@@ -53,6 +53,7 @@
     <ClInclude Include="..\..\engine\protocol.h" />
     <ClInclude Include="..\..\engine\pr_cmds.h" />
     <ClInclude Include="..\..\engine\pr_dlls.h" />
+    <ClInclude Include="..\..\engine\pr_edict.h" />
     <ClInclude Include="..\..\engine\quakedef.h" />
     <ClInclude Include="..\..\engine\r_local.h" />
     <ClInclude Include="..\..\engine\r_shared.h" />

@@ -3,6 +3,7 @@
 #include "quakedef.h"
 #include "winquake.h"
 #include "pr_cmds.h"
+#include "pr_edict.h"
 #include "exefuncs.h"
 #include "gameinfo.h"
 #include "profile.h"
@@ -1016,6 +1017,20 @@ static enginefuncs_t g_engfuncsExportedToDlls =
 	NULL,	// TODO: Implement
 	NULL,	// TODO: Implement
 	NULL,	// TODO: Implement
+	SaveSpawnParms,
+	NULL,	// TODO: Implement
+	NULL,	// TODO: Implement
+	NULL,	// TODO: Implement
+	NULL,	// TODO: Implement
+	NULL,	// TODO: Implement
+	NULL,	// TODO: Implement
+	NULL,	// TODO: Implement
+	NULL,	// TODO: Implement
+	NULL,	// TODO: Implement
+	NULL,	// TODO: Implement
+	NULL,	// TODO: Implement
+	AngleVectors,
+	ED_Alloc,
 	NULL,	// TODO: Implement
 	NULL,	// TODO: Implement
 	NULL,	// TODO: Implement
@@ -1049,38 +1064,24 @@ static enginefuncs_t g_engfuncsExportedToDlls =
 	NULL,	// TODO: Implement
 	NULL,	// TODO: Implement
 	NULL,	// TODO: Implement
-	NULL,	// TODO: Implement
-	NULL,	// TODO: Implement
-	NULL,	// TODO: Implement
-	NULL,	// TODO: Implement
-	NULL,	// TODO: Implement
-	NULL,	// TODO: Implement
-	NULL,	// TODO: Implement
-	NULL,	// TODO: Implement
-	NULL,	// TODO: Implement
-	NULL,	// TODO: Implement
-	NULL,	// TODO: Implement
-	NULL,	// TODO: Implement
-	NULL,	// TODO: Implement
-	NULL,	// TODO: Implement
-	NULL,	// TODO: Implement
-	NULL,	// TODO: Implement
-	NULL,	// TODO: Implement
-	NULL,	// TODO: Implement
+	CVarGetFloat,
+	CVarGetString,
+	CVarSetFloat,
+	CVarSetString,
 	AlertMessage,
 	EngineFprintf,
-	NULL,	// TODO: Implement
-	NULL,	// TODO: Implement
-	NULL,	// TODO: Implement
-	NULL,	// TODO: Implement
-	NULL,	// TODO: Implement
-	NULL,	// TODO: Implement
-	NULL,	// TODO: Implement
-	NULL,	// TODO: Implement
-	NULL,	// TODO: Implement
-	NULL,	// TODO: Implement
-	NULL,	// TODO: Implement
-	NULL,	// TODO: Implement
+	PvAllocEntPrivateData,
+	PvEntPrivateData,
+	FreeEntPrivateData,
+	SzFromIndex,
+	AllocEngineString,
+	GetVarsOfEnt,
+	PEntityOfEntOffset,
+	EntOffsetOfPEntity,
+	IndexOfEdict,
+	PEntityOfEntIndex,
+	FindEntityByVars,
+	GetModelPtr,
 	NULL,	// TODO: Implement
 	NULL,	// TODO: Implement
 	NULL,	// TODO: Implement

@@ -129,10 +129,10 @@ typedef struct enginefuncs_s
 	void		(*pfnWriteCoord)			( float flValue );
 	void		(*pfnWriteString)			( char* sz );
 	void		(*pfnWriteEntity)			( int iValue );
-	float		(*pfnCVarGetFloat)			( char* szVarName );
-	char*		(*pfnCVarGetString)			( char* szVarName );
-	void		(*pfnCVarSetFloat)			( char* szVarName, float flValue );
-	void		(*pfnCVarSetString)			( char* szVarName, char* szValue );
+	float		(*pfnCVarGetFloat)			( const char* szVarName );
+	const char*	(*pfnCVarGetString)			( const char* szVarName );
+	void		(*pfnCVarSetFloat)			( const char* szVarName, float flValue );
+	void		(*pfnCVarSetString)			( const char* szVarName, const char* szValue );
 	void		(*pfnAlertMessage)			( ALERT_TYPE atype, char* szFmt, ... );
 	void		(*pfnEngineFprintf)			( FILE* pfile, char* szFmt, ... );
 	void*		(*pfnPvAllocEntPrivateData)	( edict_t* pEdict, long cb );

@@ -1,7 +1,8 @@
-#include "quakedef.h"
-#include "server.h"
+// sv_edict.c -- entity dictionary
 
+#include "quakedef.h"
 #include "world.h"
+#include "pr_edict.h"
 
 /*
 =================
@@ -32,36 +33,10 @@ angles and bad trails.
 edict_t* ED_Alloc( void )
 {
 	int			i;
-	edict_t		*e;
-
-	if (sv.num_edicts <= svs.maxclients + 1)
-	{
-		if (!sv.max_edicts)
-			Sys_Error("ED_Alloc: No edicts yet");
-
-		Sys_Error("ED_Alloc: no free edicts");
-
-		sv.num_edicts++;
-
-		e = &sv.edicts[svs.maxclients + 1];
-		ED_ClearEdict(e);
-
-		return e;
-	}
+	edict_t* e;
 
 	for (i = svs.maxclients + 1; i < sv.num_edicts; i++)
 	{
-		if (sv.num_edicts <= i + 1)
-		{
-			if (sv.num_edicts <= svs.maxclients + 1)
-			{
-				if (!sv.max_edicts)
-					Sys_Error("ED_Alloc: No edicts yet");
-
-				Sys_Error("ED_Alloc: no free edicts");
-			}
-		}
-
 		e = &sv.edicts[i];
 		// the first couple seconds of server time can involve a lot of
 		// freeing and allocating, so relax the replacement policy
@@ -72,8 +47,15 @@ edict_t* ED_Alloc( void )
 		}
 	}
 
+	if (i >= sv.max_edicts)
+	{
+		if (sv.max_edicts == 0)
+			Sys_Error("ED_Alloc: No edicts yet");
+		Sys_Error("ED_Alloc: no free edicts");
+	}
+
 	sv.num_edicts++;
-	e = &sv.edicts[i];
+	e = sv.edicts + i;
 	ED_ClearEdict(e);
 
 	return e;
@@ -94,11 +76,16 @@ void ED_Free( edict_t* ed )
 
 	SV_UnlinkEdict(ed);		// unlink from world bsp
 
+	// release the DLL entity that's attached to this edict, if any
+	FreeEntPrivateData(ed);
+
 	ed->free = TRUE;
+
 	ed->serialnumber++;
+
 	ed->v.flags = 0;
 	ed->v.model = 0;
-	ed->v.takedamage = 0;
+	ed->v.takedamage = DAMAGE_NO;
 	ed->v.modelindex = 0;
 	ed->v.colormap = 0;
 	ed->v.skin = 0;
@@ -107,11 +94,45 @@ void ED_Free( edict_t* ed )
 	ed->v.gravity = 0;
 	VectorCopy(vec3_origin, ed->v.origin);
 	VectorCopy(vec3_origin, ed->v.angles);
-	ed->v.solid = 0;
 	ed->v.nextthink = -1;
+	ed->v.solid = SOLID_NOT;
 
 	ed->freetime = sv.time;
 }
+
+//===========================================================================
+
+/*
+eval_t *GetEdictFieldValue( edict_t *ed, char *field )
+{
+	ddef_t			*def = NULL;
+	int				i;
+	static int		rep = 0;
+
+	for (i = 0; i < GEFV_CACHESIZE; i++)
+	{
+		if (!strcmp(field, gefvCache[i].field))
+		{
+			def = gefvCache[i].pcache;
+			goto Done;
+		}
+	}
+
+	def = ED_FindField(field);
+
+	if (strlen(field) < MAX_FIELD_LEN)
+	{
+		gefvCache[rep].pcache = def;
+		strcpy(gefvCache[rep].field, field);
+		rep ^= 1;
+	}
+
+Done:
+	if (!def)
+		return NULL;
+
+	return (eval_t*)((char*)&ed->v + def->ofs * 4);
+}*/
 
 /*
 =============
@@ -123,7 +144,7 @@ For debugging
 void ED_Count( void )
 {
 	int		i;
-	edict_t	*ent;
+	edict_t* ent;
 	int		active, models, solid, step;
 
 	active = models = solid = step = 0;
@@ -148,6 +169,9 @@ void ED_Count( void )
 	Con_Printf("step      :%3i\n", step);
 }
 
+//============================================================================
+
+
 /*
 =============
 ED_NewString
@@ -159,7 +183,7 @@ char* ED_NewString( const char* string )
 	int		i, l;
 
 	l = strlen(string) + 1;
-	new = Hunk_Alloc(l);
+	new = (char*)Hunk_Alloc(l);
 	new_p = new;
 
 	for (i = 0; i < l; i++)
@@ -188,38 +212,39 @@ ed should be a properly initialized empty edict.
 Used for initial level load and for savegames.
 ====================
 */
-char *ED_ParseEdict(char *data, edict_t *ent)
+char* ED_ParseEdict( char* data, edict_t* ent )
 {
-	ENTITYINIT		pfnEntityInit;
-	qboolean		init;
-	KeyValueData	kvd;
-	char			keyname[256];
-	int				n;
-	char*			className;
-	float			f;
+	qboolean	init;
+	char		keyname[256];
+	int			n;
+	ENTITYINIT	pEntityInit;
+	char* className;
+	KeyValueData kvd;
+
+	init = FALSE;
 
 // clear it
 	if (ent != sv.edicts)	// hack
 		memset(&ent->v, 0, sizeof(ent->v));
 
 	InitEntityDLLFields(ent);
+
 	SuckOutClassname(data, ent);
 
-	init = FALSE;
-
-	pfnEntityInit = GetEntityInit(pr_strings + ent->v.classname);
-	if (pfnEntityInit)
+	className = (char*)(pr_strings + ent->v.classname);
+	pEntityInit = GetEntityInit(className);
+	if (pEntityInit)
 	{
-		pfnEntityInit(&ent->v);
+		pEntityInit(&ent->v);
 		init = TRUE;
 	}
 	else
 	{
-		pfnEntityInit = GetEntityInit("custom");
-		if (pfnEntityInit)
+		pEntityInit = GetEntityInit("custom");
+		if (pEntityInit)
 		{
-			pfnEntityInit(&ent->v);
-			kvd.szValue = pr_strings + ent->v.classname;
+			pEntityInit(&ent->v);
+			kvd.szValue = className;
 			kvd.szClassName = "custom";
 			kvd.szKeyName = "customclass";
 			kvd.fHandled = FALSE;
@@ -228,7 +253,7 @@ char *ED_ParseEdict(char *data, edict_t *ent)
 		}
 		else
 		{
-			Con_Printf("Can't init %s\n", pr_strings + ent->v.classname);
+			Con_Printf("Can't init %s\n", className);
 		}
 	}
 
@@ -238,65 +263,69 @@ char *ED_ParseEdict(char *data, edict_t *ent)
 	// parse key
 		data = COM_Parse(data);
 		if (com_token[0] == '}')
-		{
 			break;
-		}
 		if (!data)
 			Sys_Error("ED_ParseEntity: EOF without closing brace");
+
 		strcpy(keyname, com_token);
 
-		// Remove tail spaces
-		for (n = strlen(keyname) - 1; n >= 0 && keyname[n] == ' '; n--)
+		// another hack to fix heynames with trailing spaces
+		n = strlen(keyname);
+		while (n && keyname[n - 1] == ' ')
 		{
-			keyname[n] = 0;
+			keyname[n - 1] = 0;
+			n--;
 		}
 
-	// parse value	
+	// parse value
 		data = COM_Parse(data);
 		if (!data)
 			Sys_Error("ED_ParseEntity: EOF without closing brace");
+
 		if (com_token[0] == '}')
 			Sys_Error("ED_ParseEntity: closing brace without data");
 
-		className = pr_strings + ent->v.classname;
+		className = &pr_strings[ent->v.classname];
+		if (className && !strcmp(className, com_token))
+			continue;
 
-		if (!className || strcmp(className, com_token) != 0)
-		{
-			if (!strcmp(keyname, "angle"))
-			{
-				f = atof(com_token);
-				if (f < 0)
-				{
-					if (f == -1)
-						sprintf(com_token, "-90 0 0");
-					else
-						sprintf(com_token, "90 0 0");
-				}
-				else
-				{
-					sprintf(com_token, "%f %f %f", ent->v.angles[0], f	, ent->v.angles[2]);
-				}
 // anglehack is to allow QuakeEd to write single scalar angles
 // and allow them to be turned into vectors. (FIXME...)
-				strcpy(keyname, "angles");
+		if (!strcmp(keyname, "angle"))
+		{
+			float y = atof(com_token);
+			if (y >= 0)
+			{
+				sprintf(com_token, "%f %f %f", ent->v.angles[0], y, ent->v.angles[2]);
+			}
+			else if ((int)y == -1)
+			{
+				sprintf(com_token, "-90 0 0");
+			}
+			else
+			{
+				sprintf(com_token, "90 0 0");
 			}
 
-			kvd.szClassName = pr_strings + ent->v.classname;
-			kvd.szKeyName = keyname;
-			kvd.szValue = com_token;
-			kvd.fHandled = FALSE;
-			gEntityInterface.pfnKeyValue(ent, &kvd);
+			strcpy(keyname, "angles");
 		}
+
+		kvd.szClassName = className;
+		kvd.szKeyName = keyname;
+		kvd.szValue = com_token;
+		kvd.fHandled = FALSE;
+		gEntityInterface.pfnKeyValue(ent, &kvd);
 	}
 
-	if (init == FALSE)
+	if (!init)
 	{
 		ent->free = TRUE;
 		ent->serialnumber++;
 	}
 
-	return NULL;
+	return data;
 }
+
 
 /*
 ================
@@ -315,15 +344,14 @@ to call ED_CallSpawnFunctions () to let the objects initialize themselves.
 */
 void ED_LoadFromFile( char* data )
 {
-	edict_t		*ent;
+	edict_t* ent;
 	int			inhibit;
 
 	ent = NULL;
 	inhibit = 0;
-
 	gGlobalVariables.time = sv.time;
 
-	// parse ents
+// parse ents
 	while (1)
 	{
 // parse the opening brace	
@@ -335,7 +363,7 @@ void ED_LoadFromFile( char* data )
 
 		if (!ent)
 		{
-			ent = &sv.edicts[0];
+			ent = sv.edicts;
 			ReleaseEntityDLLFields(ent);
 			InitEntityDLLFields(ent);
 		}
@@ -349,14 +377,11 @@ void ED_LoadFromFile( char* data )
 			continue; // parse failed?
 
 // remove things from different skill levels or deathmatch
-		if (deathmatch.value)
+		if (deathmatch.value && ((int)ent->v.spawnflags & SF_NOTINDEATHMATCH))
 		{
-			if (((int)ent->v.spawnflags & SF_DECAL_NOTINDEATHMATCH))
-			{
-				ED_Free(ent);
-				inhibit++;
-				continue;
-			}
+			ED_Free(ent);
+			inhibit++;
+			continue;
 		}
 
 //
@@ -369,8 +394,8 @@ void ED_LoadFromFile( char* data )
 			continue;
 		}
 
-		// kill instantly if the appropriate flag is set
-		if (gEntityInterface.pfnSpawn(ent) < 0 || (ent->v.flags & FL_KILLME) != 0)
+		// look for the spawn function
+		if (gEntityInterface.pfnSpawn(ent) < 0 || (ent->v.flags & FL_KILLME))
 			ED_Free(ent);
 
 		SV_FlushSignon();
@@ -381,18 +406,22 @@ void ED_LoadFromFile( char* data )
 
 /*
 ===============
-PR_LoadProgs
+PR_Init
 ===============
 */
-void PR_LoadProgs(void)
+void PR_Init( void )
 {
-	;
+	//Cmd_AddCommand("edict", ED_PrintEdict_f);
+	//Cmd_AddCommand("edicts", ED_PrintEdicts);
+	//Cmd_AddCommand("edictcount", ED_Count);
+	//Cmd_AddCommand("profile", PR_Profile_f);
 }
+
+
 
 edict_t* EDICT_NUM( int n )
 {
-	if (n < 0 ||
-		n >= sv.max_edicts)
+	if (n < 0 || n >= sv.max_edicts)
 		Sys_Error("EDICT_NUM: bad number %i", n);
 	return &sv.edicts[n];
 }
@@ -410,33 +439,32 @@ int NUM_FOR_EDICT( const edict_t* e )
 
 /*
 ===============
-SuckOutClassname
+qboolean SuckOutClassname( char* szInputStream, edict_t* pEdict )
+
 ===============
 */
-void SuckOutClassname( char* data, edict_t* ent )
+void SuckOutClassname( char* szInputStream, edict_t* pEdict )
 {
-	char*			s;
-	KeyValueData	kvd;
-	char			c[256];
+	char		szKeyName[256];
+	KeyValueData kvd;
+	char* pszLastString;
 
 	while (1)
 	{
-		s = COM_Parse(data);
-
+		pszLastString = COM_Parse(szInputStream);
 		if (com_token[0] == '}')
 			break;
 
-		strcpy(c, com_token);
+		strcpy(szKeyName, com_token);
 
-		data = COM_Parse(s);
-		if (!strcmp(c, "classname"))
+		szInputStream = COM_Parse(pszLastString);
+		if (!strcmp(szKeyName, "classname"))
 		{
-			kvd.szKeyName = c;
+			kvd.szKeyName = szKeyName;
 			kvd.szClassName = NULL;
 			kvd.szValue = com_token;
 			kvd.fHandled = FALSE;
-
-			gEntityInterface.pfnKeyValue(ent, &kvd);
+			gEntityInterface.pfnKeyValue(pEdict, &kvd);
 
 			if (!kvd.fHandled)
 				Host_Error("SuckOutClassname: parse error");
@@ -446,40 +474,159 @@ void SuckOutClassname( char* data, edict_t* ent )
 	}
 }
 
-/*
-================
-ReleaseEntityDLLFields
-
-================
-*/
-void ReleaseEntityDLLFields( edict_t* ent )
+void ReleaseEntityDLLFields( edict_t* pEdict )
 {
-	FreeEntPrivateData(ent);
+	FreeEntPrivateData(pEdict);
+}
+
+void InitEntityDLLFields( edict_t* pEdict )
+{
+	pEdict->v.pContainingEntity = pEdict;
+}
+
+//============================================================================
+
+//
+// Request engine to allocate "cb" bytes on the entity's private data pointer.
+//
+void* PvAllocEntPrivateData( edict_t* pEdict, long cb )
+{
+	FreeEntPrivateData(pEdict);
+
+	if (cb <= 0)
+		return NULL;
+
+	pEdict->pvPrivateData = calloc(1, cb);
+	return pEdict->pvPrivateData;
+}
+
+void* PvEntPrivateData( edict_t* pEdict )
+{
+	if (!pEdict)
+		return NULL;
+
+	return pEdict->pvPrivateData;
+}
+
+//
+// Release the private data memory, if any.
+//
+void FreeEntPrivateData( edict_t* pEdict )
+{
+	if (pEdict->pvPrivateData)
+		free(pEdict->pvPrivateData);
+	pEdict->pvPrivateData = NULL;
+}
+
+edict_t* PEntityOfEntOffset( int iEntOffset )
+{
+	return (edict_t*)((char*)sv.edicts + iEntOffset);
+}
+
+int EntOffsetOfPEntity( const edict_t* pEdict )
+{
+	return (char*)pEdict - (char*)sv.edicts;
+}
+
+int IndexOfEdict( const edict_t* pEdict )
+{
+	int index;
+
+	if (!pEdict)
+		return 0;
+
+	index = pEdict - sv.edicts;
+	if (index < 0 || index > sv.max_edicts)
+		Sys_Error("Bad entity in IndexOfEdict()");
+
+	return index;
+}
+
+edict_t* PEntityOfEntIndex( int iEntIndex )
+{
+	edict_t* pEdict;
+
+	if (iEntIndex < 0 || iEntIndex >= sv.max_edicts)
+		return NULL;
+
+	pEdict = EDICT_NUM(iEntIndex);
+	if (pEdict->free || !pEdict->pvPrivateData)
+	{
+		if (iEntIndex >= svs.maxclients || pEdict->free)
+			return NULL;
+	}
+
+	return pEdict;
+}
+
+char* SzFromIndex( int iString )
+{
+	return pr_strings + iString;
+}
+
+entvars_t* GetVarsOfEnt( edict_t* pEdict )
+{
+	return &pEdict->v;
+}
+
+edict_t* FindEntityByVars( entvars_t* pvars )
+{
+	int i;
+
+	for (i = 0; i < sv.num_edicts; i++)
+	{
+		edict_t* pEdict = &sv.edicts[i];
+
+		if (&pEdict->v == pvars)
+			return pEdict;
+	}
+
+	return NULL;
+}
+
+float CVarGetFloat( const char* szVarName )
+{
+	return Cvar_VariableValue((char*)szVarName);
+}
+
+const char* CVarGetString( const char* szVarName )
+{
+	return Cvar_VariableString((char*)szVarName);
+}
+
+void CVarSetFloat( const char* szVarName, float flValue )
+{
+	Cvar_SetValue((char*)szVarName, flValue);
+}
+
+void CVarSetString( const char* szVarName, const char* szValue )
+{
+	Cvar_Set((char*)szVarName, (char*)szValue);
 }
 
 /*
-================
-InitEntityDLLFields
+=================
+AllocEngineString
 
-================
+This will allocate memory from the hunk
+Each call will allocate a new memory, no actual pooling of strings will occur
+=================
 */
-void InitEntityDLLFields( edict_t* ent )
+int AllocEngineString( const char* szValue )
 {
-	ent->v.pContainingEntity = ent;
+	return ED_NewString(szValue) - pr_strings;
 }
 
-/*
-================
-FreeEntPrivateData
-
-================
-*/
-void FreeEntPrivateData( edict_t* ent )
+void SaveSpawnParms( edict_t* pEdict )
 {
-	if (ent->pvPrivateData)
-		free(ent->pvPrivateData);
+	int eoffset = NUM_FOR_EDICT(pEdict);
+	client_t* client = NULL;
 
-	ent->pvPrivateData = NULL;
+	if (eoffset < 1 || eoffset > svs.maxclients)
+		Host_Error("Entity is not a client");
 }
 
-// TODO: Implement
+void* GetModelPtr( edict_t* pEdict )
+{
+	return Mod_Extradata(sv.models[pEdict->v.modelindex]);
+}
