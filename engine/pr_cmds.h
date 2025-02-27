@@ -7,7 +7,7 @@
 
 void	PF_makevectors_I( const float* rgflVector );
 float	PF_Time( void );
-
+void	PF_setorigin_I( edict_t* e, const float* org );
 
 
 

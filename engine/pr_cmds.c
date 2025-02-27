@@ -27,7 +27,20 @@ float PF_Time( void )
 	return Sys_FloatTime();
 }
 
+/*
+=================
+PF_setorigin
 
+This is the only valid way to move an object without using the physics of the world (setting velocity and waiting).  Directly changing origin will not set internal links correctly, so clipping would be messed up.  This should be called when an object is spawned, and then only if it is teleported.
+
+setorigin (entity, origin)
+=================
+*/
+void PF_setorigin_I( edict_t* e, const float* org )
+{
+	VectorCopy(org, e->v.origin);
+	SV_LinkEdict(e, FALSE);
+}
 
 
 
