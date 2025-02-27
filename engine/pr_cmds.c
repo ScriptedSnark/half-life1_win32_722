@@ -165,18 +165,123 @@ void PF_setmodel_I( edict_t* e, const char* m )
 		SetMinMaxSize(e, vec3_origin, vec3_origin, TRUE);
 }
 
+int PF_modelindex( const char* pstr )
+{
+	return SV_ModelIndex((char*)pstr);
+}
 
+int ModelFrames( int modelIndex )
+{
+	model_t* pModel;
 
+	if (modelIndex <= 0 || modelIndex >= MAX_MODELS)
+	{
+		Con_DPrintf("Bad sprite index!\n");
+		return 1;
+	}
 
+	pModel = sv.models[modelIndex];
+	return ModelFrameCount(pModel);
+}
 
+/*
+=================
+PF_bprint
 
+broadcast print to everyone on server
 
+bprint(value)
+=================
+*/
+void PF_bprint( char* s )
+{
+	SV_BroadcastPrintf("%s", s);
+}
 
+/*
+=================
+PF_sprint
 
+single print to a specific client
 
+sprint(clientent, value)
+=================
+*/
+void PF_sprint( char* s, int entnum )
+{
+	client_t* client;
 
+	if (entnum < 1 || entnum > svs.maxclients)
+	{
+		Con_Printf("tried to sprint to a non-client\n");
+		return;
+	}
 
+	client = &svs.clients[entnum - 1];
 
+	MSG_WriteChar(&client->netchan.message, svc_print);
+	MSG_WriteString(&client->netchan.message, s);
+}
+
+/*
+=================
+ClientPrintf
+
+Sends a message to the client console
+print_chat outputs to the console, just as print_console
+=================
+*/
+void ClientPrintf( edict_t* pEdict, PRINT_TYPE ptype, const char* szMsg )
+{
+	client_t* client;
+	int entnum;
+
+	entnum = NUM_FOR_EDICT(pEdict);
+	if (entnum < 1 || entnum > svs.maxclients)
+	{
+		Con_Printf("tried to sprint to a non-client\n");
+		return;
+	}
+
+	client = &svs.clients[entnum - 1];
+
+	switch (ptype)
+	{
+	case print_center:
+		MSG_WriteChar(&client->netchan.message, svc_centerprint);
+		MSG_WriteString(&client->netchan.message, (char*)szMsg);
+		break;
+	case print_chat:
+	case print_console:
+		MSG_WriteByte(&client->netchan.message, svc_print);
+		MSG_WriteString(&client->netchan.message, (char*)szMsg);
+		break;
+	default:
+		Con_Printf("invalid PRINT_TYPE %i\n", ptype);
+		break;
+	}
+}
+
+/*
+=================
+PF_vectoyaw_I
+
+Converts a direction vector to a yaw angle
+=================
+*/
+float PF_vectoyaw_I( const float* rgflVector )
+{
+	float yaw = 0;
+
+	if (rgflVector[1] == 0 && rgflVector[0] == 0)
+		return 0;
+
+	yaw = (int)(atan2(rgflVector[1], rgflVector[0]) * 180 / M_PI);
+	if (yaw < 0)
+		yaw += 360;
+
+	return yaw;
+}
 
 
 

@@ -1012,13 +1012,13 @@ static enginefuncs_t g_engfuncsExportedToDlls =
 	NULL,	// TODO: Implement
 	NULL,	// TODO: Implement
 	PF_setmodel_I,
-	NULL,	// TODO: Implement
-	NULL,	// TODO: Implement
+	PF_modelindex,
+	ModelFrames,
 	PF_setsize_I,
 	NULL,	// TODO: Implement
 	NULL,	// TODO: Implement
 	SaveSpawnParms,
-	NULL,	// TODO: Implement
+	PF_vectoyaw_I,
 	NULL,	// TODO: Implement
 	NULL,	// TODO: Implement
 	NULL,	// TODO: Implement
@@ -1087,7 +1087,7 @@ static enginefuncs_t g_engfuncsExportedToDlls =
 	NULL,	// TODO: Implement
 	FunctionFromName,
 	NameForFunction,
-	NULL,	// TODO: Implement
+	ClientPrintf,
 	Cmd_Args,
 	Cmd_Argv,
 	Cmd_Argc,
