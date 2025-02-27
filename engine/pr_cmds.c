@@ -284,6 +284,105 @@ float PF_vectoyaw_I( const float* rgflVector )
 }
 
 
+/*
+=================
+PF_vectoangles
+
+vector vectoangles(vector)
+=================
+*/
+void PF_vectoangles_I( const float* rgflVectorIn, float* rgflVectorOut )
+{
+	VectorAngles(rgflVectorIn, rgflVectorOut);
+}
+
+/*
+=================
+PF_particle_I
+
+particle(origin, color, count)
+=================
+*/
+void PF_particle_I( const float* org, const float* dir, float color, float count )
+{
+	SV_StartParticle(org, dir, color, count);
+}
+
+
+/*
+=================
+PF_ambientsound
+
+=================
+*/
+void PF_ambientsound_I( edict_t* entity, float* pos, const char* samp, float vol, float attenuation, int fFlags, int pitch )
+{
+	char** check;
+	int			i, soundnum;
+	int			ent;
+	sizebuf_t* pout;
+
+	if (samp[0] == '!')
+	{
+		fFlags |= SND_SENTENCE;
+
+		soundnum = atoi(samp + 1);
+		if (soundnum >= CVOXFILESENTENCEMAX)
+		{
+			Con_Printf("invalid sentence number: %s", samp + 1);
+			return;
+		}
+	}
+	else
+	{// check to see if samp was properly precached
+		for (soundnum = 0, check = sv.sound_precache; *check; check++, soundnum++)
+			if (!strcmp(*check, samp))
+				break;
+
+		if (!*check)
+		{
+			Con_Printf("no precache: %s\n", samp);
+			return;
+		}
+	}
+
+	ent = NUM_FOR_EDICT(entity);
+
+	pout = &sv.signon;
+	if (!(fFlags & SND_SPAWNING))
+		pout = &sv.datagram;
+
+// add an svc_spawnambient command to the level signon packet
+
+	MSG_WriteByte(pout, svc_spawnstaticsound);
+	for (i = 0; i < 3; i++)
+		MSG_WriteCoord(pout, pos[i]);
+
+	MSG_WriteShort(pout, soundnum);
+
+	MSG_WriteByte(pout, vol * 255);
+	MSG_WriteByte(pout, attenuation * 64);
+	MSG_WriteShort(pout, ent);
+	MSG_WriteByte(pout, pitch);
+	MSG_WriteByte(pout, fFlags);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 // TODO: Implement

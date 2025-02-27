@@ -115,6 +115,7 @@ void AngleMatrix( const vec_t* angles, float(*matrix)[4] );
 void VectorTransform( const vec_t* in1, float(*in2)[4], vec_t* out );
 
 void VectorMatrix( vec_t* forward, vec_t* right, vec_t* up );
+void VectorAngles( const vec_t* forward, vec_t* angles );
 
 float	anglemod( float a );
 

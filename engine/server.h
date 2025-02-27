@@ -330,6 +330,14 @@ void SV_DropClient( client_t* drop, qboolean crash );
 
 void SV_DeallocateDynamicData( void );
 
+
+void SV_StartParticle( const vec_t* org, const vec_t* dir, int color, int count );
+
+
+
+
+
+
 void SV_BroadcastPrintf( char* fmt, ... );
 
 void SV_ClearChannel( qboolean forceclear );

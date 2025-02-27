@@ -705,6 +705,30 @@ void SV_CountPlayers( int* clients, int* spectators )
 	}
 }
 
+// TODO: Implement
+
+/*
+=============================================================================
+
+EVENT MESSAGES
+
+=============================================================================
+*/
+
+/*
+==================
+SV_StartParticle
+
+Make sure the event gets sent to all clients
+==================
+*/
+void SV_StartParticle( const vec_t* org, const vec_t* dir, int color, int count )
+{
+	// TODO: Implement
+}
+
+// TODO: Implement
+
 void SV_ClearChannel( qboolean forceclear )
 {
 	// TODO: Implement; not sure if this function belongs here.

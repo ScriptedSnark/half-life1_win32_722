@@ -18,6 +18,10 @@ void	PF_sprint( char* s, int entnum );
 void	ClientPrintf( edict_t* pEdict, PRINT_TYPE ptype, const char* szMsg );
 
 float	PF_vectoyaw_I( const float* rgflVector );
+void	PF_vectoangles_I( const float* rgflVectorIn, float* rgflVectorOut );
+void	PF_particle_I( const float* org, const float* dir, float color, float count );
+void	PF_ambientsound_I( edict_t* entity, float* pos, const char* samp, float vol, float attenuation, int fFlags, int pitch );
+
 
 
 
