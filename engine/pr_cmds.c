@@ -367,13 +367,37 @@ void PF_ambientsound_I( edict_t* entity, float* pos, const char* samp, float vol
 	MSG_WriteByte(pout, fFlags);
 }
 
+/*
+=================
+PF_sound_I
 
+Each entity can have eight independant sound sources, like voice,
+weapon, feet, etc.
 
+Channel 0 is an auto-allocate channel, the others override anything
+allready running on that entity/channel pair.
 
+An attenuation of 0 will play full volume everywhere in the level.
+Larger attenuations will drop off.
 
+=================
+*/
+void PF_sound_I( edict_t* entity, int channel, const char* sample, float volume, float attenuation, int fFlags, int pitch )
+{
+	if (volume < 0 || volume > 255)
+		Sys_Error("SV_StartSound: volume = %i", (int)volume);
 
+	if (attenuation < 0 || attenuation > 4)
+		Sys_Error("SV_StartSound: attenuation = %f", attenuation);
 
+	if (channel < CHAN_AUTO || channel > CHAN_NETWORKVOICE_BASE)
+		Sys_Error("SV_StartSound: channel = %i", channel);
 
+	if (pitch < 0 || pitch > 255)
+		Sys_Error("SV_StartSound: pitch = %i", pitch);
+
+	SV_StartSound(entity, channel, sample, volume * 255, attenuation, fFlags, pitch);
+}
 
 
 

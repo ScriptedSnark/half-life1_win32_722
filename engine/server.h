@@ -332,7 +332,7 @@ void SV_DeallocateDynamicData( void );
 
 
 void SV_StartParticle( const vec_t* org, const vec_t* dir, int color, int count );
-
+void SV_StartSound( edict_t* entity, int channel, const char* sample, int volume, float attenuation, int fFlags, int pitch );
 
 
 

@@ -1038,7 +1038,7 @@ static enginefuncs_t g_engfuncsExportedToDlls =
 	NULL,	// TODO: Implement
 	NULL,	// TODO: Implement
 	PF_setorigin_I,
-	NULL,	// TODO: Implement
+	PF_sound_I,
 	PF_ambientsound_I,
 	NULL,	// TODO: Implement
 	NULL,	// TODO: Implement

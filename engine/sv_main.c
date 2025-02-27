@@ -727,6 +727,28 @@ void SV_StartParticle( const vec_t* org, const vec_t* dir, int color, int count 
 	// TODO: Implement
 }
 
+/*
+==================
+SV_StartSound
+
+Each entity can have eight independant sound sources, like voice,
+weapon, feet, etc.
+
+Channel 0 is an auto-allocate channel, the others override anything
+allready running on that entity/channel pair.
+
+An attenuation of 0 will play full volume everywhere in the level.
+Larger attenuations will drop off.  (max 4 attenuation)
+
+Pitch should be PITCH_NORM (100) for no pitch shift. Values over 100 (up to 255)
+shift pitch higher, values lower than 100 lower the pitch.
+==================
+*/
+void SV_StartSound( edict_t* entity, int channel, const char* sample, int volume, float attenuation, int fFlags, int pitch )
+{
+	// TODO: Implement
+}
+
 // TODO: Implement
 
 void SV_ClearChannel( qboolean forceclear )

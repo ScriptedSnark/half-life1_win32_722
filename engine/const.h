@@ -580,7 +580,8 @@
 #define	CHAN_BODY			4
 #define CHAN_STREAM			5		// allocate stream channel from the static or dynamic area
 #define CHAN_STATIC			6		// allocate channel from the static area 
-
+#define CHAN_NETWORKVOICE_BASE	7		// voice data coming across the network
+#define CHAN_NETWORKVOICE_END	500		// network voice data reserves slots (CHAN_NETWORKVOICE_BASE through CHAN_NETWORKVOICE_END).
 
 // attenuation values
 #define ATTN_NONE		0

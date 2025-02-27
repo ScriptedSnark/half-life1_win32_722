@@ -21,7 +21,7 @@ float	PF_vectoyaw_I( const float* rgflVector );
 void	PF_vectoangles_I( const float* rgflVectorIn, float* rgflVectorOut );
 void	PF_particle_I( const float* org, const float* dir, float color, float count );
 void	PF_ambientsound_I( edict_t* entity, float* pos, const char* samp, float vol, float attenuation, int fFlags, int pitch );
-
+void	PF_sound_I( edict_t* entity, int channel, const char* sample, float volume, float attenuation, int fFlags, int pitch );
 
 
 
