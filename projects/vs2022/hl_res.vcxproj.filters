@@ -13,6 +13,18 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Foreign">
+      <UniqueIdentifier>{4f593124-ce3f-4fe4-a9d8-d507152ae36e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Foreign\Fixes">
+      <UniqueIdentifier>{620cc71f-baaa-444d-b52a-cdc0b9b4c6c6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Foreign\Precompiled Header">
+      <UniqueIdentifier>{8297e7bf-e9da-4d71-901d-4f15c494798a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Foreign\Debugging Stuff">
+      <UniqueIdentifier>{74f5abf3-a8d2-42dd-87b9-a7a21bb27cf2}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\..\shell\hl_res\hl_res.rc">
@@ -23,5 +35,34 @@
     <ClInclude Include="..\..\shell\hl_res\resource.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\shell\hl_res\AfxRes.h">
+      <Filter>Foreign\Fixes</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shell\hl_res\StdAfx.h">
+      <Filter>Foreign\Precompiled Header</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shell\hl_res\targetver.h">
+      <Filter>Foreign\Precompiled Header</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shell\hl_res\hooks.hpp">
+      <Filter>Foreign\Debugging Stuff</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shell\hl_res\linked_list.hpp">
+      <Filter>Foreign\Debugging Stuff</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shell\hl_res\common.hpp">
+      <Filter>Foreign</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\shell\hl_res\StdAfx.cpp">
+      <Filter>Foreign\Precompiled Header</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\shell\hl_res\hooks.cpp">
+      <Filter>Foreign\Debugging Stuff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\shell\hl_res\dllmain.cpp">
+      <Filter>Foreign</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

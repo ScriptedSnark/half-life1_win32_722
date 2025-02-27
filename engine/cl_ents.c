@@ -173,7 +173,7 @@ CL_ParseDelta
 Can go from either a baseline or a previous packet_entity
 ==================
 */
-int	bitcounts[32];	/// just for protocol profiling
+int	bitcounts[32 + 8];	/// just for protocol profiling
 void CL_ParseDelta( entity_state_t* from, entity_state_t* to, int bits, int bboxbits, int number )
 {
 	int			i;
