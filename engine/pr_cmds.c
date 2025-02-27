@@ -1,6 +1,42 @@
-#include <time.h>
-
 #include "quakedef.h"
+#include "pr_cmds.h"
+
+/*
+===============================================================================
+
+						BUILT-IN FUNCTIONS
+
+===============================================================================
+*/
+
+/*
+==============
+PF_makevectors
+
+Writes new values for v_forward, v_up, and v_right based on angles
+makevectors(vector)
+==============
+*/
+void PF_makevectors_I( const float* rgflVector )
+{
+	AngleVectors(rgflVector, gGlobalVariables.v_forward, gGlobalVariables.v_right, gGlobalVariables.v_up);
+}
+
+float PF_Time( void )
+{
+	return Sys_FloatTime();
+}
+
+
+
+
+
+
+
+
+
+
+
 
 // TODO: Implement
 

@@ -5,6 +5,15 @@
 #pragma once
 #endif
 
+void	PF_makevectors_I( const float* rgflVector );
+float	PF_Time( void );
+
+
+
+
+
+
+
 msurface_t* SurfaceAtPoint( model_t* pModel, mnode_t* node, vec_t* start, vec_t* end );
 
 void SV_SetGlobalTrace( trace_t* ptrace );

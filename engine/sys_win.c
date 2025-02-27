@@ -1028,7 +1028,7 @@ static enginefuncs_t g_engfuncsExportedToDlls =
 	NULL,	// TODO: Implement
 	NULL,	// TODO: Implement
 	NULL,	// TODO: Implement
-	NULL,	// TODO: Implement
+	PF_makevectors_I,
 	AngleVectors,
 	ED_Alloc,
 	NULL,	// TODO: Implement
@@ -1099,7 +1099,7 @@ static enginefuncs_t g_engfuncsExportedToDlls =
 	RandomLong,
 	RandomFloat,
 	NULL,	// TODO: Implement
-	NULL,	// TODO: Implement
+	PF_Time,
 	NULL,	// TODO: Implement
 	COM_LoadFileForMe,
 	COM_FreeFile,
