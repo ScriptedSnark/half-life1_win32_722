@@ -409,3 +409,18 @@ void SV_MoveBounds( const vec_t* start, const vec_t* mins, const vec_t* maxs, co
 }
 
 // TODO: Implement
+
+/*
+===============
+SV_Move
+===============
+*/
+trace_t SV_Move( const vec_t *start, const vec_t *mins, const vec_t *maxs, const vec_t *end, int type, edict_t *passedict, qboolean monsterClipBrush )
+{
+	// TODO: Implement
+	trace_t trace;
+	memset(&trace, 0, sizeof(trace));
+	return trace;
+}
+
+// TODO: Implement

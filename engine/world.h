@@ -37,4 +37,6 @@ qboolean SV_RecursiveHullCheck( hull_t* hull, int num, float p1f, float p2f, vec
 
 void SV_MoveBounds( const vec_t* start, const vec_t* mins, const vec_t* maxs, const vec_t* end, vec_t* boxmins, vec_t* boxmaxs );
 
+trace_t SV_Move( const vec_t *start, const vec_t *mins, const vec_t *maxs, const vec_t *end, int type, edict_t *passedict, qboolean monsterClipBrush );
+
 #endif // WORLD_H

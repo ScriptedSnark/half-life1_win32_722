@@ -1,5 +1,6 @@
 #include "quakedef.h"
 #include "pr_cmds.h"
+#include "sv_proto.h"
 
 /*
 ===============================================================================
@@ -399,19 +400,124 @@ void PF_sound_I( edict_t* entity, int channel, const char* sample, float volume,
 	SV_StartSound(entity, channel, sample, volume * 255, attenuation, fFlags, pitch);
 }
 
+/*
+=================
+PF_traceline_Shared
 
+Used for use tracing and shot targeting
+Traces are blocked by bbox and exact bsp entityes, and also slide box entities
+if the tryents flag is set.
 
+traceline (vector1, vector2, nomonsters, ent)
+=================
+*/
+void PF_traceline_Shared( const float* v1, const float* v2, int nomonsters, edict_t* ent )
+{
+	trace_t trace;
+	trace = SV_Move(v1, vec3_origin, vec3_origin, v2, nomonsters, ent, FALSE);
 
+	gGlobalVariables.trace_flags = 0;
 
+	SV_SetGlobalTrace(&trace);
+}
 
+void PF_traceline_DLL( const float* v1, const float* v2, int fNoMonsters, edict_t* pentToSkip, TraceResult* ptr )
+{
+	PF_traceline_Shared(v1, v2, fNoMonsters, pentToSkip ? pentToSkip : &sv.edicts[0]);
+	ptr->fAllSolid = gGlobalVariables.trace_allsolid;
+	ptr->fStartSolid = gGlobalVariables.trace_startsolid;
+	ptr->fInOpen = gGlobalVariables.trace_inopen;
+	ptr->fInWater = gGlobalVariables.trace_inwater;
+	ptr->flFraction = gGlobalVariables.trace_fraction;
+	ptr->flPlaneDist = gGlobalVariables.trace_plane_dist;
+	ptr->pHit = gGlobalVariables.trace_ent;
+	VectorCopy(gGlobalVariables.trace_endpos, ptr->vecEndPos);
+	VectorCopy(gGlobalVariables.trace_plane_normal, ptr->vecPlaneNormal);
+	ptr->iHitgroup = gGlobalVariables.trace_hitgroup;
+}
 
+vec_t gHullMins[4][3] = {
+	{ 0.0, 0.0, 0.0 },
+	{ -16.0, -16.0, -36.0 },
+	{ -32.0, -32.0, -32.0 },
+	{ -16.0, -16.0, -18.0 },
+};
 
+vec_t gHullMaxs[4][3] = {
+	{ 0.0, 0.0, 0.0 },
+	{ 16.0, 16.0, 36.0 },
+	{ 32.0, 32.0, 32.0 },
+	{ 16.0, 16.0, 18.0 },
+};
 
+void TraceHull( const float* v1, const float* v2, int fNoMonsters, int hullNumber, edict_t* pentToSkip, TraceResult* ptr )
+{
+	trace_t trace;
 
+	if (hullNumber < 0 || hullNumber > 3)
+		hullNumber = 0;
 
-// TODO: Implement
+	trace = SV_Move(v1, gHullMins[hullNumber], gHullMaxs[hullNumber], v2, fNoMonsters, pentToSkip, FALSE);
 
-// Returns surface instance by specified position
+	ptr->fAllSolid = trace.allsolid;
+	ptr->fStartSolid = trace.startsolid;
+	ptr->fInOpen = trace.inopen;
+	ptr->fInWater = trace.inwater;
+	ptr->flFraction = trace.fraction;
+	ptr->flPlaneDist = trace.plane.dist;
+	ptr->pHit = trace.ent;
+	ptr->iHitgroup = trace.hitgroup;
+	VectorCopy(trace.endpos, ptr->vecEndPos);
+	VectorCopy(trace.plane.normal, ptr->vecPlaneNormal);
+}
+
+void TraceSphere( const float* v1, const float* v2, int fNoMonsters, float radius, edict_t* pentToSkip, TraceResult* ptr )
+{
+	Sys_Error("TraceSphere not yet implemented!\n");
+}
+
+void TraceModel( const float* v1, const float* v2, edict_t* pent, TraceResult* ptr )
+{
+	trace_t trace;
+	int oldSolid, oldMovetype;
+	model_t* pmodel;
+
+	pmodel = sv.models[pent->v.modelindex];
+	if (pmodel && pmodel->type == mod_brush)
+	{
+		oldSolid = pent->v.solid;
+		oldMovetype = pent->v.movetype;
+		pent->v.solid = SOLID_BSP;
+		pent->v.movetype = MOVETYPE_PUSH;
+	}
+
+	trace = SV_ClipMoveToEntity(pent, v1, vec3_origin, vec3_origin, v2);
+
+	if (pmodel && pmodel->type == mod_brush)
+	{
+		pent->v.solid = oldSolid;
+		pent->v.movetype = oldMovetype;
+	}
+
+	ptr->fAllSolid = trace.allsolid;
+	ptr->fStartSolid = trace.startsolid;
+	ptr->fInOpen = trace.inopen;
+	ptr->fInWater = trace.inwater;
+	ptr->flFraction = trace.fraction;
+	ptr->flPlaneDist = trace.plane.dist;
+	ptr->pHit = trace.ent;
+	ptr->iHitgroup = trace.hitgroup;
+	VectorCopy(trace.endpos, ptr->vecEndPos);
+	VectorCopy(trace.plane.normal, ptr->vecPlaneNormal);
+}
+
+/*
+=================
+SurfaceAtPoint
+
+Returns surface instance by specified position
+=================
+*/
 msurface_t* SurfaceAtPoint( model_t* pModel, mnode_t* node, vec_t* start, vec_t* end )
 {
 	float		front, back, frac;

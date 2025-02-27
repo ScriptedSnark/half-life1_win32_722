@@ -1040,13 +1040,13 @@ static enginefuncs_t g_engfuncsExportedToDlls =
 	PF_setorigin_I,
 	PF_sound_I,
 	PF_ambientsound_I,
+	PF_traceline_DLL,
 	NULL,	// TODO: Implement
 	NULL,	// TODO: Implement
+	TraceHull,
+	TraceModel,
 	NULL,	// TODO: Implement
-	NULL,	// TODO: Implement
-	NULL,	// TODO: Implement
-	NULL,	// TODO: Implement
-	NULL,	// TODO: Implement
+	TraceSphere,
 	NULL,	// TODO: Implement
 	NULL,	// TODO: Implement
 	NULL,	// TODO: Implement
