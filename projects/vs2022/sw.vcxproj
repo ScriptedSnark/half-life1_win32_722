@@ -66,6 +66,7 @@
     <ClInclude Include="..\..\engine\sound.h" />
     <ClInclude Include="..\..\engine\spritegn.h" />
     <ClInclude Include="..\..\engine\studio.h" />
+    <ClInclude Include="..\..\engine\sv_proto.h" />
     <ClInclude Include="..\..\engine\sys.h" />
     <ClInclude Include="..\..\engine\textures.h" />
     <ClInclude Include="..\..\engine\tmessage.h" />

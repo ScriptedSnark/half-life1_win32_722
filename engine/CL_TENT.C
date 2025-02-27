@@ -430,8 +430,16 @@ void R_Sprite_Trail( int type, vec_t* start, vec_t* end, int modelIndex, int cou
 
 	for (i = 0; i < count; i++)
 	{
-		float scale = (float)i / ((float)count - 1.0);
-		VectorMA(start, scale, delta, pos);
+		// Be careful of divide by 0 when using 'count' here...
+		if (i == 0)
+		{
+			VectorMA(start, 0, delta, pos);
+		}
+		else
+		{
+			float scale = (float)i / ((float)count - 1.0);
+			VectorMA(start, scale, delta, pos);
+		}
 
 		ptemp = CL_TempEntAlloc(pos, model);
 		if (!ptemp)
@@ -450,7 +458,7 @@ void R_Sprite_Trail( int type, vec_t* start, vec_t* end, int modelIndex, int cou
 		ptemp->entity.renderamt = renderamt;
 		ptemp->entity.baseline.renderamt = renderamt;
 		ptemp->entity.scale = size;
-		
+
 		ptemp->entity.frame = RandomLong(0, frameCount - 1);
 		ptemp->frameMax = frameCount;
 		ptemp->die = cl.time + life + RandomFloat(0, 4);
