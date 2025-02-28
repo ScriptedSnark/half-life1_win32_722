@@ -824,17 +824,6 @@ edict_t* PF_checkclient_I( edict_t* pEdict )
 	return ent;
 }
 
-
-
-
-
-
-
-
-
-
-// TODO: Implement
-
 /*
 =================
 PVSNode
@@ -870,6 +859,360 @@ mnode_t* PVSNode( mnode_t* node, vec_t* emins, vec_t* emaxs )
 
 	return NULL;
 }
+
+/*
+=================
+PVSMark
+
+Mark the leaves and nodes that are in the PVS for the specified leaf
+=================
+*/
+void PVSMark( model_t* pmodel, byte* ppvs )
+{
+	mnode_t* node;
+	int		i;
+
+	r_visframecount++;
+
+	for (i = 0; i < pmodel->numleafs; i++)
+	{
+		if ((1 << (i & 7)) & ppvs[i >> 3])
+		{
+			node = (mnode_t*)&pmodel->leafs[i + 1];
+			do
+			{
+				if (node->visframe == r_visframecount)
+					break;
+				node->visframe = r_visframecount;
+				node = node->parent;
+			} while (node);
+		}
+	}
+}
+
+void R_MarkLeaves( void );
+
+/*
+=================
+PVSFindEntities
+
+Finds an entity chain in the PVS
+=================
+*/
+edict_t* PVSFindEntities( edict_t* pplayer )
+{
+	int		i;
+	edict_t* pent, * pchain, * pentPVS;
+	vec3_t	org;
+	byte* ppvs;
+	mleaf_t* pleaf;
+
+	VectorAdd(pplayer->v.view_ofs, pplayer->v.origin, org);
+
+	pleaf = Mod_PointInLeaf(org, sv.worldmodel);
+	ppvs = Mod_LeafPVS(pleaf, sv.worldmodel);
+
+	PVSMark(sv.worldmodel, ppvs);
+	pchain = sv.edicts;
+
+	for (i = 1; i < sv.num_edicts; i++)
+	{
+		pent = &sv.edicts[i];
+		if (pent->free)
+			continue;
+
+		if (pent->v.movetype == MOVETYPE_FOLLOW && pent->v.aiment)
+			pentPVS = pent->v.aiment;
+		else
+			pentPVS = pent;
+
+		if (PVSNode(sv.worldmodel->nodes, pentPVS->v.absmin, pentPVS->v.absmax))
+		{
+			pent->v.chain = pchain;
+			pchain = pent;
+		}
+	}
+
+	if (cl.worldmodel)
+	{
+		r_oldviewleaf = NULL;
+		R_MarkLeaves();
+	}
+
+	return pchain;
+}
+
+//============================================================================
+
+qboolean ValidCmd( const char* pCmd )
+{
+	int len;
+
+	len = strlen(pCmd);
+	return (len != 0) && (pCmd[len - 1] == '\n' || pCmd[len - 1] == ';');
+}
+
+/*
+=================
+PF_stuffcmd_I
+
+Sends text over to the client's execution buffer
+
+stuffcmd (clientent, value)
+=================
+*/
+void PF_stuffcmd_I( edict_t* pEdict, char* szFmt, ... )
+{
+	int		entnum;
+	client_t* old;
+	va_list	argptr;
+	static char szOut[1024];
+
+	entnum = NUM_FOR_EDICT(pEdict);
+
+	va_start(argptr, szFmt);
+	vsprintf(szOut, szFmt, argptr);
+	va_end(argptr);
+
+	if (entnum < 1 || entnum > svs.maxclients)
+	{
+		Con_Printf("\n!!!\n\nStuffCmd:  Some entity tried to stuff '%s' to console "
+			"buffer of entity %i when maxclients was set to %i, ignoring\n\n",
+			szOut, entnum, svs.maxclients);
+		return;
+	}
+	
+	if (!ValidCmd(szOut))
+	{
+		Con_Printf("Tried to stuff bad command %s\n", szOut);
+		return;
+	}
+	
+	old = host_client;
+	host_client = &svs.clients[entnum - 1];
+	Host_ClientCommands("%s", szOut);
+	host_client = old;
+}
+
+/*
+=================
+PF_localcmd_I
+
+Sends text over to the client's execution buffer
+
+localcmd (string)
+=================
+*/
+void PF_localcmd_I( char* str )
+{
+	if (!ValidCmd(str))
+	{
+		Con_Printf("Error, bad server command %s\n", str);
+		return;
+	}
+
+	Cbuf_AddText(str);	
+}
+
+/*
+=================
+FindEntityInSphere
+
+Try to find an entity in a sphere
+=================
+*/
+edict_t* FindEntityInSphere( edict_t* pEdictStartSearchAfter, const float* org, float rad )
+{
+	edict_t* ent;
+	float	eorg;
+	int		e, i, j;
+	float	distSquared;
+
+	if (pEdictStartSearchAfter)
+		e = NUM_FOR_EDICT(pEdictStartSearchAfter);
+	else
+		e = 0;
+
+	for (i = e + 1; i < sv.num_edicts; i++)
+	{
+		ent = &sv.edicts[i];
+		if (ent->free || !ent->v.classname)
+			continue;
+
+		if (i <= svs.maxclients && !svs.clients[i - 1].active)
+			continue;
+
+		distSquared = 0.0;
+		for (j = 0; j < 3 && distSquared <= (rad * rad); j++)
+		{
+			if (org[j] < ent->v.absmin[j])
+				eorg = org[j] - ent->v.absmin[j];
+			else if (org[j] > ent->v.absmax[j])
+				eorg = org[j] - ent->v.absmax[j];
+			else
+				eorg = 0.0;
+
+			distSquared += eorg * eorg;
+		}
+
+		// Make sure it's inside the sphere.
+		if (distSquared <= (rad * rad))
+		{
+			return ent;
+		}
+	}
+
+	return &sv.edicts[0];
+}
+
+/*
+=================
+PF_Spawn_I
+
+Allocates an edict for use with an entity
+=================
+*/
+edict_t* PF_Spawn_I( void )
+{
+	edict_t* pedict = ED_Alloc();
+	return pedict;
+}
+
+/*
+=================
+CreateNamedEntity
+
+Create specified entity, allocate private data
+=================
+*/
+edict_t* CreateNamedEntity( int className )
+{
+	edict_t* pedict;
+	ENTITYINIT pEntityInit;
+
+	if (!className)
+		Sys_Error("Spawned a NULL entity!");
+
+	pedict = ED_Alloc();
+	pedict->v.classname = className;
+
+	pEntityInit = GetEntityInit(&pr_strings[className]);
+	if (!pEntityInit)
+	{
+		ED_Free(pedict);
+		Con_DPrintf("Can't create entity: %s\n", &pr_strings[className]);
+		return NULL;
+	}
+	
+	pEntityInit(&pedict->v);
+	return pedict;
+}
+
+/*
+=================
+PF_Remove_I
+
+Immediately remove the given entity
+=================
+*/
+void PF_Remove_I( edict_t* ed )
+{
+	ED_Free(ed);
+}
+
+/*
+=================
+PF_find_Shared
+
+Tries to find an entity by string
+=================
+*/
+edict_t* PF_find_Shared( int eStartSearchAfter, int iFieldToMatch, const char* szValueToFind )
+{
+	int		e;
+	char* t;
+	edict_t* ed;
+
+	for (e = eStartSearchAfter + 1; e < sv.num_edicts; e++)
+	{
+		ed = &sv.edicts[e];
+		if (ed->free)
+			continue;
+
+		t = &pr_strings[*(string_t*)((size_t)&ed->v + iFieldToMatch)];
+		if (t == NULL || t == &pr_strings[0])
+			continue;
+
+		if (!strcmp(t, szValueToFind))
+			return ed;
+	}
+
+	return &sv.edicts[0];
+}
+
+int iGetIndex( const char* pszField )
+{
+	char sz[512];
+
+	strcpy(sz, pszField);
+	_strlwr(sz);
+
+	if (!strcmp(sz, "classname"))
+		return offsetof(entvars_t, classname);
+	if (!strcmp(sz, "model"))
+		return offsetof(entvars_t, model);
+	if (!strcmp(sz, "viewmodel"))
+		return offsetof(entvars_t, viewmodel);
+	if (!strcmp(sz, "weaponmodel"))
+		return offsetof(entvars_t, weaponmodel);
+	if (!strcmp(sz, "netname"))
+		return offsetof(entvars_t, netname);
+	if (!strcmp(sz, "target"))
+		return offsetof(entvars_t, target);
+	if (!strcmp(sz, "targetname"))
+		return offsetof(entvars_t, targetname);
+	if (!strcmp(sz, "message"))
+		return offsetof(entvars_t, message);
+	if (!strcmp(sz, "noise"))
+		return offsetof(entvars_t, noise);
+	if (!strcmp(sz, "noise1"))
+		return offsetof(entvars_t, noise1);
+	if (!strcmp(sz, "noise2"))
+		return offsetof(entvars_t, noise2);
+	if (!strcmp(sz, "noise3"))
+		return offsetof(entvars_t, noise3);
+	if (!strcmp(sz, "globalname"))
+		return offsetof(entvars_t, globalname);
+
+	return -1;
+}
+
+edict_t* FindEntityByString( edict_t* pEdictStartSearchAfter, const char* pszField, const char* pszValue )
+{
+	int e;
+	int iField = iGetIndex(pszField);
+	if (iField == -1)
+		return NULL;
+
+	if (!pszValue)
+		return NULL;
+
+	if (pEdictStartSearchAfter)
+		e = NUM_FOR_EDICT(pEdictStartSearchAfter);
+	else
+		e = 0;
+
+	return PF_find_Shared(e, iField, pszValue);
+}
+
+
+
+
+
+
+
+
+
 
 // TODO: Implement
 

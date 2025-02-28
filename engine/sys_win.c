@@ -1006,7 +1006,7 @@ DLL_EXPORT void Keyboard_ReturnToGame( void )
 }
 
 // This is a table of exported engine functions to server dll
-// NOTE: New functions come imidieately after the last one
+// NOTE: New functions come immediately after the last one
 static enginefuncs_t g_engfuncsExportedToDlls =
 {
 	NULL,	// TODO: Implement
@@ -1023,16 +1023,16 @@ static enginefuncs_t g_engfuncsExportedToDlls =
 	NULL,	// TODO: Implement
 	NULL,	// TODO: Implement
 	NULL,	// TODO: Implement
+	FindEntityByString,
 	NULL,	// TODO: Implement
-	NULL,	// TODO: Implement
-	NULL,	// TODO: Implement
+	FindEntityInSphere,
 	PF_checkclient_I,
-	NULL,	// TODO: Implement
+	PVSFindEntities,
 	PF_makevectors_I,
 	AngleVectors,
-	ED_Alloc,
-	NULL,	// TODO: Implement
-	NULL,	// TODO: Implement
+	PF_Spawn_I,
+	PF_Remove_I,
+	CreateNamedEntity,
 	NULL,	// TODO: Implement
 	NULL,	// TODO: Implement
 	NULL,	// TODO: Implement
@@ -1048,8 +1048,8 @@ static enginefuncs_t g_engfuncsExportedToDlls =
 	TraceTexture,
 	TraceSphere,
 	NULL,	// TODO: Implement
-	NULL,	// TODO: Implement
-	NULL,	// TODO: Implement
+	PF_localcmd_I,
+	PF_stuffcmd_I,
 	PF_particle_I,
 	NULL,	// TODO: Implement
 	NULL,	// TODO: Implement

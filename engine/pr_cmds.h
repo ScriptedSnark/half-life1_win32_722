@@ -34,16 +34,24 @@ void	PF_TraceToss_DLL( edict_t* pent, edict_t* pentToIgnore, TraceResult* ptr );
 int		TraceMonsterHull( edict_t* pEdict, const float* v1, const float* v2, int fNoMonsters, edict_t* pentToSkip, TraceResult* ptr );
 
 edict_t* PF_checkclient_I( edict_t* pEdict );
-
-
-
-
-
-
-
-
-
 struct mnode_s* PVSNode( struct mnode_s* node, vec_t* emins, vec_t* emaxs );
+edict_t* PVSFindEntities( edict_t* pplayer );
+
+void	PF_stuffcmd_I( edict_t* pEdict, char* szFmt, ... );
+void	PF_localcmd_I( char* str );
+
+edict_t* FindEntityInSphere( edict_t* pEdictStartSearchAfter, const float* org, float rad );
+edict_t* PF_Spawn_I( void );
+edict_t* CreateNamedEntity( int className );
+void	PF_Remove_I( edict_t* ed );
+edict_t* FindEntityByString( edict_t* pEdictStartSearchAfter, const char* pszField, const char* pszValue );
+
+
+
+
+
+
+
 
 float	RandomFloat( float flLow, float flHigh );
 int		RandomLong( long lLow, long lHigh );
