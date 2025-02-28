@@ -1179,11 +1179,11 @@ void CL_SendCmd( void )
 		cl.validsequence = 0;
 
 	if (cl.validsequence && !cl_nodelta.value && cls.state == ca_active &&
-		!cls.demorecording)
+		!cls.demorecording && !cls.demowaiting)
 	{
 		cl.frames[cls.netchan.outgoing_sequence & UPDATE_MASK].delta_sequence = cl.validsequence;
 		MSG_WriteByte(&buf, clc_delta);
-		MSG_WriteByte(&buf, cl.validsequence & 255);
+		MSG_WriteByte(&buf, cl.validsequence);
 	}
 	else
 		cl.frames[cls.netchan.outgoing_sequence & UPDATE_MASK].delta_sequence = -1;
