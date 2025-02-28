@@ -1,6 +1,7 @@
 #include "quakedef.h"
 #include "sv_proto.h"
 #include "cmodel.h"
+#include "decal.h"
 #include "pr_cmds.h"
 
 /*
@@ -1258,18 +1259,14 @@ int PF_precache_sound_I( char* s )
 
 		for (i = 0; i < MAX_SOUNDS; i++)
 		{
-			if (sv.sound_precache[i])
-			{
-				if (!strcmp(sv.sound_precache[i], s))
-					return i;
-			}
-			else
+			if (!sv.sound_precache[i])
 			{
 				sv.sound_precache[i] = s;
 				return i;
 			}
+			if (!strcmp(sv.sound_precache[i], s))
+				return i;
 		}
-
 		Host_Error("PF_precache_sound_I: '%s' overflow", s);
 	}
 	else
@@ -1283,7 +1280,6 @@ int PF_precache_sound_I( char* s )
 					return i;
 			}
 		}
-
 		Host_Error("PF_precache_sound_I: '%s' Precache can only be done in spawn functions", s);
 	}
 
@@ -1306,19 +1302,15 @@ int PF_precache_model_I( char* s )
 
 		for (i = 0; i < MAX_MODELS; i++)
 		{
-			if (sv.model_precache[i])
-			{
-				if (!strcmp(sv.model_precache[i], s))
-					return i;
-			}
-			else
+			if (!sv.model_precache[i])
 			{
 				sv.model_precache[i] = s;
 				sv.models[i] = Mod_ForName(s, TRUE);
 				return i;
 			}
-		}
-		
+			if (!strcmp(sv.model_precache[i], s))
+				return i;
+		}	
 		Host_Error("PF_precache_model_I: '%s' overflow", s);
 	}
 	else
@@ -1332,12 +1324,163 @@ int PF_precache_model_I( char* s )
 					return i;
 			}
 		}
-		
 		Host_Error("PF_precache_model_I: '%s' Precache can only be done in spawn functions", s);
 	}
 
 	return i;
 }
+
+/*
+=================
+PF_IsMapValid_I
+
+Checks if the given filename is a valid map
+=================
+*/
+int PF_IsMapValid_I( char* mapname )
+{
+	char cBuf[128];
+	FILE* f;
+
+	sprintf(cBuf, "maps/%.32s.bsp", mapname);
+	return COM_FindFile(cBuf, 0, &f) > -1;
+}
+
+int PF_NumberOfEntities_I( void )
+{
+	int ent_count, i;
+
+	ent_count = 0;
+	for (i = 0; i < sv.num_edicts; i++)
+	{
+		if (sv.edicts[i].free)
+			continue;
+		ent_count++;
+	}
+	return ent_count;
+}
+
+/*
+===============
+PF_walkmove_I
+
+float(float yaw, float dist, int iMode) walkmove
+===============
+*/
+int PF_walkmove_I( edict_t* ent, float yaw, float dist, int iMode )
+{
+	vec3_t	move;
+	int 	returnValue;
+
+	if (!(ent->v.flags & (FL_ONGROUND | FL_FLY | FL_SWIM)))
+		return FALSE;
+
+	yaw = yaw * M_PI * 2 / 360;
+
+	move[0] = cos(yaw) * dist;
+	move[1] = sin(yaw) * dist;
+	move[2] = 0;
+
+	switch (iMode)
+	{
+	default:
+	case WALKMOVE_NORMAL:
+		returnValue = SV_movestep(ent, move, TRUE);
+		break;
+	case WALKMOVE_WORLDONLY:
+		returnValue = SV_movetest(ent, move, TRUE);
+		break;
+	case WALKMOVE_CHECKONLY:
+		returnValue = SV_movestep(ent, move, FALSE);
+		break;
+	}
+
+	return returnValue;
+}
+
+/*
+===============
+PF_droptofloor_I
+
+void() droptofloor
+===============
+*/
+int PF_droptofloor_I( edict_t* ent )
+{
+	vec3_t		end;
+	trace_t		trace;
+	qboolean	monsterClip;	
+	
+	monsterClip = (ent->v.flags & FL_MONSTERCLIP) ? TRUE : FALSE;
+
+	VectorCopy(ent->v.origin, end);
+	end[2] -= 256;
+
+	trace = SV_Move(ent->v.origin, ent->v.mins, ent->v.maxs, end, MOVE_NORMAL, ent, monsterClip);
+
+	if (trace.allsolid)
+		return -1;
+
+	if (trace.fraction == 1)
+		return 0;
+
+	VectorCopy(trace.endpos, ent->v.origin);
+	SV_LinkEdict(ent, FALSE);
+	ent->v.flags |= FL_ONGROUND;
+	ent->v.groundentity = trace.ent;
+	return 1;
+}
+
+/*
+===============
+PF_DecalIndex
+
+Gets the decal index by name
+===============
+*/
+int PF_DecalIndex( const char* name )
+{
+	int i;
+
+	for (i = 0; i < sv_decalnamecount; i++)
+	{
+		if (!_strcmpi(sv_decalnames[i].name, name))
+			return i;
+	}
+
+	return -1;
+}
+
+/*
+===============
+PF_lightstyle_I
+
+void(float style, string value) lightstyle
+===============
+*/
+void PF_lightstyle_I( int style, char* val )
+{
+	client_t* client;
+	int j;
+
+// change the string in sv
+	sv.lightstyles[style] = val;
+
+// send message to all clients on this server
+	if (sv.state != ss_active)
+		return;
+
+	for (j = 0, client = svs.clients; j < svs.maxclients; j++, client++)
+		if (client->active || client->spawned)
+		{
+			MSG_WriteChar(&client->netchan.message, svc_lightstyle);
+			MSG_WriteChar(&client->netchan.message, style);
+			MSG_WriteString(&client->netchan.message, val);
+		}
+}
+
+
+
 
 
 
@@ -1471,12 +1614,3 @@ int RandomLong( long lLow, long lHigh )
 }
 
 // TODO: Implement
-
-int PF_IsMapValid_I( char *mapname )
-{
-	FILE*	pfMap;
-	char	cBuf[MAX_OSPATH];
-
-	sprintf(cBuf, "maps/%.32s.bsp", mapname);
-	return COM_FindFile(cBuf, NULL, &pfMap) > -1;
-}

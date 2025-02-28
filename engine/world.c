@@ -28,6 +28,51 @@ hull_t* SV_HullForBsp( edict_t* ent, const vec_t* mins, const vec_t* maxs, vec_t
 
 /*
 ===============
+SV_CreateAreaNode
+
+===============
+*/
+areanode_t* SV_CreateAreaNode( int depth, vec_t* mins, vec_t* maxs )
+{
+	areanode_t* anode;
+	vec3_t		size;
+	vec3_t		mins1, maxs1, mins2, maxs2;
+
+	anode = &sv_areanodes[sv_numareanodes];
+	sv_numareanodes++;
+
+	ClearLink(&anode->trigger_edicts);
+	ClearLink(&anode->solid_edicts);
+
+	if (depth == AREA_DEPTH)
+	{
+		anode->axis = -1;
+		anode->children[0] = anode->children[1] = NULL;
+		return anode;
+	}
+
+	VectorSubtract(maxs, mins, size);
+	if (size[0] > size[1])
+		anode->axis = 0;
+	else
+		anode->axis = 1;
+
+	anode->dist = 0.5 * (maxs[anode->axis] + mins[anode->axis]);
+	VectorCopy(mins, mins1);
+	VectorCopy(mins, mins2);
+	VectorCopy(maxs, maxs1);
+	VectorCopy(maxs, maxs2);
+
+	maxs1[anode->axis] = mins2[anode->axis] = anode->dist;
+
+	anode->children[0] = SV_CreateAreaNode(depth + 1, mins2, maxs2);
+	anode->children[1] = SV_CreateAreaNode(depth + 1, mins1, maxs1);
+
+	return anode;
+}
+
+/*
+===============
 SV_ClearWorld
 
 ===============
@@ -35,6 +80,10 @@ SV_ClearWorld
 void SV_ClearWorld( void )
 {
 	// TODO: Implement
+
+	memset(sv_areanodes, 0, sizeof(sv_areanodes));
+	sv_numareanodes = 0;
+	SV_CreateAreaNode(0, sv.worldmodel->mins, sv.worldmodel->maxs);
 }
 
 /*
@@ -56,9 +105,63 @@ void SV_UnlinkEdict( edict_t* ent )
 SV_TouchLinks
 ====================
 */
-void SV_TouchLinks( edict_t *ent, areanode_t *node )
+void SV_TouchLinks( edict_t* ent, areanode_t* node )
 {
-	// TODO: Implement
+	link_t* l, * next;
+	edict_t* touch;
+	model_t* pModel;
+
+	// touch linked edicts
+	for (l = node->trigger_edicts.next; l != &node->trigger_edicts; l = next)
+	{
+		next = l->next;
+		touch = EDICT_FROM_AREA(l);
+		if (touch == ent)
+			continue;
+		if (touch->v.solid != SOLID_TRIGGER)
+			continue;
+		if (ent->v.absmin[0] > touch->v.absmax[0]
+			|| ent->v.absmin[1] > touch->v.absmax[1]
+			|| ent->v.absmin[2] > touch->v.absmax[2]
+			|| ent->v.absmax[0] < touch->v.absmin[0]
+			|| ent->v.absmax[1] < touch->v.absmin[1]
+			|| ent->v.absmax[2] < touch->v.absmin[2])
+			continue;
+
+		// check brush triggers accuracy
+		pModel = sv.models[touch->v.modelindex];
+
+		if (pModel && pModel->type == mod_brush)
+		{
+			// force to select bsp-hull
+			int contents;
+			hull_t* hull;
+			vec3_t offset;
+			vec3_t localPosition;
+
+			hull = SV_HullForBsp(touch, ent->v.mins, ent->v.maxs, offset);
+
+			// offset the test point appropriately for this hull
+			VectorSubtract(ent->v.origin, offset, localPosition);
+
+			// test hull for intersection with this model
+			contents = SV_HullPointContents(hull, hull->firstclipnode, localPosition);
+			if (contents != CONTENTS_SOLID)
+				continue;
+		}
+
+		gGlobalVariables.time = sv.time;
+		gEntityInterface.pfnTouch(touch, ent);
+	}
+
+// recurse down both sides
+	if (node->axis == -1)
+		return;
+
+	if (ent->v.absmax[node->axis] > node->dist)
+		SV_TouchLinks(ent, node->children[0]);
+	if (ent->v.absmin[node->axis] < node->dist)
+		SV_TouchLinks(ent, node->children[1]);
 }
 
 
@@ -70,15 +173,15 @@ SV_FindTouchedLeafs
 */
 void SV_FindTouchedLeafs( edict_t *ent, mnode_t *node, int *topnode )
 {
-	mplane_t*	splitplane;
-	mleaf_t*	leaf;
+	mplane_t* splitplane;
+	mleaf_t* leaf;
 	int			sides;
 	int			leafnum;
 
 	if (node->contents == CONTENTS_SOLID)
 		return;
 
-	// add an efrag if the node is a leaf
+// add an efrag if the node is a leaf
 
 	if (node->contents < 0)
 	{
@@ -90,28 +193,28 @@ void SV_FindTouchedLeafs( edict_t *ent, mnode_t *node, int *topnode )
 		}
 		else
 		{
-			leaf = (mleaf_t *)node;
+			leaf = (mleaf_t*)node;
 			leafnum = leaf - sv.worldmodel->leafs - 1;
+
 			ent->leafnums[ent->num_leafs] = leafnum;
 			ent->num_leafs++;
 		}
 		return;
 	}
 
-	// NODE_MIXED
+// NODE_MIXED
 
 	splitplane = node->plane;
 	sides = BOX_ON_PLANE_SIDE(ent->v.absmin, ent->v.absmax, splitplane);
 
 	if (sides == 3 && *topnode == -1)
-	{
 		*topnode = node - sv.worldmodel->nodes;
-	}
 
 // recurse down the contacted sides
-	if (sides & 1) 
+	if (sides & 1)
 		SV_FindTouchedLeafs(ent, node->children[0], topnode);
-	if (sides & 2) 
+
+	if (sides & 2)
 		SV_FindTouchedLeafs(ent, node->children[1], topnode);
 }
 
@@ -123,8 +226,8 @@ SV_LinkEdict
 */
 void SV_LinkEdict( edict_t *ent, qboolean touch_triggers )
 {
-	areanode_t*		node;
-	int				topnode;
+	areanode_t* node;
+	int topnode;
 
 	if (ent->area.prev)
 		SV_UnlinkEdict(ent);	// unlink from old position
@@ -135,6 +238,7 @@ void SV_LinkEdict( edict_t *ent, qboolean touch_triggers )
 	if (ent->free)
 		return;
 
+	// set the abs box
 	gEntityInterface.pfnSetAbsBox(ent);
 
 	if (ent->v.movetype == MOVETYPE_FOLLOW && ent->v.aiment)
@@ -144,54 +248,55 @@ void SV_LinkEdict( edict_t *ent, qboolean touch_triggers )
 	}
 	else
 	{
-// link to PVS leafs
-		ent->num_leafs = 0;
 		topnode = -1;
+
+		// link to PVS leafs
+		ent->num_leafs = 0;
 
 		if (ent->v.modelindex)
 			SV_FindTouchedLeafs(ent, sv.worldmodel->nodes, &topnode);
 
-		if (ent->num_leafs > Q_ARRAYSIZE(ent->leafnums))
+		if (ent->num_leafs > MAX_ENT_LEAFS)
 		{
-			ent->num_leafs = -1;
+			ent->num_leafs = -1; // so we use headnode instead
 			ent->leafnums[0] = topnode;
 		}
 	}
 
-	if (ent->v.solid || ent->v.skin < -1)
+	// ignore non-solid bodies
+	if (ent->v.solid == SOLID_NOT && ent->v.skin >= CONTENTS_EMPTY)
+		return;
+
+	if (ent->v.solid == SOLID_BSP && !sv.models[ent->v.modelindex] && !strlen(&pr_strings[ent->v.model]))
 	{
-		if (ent->v.solid != SOLID_BSP || sv.models[ent->v.modelindex] || strlen(pr_strings + ent->v.model))
-		{
-			// find the first node that the ent's box crosses
-			node = sv_areanodes;
-			while (1)
-			{
-				if (node->axis == -1)
-					break;
-				if (ent->v.absmin[node->axis] > node->dist)
-					node = node->children[0];
-				else if (ent->v.absmax[node->axis] < node->dist)
-					node = node->children[1];
-				else
-					break;		// crosses the node
-			}
+		Con_DPrintf("Inserted %s with no model\n", &pr_strings[ent->v.classname]);
+		return;
+	}
 
-// link it in	
+// find the first node that the ent's box crosses
+	node = sv_areanodes;
+	while (1)
+	{
+		if (node->axis == -1)
+			break;
+		if (ent->v.absmin[node->axis] > node->dist)
+			node = node->children[0];
+		else if (ent->v.absmax[node->axis] < node->dist)
+			node = node->children[1];
+		else
+			break;		// crosses the node
+	}
 
-			if (ent->v.solid == SOLID_TRIGGER)
-				InsertLinkBefore(&ent->area, &node->trigger_edicts);
-			else
-				InsertLinkBefore(&ent->area, &node->solid_edicts);
+// link it in
+
+	if (ent->v.solid == SOLID_TRIGGER)
+		InsertLinkBefore(&ent->area, &node->trigger_edicts);
+	else
+		InsertLinkBefore(&ent->area, &node->solid_edicts);
 
 // if touch_triggers, touch all entities at this node and decend for more
-			if (touch_triggers)
-				SV_TouchLinks(ent, sv_areanodes);
-		}
-		else
-		{
-			Con_DPrintf("Inserted %s with no model\n", pr_strings + ent->v.classname);
-		}
-	}
+	if (touch_triggers)
+		SV_TouchLinks(ent, sv_areanodes);
 }
 
 // TODO: Implement

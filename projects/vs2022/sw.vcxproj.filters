@@ -377,6 +377,9 @@
     <ClCompile Include="..\..\engine\pmovetst.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\engine\sv_move.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <MASM Include="..\..\engine\sys_wina.asm">

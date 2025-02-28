@@ -67,58 +67,49 @@ typedef struct
 	char		modelname[MAX_QPATH];
 
 	struct model_s*	worldmodel;			// cl_entitites[0].model
+	CRC32_t		worldmapCRC;		// For detecting that client has a hacked local copy of map, the client will be dropped if this occurs.
+	CRC32_t		clientSideDllCRC;	// The dll that this server is expecting clients to be using.
 
-	CRC32_t			worldmapCRC;		// For detecting that client has a hacked local copy of map, the client will be dropped if this occurs.
-	CRC32_t			clientSideDllCRC;	// The dll that this server is expecting clients to be using.
-										// To prevent cheating with hacked client dlls
-
-	resource_t		resources[MAX_RESOURCES];
-
-	int				num_resources;
+	resource_t	resources[MAX_RESOURCES];	// The resource list
+	int			num_resources;
 
 	// TODO: Implement
 
-	char*	model_precache[MAX_MODELS];
-	
+	char*		model_precache[MAX_MODELS];	
 	struct model_s*	models[MAX_MODELS];
-
-	char*	sound_precache[MAX_SOUNDS];
-
-	// TODO: Implement
-
+	char*		sound_precache[MAX_SOUNDS];
+	char*		lightstyles[MAX_LIGHTSTYLES];
 
 	int			num_edicts;
 	int			max_edicts;
-	edict_t*	edicts;			// can NOT be array indexed, because
-									// edict_t is variable sized, but can
-									// be used to reference the world ent
+	edict_t*	edicts;			// Can array index now, edict_t is fixed
 
-	server_state_t state;
+	server_state_t	state;
 
 	// added to every client's unreliable buffer each frame, then cleared
-	sizebuf_t		datagram;
-	byte			datagram_buf[MAX_DATAGRAM];
+	sizebuf_t	datagram;
+	byte		datagram_buf[MAX_DATAGRAM];
 
 	// added to every client's reliable buffer each frame, then cleared
-	sizebuf_t		reliable_datagram;
-	byte			reliable_datagram_buf[MAX_DATAGRAM];
+	sizebuf_t	reliable_datagram;
+	byte		reliable_datagram_buf[MAX_DATAGRAM];
 
 	// the master buffer is used for building log packets
-	sizebuf_t		master;
-	byte			master_buf[MAX_DATAGRAM];
+	sizebuf_t	master;
+	byte		master_buf[MAX_DATAGRAM];
 
 	// the multicast buffer is used to send a message to a set of clients
-	sizebuf_t		multicast;
-	byte			multicast_buf[MAX_MULTICAST];	// Longest multicast message
+	sizebuf_t	multicast;
+	byte		multicast_buf[MAX_MULTICAST];	// Longest multicast message
 
 	// the signon buffer will be sent to each client as they connect
 	// includes the entity baselines, the static entities, etc
 	// large levels will have >MAX_DATAGRAM sized signons, so 
 	// multiple signon messages are kept
-	sizebuf_t		signon;
-	int				num_signon_buffers;
-	int				signon_buffer_size[MAX_SIGNON_BUFFERS];
-	byte			signon_buffers[MAX_SIGNON_BUFFERS][MAX_DATAGRAM];
+	sizebuf_t	signon;
+	int			num_signon_buffers;
+	int			signon_buffer_size[MAX_SIGNON_BUFFERS];
+	byte		signon_buffers[MAX_SIGNON_BUFFERS][MAX_DATAGRAM];
 
 	// TODO: Implement
 
@@ -383,6 +374,12 @@ trace_t SV_Trace_Toss( edict_t* ent, edict_t* ignore );
 void SV_Impact( edict_t* e1, edict_t* e2, trace_t* ptrace );
 // TODO: Implement
 void SV_SetMoveVars( void );
+
+//
+// sv_move.c
+//
+qboolean SV_movetest( edict_t* ent, vec_t* move, qboolean relink );
+qboolean SV_movestep( edict_t* ent, vec_t* move, qboolean relink );
 
 //
 // sv_upld.c

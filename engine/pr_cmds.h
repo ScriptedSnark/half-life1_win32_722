@@ -50,6 +50,17 @@ int		GetEntityIllum( edict_t* pEnt );
 int		PF_precache_sound_I( char* s );
 int		PF_precache_model_I( char* s );
 
+int		PF_IsMapValid_I( char* mapname );
+int		PF_NumberOfEntities_I( void );
+
+int		PF_walkmove_I( edict_t* ent, float yaw, float dist, int iMode );
+int		PF_droptofloor_I( edict_t* ent );
+int		PF_DecalIndex( const char* name );
+void	PF_lightstyle_I( int style, char* val );
+
+
+
+
 
 
 
@@ -60,7 +71,5 @@ int		PF_precache_model_I( char* s );
 
 float	RandomFloat( float flLow, float flHigh );
 int		RandomLong( long lLow, long lHigh );
-
-int PF_IsMapValid_I( char* mapname );
 
 #endif // PR_CMDS_H

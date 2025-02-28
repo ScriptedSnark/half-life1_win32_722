@@ -237,6 +237,9 @@
     <ClCompile Include="..\..\engine\GL_MESH.C">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\engine\sv_move.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\engine\anorm_dots.h">

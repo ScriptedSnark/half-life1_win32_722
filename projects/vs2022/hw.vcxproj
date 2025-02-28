@@ -77,6 +77,7 @@
     <ClCompile Include="..\..\engine\SND_MIX.C" />
     <ClCompile Include="..\..\engine\SND_WIN.C" />
     <ClCompile Include="..\..\engine\sv_main.c" />
+    <ClCompile Include="..\..\engine\sv_move.c" />
     <ClCompile Include="..\..\engine\sv_phys.c" />
     <ClCompile Include="..\..\engine\sv_send.c" />
     <ClCompile Include="..\..\engine\sv_upld.c" />

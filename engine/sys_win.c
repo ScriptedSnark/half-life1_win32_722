@@ -1035,8 +1035,8 @@ static enginefuncs_t g_engfuncsExportedToDlls =
 	CreateNamedEntity,
 	NULL,	// TODO: Implement
 	NULL,	// TODO: Implement
-	NULL,	// TODO: Implement
-	NULL,	// TODO: Implement
+	PF_droptofloor_I,
+	PF_walkmove_I,
 	PF_setorigin_I,
 	PF_sound_I,
 	PF_ambientsound_I,
@@ -1051,8 +1051,8 @@ static enginefuncs_t g_engfuncsExportedToDlls =
 	PF_localcmd_I,
 	PF_stuffcmd_I,
 	PF_particle_I,
-	NULL,	// TODO: Implement
-	NULL,	// TODO: Implement
+	PF_lightstyle_I,
+	PF_DecalIndex,
 	NULL,	// TODO: Implement
 	NULL,	// TODO: Implement
 	NULL,	// TODO: Implement
@@ -1111,8 +1111,8 @@ static enginefuncs_t g_engfuncsExportedToDlls =
 	NULL,	// TODO: Implement
 	NULL,	// TODO: Implement
 	NULL,	// TODO: Implement
-	NULL,	// TODO: Implement
-	NULL	// TODO: Implement
+	PF_NumberOfEntities_I,
+	PF_IsMapValid_I
 };
 
 extensiondll_t		g_rgextdll[MAX_EXT_DLLS];

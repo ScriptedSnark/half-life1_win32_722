@@ -117,7 +117,7 @@ typedef struct enginefuncs_s
 	void		(*pfnClientCommand)			( edict_t* pEdict, char* szFmt, ... );
 	void		(*pfnParticleEffect)		( float* org, float* dir, float color, float count );
 	void		(*pfnLightStyle)			( int style, char* val );
-	int			(*pfnDecalIndex)			( char* name );
+	int			(*pfnDecalIndex)			( const char* name );
 	int			(*pfnPointContents)			( float* rgflVector );
 	void		(*pfnMessageBegin)			( int msg_dest, int msg_type, float* pOrigin, edict_t* ed );
 	void		(*pfnMessageEnd)			( void );

@@ -5,11 +5,15 @@
 #pragma once
 #endif
 
+#define MOVE_NORMAL         0 // normal trace
+#define MOVE_NOMONSTERS     1 // ignore monsters (edicts with flags (FL_MONSTER|FL_FAKECLIENT|FL_CLIENT) set)
+#define MOVE_MISSILE        2 // extra size for monsters
+
 typedef struct areanode_s
 {
 	int		axis;		// -1 = leaf node
 	float	dist;
-	struct areanode_s	*children[2];
+	struct areanode_s* children[2];
 	link_t	trigger_edicts;
 	link_t	solid_edicts;
 } areanode_t;
@@ -18,6 +22,7 @@ typedef struct areanode_s
 #define	AREA_NODES	32
 
 extern	areanode_t	sv_areanodes[AREA_NODES];
+
 
 void SV_ClearWorld( void );
 // called after the world model has been loaded, before linking any entities
