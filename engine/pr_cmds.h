@@ -45,6 +45,11 @@ edict_t* PF_Spawn_I( void );
 edict_t* CreateNamedEntity( int className );
 void	PF_Remove_I( edict_t* ed );
 edict_t* FindEntityByString( edict_t* pEdictStartSearchAfter, const char* pszField, const char* pszValue );
+int		GetEntityIllum( edict_t* pEnt );
+
+int		PF_precache_sound_I( char* s );
+int		PF_precache_model_I( char* s );
+
 
 
 

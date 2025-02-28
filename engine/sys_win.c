@@ -1009,8 +1009,8 @@ DLL_EXPORT void Keyboard_ReturnToGame( void )
 // NOTE: New functions come immediately after the last one
 static enginefuncs_t g_engfuncsExportedToDlls =
 {
-	NULL,	// TODO: Implement
-	NULL,	// TODO: Implement
+	PF_precache_model_I,
+	PF_precache_sound_I,
 	PF_setmodel_I,
 	PF_modelindex,
 	ModelFrames,
@@ -1024,7 +1024,7 @@ static enginefuncs_t g_engfuncsExportedToDlls =
 	NULL,	// TODO: Implement
 	NULL,	// TODO: Implement
 	FindEntityByString,
-	NULL,	// TODO: Implement
+	GetEntityIllum,
 	FindEntityInSphere,
 	PF_checkclient_I,
 	PVSFindEntities,

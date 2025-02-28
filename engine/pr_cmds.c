@@ -1205,6 +1205,141 @@ edict_t* FindEntityByString( edict_t* pEdictStartSearchAfter, const char* pszFie
 	return PF_find_Shared(e, iField, pszValue);
 }
 
+// Returns light_level for clients and world, otherwise
+// the color of the floor that the entity is standing on
+int GetEntityIllum( edict_t* pEnt )
+{
+	int iReturn;
+	colorVec cvFloorColor = { 0, 0, 0, 0 };
+	int iIndex;
+
+	if (!pEnt)
+		return -1;
+
+	iIndex = NUM_FOR_EDICT(pEnt);
+	if (iIndex <= svs.maxclients)
+	{
+		// the player has a more accurate level of light
+		// coming from the client side
+		return pEnt->v.light_level;
+	}
+
+	if (cls.state != ca_connected && cls.state != ca_uninitialized && cls.state != ca_active)
+		return 128;
+
+	cvFloorColor = cl_entities[iIndex].cvFloorColor;
+	iReturn = (cvFloorColor.r + cvFloorColor.g + cvFloorColor.b) / 3;
+
+	return iReturn;
+}
+
+void PR_CheckEmptyString( const char* s )
+{
+	if (s[0] <= ' ')
+		Host_Error("Bad string: %s", s);
+}
+
+/*
+=================
+PF_precache_sound_I
+
+=================
+*/
+int PF_precache_sound_I( char* s )
+{
+	int	i;
+
+	if (s && s[0] == '!')
+		Host_Error("PF_precache_sound_I: '%s' do not precache sentence names!", s);
+
+	if (sv.state == ss_loading)
+	{
+		PR_CheckEmptyString(s);
+
+		for (i = 0; i < MAX_SOUNDS; i++)
+		{
+			if (sv.sound_precache[i])
+			{
+				if (!strcmp(sv.sound_precache[i], s))
+					return i;
+			}
+			else
+			{
+				sv.sound_precache[i] = s;
+				return i;
+			}
+		}
+
+		Host_Error("PF_precache_sound_I: '%s' overflow", s);
+	}
+	else
+	{
+		// check if it's already precached
+		for (i = 0; i < MAX_SOUNDS; i++)
+		{
+			if (sv.sound_precache[i])
+			{
+				if (!strcmp(sv.sound_precache[i], s))
+					return i;
+			}
+		}
+
+		Host_Error("PF_precache_sound_I: '%s' Precache can only be done in spawn functions", s);
+	}
+
+	return i;
+}
+
+/*
+=================
+PF_precache_model_I
+
+=================
+*/
+int PF_precache_model_I( char* s )
+{
+	int	i;
+
+	if (sv.state == ss_loading)
+	{
+		PR_CheckEmptyString(s);
+
+		for (i = 0; i < MAX_MODELS; i++)
+		{
+			if (sv.model_precache[i])
+			{
+				if (!strcmp(sv.model_precache[i], s))
+					return i;
+			}
+			else
+			{
+				sv.model_precache[i] = s;
+				sv.models[i] = Mod_ForName(s, TRUE);
+				return i;
+			}
+		}
+		
+		Host_Error("PF_precache_model_I: '%s' overflow", s);
+	}
+	else
+	{
+		// check if it's already precached
+		for (i = 0; i < MAX_MODELS; i++)
+		{
+			if (sv.model_precache[i])
+			{
+				if (!strcmp(sv.model_precache[i], s))
+					return i;
+			}
+		}
+		
+		Host_Error("PF_precache_model_I: '%s' Precache can only be done in spawn functions", s);
+	}
+
+	return i;
+}
+
+
 
 
 
