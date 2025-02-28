@@ -1,6 +1,7 @@
 #include "quakedef.h"
 #include "pmove.h"
 #include "pr_cmds.h"
+#include "sv_proto.h"
 
 movevars_t		movevars;
 

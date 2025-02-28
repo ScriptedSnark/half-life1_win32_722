@@ -1026,7 +1026,7 @@ static enginefuncs_t g_engfuncsExportedToDlls =
 	NULL,	// TODO: Implement
 	NULL,	// TODO: Implement
 	NULL,	// TODO: Implement
-	NULL,	// TODO: Implement
+	PF_checkclient_I,
 	NULL,	// TODO: Implement
 	PF_makevectors_I,
 	AngleVectors,
@@ -1041,11 +1041,11 @@ static enginefuncs_t g_engfuncsExportedToDlls =
 	PF_sound_I,
 	PF_ambientsound_I,
 	PF_traceline_DLL,
-	NULL,	// TODO: Implement
-	NULL,	// TODO: Implement
+	PF_TraceToss_DLL,
+	TraceMonsterHull,
 	TraceHull,
 	TraceModel,
-	NULL,	// TODO: Implement
+	TraceTexture,
 	TraceSphere,
 	NULL,	// TODO: Implement
 	NULL,	// TODO: Implement

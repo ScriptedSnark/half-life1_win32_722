@@ -1,6 +1,7 @@
 #include "quakedef.h"
-#include "pr_cmds.h"
 #include "sv_proto.h"
+#include "cmodel.h"
+#include "pr_cmds.h"
 
 /*
 ===============================================================================
@@ -586,13 +587,251 @@ msurface_t* SurfaceAtPoint( model_t* pModel, mnode_t* node, vec_t* start, vec_t*
 	return surf;
 }
 
-// TODO: Implement
+const char* TraceTexture( edict_t* pTextureEntity, const float* v1, const float* v2 )
+{
+	model_t* pmodel;
+	msurface_t* psurf;
+	int		firstnode;
+	vec3_t	start, end;
 
-// Sets trace vars for global servers variables
+	firstnode = 0;
+
+	if (pTextureEntity)
+	{
+		vec3_t offset;
+		hull_t* phull; 
+		int modelindex;
+
+		modelindex = pTextureEntity->v.modelindex;
+		pmodel = sv.models[modelindex];
+		if (!pmodel || pmodel->type != mod_brush)
+			return NULL;
+
+		phull = SV_HullForBsp(pTextureEntity, vec3_origin, vec3_origin, offset);
+		VectorSubtract(v1, offset, start);
+		VectorSubtract(v2, offset, end);
+
+		firstnode = phull->firstclipnode;
+
+		if (pTextureEntity->v.angles[0] != 0 || pTextureEntity->v.angles[1] != 0 || pTextureEntity->v.angles[2] != 0)
+		{
+			vec3_t forward, right, up;
+			vec3_t temp;
+
+			AngleVectors(pTextureEntity->v.angles, forward, right, up);
+
+			VectorCopy(start, temp);
+			start[0] = DotProduct(forward, temp);
+			start[1] = -DotProduct(right, temp);
+			start[2] = DotProduct(up, temp);
+
+			VectorCopy(end, temp);
+			end[0] = DotProduct(forward, temp);
+			end[1] = -DotProduct(right, temp);
+			end[2] = DotProduct(up, temp);
+		}
+	}
+	else
+	{
+		pmodel = sv.worldmodel;
+		VectorCopy(v1, start);
+		VectorCopy(v2, end);
+	}
+
+	if (pmodel && pmodel->type == mod_brush)
+	{
+		if (pmodel->nodes)
+		{
+			psurf = SurfaceAtPoint(pmodel, &pmodel->nodes[firstnode], start, end);
+			if (psurf)
+				return psurf->texinfo->texture->name;
+		}
+	}
+	return NULL;
+}
+
+void PF_TraceToss_Shared( edict_t* ent, edict_t* ignore )
+{
+	trace_t trace;
+	trace = SV_Trace_Toss(ent, ignore);
+
+	SV_SetGlobalTrace(&trace);
+}
+
+// Set trace data for globalvars_t
 void SV_SetGlobalTrace( trace_t* ptrace )
 {
-	// TODO: Implement
+	gGlobalVariables.trace_allsolid = ptrace->allsolid;
+	gGlobalVariables.trace_startsolid = ptrace->startsolid;
+	gGlobalVariables.trace_fraction = ptrace->fraction;
+	gGlobalVariables.trace_inwater = ptrace->inwater;
+	gGlobalVariables.trace_inopen = ptrace->inopen;
+	VectorCopy(ptrace->endpos, gGlobalVariables.trace_endpos);
+	VectorCopy(ptrace->plane.normal, gGlobalVariables.trace_plane_normal);
+	gGlobalVariables.trace_plane_dist = ptrace->plane.dist;
+	gGlobalVariables.trace_ent = ptrace->ent ? ptrace->ent : &sv.edicts[0];
+	gGlobalVariables.trace_hitgroup = ptrace->hitgroup;
 }
+
+// This simulates tossing the entity using its current origin, velocity, angular velocity, angles and gravity
+void PF_TraceToss_DLL( edict_t* pent, edict_t* pentToIgnore, TraceResult* ptr )
+{
+	PF_TraceToss_Shared(pent, pentToIgnore ? pentToIgnore : &sv.edicts[0]);
+	ptr->fAllSolid = gGlobalVariables.trace_allsolid;
+	ptr->fStartSolid = gGlobalVariables.trace_startsolid;
+	ptr->fInOpen = gGlobalVariables.trace_inopen;
+	ptr->fInWater = gGlobalVariables.trace_inwater;
+	ptr->flFraction = gGlobalVariables.trace_fraction;
+	ptr->pHit = gGlobalVariables.trace_ent;
+	VectorCopy(gGlobalVariables.trace_endpos, ptr->vecEndPos);
+	VectorCopy(gGlobalVariables.trace_plane_normal, ptr->vecPlaneNormal);
+	ptr->flPlaneDist = gGlobalVariables.trace_plane_dist;
+	ptr->iHitgroup = gGlobalVariables.trace_hitgroup;
+}
+
+int TraceMonsterHull( edict_t* pEdict, const float* v1, const float* v2, int fNoMonsters, edict_t* pentToSkip, TraceResult* ptr )
+{
+	trace_t trace;
+	qboolean monsterClip;
+
+	monsterClip = (pEdict->v.flags & FL_MONSTERCLIP) ? TRUE : FALSE;
+	trace = SV_Move(v1, pEdict->v.mins, pEdict->v.maxs, v2, fNoMonsters, pentToSkip, monsterClip);
+
+	if (ptr)
+	{
+		ptr->fAllSolid = trace.allsolid;
+		ptr->fStartSolid = trace.startsolid;
+		ptr->fInOpen = trace.inopen;
+		ptr->fInWater = trace.inwater;
+		ptr->flPlaneDist = trace.plane.dist;
+		ptr->pHit = trace.ent;
+		ptr->iHitgroup = trace.hitgroup;
+		ptr->flFraction = trace.fraction;
+		VectorCopy(trace.endpos, ptr->vecEndPos);
+		VectorCopy(trace.plane.normal, ptr->vecPlaneNormal);
+	}
+
+	if (trace.allsolid || trace.fraction != 1.0)
+		return TRUE;
+
+	return FALSE;
+}
+
+//============================================================================
+
+byte	checkpvs[MAX_MAP_LEAFS / 8];
+
+int PF_newcheckclient( int check )
+{
+	int		i;
+	byte* pvs;
+	edict_t* ent;
+	mleaf_t* leaf;
+	vec3_t	org;
+
+// cycle to the next one
+
+	if (check < 1)
+		check = 1;
+	if (check > svs.maxclients)
+		check = svs.maxclients;
+
+	if (check == svs.maxclients)
+		i = 1;
+	else
+		i = check + 1;
+
+	for (; ; i++)
+	{
+		if (i == svs.maxclients + 1)
+			i = 1;
+
+		ent = &sv.edicts[i];
+
+		if (i == check)
+			break;	// didn't find anything else
+
+		if (ent->free)
+			continue;
+		if (!ent->pvPrivateData)
+			continue;
+		if (ent->v.flags & FL_NOTARGET)
+			continue;
+
+	// anything that is a client, or has a client as an enemy
+		break;
+	}
+
+// get the PVS for the entity
+	VectorAdd(ent->v.view_ofs, ent->v.origin, org);
+	leaf = Mod_PointInLeaf(org, sv.worldmodel);
+	pvs = Mod_LeafPVS(leaf, sv.worldmodel);
+	memcpy(checkpvs, pvs, (sv.worldmodel->numleafs + 7) >> 3);
+
+	return i;
+}
+
+/*
+=================
+PF_checkclient_I
+
+Returns a client (or object that has a client enemy) that would be a
+valid target.
+
+If there are more than one valid options, they are cycled each frame
+
+If (self.origin + self.viewofs) is not in the PVS of the current target,
+it is not returned at all.
+
+name checkclient ()
+=================
+*/
+#define	MAX_CHECK	16
+int c_invis, c_notvis;
+edict_t* PF_checkclient_I( edict_t* pEdict )
+{
+	edict_t* ent;
+	mleaf_t* leaf;
+	int		l;
+	vec3_t	view;
+
+// find a new check if on a new frame
+	if (sv.time - sv.lastchecktime >= 0.1)
+	{
+		sv.lastcheck = PF_newcheckclient(sv.lastcheck);
+		sv.lastchecktime = sv.time;
+	}
+
+// return check if it might be visible
+	ent = &sv.edicts[sv.lastcheck];
+	if (ent->free || !ent->pvPrivateData)
+	{
+		return &sv.edicts[0];
+	}
+
+// if current entity can't possibly see the check entity, return 0
+	VectorAdd(pEdict->v.origin, pEdict->v.view_ofs, view);
+	leaf = Mod_PointInLeaf(view, sv.worldmodel);
+	l = (leaf - sv.worldmodel->leafs) - 1;
+	if (l < 0 || !((1 << (l & 7)) & checkpvs[l >> 3]))
+	{
+		c_notvis++;
+		return &sv.edicts[0];
+	}
+
+// might be able to see it
+	c_invis++;
+	return ent;
+}
+
+
+
+
+
+
+
+
+
 
 // TODO: Implement
 

@@ -710,7 +710,7 @@ void PM_MinMaxForRay( vec_t* inmin, vec_t* inmax, vec_t* outmin, vec_t* outmax )
 
 /*
 =================
-PM_MinMaxForRay
+PM_Worldtrace
 
 =================
 */

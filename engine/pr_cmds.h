@@ -29,14 +29,19 @@ void	TraceSphere( const float* v1, const float* v2, int fNoMonsters, float radiu
 void	TraceModel( const float* v1, const float* v2, edict_t* pent, TraceResult* ptr );
 
 msurface_t* SurfaceAtPoint( model_t* pModel, mnode_t* node, vec_t* start, vec_t* end );
+const char* TraceTexture( edict_t* pTextureEntity, const float* v1, const float* v2 );
+void	PF_TraceToss_DLL( edict_t* pent, edict_t* pentToIgnore, TraceResult* ptr );
+int		TraceMonsterHull( edict_t* pEdict, const float* v1, const float* v2, int fNoMonsters, edict_t* pentToSkip, TraceResult* ptr );
+
+edict_t* PF_checkclient_I( edict_t* pEdict );
 
 
 
 
 
-msurface_t* SurfaceAtPoint( model_t* pModel, mnode_t* node, vec_t* start, vec_t* end );
 
-void SV_SetGlobalTrace( trace_t* ptrace );
+
+
 
 struct mnode_s* PVSNode( struct mnode_s* node, vec_t* emins, vec_t* emaxs );
 
