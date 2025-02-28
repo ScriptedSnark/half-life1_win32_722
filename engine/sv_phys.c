@@ -96,3 +96,13 @@ void SV_SetMoveVars( void )
 }
 
 // TODO: Implement
+
+trace_t SV_Trace_Toss( edict_t* ent, edict_t* ignore )
+{
+	// TODO: Implement
+	trace_t trace;
+	memset(&trace, 0, sizeof(trace));
+	return trace;
+}
+
+// TODO: Implement

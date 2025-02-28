@@ -1006,11 +1006,11 @@ DLL_EXPORT void Keyboard_ReturnToGame( void )
 }
 
 // This is a table of exported engine functions to server dll
-// NOTE: New functions come imidieately after the last one
+// NOTE: New functions come immediately after the last one
 static enginefuncs_t g_engfuncsExportedToDlls =
 {
-	NULL,	// TODO: Implement
-	NULL,	// TODO: Implement
+	PF_precache_model_I,
+	PF_precache_sound_I,
 	PF_setmodel_I,
 	PF_modelindex,
 	ModelFrames,
@@ -1023,16 +1023,16 @@ static enginefuncs_t g_engfuncsExportedToDlls =
 	NULL,	// TODO: Implement
 	NULL,	// TODO: Implement
 	NULL,	// TODO: Implement
-	NULL,	// TODO: Implement
-	NULL,	// TODO: Implement
-	NULL,	// TODO: Implement
-	NULL,	// TODO: Implement
-	NULL,	// TODO: Implement
+	FindEntityByString,
+	GetEntityIllum,
+	FindEntityInSphere,
+	PF_checkclient_I,
+	PVSFindEntities,
 	PF_makevectors_I,
 	AngleVectors,
-	ED_Alloc,
-	NULL,	// TODO: Implement
-	NULL,	// TODO: Implement
+	PF_Spawn_I,
+	PF_Remove_I,
+	CreateNamedEntity,
 	NULL,	// TODO: Implement
 	NULL,	// TODO: Implement
 	NULL,	// TODO: Implement
@@ -1041,15 +1041,15 @@ static enginefuncs_t g_engfuncsExportedToDlls =
 	PF_sound_I,
 	PF_ambientsound_I,
 	PF_traceline_DLL,
-	NULL,	// TODO: Implement
-	NULL,	// TODO: Implement
+	PF_TraceToss_DLL,
+	TraceMonsterHull,
 	TraceHull,
 	TraceModel,
-	NULL,	// TODO: Implement
+	TraceTexture,
 	TraceSphere,
 	NULL,	// TODO: Implement
-	NULL,	// TODO: Implement
-	NULL,	// TODO: Implement
+	PF_localcmd_I,
+	PF_stuffcmd_I,
 	PF_particle_I,
 	NULL,	// TODO: Implement
 	NULL,	// TODO: Implement

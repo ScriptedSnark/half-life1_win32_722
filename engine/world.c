@@ -13,6 +13,21 @@ int SV_HullPointContents( hull_t* hull, int num, vec_t* p );
 
 /*
 ===============
+SV_HullForBsp
+
+Forcing to select BSP hull
+===============
+*/
+hull_t* SV_HullForBsp( edict_t* ent, const vec_t* mins, const vec_t* maxs, vec_t* offset )
+{
+	// TODO: Implement
+	return NULL;
+}
+
+// TODO: Implement
+
+/*
+===============
 SV_ClearWorld
 
 ===============

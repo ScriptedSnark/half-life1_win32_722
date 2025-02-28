@@ -1,6 +1,7 @@
 #include "quakedef.h"
-#include "pr_cmds.h"
 #include "sv_proto.h"
+#include "cmodel.h"
+#include "pr_cmds.h"
 
 /*
 ===============================================================================
@@ -586,15 +587,242 @@ msurface_t* SurfaceAtPoint( model_t* pModel, mnode_t* node, vec_t* start, vec_t*
 	return surf;
 }
 
-// TODO: Implement
-
-// Sets trace vars for global servers variables
-void SV_SetGlobalTrace( trace_t* ptrace )
+const char* TraceTexture( edict_t* pTextureEntity, const float* v1, const float* v2 )
 {
-	// TODO: Implement
+	model_t* pmodel;
+	msurface_t* psurf;
+	int		firstnode;
+	vec3_t	start, end;
+
+	firstnode = 0;
+
+	if (pTextureEntity)
+	{
+		vec3_t offset;
+		hull_t* phull; 
+		int modelindex;
+
+		modelindex = pTextureEntity->v.modelindex;
+		pmodel = sv.models[modelindex];
+		if (!pmodel || pmodel->type != mod_brush)
+			return NULL;
+
+		phull = SV_HullForBsp(pTextureEntity, vec3_origin, vec3_origin, offset);
+		VectorSubtract(v1, offset, start);
+		VectorSubtract(v2, offset, end);
+
+		firstnode = phull->firstclipnode;
+
+		if (pTextureEntity->v.angles[0] != 0 || pTextureEntity->v.angles[1] != 0 || pTextureEntity->v.angles[2] != 0)
+		{
+			vec3_t forward, right, up;
+			vec3_t temp;
+
+			AngleVectors(pTextureEntity->v.angles, forward, right, up);
+
+			VectorCopy(start, temp);
+			start[0] = DotProduct(forward, temp);
+			start[1] = -DotProduct(right, temp);
+			start[2] = DotProduct(up, temp);
+
+			VectorCopy(end, temp);
+			end[0] = DotProduct(forward, temp);
+			end[1] = -DotProduct(right, temp);
+			end[2] = DotProduct(up, temp);
+		}
+	}
+	else
+	{
+		pmodel = sv.worldmodel;
+		VectorCopy(v1, start);
+		VectorCopy(v2, end);
+	}
+
+	if (pmodel && pmodel->type == mod_brush)
+	{
+		if (pmodel->nodes)
+		{
+			psurf = SurfaceAtPoint(pmodel, &pmodel->nodes[firstnode], start, end);
+			if (psurf)
+				return psurf->texinfo->texture->name;
+		}
+	}
+	return NULL;
 }
 
-// TODO: Implement
+void PF_TraceToss_Shared( edict_t* ent, edict_t* ignore )
+{
+	trace_t trace;
+	trace = SV_Trace_Toss(ent, ignore);
+
+	SV_SetGlobalTrace(&trace);
+}
+
+// Set trace data for globalvars_t
+void SV_SetGlobalTrace( trace_t* ptrace )
+{
+	gGlobalVariables.trace_allsolid = ptrace->allsolid;
+	gGlobalVariables.trace_startsolid = ptrace->startsolid;
+	gGlobalVariables.trace_fraction = ptrace->fraction;
+	gGlobalVariables.trace_inwater = ptrace->inwater;
+	gGlobalVariables.trace_inopen = ptrace->inopen;
+	VectorCopy(ptrace->endpos, gGlobalVariables.trace_endpos);
+	VectorCopy(ptrace->plane.normal, gGlobalVariables.trace_plane_normal);
+	gGlobalVariables.trace_plane_dist = ptrace->plane.dist;
+	gGlobalVariables.trace_ent = ptrace->ent ? ptrace->ent : &sv.edicts[0];
+	gGlobalVariables.trace_hitgroup = ptrace->hitgroup;
+}
+
+// This simulates tossing the entity using its current origin, velocity, angular velocity, angles and gravity
+void PF_TraceToss_DLL( edict_t* pent, edict_t* pentToIgnore, TraceResult* ptr )
+{
+	PF_TraceToss_Shared(pent, pentToIgnore ? pentToIgnore : &sv.edicts[0]);
+	ptr->fAllSolid = gGlobalVariables.trace_allsolid;
+	ptr->fStartSolid = gGlobalVariables.trace_startsolid;
+	ptr->fInOpen = gGlobalVariables.trace_inopen;
+	ptr->fInWater = gGlobalVariables.trace_inwater;
+	ptr->flFraction = gGlobalVariables.trace_fraction;
+	ptr->pHit = gGlobalVariables.trace_ent;
+	VectorCopy(gGlobalVariables.trace_endpos, ptr->vecEndPos);
+	VectorCopy(gGlobalVariables.trace_plane_normal, ptr->vecPlaneNormal);
+	ptr->flPlaneDist = gGlobalVariables.trace_plane_dist;
+	ptr->iHitgroup = gGlobalVariables.trace_hitgroup;
+}
+
+int TraceMonsterHull( edict_t* pEdict, const float* v1, const float* v2, int fNoMonsters, edict_t* pentToSkip, TraceResult* ptr )
+{
+	trace_t trace;
+	qboolean monsterClip;
+
+	monsterClip = (pEdict->v.flags & FL_MONSTERCLIP) ? TRUE : FALSE;
+	trace = SV_Move(v1, pEdict->v.mins, pEdict->v.maxs, v2, fNoMonsters, pentToSkip, monsterClip);
+
+	if (ptr)
+	{
+		ptr->fAllSolid = trace.allsolid;
+		ptr->fStartSolid = trace.startsolid;
+		ptr->fInOpen = trace.inopen;
+		ptr->fInWater = trace.inwater;
+		ptr->flPlaneDist = trace.plane.dist;
+		ptr->pHit = trace.ent;
+		ptr->iHitgroup = trace.hitgroup;
+		ptr->flFraction = trace.fraction;
+		VectorCopy(trace.endpos, ptr->vecEndPos);
+		VectorCopy(trace.plane.normal, ptr->vecPlaneNormal);
+	}
+
+	if (trace.allsolid || trace.fraction != 1.0)
+		return TRUE;
+
+	return FALSE;
+}
+
+//============================================================================
+
+byte	checkpvs[MAX_MAP_LEAFS / 8];
+
+int PF_newcheckclient( int check )
+{
+	int		i;
+	byte* pvs;
+	edict_t* ent;
+	mleaf_t* leaf;
+	vec3_t	org;
+
+// cycle to the next one
+
+	if (check < 1)
+		check = 1;
+	if (check > svs.maxclients)
+		check = svs.maxclients;
+
+	if (check == svs.maxclients)
+		i = 1;
+	else
+		i = check + 1;
+
+	for (; ; i++)
+	{
+		if (i == svs.maxclients + 1)
+			i = 1;
+
+		ent = &sv.edicts[i];
+
+		if (i == check)
+			break;	// didn't find anything else
+
+		if (ent->free)
+			continue;
+		if (!ent->pvPrivateData)
+			continue;
+		if (ent->v.flags & FL_NOTARGET)
+			continue;
+
+	// anything that is a client, or has a client as an enemy
+		break;
+	}
+
+// get the PVS for the entity
+	VectorAdd(ent->v.view_ofs, ent->v.origin, org);
+	leaf = Mod_PointInLeaf(org, sv.worldmodel);
+	pvs = Mod_LeafPVS(leaf, sv.worldmodel);
+	memcpy(checkpvs, pvs, (sv.worldmodel->numleafs + 7) >> 3);
+
+	return i;
+}
+
+/*
+=================
+PF_checkclient_I
+
+Returns a client (or object that has a client enemy) that would be a
+valid target.
+
+If there are more than one valid options, they are cycled each frame
+
+If (self.origin + self.viewofs) is not in the PVS of the current target,
+it is not returned at all.
+
+name checkclient ()
+=================
+*/
+#define	MAX_CHECK	16
+int c_invis, c_notvis;
+edict_t* PF_checkclient_I( edict_t* pEdict )
+{
+	edict_t* ent;
+	mleaf_t* leaf;
+	int		l;
+	vec3_t	view;
+
+// find a new check if on a new frame
+	if (sv.time - sv.lastchecktime >= 0.1)
+	{
+		sv.lastcheck = PF_newcheckclient(sv.lastcheck);
+		sv.lastchecktime = sv.time;
+	}
+
+// return check if it might be visible
+	ent = &sv.edicts[sv.lastcheck];
+	if (ent->free || !ent->pvPrivateData)
+	{
+		return &sv.edicts[0];
+	}
+
+// if current entity can't possibly see the check entity, return 0
+	VectorAdd(pEdict->v.origin, pEdict->v.view_ofs, view);
+	leaf = Mod_PointInLeaf(view, sv.worldmodel);
+	l = (leaf - sv.worldmodel->leafs) - 1;
+	if (l < 0 || !((1 << (l & 7)) & checkpvs[l >> 3]))
+	{
+		c_notvis++;
+		return &sv.edicts[0];
+	}
+
+// might be able to see it
+	c_invis++;
+	return ent;
+}
 
 /*
 =================
@@ -631,6 +859,495 @@ mnode_t* PVSNode( mnode_t* node, vec_t* emins, vec_t* emaxs )
 
 	return NULL;
 }
+
+/*
+=================
+PVSMark
+
+Mark the leaves and nodes that are in the PVS for the specified leaf
+=================
+*/
+void PVSMark( model_t* pmodel, byte* ppvs )
+{
+	mnode_t* node;
+	int		i;
+
+	r_visframecount++;
+
+	for (i = 0; i < pmodel->numleafs; i++)
+	{
+		if ((1 << (i & 7)) & ppvs[i >> 3])
+		{
+			node = (mnode_t*)&pmodel->leafs[i + 1];
+			do
+			{
+				if (node->visframe == r_visframecount)
+					break;
+				node->visframe = r_visframecount;
+				node = node->parent;
+			} while (node);
+		}
+	}
+}
+
+void R_MarkLeaves( void );
+
+/*
+=================
+PVSFindEntities
+
+Finds an entity chain in the PVS
+=================
+*/
+edict_t* PVSFindEntities( edict_t* pplayer )
+{
+	int		i;
+	edict_t* pent, * pchain, * pentPVS;
+	vec3_t	org;
+	byte* ppvs;
+	mleaf_t* pleaf;
+
+	VectorAdd(pplayer->v.view_ofs, pplayer->v.origin, org);
+
+	pleaf = Mod_PointInLeaf(org, sv.worldmodel);
+	ppvs = Mod_LeafPVS(pleaf, sv.worldmodel);
+
+	PVSMark(sv.worldmodel, ppvs);
+	pchain = sv.edicts;
+
+	for (i = 1; i < sv.num_edicts; i++)
+	{
+		pent = &sv.edicts[i];
+		if (pent->free)
+			continue;
+
+		if (pent->v.movetype == MOVETYPE_FOLLOW && pent->v.aiment)
+			pentPVS = pent->v.aiment;
+		else
+			pentPVS = pent;
+
+		if (PVSNode(sv.worldmodel->nodes, pentPVS->v.absmin, pentPVS->v.absmax))
+		{
+			pent->v.chain = pchain;
+			pchain = pent;
+		}
+	}
+
+	if (cl.worldmodel)
+	{
+		r_oldviewleaf = NULL;
+		R_MarkLeaves();
+	}
+
+	return pchain;
+}
+
+//============================================================================
+
+qboolean ValidCmd( const char* pCmd )
+{
+	int len;
+
+	len = strlen(pCmd);
+	return (len != 0) && (pCmd[len - 1] == '\n' || pCmd[len - 1] == ';');
+}
+
+/*
+=================
+PF_stuffcmd_I
+
+Sends text over to the client's execution buffer
+
+stuffcmd (clientent, value)
+=================
+*/
+void PF_stuffcmd_I( edict_t* pEdict, char* szFmt, ... )
+{
+	int		entnum;
+	client_t* old;
+	va_list	argptr;
+	static char szOut[1024];
+
+	entnum = NUM_FOR_EDICT(pEdict);
+
+	va_start(argptr, szFmt);
+	vsprintf(szOut, szFmt, argptr);
+	va_end(argptr);
+
+	if (entnum < 1 || entnum > svs.maxclients)
+	{
+		Con_Printf("\n!!!\n\nStuffCmd:  Some entity tried to stuff '%s' to console "
+			"buffer of entity %i when maxclients was set to %i, ignoring\n\n",
+			szOut, entnum, svs.maxclients);
+		return;
+	}
+	
+	if (!ValidCmd(szOut))
+	{
+		Con_Printf("Tried to stuff bad command %s\n", szOut);
+		return;
+	}
+	
+	old = host_client;
+	host_client = &svs.clients[entnum - 1];
+	Host_ClientCommands("%s", szOut);
+	host_client = old;
+}
+
+/*
+=================
+PF_localcmd_I
+
+Sends text over to the client's execution buffer
+
+localcmd (string)
+=================
+*/
+void PF_localcmd_I( char* str )
+{
+	if (!ValidCmd(str))
+	{
+		Con_Printf("Error, bad server command %s\n", str);
+		return;
+	}
+
+	Cbuf_AddText(str);	
+}
+
+/*
+=================
+FindEntityInSphere
+
+Try to find an entity in a sphere
+=================
+*/
+edict_t* FindEntityInSphere( edict_t* pEdictStartSearchAfter, const float* org, float rad )
+{
+	edict_t* ent;
+	float	eorg;
+	int		e, i, j;
+	float	distSquared;
+
+	if (pEdictStartSearchAfter)
+		e = NUM_FOR_EDICT(pEdictStartSearchAfter);
+	else
+		e = 0;
+
+	for (i = e + 1; i < sv.num_edicts; i++)
+	{
+		ent = &sv.edicts[i];
+		if (ent->free || !ent->v.classname)
+			continue;
+
+		if (i <= svs.maxclients && !svs.clients[i - 1].active)
+			continue;
+
+		distSquared = 0.0;
+		for (j = 0; j < 3 && distSquared <= (rad * rad); j++)
+		{
+			if (org[j] < ent->v.absmin[j])
+				eorg = org[j] - ent->v.absmin[j];
+			else if (org[j] > ent->v.absmax[j])
+				eorg = org[j] - ent->v.absmax[j];
+			else
+				eorg = 0.0;
+
+			distSquared += eorg * eorg;
+		}
+
+		// Make sure it's inside the sphere.
+		if (distSquared <= (rad * rad))
+		{
+			return ent;
+		}
+	}
+
+	return &sv.edicts[0];
+}
+
+/*
+=================
+PF_Spawn_I
+
+Allocates an edict for use with an entity
+=================
+*/
+edict_t* PF_Spawn_I( void )
+{
+	edict_t* pedict = ED_Alloc();
+	return pedict;
+}
+
+/*
+=================
+CreateNamedEntity
+
+Create specified entity, allocate private data
+=================
+*/
+edict_t* CreateNamedEntity( int className )
+{
+	edict_t* pedict;
+	ENTITYINIT pEntityInit;
+
+	if (!className)
+		Sys_Error("Spawned a NULL entity!");
+
+	pedict = ED_Alloc();
+	pedict->v.classname = className;
+
+	pEntityInit = GetEntityInit(&pr_strings[className]);
+	if (!pEntityInit)
+	{
+		ED_Free(pedict);
+		Con_DPrintf("Can't create entity: %s\n", &pr_strings[className]);
+		return NULL;
+	}
+	
+	pEntityInit(&pedict->v);
+	return pedict;
+}
+
+/*
+=================
+PF_Remove_I
+
+Immediately remove the given entity
+=================
+*/
+void PF_Remove_I( edict_t* ed )
+{
+	ED_Free(ed);
+}
+
+/*
+=================
+PF_find_Shared
+
+Tries to find an entity by string
+=================
+*/
+edict_t* PF_find_Shared( int eStartSearchAfter, int iFieldToMatch, const char* szValueToFind )
+{
+	int		e;
+	char* t;
+	edict_t* ed;
+
+	for (e = eStartSearchAfter + 1; e < sv.num_edicts; e++)
+	{
+		ed = &sv.edicts[e];
+		if (ed->free)
+			continue;
+
+		t = &pr_strings[*(string_t*)((size_t)&ed->v + iFieldToMatch)];
+		if (t == NULL || t == &pr_strings[0])
+			continue;
+
+		if (!strcmp(t, szValueToFind))
+			return ed;
+	}
+
+	return &sv.edicts[0];
+}
+
+int iGetIndex( const char* pszField )
+{
+	char sz[512];
+
+	strcpy(sz, pszField);
+	_strlwr(sz);
+
+	if (!strcmp(sz, "classname"))
+		return offsetof(entvars_t, classname);
+	if (!strcmp(sz, "model"))
+		return offsetof(entvars_t, model);
+	if (!strcmp(sz, "viewmodel"))
+		return offsetof(entvars_t, viewmodel);
+	if (!strcmp(sz, "weaponmodel"))
+		return offsetof(entvars_t, weaponmodel);
+	if (!strcmp(sz, "netname"))
+		return offsetof(entvars_t, netname);
+	if (!strcmp(sz, "target"))
+		return offsetof(entvars_t, target);
+	if (!strcmp(sz, "targetname"))
+		return offsetof(entvars_t, targetname);
+	if (!strcmp(sz, "message"))
+		return offsetof(entvars_t, message);
+	if (!strcmp(sz, "noise"))
+		return offsetof(entvars_t, noise);
+	if (!strcmp(sz, "noise1"))
+		return offsetof(entvars_t, noise1);
+	if (!strcmp(sz, "noise2"))
+		return offsetof(entvars_t, noise2);
+	if (!strcmp(sz, "noise3"))
+		return offsetof(entvars_t, noise3);
+	if (!strcmp(sz, "globalname"))
+		return offsetof(entvars_t, globalname);
+
+	return -1;
+}
+
+edict_t* FindEntityByString( edict_t* pEdictStartSearchAfter, const char* pszField, const char* pszValue )
+{
+	int e;
+	int iField = iGetIndex(pszField);
+	if (iField == -1)
+		return NULL;
+
+	if (!pszValue)
+		return NULL;
+
+	if (pEdictStartSearchAfter)
+		e = NUM_FOR_EDICT(pEdictStartSearchAfter);
+	else
+		e = 0;
+
+	return PF_find_Shared(e, iField, pszValue);
+}
+
+// Returns light_level for clients and world, otherwise
+// the color of the floor that the entity is standing on
+int GetEntityIllum( edict_t* pEnt )
+{
+	int iReturn;
+	colorVec cvFloorColor = { 0, 0, 0, 0 };
+	int iIndex;
+
+	if (!pEnt)
+		return -1;
+
+	iIndex = NUM_FOR_EDICT(pEnt);
+	if (iIndex <= svs.maxclients)
+	{
+		// the player has a more accurate level of light
+		// coming from the client side
+		return pEnt->v.light_level;
+	}
+
+	if (cls.state != ca_connected && cls.state != ca_uninitialized && cls.state != ca_active)
+		return 128;
+
+	cvFloorColor = cl_entities[iIndex].cvFloorColor;
+	iReturn = (cvFloorColor.r + cvFloorColor.g + cvFloorColor.b) / 3;
+
+	return iReturn;
+}
+
+void PR_CheckEmptyString( const char* s )
+{
+	if (s[0] <= ' ')
+		Host_Error("Bad string: %s", s);
+}
+
+/*
+=================
+PF_precache_sound_I
+
+=================
+*/
+int PF_precache_sound_I( char* s )
+{
+	int	i;
+
+	if (s && s[0] == '!')
+		Host_Error("PF_precache_sound_I: '%s' do not precache sentence names!", s);
+
+	if (sv.state == ss_loading)
+	{
+		PR_CheckEmptyString(s);
+
+		for (i = 0; i < MAX_SOUNDS; i++)
+		{
+			if (sv.sound_precache[i])
+			{
+				if (!strcmp(sv.sound_precache[i], s))
+					return i;
+			}
+			else
+			{
+				sv.sound_precache[i] = s;
+				return i;
+			}
+		}
+
+		Host_Error("PF_precache_sound_I: '%s' overflow", s);
+	}
+	else
+	{
+		// check if it's already precached
+		for (i = 0; i < MAX_SOUNDS; i++)
+		{
+			if (sv.sound_precache[i])
+			{
+				if (!strcmp(sv.sound_precache[i], s))
+					return i;
+			}
+		}
+
+		Host_Error("PF_precache_sound_I: '%s' Precache can only be done in spawn functions", s);
+	}
+
+	return i;
+}
+
+/*
+=================
+PF_precache_model_I
+
+=================
+*/
+int PF_precache_model_I( char* s )
+{
+	int	i;
+
+	if (sv.state == ss_loading)
+	{
+		PR_CheckEmptyString(s);
+
+		for (i = 0; i < MAX_MODELS; i++)
+		{
+			if (sv.model_precache[i])
+			{
+				if (!strcmp(sv.model_precache[i], s))
+					return i;
+			}
+			else
+			{
+				sv.model_precache[i] = s;
+				sv.models[i] = Mod_ForName(s, TRUE);
+				return i;
+			}
+		}
+		
+		Host_Error("PF_precache_model_I: '%s' overflow", s);
+	}
+	else
+	{
+		// check if it's already precached
+		for (i = 0; i < MAX_MODELS; i++)
+		{
+			if (sv.model_precache[i])
+			{
+				if (!strcmp(sv.model_precache[i], s))
+					return i;
+			}
+		}
+		
+		Host_Error("PF_precache_model_I: '%s' Precache can only be done in spawn functions", s);
+	}
+
+	return i;
+}
+
+
+
+
+
+
+
+
+
+
 
 // TODO: Implement
 

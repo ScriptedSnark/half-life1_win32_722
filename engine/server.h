@@ -57,12 +57,14 @@ typedef struct
 	qboolean	loadgame;			// handle connections specially
 
 	double		time;
+	double		oldtime;
 
-	// TODO: Implement
+	int			lastcheck;
+	double		lastchecktime;
 
-	char name[MAX_QPATH]; // map name
-	char startspot[MAX_QPATH];
-	char modelname[MAX_QPATH];
+	char		name[MAX_QPATH];			// map name
+	char		startspot[MAX_QPATH];
+	char		modelname[MAX_QPATH];
 
 	struct model_s*	worldmodel;			// cl_entitites[0].model
 
@@ -377,6 +379,7 @@ void SV_ExecuteClientMessage( client_t* cl );
 //
 // TODO: Implement
 void SV_Physics( void );
+trace_t SV_Trace_Toss( edict_t* ent, edict_t* ignore );
 void SV_Impact( edict_t* e1, edict_t* e2, trace_t* ptrace );
 // TODO: Implement
 void SV_SetMoveVars( void );
