@@ -116,7 +116,146 @@ SV_WriteCustomEntityDeltaToClient
 */
 void SV_WriteCustomEntityDeltaToClient( entity_state_t* from, entity_state_t* to, sizebuf_t* msg, qboolean force )
 {
-	
+	// TODO: Refactor
+
+	int v4; // esi
+	int rendermode; // eax
+	int v6; // ecx
+	float *origin; // ebp
+	float *v8; // ebx
+	int v9; // ecx
+	float *angles; // ebp
+	float *v11; // ebx
+	int number; // eax
+	int v13; // [esp-4h] [ebp-20h]
+	unsigned __int32 v14; // [esp+10h] [ebp-Ch]
+	float v15; // [esp+14h] [ebp-8h]
+	double v16; // [esp+14h] [ebp-8h]
+	float v17; // [esp+14h] [ebp-8h]
+	double v18; // [esp+14h] [ebp-8h]
+
+	v4 = 8449;
+	rendermode = to->rendermode;
+	if (from->rendermode != rendermode)
+		v4 = 9473;
+	v14 = to->rendermode & 0xF;
+	if (v14 <= 1)
+	{
+		v6 = 0;
+		origin = from->origin;
+		v8 = to->origin;
+		do
+		{
+			v15 = *v8 - *origin;
+			v16 = v15;
+			if (v16 < -0.1 || v16 > 0.1)
+				v4 |= 2 << v6;
+			++origin;
+			++v8;
+			++v6;
+		} while (v6 < 3);
+		if ((rendermode & 0xF) == 0)
+		{
+			v9 = 0;
+			angles = from->angles;
+			v11 = to->angles;
+			do
+			{
+				v17 = *v11 - *angles;
+				v18 = v17;
+				if (v18 < -0.1 || v18 > 0.1)
+					v4 |= 32 << v9;
+				++angles;
+				++v11;
+				++v9;
+			} while (v9 < 3);
+		}
+	}
+	if ((v14 == 2 || v14 == 1) && (to->sequence != from->sequence || to->skin != from->skin))
+		v4 |= 0x200u;
+	if (from->modelindex != to->modelindex)
+		v4 |= 0x800u;
+	if (from->scale != to->scale)
+		v4 |= 0x1000u;
+	if (from->body != to->body)
+		v4 |= 0x4000u;
+	if (from->rendercolor.r != to->rendercolor.r
+	  || to->rendercolor.g != from->rendercolor.g
+	  || to->rendercolor.b != from->rendercolor.b
+	  || to->renderfx != from->renderfx)
+	{
+		v4 |= 0x10000u;
+	}
+	if (from->renderamt != to->renderamt)
+		v4 |= 0x20000u;
+	if (from->frame != to->frame)
+		v4 |= 0x80000u;
+	if ((__int64)from->animtime != (__int64)to->animtime)
+		v4 |= 0x40000u;
+	number = to->number;
+	if (number >= 256)
+		v4 |= 0x8000u;
+	if (v4 >= 256)
+		v4 |= 1u;
+	if (v4 >= 0x10000)
+		v4 |= 0x100u;
+	if (v4 >= 0x1000000)
+		v4 |= 0x800000u;
+	if (!number)
+		Sys_Error("Unset entity number");
+	if (v4 || force)
+	{
+		MSG_WriteByte(msg, v4);
+		if ((v4 & 1) != 0)
+			MSG_WriteByte(msg, v4 >> 8);
+		if ((v4 & 0x100) != 0)
+			MSG_WriteByte(msg, v4 >> 16);
+		if ((v4 & 0x800000) != 0)
+			MSG_WriteByte(msg, v4 >> 24);
+		v13 = to->number;
+		if ((v4 & 0x8000) != 0)
+			MSG_WriteShort(msg, v13);
+		else
+			MSG_WriteByte(msg, v13);
+		if ((v4 & 2) != 0)
+			MSG_WriteCoord(msg, to->origin[0]);
+		if ((v4 & 4) != 0)
+			MSG_WriteCoord(msg, to->origin[1]);
+		if ((v4 & 8) != 0)
+			MSG_WriteCoord(msg, to->origin[2]);
+		if ((v4 & 0x20) != 0)
+			MSG_WriteCoord(msg, to->angles[0]);
+		if ((v4 & 0x40) != 0)
+			MSG_WriteCoord(msg, to->angles[1]);
+		if ((v4 & 0x80) != 0)
+			MSG_WriteCoord(msg, to->angles[2]);
+		if ((v4 & 0x200) != 0)
+		{
+			MSG_WriteShort(msg, to->sequence);
+			MSG_WriteShort(msg, to->skin);
+		}
+		if ((v4 & 0x400) != 0)
+			MSG_WriteByte(msg, to->rendermode);
+		if ((v4 & 0x800) != 0)
+			MSG_WriteShort(msg, to->modelindex);
+		if ((v4 & 0x1000) != 0)
+			MSG_WriteByte(msg, (__int64)to->scale);
+		if ((v4 & 0x4000) != 0)
+			MSG_WriteByte(msg, to->body);
+		if ((v4 & 0x10000) != 0)
+		{
+			MSG_WriteByte(msg, to->rendercolor.r);
+			MSG_WriteByte(msg, to->rendercolor.g);
+			MSG_WriteByte(msg, to->rendercolor.b);
+			MSG_WriteByte(msg, to->renderfx);
+		}
+		if ((v4 & 0x20000) != 0)
+			MSG_WriteByte(msg, to->renderamt);
+		if ((v4 & 0x80000) != 0)
+			MSG_WriteByte(msg, (__int64)to->frame);
+		if ((v4 & 0x40000) != 0)
+			MSG_WriteByte(msg, (__int64)to->animtime);
+	}
 }
 
 /*
@@ -129,7 +268,221 @@ Can delta from either a baseline or a previous packet_entity
 */
 void SV_WriteDelta( entity_state_t* from, entity_state_t* to, sizebuf_t* msg, qboolean force )
 {
-	
+	// TODO: Refactor
+
+	int v4; // ebx
+	int v5; // ebp
+	int v6; // ecx
+	float *v7; // esi
+	int v8; // ecx
+	float *mins; // edx
+	float *v10; // esi
+	int number; // eax
+	int v12; // [esp-4h] [ebp-20h]
+	float a2c; // [esp+10h] [ebp-Ch]
+	double a2; // [esp+10h] [ebp-Ch]
+	float a2d; // [esp+10h] [ebp-Ch]
+	double a2a; // [esp+10h] [ebp-Ch]
+	float a2e; // [esp+10h] [ebp-Ch]
+	double a2b; // [esp+10h] [ebp-Ch]
+	int a2f; // [esp+10h] [ebp-Ch]
+	float *origin; // [esp+18h] [ebp-4h]
+
+	if (to->entityType)
+	{
+		SV_WriteCustomEntityDeltaToClient(from, to, msg, force);
+	}
+	else
+	{
+		v4 = 0;
+		v5 = 0;
+		v6 = 0;
+		origin = to->origin;
+		v7 = from->origin;
+		do
+		{
+			a2c = *origin - *v7;
+			a2 = a2c;
+			if (a2 < -0.1 || a2 > 0.1)
+				v4 |= 2 << v6;
+			++v7;
+			++v6;
+			++origin;
+		} while (v6 < 3);
+		if (from->angles[0] != to->angles[0])
+			v4 |= U_ANGLE1;
+		if (from->angles[1] != to->angles[1])
+			v4 |= U_ANGLE2;
+		if (from->angles[2] != to->angles[2])
+			v4 |= U_ANGLE3;
+		if (from->movetype != to->movetype)
+			v4 |= U_MOVETYPE;
+		if (from->colormap != to->colormap)
+			v4 |= U_COLORMAP;
+		if (from->skin != to->skin || to->solid != from->solid)
+			v4 |= U_CONTENTS;
+		if (from->frame != to->frame)
+			v4 |= U_FRAME;
+		if (from->scale != to->scale)
+			v4 |= U_SCALE;
+		if (from->effects != to->effects)
+			v4 |= U_EFFECTS;
+		if (from->modelindex != to->modelindex)
+			v4 |= U_MODELINDEX;
+		if (from->animtime != to->animtime || to->sequence != from->sequence)
+			v4 |= U_SEQUENCE;
+		if (from->framerate != to->framerate)
+			v4 |= U_FRAMERATE;
+		if (from->body != to->body)
+			v4 |= U_BODY;
+		if (from->controller[0] != to->controller[0])
+			v4 |= U_CONTROLLER1;
+		if (from->controller[1] != to->controller[1])
+			v4 |= U_CONTROLLER2;
+		if (from->controller[2] != to->controller[2])
+			v4 |= U_CONTROLLER3;
+		if (from->controller[3] != to->controller[3])
+			v4 |= U_CONTROLLER4;
+		if (from->blending[0] != to->blending[0])
+			v4 |= U_BLENDING1;
+		if (from->blending[1] != to->blending[1])
+			v4 |= U_BLENDING2;
+		if (from->rendermode != to->rendermode
+		  || to->renderamt != from->renderamt
+		  || to->renderfx != from->renderfx
+		  || to->rendercolor.r != from->rendercolor.r
+		  || from->rendercolor.g != to->rendercolor.g
+		  || to->rendercolor.b != from->rendercolor.b)
+		{
+			v4 |= U_RENDER;
+		}
+
+		if (to->animtime != 0.0 && to->velocity[0] == 0.0 && to->velocity[1] == 0.0 && to->velocity[2] == 0.0)
+			v4 |= U_MONSTERMOVE;
+
+		v8 = 0;
+		mins = from->mins;
+		v10 = to->mins;
+		do
+		{
+			a2d = *v10 - *mins;
+			a2a = a2d;
+			if (a2a < -0.1 || a2a > 0.1)
+				v5 |= 1 << v8;
+			a2e = v10[3] - mins[3];
+			a2b = a2e;
+			if (a2b < -0.1 || a2b > 0.1)
+				v5 |= 8 << v8;
+			++mins;
+			++v10;
+			++v8;
+		} while (v8 < 3);
+		number = to->number;
+		if (number >= 256)
+			v4 |= U_LONGENTITY;
+		if (v4 >= U_EVENMOREBITS)
+			v4 |= U_MOREBITS;
+		if (v4 >= U_FRAMERATE)
+			v4 |= U_EVENMOREBITS;
+		if (v4 >= U_CONTROLLER1)
+			v4 |= U_YETMOREBITS;
+		if (v5)
+			v4 |= U_YETMOREBITS | U_EVENMOREBITS | U_MOREBITS | 0x80000000;
+		if (!number)
+			Sys_Error("Unset entity number");
+		if (v4 || v5 || force)
+		{
+			MSG_WriteByte(msg, v4);
+			if ((v4 & 1) != 0)
+				MSG_WriteByte(msg, v4 >> 8);
+			if ((v4 & 1) != 0)
+				MSG_WriteByte(msg, v4 >> 16);
+			if ((v4 & U_YETMOREBITS) != 0)
+				MSG_WriteByte(msg, v4 >> 24);
+
+			if ((v4 & 0x80000000) != 0)
+				MSG_WriteByte(msg, v5);
+
+			v12 = to->number;
+			if (v4 >= 0)
+				MSG_WriteByte(msg, v12);
+			else
+				MSG_WriteShort(msg, v12);
+			if ((v4 & 8) != 0)
+				MSG_WriteShort(msg, to->modelindex);
+			if ((v4 & 0x80u) != 0)
+				MSG_WriteWord(msg, (__int64)(to->frame * 256.0));
+			if ((v4 & 0x40) != 0)
+				MSG_WriteByte(msg, to->movetype);
+			if ((v4 & 0x40000) != 0)
+				MSG_WriteByte(msg, to->colormap);
+			if ((v4 & 0x80000) != 0)
+			{
+				MSG_WriteShort(msg, to->skin);
+				MSG_WriteByte(msg, to->solid);
+			}
+			if ((v4 & 0x40000000) != 0)
+				MSG_WriteWord(msg, (__int64)(to->scale * 256.0));
+			if ((v4 & 0x40) != 0)
+				MSG_WriteByte(msg, to->effects);
+			if ((v4 & 2) != 0)
+				MSG_WriteCoord(msg, to->origin[0]);
+			if ((v4 & 2) != 0)
+				MSG_WriteHiresAngle(msg, to->angles[0]);
+			if ((v4 & 4) != 0)
+				MSG_WriteCoord(msg, to->origin[1]);
+			if ((v4 & 0x20) != 0)
+				MSG_WriteHiresAngle(msg, to->angles[1]);
+			if ((v4 & 8) != 0)
+				MSG_WriteCoord(msg, to->origin[2]);
+			if ((v4 & 4) != 0)
+				MSG_WriteHiresAngle(msg, to->angles[2]);
+			if ((v4 & 0x10) != 0)
+			{
+				a2f = (unsigned __int8)(__int64)(to->animtime * 100.0);
+				MSG_WriteByte(msg, to->sequence);
+				MSG_WriteByte(msg, a2f);
+			}
+			if ((v4 & U_FRAMERATE) != 0)
+				MSG_WriteChar(msg, (__int64)(to->framerate * 16.0));
+			if ((v4 & U_CONTROLLER1) != 0)
+				MSG_WriteByte(msg, to->controller[0]);
+			if ((v4 & U_CONTROLLER2) != 0)
+				MSG_WriteByte(msg, to->controller[1]);
+			if ((v4 & U_CONTROLLER3) != 0)
+				MSG_WriteByte(msg, to->controller[2]);
+			if ((v4 & U_CONTROLLER4) != 0)
+				MSG_WriteByte(msg, to->controller[3]);
+			if ((v4 & U_BLENDING1) != 0)
+				MSG_WriteByte(msg, to->blending[0]);
+			if ((v4 & U_BLENDING2) != 0)
+				MSG_WriteByte(msg, to->blending[1]);
+			if ((v4 & U_BODY) != 0)
+				MSG_WriteByte(msg, to->body);
+			if ((v4 & U_RENDER) != 0)
+			{
+				MSG_WriteByte(msg, to->rendermode);
+				MSG_WriteByte(msg, to->renderamt);
+				MSG_WriteByte(msg, to->rendercolor.r);
+				MSG_WriteByte(msg, to->rendercolor.g);
+				MSG_WriteByte(msg, to->rendercolor.b);
+				MSG_WriteByte(msg, to->renderfx);
+			}
+
+			if ((v5 & 1) != 0)
+				MSG_WriteCoord(msg, to->mins[0]);
+			if ((v5 & 2) != 0)
+				MSG_WriteCoord(msg, to->mins[1]);
+			if ((v5 & 4) != 0)
+				MSG_WriteCoord(msg, to->mins[2]);
+			if ((v5 & 8) != 0)
+				MSG_WriteCoord(msg, to->maxs[0]);
+			if ((v5 & 0x10) != 0)
+				MSG_WriteCoord(msg, to->maxs[1]);
+			if ((v5 & 0x20) != 0)
+				MSG_WriteCoord(msg, to->maxs[2]);
+		}
+	}
 }
 
 /*
