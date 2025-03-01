@@ -4,6 +4,23 @@
 #include "server.h"
 #include "pr_cmds.h"
 
+/*
+=============
+SV_CheckBottom
+
+Returns false if any part of the bottom of the entity is off an edge that
+is not a staircase.
+
+=============
+*/
+int c_yes, c_no;
+
+qboolean SV_CheckBottom( edict_t* ent )
+{
+	// TODO: Implement
+	return FALSE;
+}
+
 // TODO: Implement
 
 /*

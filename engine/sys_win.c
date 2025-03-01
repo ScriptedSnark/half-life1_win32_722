@@ -1034,7 +1034,7 @@ static enginefuncs_t g_engfuncsExportedToDlls =
 	PF_Remove_I,
 	CreateNamedEntity,
 	NULL,	// TODO: Implement
-	NULL,	// TODO: Implement
+	PF_checkbottom_I,
 	PF_droptofloor_I,
 	PF_walkmove_I,
 	PF_setorigin_I,
@@ -1047,13 +1047,13 @@ static enginefuncs_t g_engfuncsExportedToDlls =
 	TraceModel,
 	TraceTexture,
 	TraceSphere,
-	NULL,	// TODO: Implement
+	PF_aim_I,
 	PF_localcmd_I,
 	PF_stuffcmd_I,
 	PF_particle_I,
 	PF_lightstyle_I,
 	PF_DecalIndex,
-	NULL,	// TODO: Implement
+	PF_pointcontents_I,
 	NULL,	// TODO: Implement
 	NULL,	// TODO: Implement
 	NULL,	// TODO: Implement

@@ -242,6 +242,7 @@ typedef struct client_s
 
 //============================================================================
 
+extern	cvar_t	teamplay;
 extern	cvar_t	skill;
 extern	cvar_t	deathmatch;
 extern	cvar_t	coop;
@@ -275,6 +276,10 @@ extern	cvar_t	sv_zmax;
 extern	cvar_t	sv_wateramp;
 extern	cvar_t	sv_skyname;
 extern	cvar_t	sv_maxvelocity;
+
+
+
+extern	cvar_t	sv_aim;
 
 
 extern float		g_LastScreenUpdateTime;
@@ -378,6 +383,7 @@ void SV_SetMoveVars( void );
 //
 // sv_move.c
 //
+qboolean SV_CheckBottom( edict_t* ent );
 qboolean SV_movetest( edict_t* ent, vec_t* move, qboolean relink );
 qboolean SV_movestep( edict_t* ent, vec_t* move, qboolean relink );
 

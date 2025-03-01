@@ -234,8 +234,6 @@ extern	cvar_t		host_speeds;
 // start of every frame, never reset
 
 
-
-
 void Host_ClearMemory( qboolean bQuiet );
 
 void Host_InitCommands( void );

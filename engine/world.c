@@ -7,7 +7,7 @@ static	int			sv_numareanodes;
 
 // TODO: Implement
 
-int SV_HullPointContents( hull_t* hull, int num, vec_t* p );
+int SV_HullPointContents( hull_t* hull, int num, const vec_t* p );
 
 // TODO: Implement
 
@@ -345,6 +345,99 @@ int SV_HullPointContents( hull_t* hull, int num, const vec_t* p )
 }
 
 #endif	// !id386
+
+// TODO: Implement
+
+/*
+===============
+SV_LinkContents
+
+===============
+*/
+int SV_LinkContents( areanode_t* node, const vec_t* pos )
+{
+	link_t* l, * next;
+	edict_t* touch;
+	int contents;
+	hull_t* hull;
+	vec3_t offset;
+	vec3_t localPosition;
+
+	model_t* pModel;
+
+	for (l = node->solid_edicts.next; l != &node->solid_edicts; l = next)
+	{
+		touch = EDICT_FROM_AREA(l);
+		next = l->next;
+
+		if (touch->v.solid != SOLID_NOT)
+			continue;
+
+		pModel = sv.models[touch->v.modelindex];
+
+		if (!pModel || pModel->type != mod_brush)
+			continue;
+
+		if (pos[0] > touch->v.absmax[0]
+			|| pos[1] > touch->v.absmax[1]
+			|| pos[2] > touch->v.absmax[2]
+			|| pos[0] < touch->v.absmin[0]
+			|| pos[1] < touch->v.absmin[1]
+			|| pos[2] < touch->v.absmin[2])
+			continue;
+
+		contents = touch->v.skin;
+
+		if (contents < -100 || contents > 100)
+			Con_DPrintf("Invalid contents on trigger field: %s\n", &pr_strings[touch->v.classname]);
+
+		// force to select bsp-hull
+		hull = SV_HullForBsp(touch, vec3_origin, vec3_origin, offset);
+
+		// offset the test point appropriately for this hull
+		VectorSubtract(pos, offset, localPosition);
+
+		// test hull for intersection with this model
+		if (SV_HullPointContents(hull, hull->firstclipnode, localPosition) != CONTENTS_EMPTY)
+			return contents;
+	}
+
+	if (node->axis == -1)
+		return CONTENTS_EMPTY;
+
+	if (pos[node->axis] > node->dist)
+		return SV_LinkContents(node->children[0], pos);
+
+	else if (pos[node->axis] < node->dist)
+		return SV_LinkContents(node->children[1], pos);
+
+	return CONTENTS_EMPTY;
+}
+
+/*
+==================
+SV_PointContents
+
+Returns the CONTENTS_* value from the world at the given point.
+does not check any entities at all
+==================
+*/
+int SV_PointContents( const vec_t* p )
+{
+	int		cont, entityContents;
+
+	cont = SV_HullPointContents(sv.worldmodel->hulls, 0, p);
+	if (cont <= CONTENTS_CURRENT_0 && cont >= CONTENTS_CURRENT_DOWN)
+		cont = CONTENTS_WATER;
+	else if (cont == CONTENTS_SOLID)
+		return CONTENTS_SOLID;
+
+	entityContents = SV_LinkContents(&sv_areanodes[0], p);
+	if (entityContents != CONTENTS_EMPTY)
+		return entityContents;
+
+	return cont;
+}
 
 // TODO: Implement
 

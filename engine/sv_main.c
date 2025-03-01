@@ -640,6 +640,10 @@ void SV_Init( void )
 
 	// TODO: Implement
 	
+	Cvar_RegisterVariable(&sv_aim);
+
+	// TODO: Implement
+	
 	Cvar_RegisterVariable(&sv_gravity);
 	Cvar_RegisterVariable(&sv_friction);
 	Cvar_RegisterVariable(&sv_edgefriction);

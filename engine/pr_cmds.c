@@ -1479,6 +1479,94 @@ void PF_lightstyle_I( int style, char* val )
 		}
 }
 
+/*
+=============
+PF_checkbottom_I
+=============
+*/
+int PF_checkbottom_I( edict_t* pEdict )
+{
+	return SV_CheckBottom(pEdict);
+}
+
+/*
+=============
+PF_pointcontents_I
+=============
+*/
+int PF_pointcontents_I( const float* rgflVector )
+{
+	return SV_PointContents(rgflVector);
+}
+
+/*
+=============
+PF_aim_I
+
+Pick a vector for the player to shoot along
+vector aim(entity, missilespeed)
+=============
+*/
+cvar_t	sv_aim = { "sv_aim", "1", FALSE, TRUE };
+void PF_aim_I( edict_t* ent, float speed, float* rgflReturn )
+{
+	edict_t* check;
+	vec3_t	start, dir, end, bestdir;
+	int		i, j;
+	trace_t	tr;
+	float	dist, bestdist;
+
+// try sending a trace straight
+	VectorCopy(gGlobalVariables.v_forward, dir);
+	VectorAdd(ent->v.origin, ent->v.view_ofs, start); // get eye position
+	VectorMA(start, 2048, dir, end);
+	tr = SV_Move(start, vec3_origin, vec3_origin, end, MOVE_NORMAL, ent, FALSE);
+	if (tr.ent && tr.ent->v.takedamage == DAMAGE_AIM
+		&& (!teamplay.value || ent->v.team <= 0 || ent->v.team != tr.ent->v.team))
+	{
+		VectorCopy(gGlobalVariables.v_forward, rgflReturn);
+		return;
+	}
+
+// try all possible entities
+	VectorCopy(dir, bestdir);
+	bestdist = sv_aim.value;
+
+	for (i = 1; i < sv.num_edicts; i++)
+	{
+		check = &sv.edicts[i];
+		if (check->v.takedamage != DAMAGE_AIM)
+			continue;
+		if (check == ent)
+			continue;
+		if (teamplay.value && ent->v.team > 0 && ent->v.team == check->v.team)
+			continue;	// don't aim at teammate
+		for (j = 0; j < 3; j++)
+			end[j] = check->v.origin[j]
+			+ 0.75 * (check->v.mins[j] + check->v.maxs[j]);
+		VectorSubtract(end, start, dir);
+		VectorNormalize(dir);
+		dist = DotProduct(dir, gGlobalVariables.v_forward);
+		if (dist < bestdist)
+			continue;	// too far to turn	
+		tr = SV_Move(start, vec3_origin, vec3_origin, end, MOVE_NORMAL, ent, FALSE);
+		if (tr.ent == check)
+		{	// can shoot at this one
+			bestdist = dist;
+			VectorCopy(dir, bestdir);
+		}
+	}
+
+	VectorCopy(bestdir, rgflReturn);
+}
+
+
+
+
+
+
+
+
 
 
 
