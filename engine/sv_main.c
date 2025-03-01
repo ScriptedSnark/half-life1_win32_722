@@ -4,6 +4,7 @@
 #include "pr_cmds.h"
 #include "pmove.h"
 #include "decal.h"
+#include "cmodel.h"
 
 server_t		sv;
 server_static_t	svs;
@@ -14,6 +15,8 @@ server_static_t	svs;
 
 char* pr_strings = NULL, *gNullString = "";
 globalvars_t gGlobalVariables;
+
+int sv_playermodel;
 
 char	localmodels[MAX_MODELS][5];			// inline model names for precache
 
@@ -42,7 +45,7 @@ qboolean bUnreliableOverflow = FALSE;
 float g_LastScreenUpdateTime;
 float scr_centertime_off;
 
-qboolean bAddDeltaFlag = FALSE;
+qboolean bShouldUpdatePing = FALSE;
 
 cvar_t sv_password = { "sv_password", "" };
 cvar_t sv_spectator_password = { "sv_spectator_password", "" };
@@ -606,7 +609,35 @@ void SV_CheckTimeouts( void )
 	// TODO: Implement
 }
 
-// TODO: Implement
+/*
+===================
+SV_CalcPing
+
+===================
+*/
+int SV_CalcPing( client_t* cl )
+{
+	float		ping;
+	int			i;
+	int			count;
+	register	client_frame_t* frame;
+
+	ping = 0;
+	count = 0;
+	for (frame = cl->frames, i = 0; i < UPDATE_BACKUP; i++, frame++)
+	{
+		if (frame->ping_time > 0)
+		{
+			ping += frame->ping_time;
+			count++;
+		}
+	}
+	if (!count)
+		return 9999;
+	ping /= count;
+
+	return ping * 1000;
+}
 
 /*
 ===================
@@ -638,6 +669,92 @@ void SV_FullClientUpdate( client_t* cl, sizebuf_t* sb )
 		MSG_WriteByte(sb, 0);
 	}
 }
+
+/*
+===============================================================================
+
+FRAME UPDATES
+
+===============================================================================
+*/
+
+/*
+==================
+SV_ClearDatagram
+
+==================
+*/
+void SV_ClearDatagram(void)
+{
+	SZ_Clear(&sv.datagram);
+}
+
+/*
+=============================================================================
+
+The PVS must include a small area around the client to allow head bobbing
+or other small motion on the client side.  Otherwise, a bob might cause an
+entity that should be visible to not show up, especially when the bob
+crosses a waterline.
+
+=============================================================================
+*/
+
+int		fatbytes;
+byte	fatpvs[MAX_MAP_LEAFS / 8];
+
+void SV_AddToFatPVS(vec3_t org, mnode_t* node)
+{
+	int		i;
+	byte*	pvs;
+	mplane_t*	plane;
+	float	d;
+
+	while (1)
+	{
+	// if this is a leaf, accumulate the pvs bits
+		if (node->contents < 0)
+		{
+			if (node->contents != CONTENTS_SOLID)
+			{
+				pvs = Mod_LeafPVS((mleaf_t*)node, sv.worldmodel);
+				for (i = 0; i < fatbytes; i++)
+					fatpvs[i] |= pvs[i];
+			}
+			return;
+		}
+
+		plane = node->plane;
+		d = DotProduct(org, plane->normal) - plane->dist;
+		if (d > 8)
+			node = node->children[0];
+		else if (d < -8)
+			node = node->children[1];
+		else
+		{	// go down both
+			SV_AddToFatPVS(org, node->children[0]);
+			node = node->children[1];
+		}
+	}
+}
+
+/*
+=============
+SV_FatPVS
+
+Calculates a PVS that is the inclusive or of all leafs within 8 pixels of the
+given point.
+=============
+*/
+byte* SV_FatPVS(vec3_t org)
+{
+	fatbytes = (sv.worldmodel->numleafs + 31) >> 3;
+	Q_memset(fatpvs, 0, fatbytes);
+	SV_AddToFatPVS(org, sv.worldmodel->nodes);
+	return fatpvs;
+}
+
+//=============================================================================
 
 /*
 ==================
@@ -905,7 +1022,9 @@ void SV_CreateBaseline( void )
 		for (i = 0; i < 3; i++)
 		{
 			MSG_WriteCoord(&sv.signon, svent->baseline.origin[i]);
-			MSG_WriteAngle(&sv.signon, svent->baseline.angles[i]);
+			MSG_WriteFloat(&sv.signon, svent->baseline.angles[i]);
+			MSG_WriteCoord(&sv.signon, svent->baseline.mins[i]);
+			MSG_WriteCoord(&sv.signon, svent->baseline.maxs[i]);
 		}
 
 		MSG_WriteByte(&sv.signon, svent->v.rendermode);

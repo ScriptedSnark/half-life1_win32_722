@@ -87,7 +87,7 @@ void SV_SendResourceListBlock_f( void )
 
 	if (sv.num_resources <= n)
 	{
-		host_client->netchan.message.data[i] = n;
+		*(unsigned short*)&host_client->netchan.message.data[i] = n;
 	}
 	else
 	{
@@ -108,7 +108,7 @@ void SV_SendResourceListBlock_f( void )
 			}
 		}
 
-		host_client->netchan.message.data[i] = n;
+		*(unsigned short*)&host_client->netchan.message.data[i] = n;
 	}
 
 	if (sv.num_resources > n)
@@ -231,9 +231,95 @@ SV_ClearResourceLists
 
 ==================
 */
-void SV_ClearResourceLists(client_t* cl)
+void SV_ClearResourceLists( client_t* cl )
 {
 	// TODO: Implement
+}
+
+int SV_SizeofResourceList( resource_t *pList, resourceinfo_t *ri )
+{
+	int				size;
+	resource_t*		res;
+
+	size = 0;
+
+	for (res = pList->pNext; pList != res; res = res->pNext)
+	{
+		size += res->nDownloadSize;
+		// TODO: Implement (switch)
+	}
+	return size;
+}
+
+/*
+==================
+SV_AddToResourceList
+
+==================
+*/
+void SV_AddToResourceList( resource_t *pResource, resource_t *pList )
+{
+	if (pResource->pPrev || pResource->pNext)
+	{
+		Con_Printf("Resource already linked\n");
+		return;
+	}
+
+	pResource->pPrev = pList->pPrev;
+	pResource->pNext = pList;
+	pList->pPrev->pNext = pResource;
+	pList->pPrev = pResource;
+}
+
+/*
+==================
+SV_ClearResourceLists
+
+==================
+*/
+void SV_ClearResourceList( resource_t *pList )
+{
+	resource_t *p, *n;
+
+	for (p = pList->pNext; p && p != pList; p = n)
+	{
+		n = p->pNext;
+
+		SV_RemoveFromResourceList(p);
+		free(p);
+	}
+
+
+	pList->pPrev = pList;
+	pList->pNext = pList;
+}
+
+/*
+==================
+SV_RemoveFromResourceList
+
+==================
+*/
+void SV_RemoveFromResourceList( resource_t *pResource )
+{
+	pResource->pPrev->pNext = pResource->pNext;
+	pResource->pNext->pPrev = pResource->pPrev;
+	pResource->pPrev = NULL;
+	pResource->pNext = NULL;
+}
+
+/*
+==================
+SV_EstimateNeededResources
+
+For each t_decal and RES_CUSTOM resource the player had shown to us, tries to find it locally or count size required to be downloaded.
+==================
+*/
+int SV_EstimateNeededResources( void )
+{
+	// TODO: Implement
+
+	return 0;
 }
 
 /*
@@ -248,6 +334,8 @@ void SV_RequestMissingResourcesFromClients( void )
 	// TODO: Implement
 }
 
+// TODO: Implement
+
 /*
 ==================
 SV_ParseResourceList
@@ -255,5 +343,86 @@ SV_ParseResourceList
 */
 void SV_ParseResourceList( void )
 {
+	int				current, total, acknowledged;
+	resource_t*		res;
+	byte			flags;
+	resourceinfo_t	ri;
+
+	current = MSG_ReadShort();
+	total = MSG_ReadShort();
+	acknowledged = MSG_ReadShort();
+
+	while (total < acknowledged)
+	{
+		res = (resource_t*)malloc(sizeof(resource_t));
+		memset(res, 0, sizeof(resource_t));
+		res->type = MSG_ReadByte();
+		strcpy(res->szFileName, MSG_ReadString());
+		res->nIndex = MSG_ReadShort();
+		res->nDownloadSize = MSG_ReadLong();
+		flags = MSG_ReadByte();
+		res->ucFlags = flags & (~RES_WASMISSING);
+		res->pNext = NULL;
+		res->pPrev = NULL;
+
+		if (flags & RES_CUSTOM)
+		{
+			MSG_ReadBuf(sizeof(res->rgucMD5_hash), res->rgucMD5_hash);
+		}
+		if (total == 0)
+		{
+			SV_ClearResourceList(&host_client->resourcesneeded);
+			SV_ClearResourceList(&host_client->resourcesonhand);
+		}
+
+		++total;
+		SV_AddToResourceList(res, &host_client->resourcesneeded);
+	}
+	if (acknowledged < current)
+	{
+		host_client->uploading = FALSE;
+	}
+	else
+	{
+		Con_DPrintf("Verifying and uploading resources...\n");
+	}
+
 	// TODO: Implement
+	
+	host_client->nResourcesTotalSize = SV_SizeofResourceList(&host_client->resourcesneeded, &ri);
+	
+	host_client->nResourcesUploadLeftPercent = SV_EstimateNeededResources();
+	if (host_client->nResourcesTotalSize != 0)
+	{
+		Con_DPrintf("Custom resources total %.2fK\n", (float) host_client->nResourcesTotalSize / 1024.0f);
+		if (ri.info[1].size)
+		{
+			Con_DPrintf("  Models:  %.2fK\n", (float) ri.info[1].size / 1024.0f);
+		}
+		if (ri.info[2].size)
+		{
+			Con_DPrintf("  Sounds:  %.2fK\n", (float) ri.info[2].size / 1024.0f);
+		}
+		if (ri.info[3].size)
+		{
+			Con_DPrintf("  Decals:  %.2fK\n", (float) ri.info[3].size / 1024.0f);
+		}
+		if (ri.info[4].size)
+		{
+			Con_DPrintf("  Skins :  %.2fK\n", (float) ri.info[4].size / 1024.0f);
+		}
+		Con_DPrintf("----------------------\n");
+		if (host_client->nResourcesUploadLeftPercent > 1024)
+			Con_DPrintf("Resources to request: %iK\n", host_client->nResourcesUploadLeftPercent / 1024);
+		else
+			Con_DPrintf("Resources to request: %i bytes\n", host_client->nResourcesUploadLeftPercent);
+	}
+	host_client->uploading = TRUE;
+	host_client->uploaddoneregistering = FALSE;
+	host_client->bUploading = FALSE; // TODO: Implement
+	//*(float *)host_client->pad_11 = realtime; // TODO: Implement
+	host_client->flLastUploadTime = realtime;
+	host_client->uploadsize = host_client->nResourcesUploadLeftPercent;
+	//memset(host_client->pad_22, 0, sizeof(host_client->pad_22)); // TODO: Implement
+	host_client->numuploads = 0;
 }

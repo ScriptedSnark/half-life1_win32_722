@@ -190,9 +190,9 @@ typedef struct client_s
 
 	client_frame_t frames[UPDATE_BACKUP]; // updates can be deltad from here
 
-	edict_t *edict; // EDICT_NUM(clientnum+1)
+	edict_t* edict; // EDICT_NUM(clientnum+1)
 
-	const edict_t *pViewEntity; // View Entity (camera or the client itself)
+	const edict_t* pViewEntity; // View Entity (camera or the client itself)
 
 	char hashedcdkey[33];
 
@@ -220,9 +220,8 @@ typedef struct client_s
 
 	int uploadcount;
 	qboolean bUploading;
-
-	// TODO: Implement
-
+	int nResourcesTotalSize;
+	int nResourcesUploadLeftPercent;
 	int uploadsize;
 
 	// TODO: Implement
@@ -292,7 +291,7 @@ extern	cvar_t	sv_aim;
 extern float		g_LastScreenUpdateTime;
 extern float		scr_centertime_off;
 
-extern qboolean		bAddDeltaFlag;
+extern qboolean		bShouldUpdatePing;
 
 extern UserMsg* sv_gpNewUserMsgs;
 extern UserMsg* sv_gpUserMsgs;
@@ -306,9 +305,9 @@ extern qboolean bUnreliableOverflow;
 extern	server_static_t	svs;				// persistant server info
 extern	server_t		sv;					// local server
 
-extern	client_t		*host_client;
+extern	client_t*		host_client;
 
-extern	edict_t			*sv_player;
+extern	edict_t*		sv_player;
 
 
 extern	jmp_buf 	host_abortserver;
@@ -332,6 +331,8 @@ void SV_CheckTimeouts( void );
 void SV_FullClientUpdate( client_t* cl, sizebuf_t* sb );
 void SV_CountPlayers( int* clients, int* spectators );
 void SV_DropClient( client_t* drop, qboolean crash );
+
+int SV_CalcPing( client_t* cl );
 
 void SV_DeallocateDynamicData( void );
 
@@ -376,6 +377,7 @@ void SV_SendUserReg( sizebuf_t* sb );
 void SV_SendBan( void );
 qboolean SV_FilterPacket( void );
 void SV_SendClientMessages( void );
+void SV_WriteClientdataToMessage( client_t* client, sizebuf_t* msg );
 
 //
 // sv_user.c
@@ -408,9 +410,10 @@ void SV_MoveToOrigin_I( edict_t* ent, const float* pflGoal, float dist, int iStr
 int SV_ModelIndex( char* name );
 void SV_FlushSignon( void );
 void SV_SendResourceListBlock_f( void );
-void SV_AddResource( resourcetype_t type, const char *name, int size, byte flags, int index );
+void SV_AddResource( resourcetype_t type, const char* name, int size, byte flags, int index );
 void SV_CreateResourceList( void );
 void SV_ClearResourceLists( client_t* cl );
+void SV_RemoveFromResourceList( resource_t* pResource );
 void SV_RequestMissingResourcesFromClients( void );
 void SV_ParseResourceList( void );
 

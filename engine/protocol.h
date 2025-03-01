@@ -176,16 +176,16 @@
 
 #define	PF_MSEC			(1<<0)
 #define	PF_COMMAND		(1<<1)
-
-
-
+#define	PF_VELOCITY1	(1<<2)
+#define	PF_VELOCITY2	(1<<3)
+#define	PF_VELOCITY3	(1<<4)
 #define	PF_MODEL		(1<<5)
 #define	PF_SKINNUM		(1<<6)
 #define	PF_EFFECTS		(1<<7)
 #define	PF_WEAPONMODEL	(1<<8)
 #define PF_DEAD			(1<<9)
-
-
+#define PF_GIB			(1<<10)
+#define PF_NOGRAV		(1<<11)
 #define	PF_MOVETYPE		(1<<12)
 #define	PF_SEQUENCE		(1<<13)
 #define	PF_RENDER		(1<<14)

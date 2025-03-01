@@ -2,7 +2,7 @@
 #include "winquake.h"
 #include "pr_cmds.h"
 #include "cl_demo.h"
-
+#include "pr_edict.h"
 
 
 int	gHostSpawnCount = 0;
@@ -291,7 +291,110 @@ Host_Spawn_f
 */
 void Host_Spawn_f( void )
 {
-	Con_Printf("Host_Spawn_f");
+	int		i;
+	client_t*	client;
+	edict_t* ent;
+
+	if (cmd_source == src_command)
+	{
+		Con_Printf("spawn is not valid from the console\n");
+		return;
+	}
+
+	if (!host_client->connected)
+	{
+		Con_Printf("Spawn not valid -- already spawned\n");
+		return;
+	}
+
+	if (!cls.demoplayback && svs.spawncount != atoi(Cmd_Argv(1)))
+	{
+		Con_Printf("SV_Spawn_f from different level\n");
+		SV_New_f();
+		return;
+	}
+
+	if (sv.loadgame)
+	{	// loaded games are fully inited allready
+		// if this is the last client to be connected, unpause
+		sv.paused = FALSE;
+	}
+	else
+	{
+		// set up the edict
+		ent = host_client->edict;
+
+		sv.state = ss_loading;
+
+		ReleaseEntityDLLFields(ent);
+		memset(&ent->v, 0, sizeof(ent->v));
+		InitEntityDLLFields(ent);
+
+		ent->v.colormap = NUM_FOR_EDICT(ent);
+		ent->v.netname = host_client->name - pr_strings;
+		ent->v.team = (host_client->colors & 15) + 1;
+		gGlobalVariables.time = sv.time;
+		gEntityInterface.pfnClientPutInServer(ent);
+		sv.state = ss_active;
+	}
+
+
+// send all current names, colors, and frag counts
+	SZ_Clear(&host_client->netchan.message);
+
+// send time of update
+	MSG_WriteByte(&host_client->netchan.message, svc_time);
+	MSG_WriteFloat(&host_client->netchan.message, sv.time);
+
+	for (i = 0, client = svs.clients; i < svs.maxclients; i++, client++)
+	{
+		MSG_WriteByte(&host_client->netchan.message, svc_updatename);
+		MSG_WriteByte(&host_client->netchan.message, i);
+		MSG_WriteString(&host_client->netchan.message, client->name);
+		MSG_WriteByte(&host_client->netchan.message, svc_updatecolors);
+		MSG_WriteByte(&host_client->netchan.message, i);
+		MSG_WriteByte(&host_client->netchan.message, client->colors);
+
+		if (host_client->maxspeed)
+		{
+			MSG_WriteByte(&host_client->netchan.message, svc_clientmaxspeed);
+			MSG_WriteByte(&host_client->netchan.message, i);
+			MSG_WriteByte(&host_client->netchan.message, client->maxspeed);
+		}
+	}
+
+// send all current light styles
+	for (i = 0; i < MAX_LIGHTSTYLES; i++)
+	{
+		MSG_WriteByte(&host_client->netchan.message, svc_lightstyle);
+		MSG_WriteByte(&host_client->netchan.message, (char)i);
+		MSG_WriteString(&host_client->netchan.message, sv.lightstyles[i]);
+	}
+
+//
+// send a fixangle
+// Never send a roll angle, because savegames can catch the server
+// in a state where it is expecting the client to correct the angle
+// and it won't happen if the game was just loaded, so you wind up
+// with a permanent head tilt
+	ent = &sv.edicts[1 + (host_client - svs.clients)];
+	MSG_WriteByte(&host_client->netchan.message, svc_setangle);
+	for (i = 0; i < 2; i++)
+		MSG_WriteHiresAngle(&host_client->netchan.message, ent->v.v_angle[i]);
+	MSG_WriteHiresAngle(&host_client->netchan.message, 0);
+
+	SV_WriteClientdataToMessage(host_client, &host_client->netchan.message);
+
+	MSG_WriteByte(&host_client->netchan.message, svc_signonnum);
+	MSG_WriteByte(&host_client->netchan.message, 2);
+	host_client->sendsignon = TRUE;
+
+	if (sv.loadgame)
+	{
+		// TODO: Implement
+		sv.loadgame = FALSE;
+		gGlobalVariables.pSaveData = NULL;
+	}
 }
 
 /*

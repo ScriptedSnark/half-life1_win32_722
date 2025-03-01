@@ -1079,7 +1079,7 @@ void CL_ParsePlayerinfo( void )
 
 	for (i = 0; i < 3; i++)
 	{
-		if (flags & (4 << i))
+		if (flags & (PF_VELOCITY1 << i))
 		{
 			state->velocity[i] = MSG_ReadShort();
 		}
