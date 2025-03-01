@@ -1644,27 +1644,418 @@ void PF_changepitch_I( edict_t* ent )
 	ent->v.angles[0] = anglemod(current + move);
 }
 
+/*
+==============
+PF_setview_I
 
+Set the view of a client to the given entity
+==============
+*/
+void PF_setview_I( const edict_t* clientent, const edict_t* viewent )
+{
+	client_t* client;
+	int clientnum;
 
+	clientnum = NUM_FOR_EDICT(clientent);
+	if (clientnum < 1 || clientnum > svs.maxclients)
+		Host_Error("PF_setview_I: not a client");
 
+	client = &svs.clients[clientnum - 1];
 
+	MSG_WriteByte(&client->netchan.message, svc_setview);
+	MSG_WriteShort(&client->netchan.message, NUM_FOR_EDICT(viewent));
+}
 
+/*
+==============
+PF_crosshairangle_I
 
+Sets the angles of the given player's crosshairs to the given settings
+Set both to 0 to disable
+==============
+*/
+void PF_crosshairangle_I( const edict_t* clientent, float pitch, float yaw )
+{
+	client_t* client;
+	int clientnum;
 
+	clientnum = NUM_FOR_EDICT(clientent);
+	if (clientnum < 1 || clientnum > svs.maxclients)
+		Host_Error("PF_setview_I: not a client");
 
+	client = &svs.clients[clientnum - 1];
+	if (pitch > 180)
+		pitch -= 360;
+	if (pitch < -180)
+		pitch += 360;
+	if (yaw > 180)
+		yaw -= 360;
+	if (yaw < -180)
+		yaw += 360;
 
+	MSG_WriteByte(&client->netchan.message, svc_crosshairangle);
+	MSG_WriteChar(&client->netchan.message, pitch * 5.0);
+	MSG_WriteChar(&client->netchan.message, yaw * 5.0);
+}
 
+edict_t* PF_CreateFakeClient_I( const char* netname )
+{
+	client_t* fakeclient = NULL;
+	edict_t* ent;
+	int		i;
 
+	// find free slot
+	for (i = 0, fakeclient = svs.clients; i < svs.maxclients; i++, fakeclient++)
+	{
+		if (!fakeclient->active && !fakeclient->spawned && !fakeclient->connected)
+			break;
+	}
 
+	// server is full
+	if (i == svs.maxclients)
+		return NULL;
 
+	ent = EDICT_NUM(i + 1);
 
+	memset(fakeclient, 0, sizeof(client_t));
+	fakeclient->resourcesneeded.pPrev = &fakeclient->resourcesneeded;
+	fakeclient->resourcesneeded.pNext = &fakeclient->resourcesneeded;
+	fakeclient->resourcesonhand.pPrev = &fakeclient->resourcesonhand;
+	fakeclient->resourcesonhand.pNext = &fakeclient->resourcesonhand;
 
+	strncpy(fakeclient->name, netname, sizeof(fakeclient->name));
+	fakeclient->active = TRUE;
+	fakeclient->spawned = TRUE;
+	fakeclient->connected = TRUE;
+	fakeclient->edict = ent;
+	fakeclient->fakeclient = TRUE;
+	fakeclient->uploading = FALSE;
 
+	ent->v.netname = fakeclient->name - pr_strings;
+	return ent;
+}
 
+void PF_RunPlayerMove_I( edict_t* fakeclient, const float* viewangles, float forwardmove, float sidemove, float upmove, unsigned short buttons, byte impulse, byte msec )
+{
+	usercmd_t cmd;
+	edict_t* oldclient;
 
+	VectorCopy(viewangles, cmd.angles);
 
+	oldclient = sv_player;
+	sv_player = fakeclient;
 
-// TODO: Implement
+	cmd.forwardmove = forwardmove;
+	cmd.sidemove = sidemove;
+	cmd.buttons = buttons;
+	cmd.upmove = upmove;
+	cmd.impulse = impulse;
+	cmd.msec = msec;
+	cmd.lightlevel = 0;
+
+	VectorCopy(cmd.angles, fakeclient->v.v_angle);
+	SV_PreRunCmd();
+	SV_RunCmd(&cmd);
+	sv_player = oldclient;
+}
+
+/*
+===============================================================================
+
+MESSAGE WRITING
+
+===============================================================================
+*/
+
+byte gMsgData[250];
+sizebuf_t gMsgBuffer = { FALSE, FALSE, gMsgData, sizeof(gMsgData), 0 };
+edict_t* gMsgEntity = NULL;
+int gMsgDest = 0;
+int gMsgType = 0;
+qboolean gMsgStarted = FALSE;
+vec3_t gMsgOrigin;
+
+sizebuf_t* WriteDest_Parm( int dest )
+{
+	int entnum;
+
+	switch (dest)
+	{
+	case MSG_BROADCAST:
+		return &sv.datagram;
+	case MSG_ONE:
+		entnum = NUM_FOR_EDICT(gMsgEntity);
+		if (entnum < 1 || entnum > svs.maxclients)
+			Host_Error("WriteDest_Parm: not a client");
+		return &svs.clients[entnum - 1].netchan.message;
+	case MSG_ALL:
+		return &sv.reliable_datagram;
+	// This really only applies to the first player to connect,
+	// but that works in single player well enough
+	case MSG_INIT:
+		return &sv.signon;
+	case MSG_PVS:
+	case MSG_PAS:
+		return &sv.multicast;
+	default:
+		Host_Error("WriteDest_Parm: bad destination=%d", dest);
+		break;
+	}
+
+	return NULL;
+}
+
+void PF_MessageBegin_I( int msg_dest, int msg_type, const float* pOrigin, edict_t* ed )
+{
+	if (msg_dest == MSG_ONE && !ed)
+		Sys_Error("MSG_ONE with no target entity\n");
+
+	if (msg_dest != MSG_ONE && ed)
+		Sys_Error("Invalid message;  cannot use broadcast message with a target entity");
+
+	if (gMsgStarted)
+		Sys_Error("new message started when msg '%d' has not been sent yet", gMsgType);
+
+	gMsgEntity = ed;
+	gMsgType = msg_type;
+	gMsgDest = msg_dest;
+	gMsgStarted = TRUE;
+
+	if (msg_dest == MSG_PVS || msg_dest == MSG_PAS)
+	{
+		if (pOrigin)
+		{
+			VectorCopy(pOrigin, gMsgOrigin);
+		}
+	}
+
+	gMsgBuffer.cursize = 0;
+	gMsgBuffer.overflowed = FALSE;
+	gMsgBuffer.allowoverflow = FALSE;
+}
+
+void PF_MessageEnd_I( void )
+{
+	qboolean MsgIsVarLength = FALSE;
+	sizebuf_t* pBuffer;
+
+	if (!gMsgStarted)
+		Sys_Error("MESSAGE_END called with no active message\n");
+
+	gMsgStarted = FALSE;
+
+	// Don't output this to bots
+	if (gMsgEntity && (gMsgEntity->v.flags & FL_FAKECLIENT))
+		return;
+
+	// Check if it's a valid msg
+	if (gMsgType > svc_lastmsg)
+	{
+		// The list of user's messages will become complete only after calling Host_Map
+		// or sending a message to clients for the first time
+		UserMsg* pUserMsg = sv_gpUserMsgs;
+		while (pUserMsg)
+		{
+			if (pUserMsg->iMsg == gMsgType)
+				break;
+			pUserMsg = pUserMsg->next;
+		}
+
+		if (!pUserMsg)
+		{
+			Con_DPrintf("Illegal User Msg %d\n", gMsgType);
+			return;
+		}
+
+		if (pUserMsg->iSize == -1)
+		{
+			MsgIsVarLength = TRUE;
+		}
+		else
+		{
+			if (pUserMsg->iSize != gMsgBuffer.cursize)
+			{
+				Sys_Error("User Msg '%s': %d bytes written, expected %d\n", pUserMsg->szName, gMsgBuffer.cursize, pUserMsg->iSize);
+				return;
+			}
+		}
+	}
+
+	// Write the message type to the buffer
+	pBuffer = WriteDest_Parm(gMsgDest);
+	MSG_WriteByte(pBuffer, gMsgType);
+
+	if (MsgIsVarLength)
+	{
+		pBuffer = WriteDest_Parm(gMsgDest);
+		MSG_WriteByte(pBuffer, gMsgBuffer.cursize);
+	}
+
+	pBuffer = WriteDest_Parm(gMsgDest);
+	MSG_WriteBuf(pBuffer, gMsgBuffer.cursize, gMsgBuffer.data);
+
+	switch (gMsgDest)
+	{
+	case MSG_PVS:
+		SV_Multicast(gMsgOrigin, MSG_FL_PVS, FALSE);
+		break;
+	case MSG_PAS:
+		SV_Multicast(gMsgOrigin, MSG_FL_PAS, FALSE);
+		break;
+	case MSG_PVS_R:
+		SV_Multicast(gMsgOrigin, MSG_FL_PAS, TRUE);
+		break;
+	case MSG_PAS_R:
+		SV_Multicast(gMsgOrigin, MSG_FL_PAS, TRUE);
+		break;
+	default:
+		break;
+	}
+}
+
+void PF_WriteByte_I( int iValue )
+{
+	if (!gMsgStarted)
+		Sys_Error("WRITE_BYTE called with no active message\n");
+
+	MSG_WriteByte(&gMsgBuffer, iValue);
+}
+
+void PF_WriteChar_I( int iValue )
+{
+	if (!gMsgStarted)
+		Sys_Error("WRITE_CHAR called with no active message\n");
+
+	MSG_WriteChar(&gMsgBuffer, iValue);
+}
+
+void PF_WriteShort_I( int iValue )
+{
+	if (!gMsgStarted)
+		Sys_Error("WRITE_SHORT called with no active message\n");
+
+	MSG_WriteShort(&gMsgBuffer, iValue);
+}
+
+void PF_WriteLong_I( int iValue )
+{
+	if (!gMsgStarted)
+		Sys_Error("PF_WriteLong_I called with no active message\n");
+
+	MSG_WriteLong(&gMsgBuffer, iValue);
+}
+
+void PF_WriteAngle_I( float flValue )
+{
+	if (!gMsgStarted)
+		Sys_Error("PF_WriteAngle_I called with no active message\n");
+
+	MSG_WriteAngle(&gMsgBuffer, flValue);
+}
+
+void PF_WriteCoord_I( float flValue )
+{
+	if (!gMsgStarted)
+		Sys_Error("PF_WriteCoord_I called with no active message\n");
+
+	MSG_WriteCoord(&gMsgBuffer, flValue);
+}
+
+void PF_WriteString_I( char* sz )
+{
+	if (!gMsgStarted)
+		Sys_Error("PF_WriteString_I called with no active message\n");
+
+	MSG_WriteString(&gMsgBuffer, sz);
+}
+
+void PF_WriteEntity_I( int iValue )
+{
+	if (!gMsgStarted)
+		Sys_Error("PF_WriteEntity_I called with no active message\n");
+
+	MSG_WriteShort(&gMsgBuffer, iValue);
+}
+
+//=============================================================================
+
+void PF_makestatic_I( edict_t* ent )
+{
+	int		i;
+
+	MSG_WriteByte(&sv.signon, svc_spawnstatic);
+
+	MSG_WriteShort(&sv.signon, SV_ModelIndex(&pr_strings[ent->v.model]));
+
+	MSG_WriteByte(&sv.signon, ent->v.sequence);
+	MSG_WriteByte(&sv.signon, ent->v.frame);
+	MSG_WriteByte(&sv.signon, ent->v.colormap);
+	MSG_WriteByte(&sv.signon, ent->v.skin);
+	for (i = 0; i < 3; i++)
+	{
+		MSG_WriteCoord(&sv.signon, ent->v.origin[i]);
+		MSG_WriteAngle(&sv.signon, ent->v.angles[i]);
+	}
+
+	MSG_WriteByte(&sv.signon, ent->v.rendermode);
+
+	if (ent->v.rendermode != kRenderNormal)
+	{
+		MSG_WriteByte(&sv.signon, ent->v.renderamt);
+		MSG_WriteByte(&sv.signon, ent->v.rendercolor[0]);
+		MSG_WriteByte(&sv.signon, ent->v.rendercolor[1]);
+		MSG_WriteByte(&sv.signon, ent->v.rendercolor[2]);
+		MSG_WriteByte(&sv.signon, ent->v.renderfx);
+	}
+
+// throw the entity away now
+	ED_Free(ent);
+}
+
+//=============================================================================
+
+/*
+==============
+PF_setspawnparms_I
+==============
+*/
+void PF_setspawnparms_I( edict_t* ent )
+{
+	int		i;
+	client_t* client;
+
+	i = NUM_FOR_EDICT(ent);
+	if (i < 1 || i > svs.maxclients)
+		Host_Error("Entity is not a client");
+
+	// copy spawn parms out of the client_t
+	client = svs.clients + (i - 1);
+}
+
+/*
+===============
+PF_changelevel_I
+
+Change the level
+This will append a changelevel command to the server command buffer
+===============
+*/
+void PF_changelevel_I( char* s1, char* s2 )
+{
+	static int last_spawncount;
+
+	if (svs.spawncount == last_spawncount)
+		return;
+	
+	last_spawncount = svs.spawncount;
+
+	if (!s2)
+		Cbuf_AddText(va("changelevel %s\n", s1));
+	else if ((int)gGlobalVariables.serverflags & (SFL_NEW_UNIT | SFL_NEW_EPISODE))
+		Cbuf_AddText(va("changelevel %s %s\n", s1, s2));
+	else
+		Cbuf_AddText(va("changelevel2 %s %s\n", s1, s2));
+}
 
 #define IA	16807
 #define IM	2147483647
@@ -1785,4 +2176,48 @@ int RandomLong( long lLow, long lHigh )
 	return lLow + (n % x);
 }
 
-// TODO: Implement
+void PF_FadeVolume( const edict_t* clientent, int fadePercent, int fadeOutSeconds, int holdTime, int fadeInSeconds )
+{
+	client_t* client;
+	int entnum;
+
+	entnum = NUM_FOR_EDICT(clientent);
+	if (entnum < 1 || entnum > svs.maxclients)
+	{
+		Con_Printf("tried to PF_FadeVolume a non-client\n");
+		return;
+	}
+
+	client = &svs.clients[entnum - 1];
+
+	MSG_WriteChar(&client->netchan.message, svc_soundfade);
+	MSG_WriteByte(&client->netchan.message, (byte)fadePercent);
+	MSG_WriteByte(&client->netchan.message, (byte)holdTime);
+	MSG_WriteByte(&client->netchan.message, (byte)fadeOutSeconds);
+	MSG_WriteByte(&client->netchan.message, (byte)fadeInSeconds);
+}
+
+/*
+===============
+PF_SetClientMaxspeed
+
+Set the client's maximum speed value
+===============
+*/
+void PF_SetClientMaxspeed( const edict_t* clientent, float fNewMaxspeed )
+{
+	int entnum;
+
+	entnum = NUM_FOR_EDICT(clientent);
+	if (entnum < 1 || entnum > svs.maxclients)
+	{
+		Con_Printf("tried to PF_SetClientMaxspeed a non-client\n");
+		return;
+	}
+
+	svs.clients[entnum - 1].maxspeed = fNewMaxspeed;
+
+	MSG_WriteChar(&sv.datagram, svc_clientmaxspeed);
+	MSG_WriteByte(&sv.datagram, (byte)(entnum - 1));
+	MSG_WriteFloat(&sv.datagram, fNewMaxspeed);
+}

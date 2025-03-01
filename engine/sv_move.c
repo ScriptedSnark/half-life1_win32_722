@@ -52,3 +52,15 @@ qboolean SV_movestep( edict_t* ent, vec_t* move, qboolean relink )
 }
 
 // TODO: Implement
+
+/*
+===============
+SV_MoveToOrigin_I
+
+Moves the given entity to the given destination
+===============
+*/
+void SV_MoveToOrigin_I( edict_t* ent, const float* pflGoal, float dist, int iStrafe )
+{
+	// TODO: Implement
+}

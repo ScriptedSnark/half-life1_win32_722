@@ -10,6 +10,13 @@
 #define STUDIO_TRACE_HITBOX			0x0200	// always use hitbox trace instead of bbox
 #define STUDIO_FORCE_SKYLIGHT		0x400	// always grab lightvalues from the sky settings (even if sky is invisible)
 
+void	AnimationAutomove( const edict_t* pEdict, float flTime );
+void	GetBonePosition( const edict_t* pEdict, int iBone, float* rgflOrigin, float* rgflAngles );
+void	GetAttachment( const edict_t* pEdict, int iAttachment, float* rgflOrigin, float* rgflAngles );
+
+hull_t* R_StudioHull( model_t* pModel, float frame, int sequence, const vec_t* angles, const vec_t* origin, const vec_t* size, const byte* pcontroller, const byte* pblending, int* pNumHulls );
+int		SV_HitgroupForStudioHull( int index );
+
 int		R_StudioBodyVariations( struct model_s* model );
 
 int		R_StudioDrawModel( int flags );
@@ -20,8 +27,5 @@ void	R_StudioClientEvents( void );
 void	R_StudioRenderFinal( void );
 void	GLR_StudioDrawShadow( void );
 void	R_StudioDrawPoints( void );
-
-hull_t* R_StudioHull( model_t* pModel, float frame, int sequence, const vec_t* angles, const vec_t* origin, const vec_t* size, const byte* pcontroller, const byte* pblending, int* pNumHulls );
-int		SV_HitgroupForStudioHull( int index );
 
 #endif // R_STUDIO_H

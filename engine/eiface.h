@@ -147,7 +147,7 @@ typedef struct enginefuncs_s
 	edict_t*	(*pfnPEntityOfEntIndex)		( int iEntIndex );
 	edict_t*	(*pfnFindEntityByVars)		( entvars_t* pvars );
 	void*		(*pfnGetModelPtr)			( edict_t* pEdict );
-	int			(*pfnRegUserMsg)			( char* pszName, int iSize);
+	int			(*pfnRegUserMsg)			( const char* pszName, int iSize);
 	void		(*pfnAnimationAutomove)		( const edict_t* pEdict, float flTime );
 	void		(*pfnGetBonePosition)		( const edict_t* pEdict, int iBone, float* rgflOrigin, float* rgflAngles );
 	uint32		(*pfnFunctionFromName)		( char* pName );
@@ -168,13 +168,13 @@ typedef struct enginefuncs_s
 	void		(*pfnCrosshairAngle)		( const edict_t* pClient, float pitch, float yaw );
 	byte*		(*pfnLoadFileForMe)			( char* filename, int* pLength );
 	void		(*pfnFreeFile)				( void* buffer );
-	void		(*pfnEndSection)			( char* pszSectionName ); // trigger_endsection
+	void		(*pfnEndSection)			( const char* pszSectionName ); // trigger_endsection
 	int			(*pfnCompareFileTime)		( char* filename1, char* filename2, int* iCompare );
 	void		(*pfnGetGameDir)			( char* szGetGameDir );
 	void		(*pfnCvar_RegisterVariable)	( cvar_t* variable );
 	void		(*pfnFadeClientVolume)		( const edict_t* pEdict, int fadePercent, int fadeOutSeconds, int holdTime, int fadeInSeconds );
 	void		(*pfnSetClientMaxspeed)		( const edict_t* pEdict, float fNewMaxspeed );
-	edict_t*	(*pfnCreateFakeClient)		( char* netname );	// returns NULL if fake client can't be created
+	edict_t*	(*pfnCreateFakeClient)		( const char* netname );	// returns NULL if fake client can't be created
 	void		(*pfnRunPlayerMove)			( edict_t* fakeclient, float* viewangles, float forwardmove, float sidemove, float upmove, unsigned short buttons, byte impulse, byte msec );
 	int			(*pfnNumberOfEntities)		( void );
 	int			(*pfnIsMapValid)			( char* filename );

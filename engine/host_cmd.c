@@ -232,9 +232,25 @@ void Host_Version_f( void )
 	Con_Printf("Exe: " __TIME__ " " __DATE__ "\n");
 }
 
+// TODO: Implement
 
+/*
+==============================
+Host_EndSection
 
+Signals the engine that a section has ended
+Possible values:
+	_oem_end_training
+	_oem_end_logo
+	_oem_end_demo
+==============================
+*/
+void Host_EndSection( const char* pszSection )
+{
+	// TODO: Implement
+}
 
+// TODO: Implement
 
 //=============================================================================
 

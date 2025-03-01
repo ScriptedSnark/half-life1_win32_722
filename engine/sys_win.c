@@ -4,6 +4,8 @@
 #include "winquake.h"
 #include "pr_cmds.h"
 #include "pr_edict.h"
+#include "r_studio.h"
+#include "host_cmd.h"
 #include "exefuncs.h"
 #include "gameinfo.h"
 #include "profile.h"
@@ -1005,8 +1007,7 @@ DLL_EXPORT void Keyboard_ReturnToGame( void )
 	Con_DPrintf("KB Reset\n");
 }
 
-// This is a table of exported engine functions to server dll
-// NOTE: New functions come immediately after the last one
+// The table of exported engine functions to game dll
 static enginefuncs_t g_engfuncsExportedToDlls =
 {
 	PF_precache_model_I,
@@ -1015,12 +1016,12 @@ static enginefuncs_t g_engfuncsExportedToDlls =
 	PF_modelindex,
 	ModelFrames,
 	PF_setsize_I,
-	NULL,	// TODO: Implement
-	NULL,	// TODO: Implement
+	PF_changelevel_I,
+	PF_setspawnparms_I,
 	SaveSpawnParms,
 	PF_vectoyaw_I,
 	PF_vectoangles_I,
-	NULL,	// TODO: Implement
+	SV_MoveToOrigin_I,
 	PF_changeyaw_I,
 	PF_changepitch_I,
 	FindEntityByString,
@@ -1033,7 +1034,7 @@ static enginefuncs_t g_engfuncsExportedToDlls =
 	PF_Spawn_I,
 	PF_Remove_I,
 	CreateNamedEntity,
-	NULL,	// TODO: Implement
+	PF_makestatic_I,
 	PF_checkbottom_I,
 	PF_droptofloor_I,
 	PF_walkmove_I,
@@ -1054,16 +1055,16 @@ static enginefuncs_t g_engfuncsExportedToDlls =
 	PF_lightstyle_I,
 	PF_DecalIndex,
 	PF_pointcontents_I,
-	NULL,	// TODO: Implement
-	NULL,	// TODO: Implement
-	NULL,	// TODO: Implement
-	NULL,	// TODO: Implement
-	NULL,	// TODO: Implement
-	NULL,	// TODO: Implement
-	NULL,	// TODO: Implement
-	NULL,	// TODO: Implement
-	NULL,	// TODO: Implement
-	NULL,	// TODO: Implement
+	PF_MessageBegin_I,
+	PF_MessageEnd_I,
+	PF_WriteByte_I,
+	PF_WriteChar_I,
+	PF_WriteShort_I,
+	PF_WriteLong_I,
+	PF_WriteAngle_I,
+	PF_WriteCoord_I,
+	PF_WriteString_I,
+	PF_WriteEntity_I,
 	CVarGetFloat,
 	CVarGetString,
 	CVarSetFloat,
@@ -1082,35 +1083,35 @@ static enginefuncs_t g_engfuncsExportedToDlls =
 	PEntityOfEntIndex,
 	FindEntityByVars,
 	GetModelPtr,
-	NULL,	// TODO: Implement
-	NULL,	// TODO: Implement
-	NULL,	// TODO: Implement
+	RegUserMsg,
+	AnimationAutomove,
+	GetBonePosition,
 	FunctionFromName,
 	NameForFunction,
 	ClientPrintf,
 	Cmd_Args,
 	Cmd_Argv,
 	Cmd_Argc,
-	NULL,	// TODO: Implement
+	GetAttachment,
 	CRC32_Init,
 	CRC32_ProcessBuffer,
 	CRC32_ProcessByte,
 	CRC32_Final,
 	RandomLong,
 	RandomFloat,
-	NULL,	// TODO: Implement
+	PF_setview_I,
 	PF_Time,
-	NULL,	// TODO: Implement
+	PF_crosshairangle_I,
 	COM_LoadFileForMe,
 	COM_FreeFile,
-	NULL,	// TODO: Implement
+	Host_EndSection,
 	COM_CompareFileTime,
 	COM_GetGameDir,
 	Cvar_RegisterVariable,
-	NULL,	// TODO: Implement
-	NULL,	// TODO: Implement
-	NULL,	// TODO: Implement
-	NULL,	// TODO: Implement
+	PF_FadeVolume,
+	PF_SetClientMaxspeed,
+	PF_CreateFakeClient_I,
+	PF_RunPlayerMove_I,
 	PF_NumberOfEntities_I,
 	PF_IsMapValid_I
 };

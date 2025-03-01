@@ -93,7 +93,7 @@
 #define svc_updatecolors		17		// [byte] [byte]
 #define	svc_particle			18		// [vec3] <variable>
 #define	svc_damage				19
-
+#define svc_spawnstatic			20
 
 #define svc_spawnbaseline		22
 #define svc_tempentity			23
@@ -125,7 +125,8 @@
 #define svc_resourcerequest		48
 
 #define svc_crosshairangle		50		// [char] pitch * 5 [char] yaw * 5
-#define svc_soundfade			41      // char percent, char holdtime, char fadeouttime, char fadeintime
+#define svc_soundfade			51      // char percent, char holdtime, char fadeouttime, char fadeintime
+#define svc_clientmaxspeed		52
 #define svc_lastmsg				52
 
 //
@@ -139,9 +140,6 @@
 #define clc_tmove				6		// teleport request, spectator only
 #define clc_upload				7		// teleport request, spectator only
 #define clc_resourcelist		8
-
-
-
 
 //==============================================
 
@@ -280,7 +278,11 @@
 #define DEFAULT_SOUND_PACKET_VOLUME			1.0
 #define DEFAULT_SOUND_PACKET_ATTENUATION	1.0
 
+//==============================================
 
+// usermsg flags
+#define MSG_FL_PVS				(1<<0)	// Send to PVS
+#define MSG_FL_PAS				(1<<1)	// Send to PAS
 
 /*
 ==========================================================

@@ -62,21 +62,31 @@ int		PF_pointcontents_I( const float* rgflVector );
 void	PF_aim_I( edict_t* ent, float speed, float* rgflReturn );
 void	PF_changeyaw_I( edict_t* ent );
 void	PF_changepitch_I( edict_t* ent );
+void	PF_setview_I( const edict_t* clientent, const edict_t* viewent );
+void	PF_crosshairangle_I( const edict_t* clientent, float pitch, float yaw );
+edict_t* PF_CreateFakeClient_I( const char* netname );
+void	PF_RunPlayerMove_I( edict_t* fakeclient, const float* viewangles, float forwardmove, float sidemove, float upmove, unsigned short buttons, byte impulse, byte msec );
 
+void	PF_MessageBegin_I( int msg_dest, int msg_type, const float* pOrigin, edict_t* ed );
+void	PF_MessageEnd_I( void );
+void	PF_WriteByte_I( int iValue );
+void	PF_WriteChar_I( int iValue );
+void	PF_WriteShort_I( int iValue );
+void	PF_WriteLong_I( int iValue );
+void	PF_WriteAngle_I( float flValue );
+void	PF_WriteCoord_I( float flValue );
+void	PF_WriteString_I( char* sz );
+void	PF_WriteEntity_I( int iValue );
 
+void	PF_makestatic_I( edict_t* ent );
 
-
-
-
-
-
-
-
-
-
-
+void	PF_setspawnparms_I( edict_t* ent );
+void	PF_changelevel_I( char* s1, char* s2 );
 
 float	RandomFloat( float flLow, float flHigh );
 int		RandomLong( long lLow, long lHigh );
+
+void	PF_FadeVolume( const edict_t* clientent, int fadePercent, int fadeOutSeconds, int holdTime, int fadeInSeconds );
+void	PF_SetClientMaxspeed( const edict_t* clientent, float fNewMaxspeed );
 
 #endif // PR_CMDS_H

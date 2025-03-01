@@ -26,8 +26,10 @@ decalname_t	sv_decalnames[MAX_BASE_DECALS];
 
 int			sv_decalnamecount;
 
+// Usermsg
 UserMsg* sv_gpNewUserMsgs;
 UserMsg* sv_gpUserMsgs;
+int giNextUserMsg = 64;
 
 int		nReliableBytesSent = 0;
 int		nDatagramBytesSent = 0;
@@ -755,6 +757,28 @@ void SV_StartSound( edict_t* entity, int channel, const char* sample, int volume
 
 // TODO: Implement
 
+/*
+=============================================================================
+
+MULTICAST MESSAGE
+
+=============================================================================
+*/
+
+/*
+==================
+SV_Multicast
+
+Write client buffers based on valid multicast recipients
+==================
+*/
+void SV_Multicast( vec_t* origin, int to, qboolean reliable )
+{
+	// TODO: Implement
+}
+
+// TODO: Implement
+
 void SV_ClearChannel( qboolean forceclear )
 {
 	// TODO: Implement; not sure if this function belongs here.
@@ -1318,6 +1342,72 @@ int SV_SpawnServer( qboolean bIsDemo, char* server, char* startspot )
 
 	return 1;
 }
+
+// TODO: Implement
+
+/*
+=================
+RegUserMsg
+
+Registers a user message
+The name of the message is used to find an exported function in the client library
+The format is MsgFunc_<name>
+=================
+*/
+int RegUserMsg( const char* pszName, int iSize )
+{
+	UserMsg* pUserMsgs;
+	UserMsg* pNewMsg;
+	int iFound = 0;
+	int iRet;
+
+	if (giNextUserMsg > MAX_USERMSGS)
+		return 0;
+
+	if (!pszName)
+		return 0;
+
+	if (strlen(pszName) > 11)
+		return 0;
+
+	if (iSize > MAX_USER_MSG_DATA)
+		return 0;
+
+	pUserMsgs = sv_gpUserMsgs;
+	while (pUserMsgs)
+	{
+		if (!strcmp(pszName, pUserMsgs->szName))
+		{
+			iFound = 1;
+			break;
+		}
+		pUserMsgs = pUserMsgs->next;
+	}
+
+	if (iFound)
+	{
+		return pUserMsgs->iMsg;
+	}
+
+	pNewMsg = (UserMsg*)malloc(sizeof(UserMsg));
+	pNewMsg->iSize = iSize;
+	pNewMsg->iMsg = giNextUserMsg;
+	giNextUserMsg++;
+
+	strcpy(pNewMsg->szName, pszName);
+
+	if (pNewMsg)
+	{
+		pNewMsg->next = sv_gpNewUserMsgs;
+		sv_gpNewUserMsgs = pNewMsg;
+		iRet = pNewMsg->iMsg;
+		return iRet;
+	}
+
+	return 0;
+}
+
+// TODO: Implement
 
 /*
 ================

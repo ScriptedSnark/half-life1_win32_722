@@ -238,7 +238,14 @@ typedef struct client_s
 	customization_t customdata;
 } client_t;
 
-
+// server flags
+#define	SFL_EPISODE_1		1
+#define	SFL_EPISODE_2		2
+#define	SFL_EPISODE_3		4
+#define	SFL_EPISODE_4		8
+#define	SFL_NEW_UNIT		16
+#define	SFL_NEW_EPISODE		32
+#define	SFL_CROSS_TRIGGERS	65280
 
 //============================================================================
 
@@ -333,6 +340,9 @@ void SV_StartParticle( const vec_t* org, const vec_t* dir, int color, int count 
 void SV_StartSound( edict_t* entity, int channel, const char* sample, int volume, float attenuation, int fFlags, int pitch );
 
 
+void SV_Multicast( vec_t* origin, int to, qboolean reliable );
+
+
 
 
 
@@ -345,6 +355,8 @@ void SV_QueryMovevarsChanged( void );
 void SV_ActivateServer( qboolean runPhysics );
 int SV_SpawnServer( qboolean bIsDemo, char* server, char* startspot );
 void SV_LoadEntities( void );
+
+int RegUserMsg( const char* pszName, int iSize );
 
 void Master_Heartbeat( void );
 
@@ -369,6 +381,8 @@ void SV_SendClientMessages( void );
 // sv_user.c
 //
 void SV_ExecuteClientMessage( client_t* cl );
+void SV_PreRunCmd( void );
+void SV_RunCmd( usercmd_t* ucmd );
 
 //
 // sv_phys.c
@@ -386,6 +400,7 @@ void SV_SetMoveVars( void );
 qboolean SV_CheckBottom( edict_t* ent );
 qboolean SV_movetest( edict_t* ent, vec_t* move, qboolean relink );
 qboolean SV_movestep( edict_t* ent, vec_t* move, qboolean relink );
+void SV_MoveToOrigin_I( edict_t* ent, const float* pflGoal, float dist, int iStrafe );
 
 //
 // sv_upld.c

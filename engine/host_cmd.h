@@ -10,4 +10,6 @@ extern int	current_skill;
 
 void Host_ClearSaveDirectory( void );
 
+void Host_EndSection( const char* pszSection );
+
 #endif // HOST_CMD_H

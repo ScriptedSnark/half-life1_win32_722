@@ -219,6 +219,12 @@ int R_StudioBodyVariations( model_t* model )
 	return count;
 }
 
+// TODO: Implement
+
+
+
+// TODO: Implement
+
 /*
 ================
 R_StudioTransformVector
@@ -1044,6 +1050,31 @@ void R_StudioMergeBones( studiohdr_t* psubstudiohdr, model_t* psubmodel )
 			}
 		}
 	}
+}
+
+// TODO: Implement
+
+void AnimationAutomove( const edict_t* pEdict, float flTime )
+{
+}
+
+void GetBonePosition( const edict_t* pEdict, int iBone, float* rgflOrigin, float* rgflAngles )
+{
+	// TODO: Implement
+}
+
+// TODO: Implement
+
+/*
+====================
+GetAttachment
+
+Get the attachment origin and angles
+====================
+*/
+void GetAttachment( const edict_t* pEdict, int iAttachment, float* rgflOrigin, float* rgflAngles )
+{
+	// TODO: Implement
 }
 
 // TODO: Implement
