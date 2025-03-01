@@ -60,6 +60,10 @@ void	PF_lightstyle_I( int style, char* val );
 int		PF_checkbottom_I( edict_t* pEdict );
 int		PF_pointcontents_I( const float* rgflVector );
 void	PF_aim_I( edict_t* ent, float speed, float* rgflReturn );
+void	PF_changeyaw_I( edict_t* ent );
+void	PF_changepitch_I( edict_t* ent );
+
+
 
 
 

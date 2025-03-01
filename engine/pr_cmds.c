@@ -1560,6 +1560,90 @@ void PF_aim_I( edict_t* ent, float speed, float* rgflReturn )
 	VectorCopy(bestdir, rgflReturn);
 }
 
+/*
+==============
+PF_changeyaw_I
+
+This was a major timewaster in progs, so it was converted to C
+==============
+*/
+void PF_changeyaw_I( edict_t* ent )
+{
+	float		ideal, current, move, speed;
+
+	current = anglemod(ent->v.angles[1]);
+	ideal = ent->v.ideal_yaw;
+	speed = ent->v.yaw_speed;
+
+	if (current == ideal)
+		return;
+	move = ideal - current;
+	if (ideal > current)
+	{
+		if (move >= 180)
+			move = move - 360;
+	}
+	else
+	{
+		if (move <= -180)
+			move = move + 360;
+	}
+	if (move > 0)
+	{
+		if (move > speed)
+			move = speed;
+	}
+	else
+	{
+		if (move < -speed)
+			move = -speed;
+	}
+
+	ent->v.angles[1] = anglemod(current + move);
+}
+
+/*
+==============
+PF_changepitch_I
+
+Change the entity's pitch angle to approach its ideal pitch
+==============
+*/
+void PF_changepitch_I( edict_t* ent )
+{
+	float		ideal, current, move, speed;
+
+	current = anglemod(ent->v.angles[0]);
+	ideal = ent->v.idealpitch;
+	speed = ent->v.pitch_speed;
+
+	if (current == ideal)
+		return;
+	move = ideal - current;
+	if (ideal > current)
+	{
+		if (move >= 180)
+			move = move - 360;
+	}
+	else
+	{
+		if (move <= -180)
+			move = move + 360;
+	}
+	if (move > 0)
+	{
+		if (move > speed)
+			move = speed;
+	}
+	else
+	{
+		if (move < -speed)
+			move = -speed;
+	}
+
+	ent->v.angles[0] = anglemod(current + move);
+}
+
 
 
 

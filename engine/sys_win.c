@@ -1021,8 +1021,8 @@ static enginefuncs_t g_engfuncsExportedToDlls =
 	PF_vectoyaw_I,
 	PF_vectoangles_I,
 	NULL,	// TODO: Implement
-	NULL,	// TODO: Implement
-	NULL,	// TODO: Implement
+	PF_changeyaw_I,
+	PF_changepitch_I,
 	FindEntityByString,
 	GetEntityIllum,
 	FindEntityInSphere,
