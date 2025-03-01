@@ -55,6 +55,8 @@ cvar_t sv_wateramp = { "sv_wateramp", "0" };
 cvar_t sv_skyname = { "sv_skyname", "desert" };
 cvar_t sv_maxvelocity = { "sv_maxvelocity", "2000" };
 
+cvar_t sv_netsize = { "sv_netsize", "0" };
+
 /*
 ================
 SV_RejectConnection
@@ -682,6 +684,7 @@ void SV_Init( void )
 
 	Cvar_RegisterVariable(&sv_cheats);
 	Cvar_RegisterVariable(&sv_spectatormaxspeed);
+	Cvar_RegisterVariable(&sv_netsize);
 
 	// TODO: Implement
 
@@ -1089,6 +1092,7 @@ This will be sent on the initial connection and upon each server load.
 void SV_New_f( void )
 {
 	UserMsg*	pMsg;
+	int			size;
 
 	if (host_client->spawned && !host_client->active)
 		return;
@@ -1098,8 +1102,19 @@ void SV_New_f( void )
 	SZ_Clear(&host_client->netchan.message);
 	SV_SendServerinfo(host_client);
 
-	// TODO: Implement (sv_netsize cvar)
+	size = host_client->netchan.message.cursize;
+	if (sv_netsize.value != 0.0)
+	{
+		Con_DPrintf("SINFO=%i\n", size);
+	}
 
+	size = host_client->netchan.message.cursize;
+	if (sv_netsize.value != 0.0)
+	{
+		Con_DPrintf("DECALS=%i\n", host_client->netchan.message.cursize - size);
+	}
+
+	size = host_client->netchan.message.cursize;
 	if (sv_gpUserMsgs)
 	{
 		pMsg = sv_gpNewUserMsgs;
@@ -1108,7 +1123,10 @@ void SV_New_f( void )
 		sv_gpNewUserMsgs = pMsg;
 	}
 
-	// TODO: Implement (sv_netsize cvar)
+	if (sv_netsize.value != 0.0)
+	{
+		Con_DPrintf("USR=%i\n", host_client->netchan.message.cursize - size);
+	}
 
 	if (host_client->spectator)
 	{
@@ -1122,7 +1140,8 @@ void SV_New_f( void )
 		gEntityInterface.pfnClientConnect(host_client->edict);
 	}
 
-	// TODO: Implement (sv_netsize cvar)
+	if (sv_netsize.value != 0.0)
+		Con_DPrintf("CLSIZE = %i\n", host_client->netchan.message.cursize - size);
 
 	++net_activeconnections;
 }

@@ -407,6 +407,7 @@ void SV_MoveToOrigin_I( edict_t* ent, const float* pflGoal, float dist, int iStr
 //
 int SV_ModelIndex( char* name );
 void SV_FlushSignon( void );
+void SV_SendResourceListBlock_f( void );
 void SV_AddResource( resourcetype_t type, const char *name, int size, byte flags, int index );
 void SV_CreateResourceList( void );
 void SV_ClearResourceLists( client_t* cl );

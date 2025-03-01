@@ -369,6 +369,10 @@ void Host_InitCommands( void )
 
 	// TODO: Implement
 
+	Cmd_AddCommand("resourcelist", SV_SendResourceListBlock_f);
+
+	// TODO: Implement
+
 	Cmd_AddCommand("new", SV_New_f);
 
 	// TODO: Implement

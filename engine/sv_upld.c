@@ -45,6 +45,80 @@ void SV_FlushSignon( void )
 	sv.signon.cursize = 0;
 }
 
+/*
+================
+SV_SendResourceListBlock_f
+================
+*/
+void SV_SendResourceListBlock_f( void )
+{
+	int			i, n;
+	resource_t* res;
+
+	if (cmd_source == src_command)
+	{
+		Cmd_ForwardToServer();
+		return;
+	}
+
+	if (!host_client->connected) {
+		Con_Printf("resourcelist not valid -- already spawned\n");
+		return;
+	}
+
+	// handle the case of a level changing while a client was connecting
+	if (!cls.demoplayback && atoi(Cmd_Argv(1)) != svs.spawncount)
+	{
+		Con_Printf("SV_SendResourceListBlock_f from different level\n");
+		SV_New_f();
+		return;
+	}
+
+	n = atoi(Cmd_Argv(2));
+
+	MSG_WriteByte(&host_client->netchan.message, svc_resourcelist);
+	MSG_WriteShort(&host_client->netchan.message, sv.num_resources);
+	MSG_WriteShort(&host_client->netchan.message, n);
+
+	// save index
+	i = host_client->netchan.message.cursize;
+
+	MSG_WriteShort(&host_client->netchan.message, 0);
+
+	if (sv.num_resources <= n)
+	{
+		host_client->netchan.message.data[i] = n;
+	}
+	else
+	{
+		for (res = &sv.resources[n]; n < sv.num_resources; n++, res++)
+		{
+			//leave a small window for other messages
+			if (host_client->netchan.message.maxsize - 512 <= host_client->netchan.message.cursize)
+				break;
+
+			MSG_WriteByte(&host_client->netchan.message, res->type);
+			MSG_WriteString(&host_client->netchan.message, res->szFileName);
+			MSG_WriteShort(&host_client->netchan.message, res->nIndex);
+			MSG_WriteLong(&host_client->netchan.message, res->nDownloadSize);
+			MSG_WriteByte(&host_client->netchan.message, res->ucFlags);
+			if (res->ucFlags & RES_CUSTOM)
+			{
+				SZ_Write(&cls.netchan.message, res->rgucMD5_hash, sizeof(res->rgucMD5_hash));
+			}
+		}
+
+		host_client->netchan.message.data[i] = n;
+	}
+
+	if (sv.num_resources > n)
+	{
+		MSG_WriteByte(&host_client->netchan.message, svc_stufftext);
+		MSG_WriteString(&host_client->netchan.message,
+						va("cmd resourcelist %i %i\n", svs.spawncount, n));
+	}
+}
+
 // TODO: Implement
 
 /*
