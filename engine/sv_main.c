@@ -72,6 +72,16 @@ void SV_RejectConnection( netadr_t* adr, char* reason )
 	SZ_Clear(&net_message);
 }
 
+/*
+==================
+SV_SpawnSpectator
+==================
+*/
+void SV_SpawnSpectator( void )
+{
+	__debugbreak();
+}
+
 // TODO: Implement
 
 
@@ -1066,6 +1076,55 @@ void SV_SendServerinfo( client_t *client )
 	client->connected = TRUE;
 	client->sendsignon = TRUE;
 	client->spawned = FALSE;
+}
+
+/*
+================
+SV_New_f
+
+Sends the first message from the server to a connected client.
+This will be sent on the initial connection and upon each server load.
+================
+*/
+void SV_New_f( void )
+{
+	UserMsg*	pMsg;
+
+	if (host_client->spawned && !host_client->active)
+		return;
+
+	host_client->connection_started = realtime;
+	host_client->connected = TRUE;
+	SZ_Clear(&host_client->netchan.message);
+	SV_SendServerinfo(host_client);
+
+	// TODO: Implement (sv_netsize cvar)
+
+	if (sv_gpUserMsgs)
+	{
+		pMsg = sv_gpNewUserMsgs;
+		sv_gpNewUserMsgs = sv_gpUserMsgs;
+		SV_SendUserReg(&host_client->netchan.message);
+		sv_gpNewUserMsgs = pMsg;
+	}
+
+	// TODO: Implement (sv_netsize cvar)
+
+	if (host_client->spectator)
+	{
+		SV_SpawnSpectator();
+		gGlobalVariables.time = sv.time;
+		gEntityInterface.pfnParmsNewLevel();
+		gEntityInterface.pfnSpectatorConnect(host_client->edict);
+	}
+	else
+	{
+		gEntityInterface.pfnClientConnect(host_client->edict);
+	}
+
+	// TODO: Implement (sv_netsize cvar)
+
+	++net_activeconnections;
 }
 
 /*

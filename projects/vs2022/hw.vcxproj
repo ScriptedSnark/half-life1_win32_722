@@ -238,7 +238,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug - Address Sanitizer|Win32'">
     <TargetName>hw</TargetName>
-    <OutDir>$(SolutionDir)..\..\build\$(PlatformTarget)\engine\GL_ASAN_$(Configuration)\</OutDir>
+    <OutDir>$(SolutionDir)..\..\build\$(PlatformTarget)\engine\GL_ASAN_Debug\</OutDir>
     <IntDir>$(Configuration)\$(PlatformTarget)\$(ProjectName)\int\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">

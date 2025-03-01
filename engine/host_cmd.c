@@ -235,6 +235,90 @@ void Host_Version_f( void )
 // TODO: Implement
 
 /*
+==================
+Host_PreSpawn_f
+==================
+*/
+void Host_PreSpawn_f(void)
+{
+	unsigned	buf;
+
+	if (cmd_source == src_command)
+	{
+		Con_Printf("prespawn is not valid from the console\n");
+		return;
+	}
+
+	if (host_client->spawned)
+	{
+		Con_Printf("prespawn not valid -- already spawned\n");
+		return;
+	}
+
+	// handle the case of a level changing while a client was connecting
+	if (!cls.demoplayback && atoi(Cmd_Argv(1)) != svs.spawncount)
+	{
+		Con_Printf("SV_PreSpawn_f from different level\n");
+		SV_New_f();
+		return;
+	}
+
+	buf = atoi(Cmd_Argv(2));
+	if (buf >= sv.num_signon_buffers)
+		buf = 0;
+
+	SZ_Write(&host_client->netchan.message, sv.signon_buffers[buf], sv.signon_buffer_size[buf]);
+
+	buf++;
+	if (buf == sv.num_signon_buffers)
+	{	// all done prespawning
+		MSG_WriteByte(&host_client->netchan.message, svc_signonnum);
+		MSG_WriteByte(&host_client->netchan.message, 1);
+		host_client->sendsignon = TRUE;
+	}
+	else
+	{	// need to prespawn more
+		MSG_WriteByte(&host_client->netchan.message, svc_stufftext);
+		MSG_WriteString(&host_client->netchan.message,
+			va("cmd prespawn %i %i\n", svs.spawncount, buf));
+	}
+}
+
+/*
+==================
+Host_Spawn_f
+==================
+*/
+void Host_Spawn_f( void )
+{
+	Con_Printf("Host_Spawn_f");
+}
+
+/*
+==================
+Host_Begin_f
+==================
+*/
+void Host_Begin_f( void )
+{
+	if (cmd_source == src_command)
+	{
+		Con_Printf("begin is not valid from the console\n");
+		return;
+	}
+
+	host_client->active = TRUE;
+	host_client->connected = FALSE;
+	host_client->netchan.frame_latency = 0;
+	host_client->netchan.frame_rate = 0;
+	host_client->netchan.drop_count = 0;
+	host_client->netchan.good_count = 0;
+	host_client->spawned = TRUE;
+}
+
+// TODO: Implement
+
+/*
 ==============================
 Host_EndSection
 
@@ -277,6 +361,15 @@ void Host_InitCommands( void )
 
 	Cmd_AddCommand("version", Host_Version_f);
 
+	// TODO: Implement
+
+	Cmd_AddCommand("spawn", Host_Spawn_f);
+	Cmd_AddCommand("begin", Host_Begin_f);
+	Cmd_AddCommand("prespawn", Host_PreSpawn_f);
+
+	// TODO: Implement
+
+	Cmd_AddCommand("new", SV_New_f);
 
 	// TODO: Implement
 }
