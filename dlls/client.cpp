@@ -179,7 +179,7 @@ void Host_Say( edict_t *pEntity, int teamonly )
 	if ( CMD_ARGC() == 0 )
 		return;
 
-	if ( !stricmp( pcmd, cpSay) )
+	if ( !stricmp( pcmd, cpSay) || !stricmp( pcmd, cpSayTeam ) )
 	{
 		if ( CMD_ARGC() >= 2 )
 		{
@@ -248,7 +248,7 @@ void Host_Say( edict_t *pEntity, int teamonly )
 		if ( client->edict() == pEntity )
 			continue;
 
-		if ( !(client->IsNetClient()) )	// Not a client ? (should never be true)
+		if ( !(client->pev->flags & FL_CLIENT) )	// Not a client ? (should never be true)
 			continue;
 
 		if ( teamonly && g_pGameRules->PlayerRelationship(client, CBaseEntity::Instance(pEntity)) != GR_TEAMMATE )
