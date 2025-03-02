@@ -270,7 +270,7 @@ void SV_WriteDelta( entity_state_t* from, entity_state_t* to, sizebuf_t* msg, qb
 {
 	// TODO: Refactor
 
-	int v4; // ebx
+	unsigned int v4; // ebx
 	int v5; // ebp
 	int v6; // ecx
 	float *v7; // esi
@@ -356,10 +356,8 @@ void SV_WriteDelta( entity_state_t* from, entity_state_t* to, sizebuf_t* msg, qb
 		{
 			v4 |= U_RENDER;
 		}
-
 		if (to->animtime != 0.0 && to->velocity[0] == 0.0 && to->velocity[1] == 0.0 && to->velocity[2] == 0.0)
-			v4 |= U_MONSTERMOVE;
-
+			v4 |= 0x200000u;
 		v8 = 0;
 		mins = from->mins;
 		v10 = to->mins;
@@ -379,11 +377,11 @@ void SV_WriteDelta( entity_state_t* from, entity_state_t* to, sizebuf_t* msg, qb
 		} while (v8 < 3);
 		number = to->number;
 		if (number >= 256)
-			v4 |= U_LONGENTITY;
+			v4 |= 0x8000u;
 		if (v4 >= U_EVENMOREBITS)
-			v4 |= U_MOREBITS;
+			v4 |= 1u;
 		if (v4 >= U_FRAMERATE)
-			v4 |= U_EVENMOREBITS;
+			v4 |= 0x100u;
 		if (v4 >= U_CONTROLLER1)
 			v4 |= U_YETMOREBITS;
 		if (v5)
@@ -393,51 +391,49 @@ void SV_WriteDelta( entity_state_t* from, entity_state_t* to, sizebuf_t* msg, qb
 		if (v4 || v5 || force)
 		{
 			MSG_WriteByte(msg, v4);
-			if ((v4 & 1) != 0)
+			if ((v4 & U_MOREBITS) != 0)
 				MSG_WriteByte(msg, v4 >> 8);
-			if ((v4 & 1) != 0)
-				MSG_WriteByte(msg, v4 >> 16);
+			if ((v4 & U_EVENMOREBITS) != 0)
+				MSG_WriteByte(msg, HIWORD(v4));
 			if ((v4 & U_YETMOREBITS) != 0)
-				MSG_WriteByte(msg, v4 >> 24);
-
+				MSG_WriteByte(msg, HIBYTE(v4));
 			if ((v4 & 0x80000000) != 0)
 				MSG_WriteByte(msg, v5);
-
 			v12 = to->number;
-			if (v4 >= 0)
+			if ((v4 & U_FRAME) == 0)
 				MSG_WriteByte(msg, v12);
 			else
 				MSG_WriteShort(msg, v12);
-			if ((v4 & 8) != 0)
+			if ((v4 & U_MODELINDEX) != 0)
 				MSG_WriteShort(msg, to->modelindex);
-			if ((v4 & 0x80u) != 0)
+			if ((v4 & U_FRAME) != 0)
 				MSG_WriteWord(msg, (__int64)(to->frame * 256.0));
-			if ((v4 & 0x40) != 0)
+			if ((v4 & U_MOVETYPE) != 0)
 				MSG_WriteByte(msg, to->movetype);
-			if ((v4 & 0x40000) != 0)
+			if ((v4 & U_COLORMAP) != 0)
 				MSG_WriteByte(msg, to->colormap);
-			if ((v4 & 0x80000) != 0)
+			if ((v4 & U_CONTENTS) != 0)
 			{
 				MSG_WriteShort(msg, to->skin);
 				MSG_WriteByte(msg, to->solid);
 			}
-			if ((v4 & 0x40000000) != 0)
+			if ((v4 & U_SCALE) != 0)
 				MSG_WriteWord(msg, (__int64)(to->scale * 256.0));
-			if ((v4 & 0x40) != 0)
+			if ((v4 & U_EFFECTS) != 0)
 				MSG_WriteByte(msg, to->effects);
-			if ((v4 & 2) != 0)
+			if ((v4 & U_ORIGIN1) != 0)
 				MSG_WriteCoord(msg, to->origin[0]);
-			if ((v4 & 2) != 0)
+			if ((v4 & U_ANGLE1) != 0)
 				MSG_WriteHiresAngle(msg, to->angles[0]);
-			if ((v4 & 4) != 0)
+			if ((v4 & U_ORIGIN2) != 0)
 				MSG_WriteCoord(msg, to->origin[1]);
-			if ((v4 & 0x20) != 0)
+			if ((v4 & U_ANGLE2) != 0)
 				MSG_WriteHiresAngle(msg, to->angles[1]);
-			if ((v4 & 8) != 0)
+			if ((v4 & U_ORIGIN3) != 0)
 				MSG_WriteCoord(msg, to->origin[2]);
-			if ((v4 & 4) != 0)
+			if ((v4 & U_ANGLE3) != 0)
 				MSG_WriteHiresAngle(msg, to->angles[2]);
-			if ((v4 & 0x10) != 0)
+			if ((v4 & U_SEQUENCE) != 0)
 			{
 				a2f = (unsigned __int8)(__int64)(to->animtime * 100.0);
 				MSG_WriteByte(msg, to->sequence);
@@ -468,7 +464,6 @@ void SV_WriteDelta( entity_state_t* from, entity_state_t* to, sizebuf_t* msg, qb
 				MSG_WriteByte(msg, to->rendercolor.b);
 				MSG_WriteByte(msg, to->renderfx);
 			}
-
 			if ((v5 & 1) != 0)
 				MSG_WriteCoord(msg, to->mins[0]);
 			if ((v5 & 2) != 0)
@@ -494,7 +489,6 @@ Writes a delta update of a packet_entities_t to the message.
 */
 void SV_EmitPacketEntities( client_t* client, packet_entities_t* to, sizebuf_t* msg )
 {
-	int         i, j;
 	int         oldnum, newnum;
 	int         oldindex;
 	int         newindex;
@@ -545,7 +539,7 @@ void SV_EmitPacketEntities( client_t* client, packet_entities_t* to, sizebuf_t* 
 		{
 			// delta update from old position
 			state = &to->entities[newindex];
-			SV_WriteDelta(&from->entities[oldindex], state, msg, false);
+			SV_WriteDelta(&from->entities[oldindex], state, msg, FALSE);
 			newindex++;
 			oldindex++;
 			continue;
@@ -554,7 +548,7 @@ void SV_EmitPacketEntities( client_t* client, packet_entities_t* to, sizebuf_t* 
 		if (newnum > oldnum)
 		{
 			bits = U_REMOVE;
-			if (oldnum >= 256)
+			if (oldnum >= MAX_PACKET_ENTITIES)
 				bits |= U_LONGENTITY;
 
 			if (bits >= U_EVENMOREBITS)
@@ -566,7 +560,7 @@ void SV_EmitPacketEntities( client_t* client, packet_entities_t* to, sizebuf_t* 
 			if (bits >= U_CONTROLLER1)
 				bits |= U_YETMOREBITS;
 
-			MSG_WriteByte(msg, bits);
+			MSG_WriteByte(msg, bits & 255);
 
 			if (bits & U_MOREBITS)
 				MSG_WriteByte(msg, (bits >> 8) & 255);
@@ -589,7 +583,7 @@ void SV_EmitPacketEntities( client_t* client, packet_entities_t* to, sizebuf_t* 
 
 		// new entity
 		ent = EDICT_NUM(newnum);
-		SV_WriteDelta(&ent->baseline, &to->entities[newindex], msg, true);
+		SV_WriteDelta(&ent->baseline, &to->entities[newindex], msg, TRUE);
 		newindex++;
 	}
 
@@ -741,7 +735,7 @@ void SV_WritePlayersToClient( client_t* client, byte* pvs, sizebuf_t* msg )
 				MSG_WriteShort(msg, ent->v.velocity[i]);
 
 		if (pflags & PF_MODEL)
-			MSG_WriteByte(msg, ent->v.modelindex);
+			MSG_WriteShort(msg, ent->v.modelindex);
 
 		if (pflags & PF_SKINNUM)
 			MSG_WriteByte(msg, ent->v.skin);
@@ -968,6 +962,8 @@ void SV_WriteEntitiesToClient( client_t* client, sizebuf_t* msg )
 		memcpy(pack->entities, fullpack.entities, sizeof(entity_state_t) * pack->num_entities); // TODO: There might be a problem
 	else
 		memset(pack->entities, 0, sizeof(entity_state_t));
+
+	SV_EmitPacketEntities(client, pack, msg);
 }
 
 /*
