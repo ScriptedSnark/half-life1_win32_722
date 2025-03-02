@@ -2,8 +2,6 @@
 #include "winquake.h"
 #include "pmove.h"
 
-#define PLAYER_DUCKING_MULTIPLIER 0.333
-
 cvar_t	cl_nopred = { "cl_nopred", "0" };
 cvar_t	cl_pushlatency = { "pushlatency", "-500" };
 cvar_t	cl_dumpents = { "cl_dumpents", "0" };

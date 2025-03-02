@@ -2,8 +2,8 @@
 
 #include "quakedef.h"
 
-static	areanode_t	sv_areanodes[AREA_NODES];
-static	int			sv_numareanodes;
+areanode_t	sv_areanodes[AREA_NODES];
+int			sv_numareanodes;
 
 // TODO: Implement
 
@@ -20,8 +20,44 @@ Forcing to select BSP hull
 */
 hull_t* SV_HullForBsp( edict_t* ent, const vec_t* mins, const vec_t* maxs, vec_t* offset )
 {
-	// TODO: Implement
-	return NULL;
+	model_t* model;
+	hull_t* hull;
+	vec3_t size;
+
+	model = sv.models[ent->v.modelindex];
+	if (!model)
+		Sys_Error("Hit a %s with no model (%s)", &pr_strings[ent->v.classname], &pr_strings[ent->v.model]);
+	if (model->type != mod_brush)
+		Sys_Error("Hit a %s with no model (%s)", &pr_strings[ent->v.classname], &pr_strings[ent->v.model]);
+
+	VectorSubtract(maxs, mins, size);
+
+	if (size[0] > 8)
+	{
+		if (size[0] > 36)
+		{
+			hull = &model->hulls[2];
+		}
+		else if (size[2] > 36)
+		{		
+			hull = &model->hulls[1];
+		}
+		else
+		{
+			hull = &model->hulls[3];
+		}
+
+		// calculate an offset value to center the origin
+		VectorSubtract(hull->clip_mins, mins, offset);
+	}
+	else
+	{
+		hull = &model->hulls[0];
+		VectorCopy(hull->clip_mins, offset);
+	}
+
+	VectorAdd(offset, ent->v.origin, offset);
+	return hull;
 }
 
 // TODO: Implement

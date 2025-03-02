@@ -2,6 +2,8 @@
 #if !defined( PMOVE_H )
 #define PMOVE_H
 
+#define PLAYER_DUCKING_MULTIPLIER 0.333
+
 #define PM_NORMAL			0x00000000
 #define PM_STUDIO_IGNORE	0x00000001		// Skip studio models
 #define PM_STUDIO_BOX		0x00000002		// Use boxes for non-complex studio models (even in traceline)
@@ -118,7 +120,12 @@ extern	int		onground;
 extern	int		waterlevel;
 extern	int		watertype;
 
+extern	float	frametime;
+
 extern	vec3_t	forward, right, up;
+
+extern	vec3_t	player_mins[3];
+extern	vec3_t	player_maxs[3];
 
 extern	cvar_t	cl_showclip;
 extern	cvar_t	cl_printclip;
@@ -133,6 +140,7 @@ void PlayerMove( qboolean server );
 void Pmove_Init( void );
 
 void PM_Accelerate( vec_t* wishdir, float wishspeed, float accel );
+void PM_CheckVelocity( void );
 qboolean PM_CheckWater( void );
 qboolean PM_AddToTouched( pmtrace_t tr, vec_t* impactvelocity );
 

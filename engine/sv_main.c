@@ -805,6 +805,8 @@ void SV_Init( void )
 
 	// TODO: Implement
 
+	Pmove_Init();
+
 	for (i = 0; i < MAX_MODELS; i++)
 	{
 		sprintf(localmodels[i], "*%i", i);

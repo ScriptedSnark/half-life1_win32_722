@@ -1604,8 +1604,8 @@ pmove must be setup with world and solid entity hulls before calling
 void CL_SetSolidPlayers( int playernum )
 {
 	int		j;
-	extern	vec3_t	player_mins[4];
-	extern	vec3_t	player_maxs[4];
+	extern	vec3_t	player_mins[3];
+	extern	vec3_t	player_maxs[3];
 	predicted_player* pplayer;
 	physent_t *pent;
 

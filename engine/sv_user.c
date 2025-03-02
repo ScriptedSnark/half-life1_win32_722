@@ -1,9 +1,19 @@
 // sv_user.c -- server code for moving users
 
 #include "quakedef.h"
-#include "protocol.h"
+#include "pmove.h"
+#include "view.h"
 
-edict_t	*sv_player;
+edict_t* sv_player;
+
+// world
+float* angles;
+float* origin;
+float* velocity;
+
+usercmd_t	cmd;
+
+void SV_PostRunCmd(	void );
 
 /*
 ==================
@@ -17,17 +27,288 @@ void SV_NextUpload(void)
 
 // TODO: Implement
 
+void DropPunchAngle( void )
+{
+	float	len;
+
+	len = VectorNormalize(sv_player->v.punchangle);
+
+	len -= (len * 0.5 + 10.0) * host_frametime;
+	if (len < 0)
+		len = 0;
+	VectorScale(sv_player->v.punchangle, len, sv_player->v.punchangle);
+}
+
 void SV_PreRunCmd( void )
 {
 	// TODO: Implement
 }
 
-// TODO: Implement
+//============================================================================
 
-void SV_PostRunCmd(	void );
-void SV_RunCmd( usercmd_t* ucmd )
+vec3_t	pmove_mins, pmove_maxs;
+
+/*
+====================
+AddLinksToPmove
+
+====================
+*/
+void AddLinksToPmove( areanode_t* node )
 {
 	// TODO: Implement
+}
+
+/*
+===========
+SV_RunCmd
+===========
+*/
+void SV_RunCmd( usercmd_t* ucmd )
+{
+	edict_t* ent;
+	trace_t		trace;
+	pmtrace_t* touch;
+	int			i, n;
+	float		oldmsec;
+
+	cmd = *ucmd;
+
+	// chop up very long commands
+	if (cmd.msec > 50)
+	{
+		oldmsec = ucmd->msec;
+		cmd.msec = oldmsec / 2;
+		SV_RunCmd(&cmd);
+		cmd.msec = oldmsec / 2;
+		cmd.impulse = 0;
+		SV_RunCmd(&cmd);
+		return;
+	}
+
+	DropPunchAngle();
+
+	VectorCopy(vec3_origin, sv_player->v.clbasevelocity);
+
+	if (sv_player->v.fixangle == 0)
+		VectorCopy(ucmd->angles, sv_player->v.v_angle);
+
+	sv_player->v.button = ucmd->buttons;
+	if (ucmd->impulse)
+		sv_player->v.impulse = ucmd->impulse;
+
+	// Checks if an entity is standing on a moving entity to adjust the velocity
+	if (sv_player->v.flags & FL_ONGROUND)
+	{
+		edict_t* groundentity;
+
+		groundentity = sv_player->v.groundentity;
+		if (groundentity)
+		{
+			if (groundentity->v.flags & FL_CONVEYOR)
+			{
+				if (sv_player->v.flags & FL_BASEVELOCITY)
+				{
+					VectorMA(sv_player->v.basevelocity, groundentity->v.speed, groundentity->v.movedir, sv_player->v.basevelocity);
+				}
+				else
+				{
+					VectorScale(groundentity->v.movedir, groundentity->v.speed, sv_player->v.basevelocity);
+				}
+				sv_player->v.flags |= FL_BASEVELOCITY;
+			}
+		}
+	}
+
+	frametime = ucmd->msec * 0.001;
+	if (frametime > 0.1)
+		frametime = 0.1;
+
+	if (!(sv_player->v.flags & FL_BASEVELOCITY))
+	{
+		// Apply momentum (add in half of the previous frame of velocity first)
+		VectorMA(sv_player->v.velocity, 1.0 + (frametime * 0.5), sv_player->v.basevelocity, sv_player->v.velocity);
+		VectorCopy(vec3_origin, sv_player->v.basevelocity);
+	}
+
+	sv_player->v.flags &= ~FL_BASEVELOCITY;
+
+	if (!host_client->spectator)
+	{
+		gGlobalVariables.time = sv.time;
+		gEntityInterface.pfnPlayerPreThink(sv_player);
+
+		SV_RunThink(sv_player);
+	}
+
+	pmove.usehull = 0;
+
+	if (sv_player->v.flags & FL_DUCKING)
+	{
+		cmd.forwardmove *= PLAYER_DUCKING_MULTIPLIER;
+		cmd.sidemove *= PLAYER_DUCKING_MULTIPLIER;
+		cmd.upmove *= PLAYER_DUCKING_MULTIPLIER;
+		pmove.usehull = 1;
+	}
+
+	if (sv_player->v.flags & (FL_FROZEN | FL_ONTRAIN))
+	{
+		cmd.forwardmove = 0;
+		cmd.sidemove = 0;
+		cmd.upmove = 0;
+	}
+
+	if (sv_player->v.basevelocity[0] || sv_player->v.basevelocity[1] || sv_player->v.basevelocity[2])
+		VectorCopy(sv_player->v.basevelocity, sv_player->v.clbasevelocity);
+
+	VectorAdd(sv_player->v.v_angle, sv_player->v.punchangle, sv_player->v.v_angle);
+	sv_player->v.angles[ROLL] = V_CalcRoll(sv_player->v.angles, sv_player->v.velocity) * 4;
+	if (sv_player->v.fixangle == 0)
+	{
+		sv_player->v.angles[PITCH] = -sv_player->v.v_angle[PITCH] / 3;
+		sv_player->v.angles[YAW] = sv_player->v.v_angle[YAW];
+	}
+
+	for (i = 0; i < 3; i++)
+		pmove.origin[i] = sv_player->v.origin[i] + (sv_player->v.mins[i] - player_mins[pmove.usehull][i]);
+	VectorCopy(sv_player->v.velocity, pmove.velocity);
+	VectorCopy(sv_player->v.movedir, pmove.movedir);
+	VectorCopy(sv_player->v.v_angle, pmove.angles);
+	VectorCopy(sv_player->v.basevelocity, pmove.basevelocity);
+	VectorCopy(sv_player->v.view_ofs, pmove.view_ofs);
+
+	pmove.gravity = sv_player->v.gravity;
+	pmove.friction = sv_player->v.friction;
+	pmove.spectator = host_client->spectator;
+	pmove.waterjumptime = sv_player->v.teleport_time;
+	pmove.cmd = cmd;
+	pmove.dead = sv_player->v.health <= 0;
+	pmove.oldbuttons = host_client->oldbuttons;
+	pmove.movetype = sv_player->v.movetype;
+	pmove.flags = sv_player->v.flags;
+
+	for (i = 0; i < 3; i++)
+	{
+		pmove_mins[i] = pmove.origin[i] - 256;
+		pmove_maxs[i] = pmove.origin[i] + 256;
+	}
+
+	if (host_client->maxspeed)
+	{
+		float maxspeed;
+
+		maxspeed = host_client->maxspeed;
+		if (maxspeed >= sv_maxspeed.value)
+			maxspeed = sv_maxspeed.value;
+		pmove.maxspeed = maxspeed;
+	}
+	else
+	{
+		pmove.maxspeed = sv_maxspeed.value;
+	}
+
+	pmove.numphysent = 1;
+	pmove.physents[0].model = sv.worldmodel;
+
+	AddLinksToPmove(sv_areanodes);
+
+	if (pm_pushfix.value)
+		SV_LinkEdict(sv_player, TRUE);
+
+	pmove.player_index = NUM_FOR_EDICT(sv_player);
+
+	PlayerMove(TRUE);
+
+	if (pmove.movetype == MOVETYPE_WALK)
+		pmove.friction = 1.0;
+
+	host_client->oldbuttons = pmove.oldbuttons;
+	sv_player->v.teleport_time = pmove.waterjumptime;
+	sv_player->v.waterlevel = waterlevel;
+	sv_player->v.watertype = watertype;
+	sv_player->v.flags = pmove.flags;
+	sv_player->v.friction = pmove.friction;
+
+	if (onground != -1)
+	{
+		sv_player->v.flags = (int)sv_player->v.flags | FL_ONGROUND;
+		sv_player->v.groundentity = EDICT_NUM(pmove.physents[onground].info);
+	}
+	else
+		sv_player->v.flags = (int)sv_player->v.flags & ~FL_ONGROUND;
+
+	onground = onground != -1;
+
+	for (i = 0; i < 3; i++)
+		sv_player->v.origin[i] = pmove.origin[i] - (sv_player->v.mins[i] - player_mins[pmove.usehull][i]);
+
+	if (!pm_pushfix.value)
+		VectorCopy(pmove.velocity, sv_player->v.velocity);
+
+	origin = sv_player->v.origin;
+	velocity = sv_player->v.velocity;
+
+	VectorCopy(pmove.basevelocity, sv_player->v.basevelocity);
+
+	if (!pm_pushfix.value)
+	{
+		if (!host_client->spectator)
+		{
+			// link into place and touch triggers
+			SV_LinkEdict(sv_player, TRUE);
+
+			vec3_t save_velocity;
+			VectorCopy(sv_player->v.velocity, save_velocity);
+
+			// touch other objects
+			for (i = 0; i < pmove.numtouch; i++)
+			{
+				touch = &pmove.touchindex[i];
+				n = pmove.physents[touch->ent].info;
+				ent = EDICT_NUM(n);
+				if ((g_playertouch[n / 8] & (1 << (n % 8))) || (ent->v.flags & FL_SPECTATOR))
+					continue;
+
+				trace.allsolid = touch->allsolid;
+				trace.startsolid = touch->startsolid;
+				trace.inopen = touch->inopen;
+				trace.inwater = touch->inwater;
+				trace.fraction = touch->fraction;
+				VectorCopy(touch->endpos, trace.endpos);
+				VectorCopy(touch->plane.normal, trace.plane.normal);
+				trace.plane.dist = touch->plane.dist;
+				trace.hitgroup = touch->hitgroup;
+				trace.ent = ent;
+
+				VectorCopy(touch->deltavelocity, sv_player->v.velocity);
+				SV_Impact(ent, sv_player, &trace);
+			}
+
+			VectorCopy(save_velocity, sv_player->v.velocity);
+		}
+	}
+	else
+	{
+		if (!host_client->spectator)
+		{
+			vec3_t velocity;
+			VectorCopy(vec3_origin, velocity);
+
+			// touch other objects
+			for (i = 0; i < pmove.numtouch; i++)
+			{
+				touch = &pmove.touchindex[i];
+				VectorAdd(velocity, touch->deltavelocity, velocity);
+			}
+
+			PM_CheckVelocity();
+
+			VectorAdd(pmove.velocity, velocity, sv_player->v.velocity);
+			SV_LinkEdict(sv_player, TRUE);
+		}
+	}
+
+	SV_PostRunCmd();
 }
 
 void SV_PostRunCmd( void )

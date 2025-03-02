@@ -171,8 +171,10 @@ typedef struct client_s
 
 	double localtime; // of last message
 
+	int oldbuttons;
+
 	// TODO: Implement
-	//FF: 52 bytes
+	//FF: 48 bytes
 
 	float maxspeed; // localized maxspeed
 
@@ -392,6 +394,7 @@ void SV_RunCmd( usercmd_t* ucmd );
 // TODO: Implement
 void SV_Physics( void );
 trace_t SV_Trace_Toss( edict_t* ent, edict_t* ignore );
+qboolean SV_RunThink( edict_t* ent );
 void SV_Impact( edict_t* e1, edict_t* e2, trace_t* ptrace );
 // TODO: Implement
 void SV_SetMoveVars( void );

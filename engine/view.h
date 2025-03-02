@@ -24,4 +24,6 @@ void V_CalcBlend( void );
 
 void V_UpdatePalette( void );
 
+float V_CalcRoll( float* angles, float* velocity );
+
 #endif // VIEW_H
