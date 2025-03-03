@@ -107,11 +107,25 @@ void SV_Impact( edict_t* e1, edict_t* e2, trace_t* ptrace )
 	}
 }
 
+
+/*
+=============
+SV_Physics_None
+
+Non moving objects can only think
+=============
+*/
+void SV_Physics_None( edict_t* ent )
+{
+// regular thinking
+	SV_RunThink(ent);
+}
+
+
 // TODO: Implement
 
 edict_t** g_moved_edict;
 vec3_t* g_moved_from;
-byte* g_playertouch = NULL;
 
 /*
 ============
@@ -122,9 +136,90 @@ SV_PushMove
 
 // TODO: Implement
 
+/*
+=============
+SV_Physics
+
+Runs the main physics simulation loop against all entities
+except the players
+=============
+*/
 void SV_Physics( void )
 {
-	// TODO: Implement
+	int		i;
+	edict_t* ent;
+	edict_t* groundentity;
+
+	// let the progs know that a new frame has started
+	gGlobalVariables.time = sv.time;
+
+	gEntityInterface.pfnStartFrame();
+
+	// iterate through all entities and have them think or simulate
+	for (i = 0; i < sv.num_edicts; i++)
+	{
+		ent = &sv.edicts[i];
+		if (ent->free)
+			continue;
+
+		if (gGlobalVariables.force_retouch != 0)
+		{
+			// force retouch even for stationary
+			SV_LinkEdict(&sv.edicts[i], TRUE);
+		}
+
+		if (i > 0 && i <= svs.maxclients)
+			continue;
+
+		// Checks if an entity is standing on a moving entity to adjust the velocity
+		if (ent->v.flags & FL_ONGROUND)
+		{
+			groundentity = ent->v.groundentity;
+			if (groundentity)
+			{
+				if (groundentity->v.flags & FL_CONVEYOR)
+				{
+					if (ent->v.flags & FL_BASEVELOCITY)
+					{
+						VectorMA(ent->v.basevelocity, groundentity->v.speed, groundentity->v.movedir, ent->v.basevelocity);
+					}
+					else
+					{
+						VectorScale(groundentity->v.movedir, groundentity->v.speed, ent->v.basevelocity);
+					}
+					ent->v.flags |= FL_BASEVELOCITY;
+				}
+			}
+		}
+
+		if (!(ent->v.flags & FL_BASEVELOCITY))
+		{
+			// Apply momentum (add in half of the previous frame of velocity first)
+			VectorMA(ent->v.velocity, 1.0 + (host_frametime * 0.5), ent->v.basevelocity, ent->v.velocity);
+			VectorCopy(vec3_origin, ent->v.basevelocity);
+		}
+
+		ent->v.flags &= ~FL_BASEVELOCITY;
+
+		switch (ent->v.movetype)
+		{
+		case MOVETYPE_NONE:
+			SV_Physics_None(ent);
+			break;
+
+		//default:
+		//	Sys_Error("SV_Physics: %s bad movetype %d", &pr_strings[ent->v.classname], ent->v.movetype);
+		//	break;
+		}
+
+		if (ent->v.flags & FL_KILLME)
+			ED_Free(ent);
+	}
+
+	if (gGlobalVariables.force_retouch != 0)
+		gGlobalVariables.force_retouch -= 1;
+
+	sv.time += host_frametime;
 }
 
 // TODO: Implement

@@ -513,7 +513,17 @@ Host_DeallocateDynamicData
 */
 void Host_DeallocateDynamicData( void )
 {
-	// TODO: Implement
+	if (g_moved_edict)
+		free(g_moved_edict);
+	g_moved_edict = NULL;
+
+	if (g_moved_from)
+		free(g_moved_from);
+	g_moved_from = NULL;
+
+	if (g_playertouch)
+		free(g_playertouch);
+	g_playertouch = NULL;
 }
 
 /*
@@ -523,7 +533,26 @@ Host_ReallocateDynamicData
 */
 void Host_ReallocateDynamicData( void )
 {
-	// TODO: Implement
+	if (!sv.max_edicts)
+	{
+		Con_DPrintf("Host_ReallocateDynamicData with sv.max_edicts == 0");
+		return;
+	}
+
+	if (g_moved_edict)
+		Con_Printf("Reallocate on moved_edict\n");
+	g_moved_edict = (edict_t**)malloc(sizeof(edict_t*) * sv.max_edicts);
+	memset(g_moved_edict, 0, sizeof(edict_t*) * sv.max_edicts);
+
+	if (g_moved_from)
+		Con_Printf("Reallocate on moved_from\n");
+	g_moved_from = (vec3_t*)malloc(sizeof(vec3_t) * sv.max_edicts);
+	memset(g_moved_from, 0, sizeof(vec3_t) * sv.max_edicts);
+
+	if (g_playertouch)
+		Con_Printf("Reallocate on playertouch\n");
+	g_playertouch = (byte*)malloc((sv.max_edicts + 7) / 8);
+	memset(g_playertouch, 0, (sv.max_edicts + 7) / 8);
 }
 
 /*

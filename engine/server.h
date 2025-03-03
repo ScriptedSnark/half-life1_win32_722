@@ -287,6 +287,14 @@ extern	cvar_t	sv_maxvelocity;
 
 
 
+
+
+
+extern	cvar_t	sv_idealpitchscale;
+
+
+
+
 extern	cvar_t	sv_aim;
 
 
@@ -384,6 +392,7 @@ void SV_WriteClientdataToMessage( client_t* client, sizebuf_t* msg );
 //
 // sv_user.c
 //
+void SV_SetIdealPitch( void );
 void SV_ExecuteClientMessage( client_t* cl );
 void SV_PreRunCmd( void );
 void SV_RunCmd( usercmd_t* ucmd );

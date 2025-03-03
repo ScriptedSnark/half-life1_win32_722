@@ -3,6 +3,7 @@
 #include "quakedef.h"
 #include "pmove.h"
 #include "view.h"
+#include "r_studio.h"
 
 edict_t* sv_player;
 
@@ -15,17 +16,79 @@ usercmd_t	cmd;
 
 void SV_PostRunCmd(	void );
 
-/*
-==================
-SV_NextUpload
-==================
-*/
-void SV_NextUpload(void)
-{
-	// TODO: Implement
-}
+cvar_t	sv_idealpitchscale = { "sv_idealpitchscale", "0.8" };
 
-// TODO: Implement
+
+
+
+
+/*
+===============
+SV_SetIdealPitch
+===============
+*/
+#define	MAX_FORWARD	6
+void SV_SetIdealPitch( void )
+{
+	float	angleval, sinval, cosval;
+	trace_t	tr;
+	vec3_t	top, bottom;
+	float	z[MAX_FORWARD];
+	int		i, j;
+	int		step, dir, steps;
+
+	if (!((int)sv_player->v.flags & FL_ONGROUND))
+		return;
+
+	angleval = sv_player->v.angles[YAW] * M_PI * 2 / 360;
+	sinval = sin(angleval);
+	cosval = cos(angleval);
+
+	for (i = 0; i < MAX_FORWARD; i++)
+	{
+		top[0] = sv_player->v.origin[0] + cosval * (i + 3) * 12;
+		top[1] = sv_player->v.origin[1] + sinval * (i + 3) * 12;
+		top[2] = sv_player->v.origin[2] + sv_player->v.view_ofs[2];
+
+		bottom[0] = top[0];
+		bottom[1] = top[1];
+		bottom[2] = top[2] - 160;
+
+		tr = SV_Move(top, vec3_origin, vec3_origin, bottom, 1, sv_player, FALSE);
+		if (tr.allsolid)
+			return;	// looking at a wall, leave ideal the way is was
+
+		if (tr.fraction == 1)
+			return;	// near a dropoff
+
+		z[i] = top[2] + tr.fraction * (bottom[2] - top[2]);
+	}
+
+	dir = 0;
+	steps = 0;
+	for (j = 1; j < i; j++)
+	{
+		step = z[j] - z[j - 1];
+		if (step > -ON_EPSILON && step < ON_EPSILON)
+			continue;
+
+		if (dir && (step - dir > ON_EPSILON || step - dir < -ON_EPSILON))
+			return;		// mixed changes
+
+		steps++;
+		dir = step;
+	}
+
+	if (!dir)
+	{
+		sv_player->v.idealpitch = 0;
+		return;
+	}
+
+	if (steps < 2)
+		return;
+	sv_player->v.idealpitch = -dir * sv_idealpitchscale.value;
+}
 
 void DropPunchAngle( void )
 {
@@ -39,9 +102,17 @@ void DropPunchAngle( void )
 	VectorScale(sv_player->v.punchangle, len, sv_player->v.punchangle);
 }
 
+/*
+===========
+SV_PreRunCmd
+===========
+Done before running a player command.  Clears the touch array
+*/
+byte* g_playertouch = NULL;
+
 void SV_PreRunCmd( void )
 {
-	// TODO: Implement
+	memset(g_playertouch, 0, (sv.max_edicts + 7) / 8);
 }
 
 //============================================================================
@@ -56,7 +127,104 @@ AddLinksToPmove
 */
 void AddLinksToPmove( areanode_t* node )
 {
-	// TODO: Implement
+	link_t* l, * next;
+	edict_t* check;
+	int			i;
+	physent_t* pe;
+
+	// touch linked edicts
+	for (l = node->solid_edicts.next; l != &node->solid_edicts; l = next)
+	{
+		next = l->next;
+		check = EDICT_FROM_AREA(l);
+
+		if (check->v.owner == sv_player)
+			continue;		// player's own missile
+		if (check->v.solid == SOLID_BSP
+			|| check->v.solid == SOLID_BBOX
+			|| check->v.solid == SOLID_SLIDEBOX
+			|| check->v.solid == SOLID_NOT)
+		{
+			if (check->v.solid == SOLID_NOT && (check->v.skin == 0 || check->v.modelindex == 0))
+				continue;
+			if ((check->v.flags & FL_MONSTERCLIP) && check->v.solid == SOLID_BSP)
+				continue;		// ignore monsterclip brushes
+			if (check == sv_player)
+				continue;
+
+			for (i = 0; i < 3; i++)
+				if (check->v.absmin[i] > pmove_maxs[i]
+				|| check->v.absmax[i] < pmove_mins[i])
+					break;
+			if (i != 3)
+				continue;
+
+			if (pmove.numphysent >= MAX_PHYSENTS)
+			{
+				Con_DPrintf("Too many physents on server playermove link adding...\n");
+				return;
+			}
+
+			if (check->v.flags & FL_SPECTATOR)
+				continue;
+
+			pe = &pmove.physents[pmove.numphysent];
+			pmove.numphysent++;
+
+			VectorCopy(check->v.origin, pe->origin);
+			VectorCopy(check->v.angles, pe->angles);
+			pe->info = NUM_FOR_EDICT(check);
+			pe->rendermode = check->v.rendermode;
+			pe->studiomodel = NULL;
+			if (check->v.solid == SOLID_BSP)
+			{
+				pe->model = sv.models[check->v.modelindex];
+			}
+			else if (check->v.solid != SOLID_NOT)
+			{
+				pe->model = NULL;
+
+				if (check->v.solid == SOLID_BBOX)
+				{
+					model_t* pModel;
+
+					if (check->v.modelindex)
+						pModel = sv.models[(int)(check->v.modelindex)];
+					else
+						pModel = NULL;
+
+					if (pModel && (pModel->flags & STUDIO_TRACE_HITBOX))
+						pe->studiomodel = pModel;
+				}
+
+				VectorCopy(check->v.mins, pe->mins);
+				VectorCopy(check->v.maxs, pe->maxs);
+			}
+			else
+			{
+				if (check->v.modelindex)
+					pe->model = sv.models[(int)(check->v.modelindex)];
+				else
+					pe->model = NULL;
+			}
+
+			pe->solid = check->v.solid;
+			pe->skin = check->v.skin;
+			pe->frame = check->v.frame;
+			pe->sequence = check->v.sequence;
+			memcpy(pe->controller, check->v.controller, 4);
+			memcpy(pe->blending, check->v.blending, 2);
+		}
+	}
+
+// recurse down both sides
+	if (node->axis == -1)
+		return;
+
+	if (pmove_maxs[node->axis] > node->dist)
+		AddLinksToPmove(node->children[0]);
+	if (pmove_mins[node->axis] < node->dist)
+		AddLinksToPmove(node->children[1]);
 }
 
 /*
@@ -277,8 +445,8 @@ void SV_RunCmd( usercmd_t* ucmd )
 				VectorCopy(touch->endpos, trace.endpos);
 				VectorCopy(touch->plane.normal, trace.plane.normal);
 				trace.plane.dist = touch->plane.dist;
-				trace.hitgroup = touch->hitgroup;
 				trace.ent = ent;
+				trace.hitgroup = touch->hitgroup;
 
 				VectorCopy(touch->deltavelocity, sv_player->v.velocity);
 				SV_Impact(ent, sv_player, &trace);
@@ -313,14 +481,14 @@ void SV_RunCmd( usercmd_t* ucmd )
 
 void SV_PostRunCmd( void )
 {
-	gGlobalVariables.time = sv.time;
-
 	if (host_client->spectator)
 	{
+		gGlobalVariables.time = sv.time;
 		gEntityInterface.pfnSpectatorThink(sv_player);
 	}
 	else
 	{
+		gGlobalVariables.time = sv.time;
 		gEntityInterface.pfnPlayerPostThink(sv_player);
 	}
 }
@@ -522,7 +690,7 @@ void SV_ExecuteClientMessage( client_t* cl )
 			}
 			break;
 		case clc_upload:
-			SV_NextUpload();
+//			SV_NextUpload(); TODO
 			break;
 		case clc_resourcelist:
 			SV_ParseResourceList();

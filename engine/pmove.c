@@ -1526,7 +1526,7 @@ int PM_CheckStuck( void )
 
 			info = pmove.physents[hitent].info;
 			ent = EDICT_NUM(info);
-			if (!(ent->v.flags & FL_SPECTATOR) && !(g_playertouch[info >> 3] & (1 << (info & 7))))
+			if (!(ent->v.flags & FL_SPECTATOR) && !(g_playertouch[info / 8] & (1 << (info % 8))))
 			{
 				vec3_t vel;
 				trace_t trace;

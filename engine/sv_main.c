@@ -771,6 +771,7 @@ void SV_Init( void )
 
 	// TODO: Implement
 	
+	Cvar_RegisterVariable(&sv_idealpitchscale);
 	Cvar_RegisterVariable(&sv_aim);
 
 	// TODO: Implement

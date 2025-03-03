@@ -1008,7 +1008,7 @@ void SV_WriteClientdataToMessage( client_t* client, sizebuf_t* msg )
 		client->chokecount = 0;
 	}
 
-	//SV_SetIdealPitch(); // TODO: Implement
+	SV_SetIdealPitch();
 
 	// a fixangle might get lost in a dropped packet.  Oh well.
 	if (ent->v.fixangle)
