@@ -426,3 +426,8 @@ void SV_ParseResourceList( void )
 	//memset(host_client->pad_22, 0, sizeof(host_client->pad_22)); // TODO: Implement
 	host_client->numuploads = 0;
 }
+
+void SV_ParseUpload( void )
+{
+	// TODO: Implement
+}

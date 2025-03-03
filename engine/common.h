@@ -78,7 +78,7 @@ void MSG_WriteBuf( sizebuf_t* sb, int iSize, void* buf );
 void MSG_WriteCoord( sizebuf_t* sb, float f );
 void MSG_WriteAngle( sizebuf_t* sb, float f );
 void MSG_WriteHiresAngle( sizebuf_t* sb, float f );
-void MSG_WriteUsercmd( sizebuf_t* buf, struct usercmd_s* from, struct usercmd_s* cmd );
+void MSG_WriteDeltaUsercmd( sizebuf_t* buf, struct usercmd_s* from, struct usercmd_s* cmd );
 
 extern	int			msg_readcount;
 extern	qboolean	msg_badread;		// set if a read goes beyond end of message
@@ -96,7 +96,7 @@ char* MSG_ReadStringLine( void );
 float MSG_ReadCoord( void );
 float MSG_ReadAngle( void );
 float MSG_ReadHiresAngle( void );
-void MSG_ReadUsercmd( struct usercmd_s* from, struct usercmd_s* move );
+void MSG_ReadDeltaUsercmd( struct usercmd_s* move, struct usercmd_s* from );
 
 //============================================================================
 

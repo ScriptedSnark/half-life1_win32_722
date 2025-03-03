@@ -455,7 +455,7 @@ void Con_Printf( char* fmt, ... )
 	{
 		if ((strlen(msg) + strlen(outputbuf)) >= sizeof(outputbuf))
 		{
-			SV_FlushRedirect();
+			Host_FlushRedirect();
 		}
 		strcat(outputbuf, msg);
 		return;

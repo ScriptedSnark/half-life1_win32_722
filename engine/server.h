@@ -264,10 +264,7 @@ extern	cvar_t	sv_cheats;
 
 extern	cvar_t	sv_gravity;
 extern	cvar_t	sv_friction;
-extern	cvar_t	sv_edgefriction;
 extern	cvar_t	sv_stopspeed;
-extern	cvar_t	sv_maxspeed;
-extern	cvar_t	sv_accelerate;
 extern	cvar_t	sv_stepsize;
 extern	cvar_t	sv_clipmode;
 extern	cvar_t	sv_bounce;
@@ -291,11 +288,15 @@ extern	cvar_t	sv_maxvelocity;
 
 
 extern	cvar_t	sv_idealpitchscale;
-
+extern	cvar_t	sv_edgefriction;
+extern	cvar_t	sv_maxspeed;
+extern	cvar_t	sv_accelerate;
 
 
 
 extern	cvar_t	sv_aim;
+
+extern	cvar_t	sv_showcmd;
 
 
 extern float		g_LastScreenUpdateTime;
@@ -371,9 +372,6 @@ int RegUserMsg( const char* pszName, int iSize );
 
 void Master_Heartbeat( void );
 
-//
-// sv_send.c
-//
 typedef enum
 {
 	RD_NONE = 0,
@@ -381,8 +379,14 @@ typedef enum
 	RD_PACKET
 } redirect_t;
 extern redirect_t	sv_redirected;
+void Host_FlushRedirect( void );
+void Host_EndRedirect( void );
+
+//
+// sv_send.c
+//
+
 void SV_InactivateClients( void );
-void SV_FlushRedirect( void );
 void SV_SendUserReg( sizebuf_t* sb );
 void SV_SendBan( void );
 qboolean SV_FilterPacket( void );
@@ -396,6 +400,7 @@ void SV_SetIdealPitch( void );
 void SV_ExecuteClientMessage( client_t* cl );
 void SV_PreRunCmd( void );
 void SV_RunCmd( usercmd_t* ucmd );
+void SV_PostRunCmd(	void );
 
 //
 // sv_phys.c
@@ -428,5 +433,6 @@ void SV_ClearResourceLists( client_t* cl );
 void SV_RemoveFromResourceList( resource_t* pResource );
 void SV_RequestMissingResourcesFromClients( void );
 void SV_ParseResourceList( void );
+void SV_ParseUpload( void );
 
 #endif // SERVER_H

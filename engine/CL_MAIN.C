@@ -1153,17 +1153,17 @@ void CL_SendCmd( void )
 
 	i = (cls.netchan.outgoing_sequence - 2) & UPDATE_MASK;
 	cmd = &cl.frames[i].cmd;
-	MSG_WriteUsercmd(&buf, cmd, &nullcmd);
+	MSG_WriteDeltaUsercmd(&buf, cmd, &nullcmd);
 	oldcmd = cmd;
 
 	i = (cls.netchan.outgoing_sequence - 1) & UPDATE_MASK;
 	cmd = &cl.frames[i].cmd;
-	MSG_WriteUsercmd(&buf, cmd, oldcmd);
+	MSG_WriteDeltaUsercmd(&buf, cmd, oldcmd);
 	oldcmd = cmd;
 
 	i = (cls.netchan.outgoing_sequence) & UPDATE_MASK;
 	cmd = &cl.frames[i].cmd;
-	MSG_WriteUsercmd(&buf, cmd, oldcmd);
+	MSG_WriteDeltaUsercmd(&buf, cmd, oldcmd);
 
 	// calculate a checksum over the move commands
 	buf.data[checksumIndex] = COM_BlockSequenceCRCByte(

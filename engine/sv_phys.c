@@ -26,10 +26,7 @@ solid_edge items only clip against bsp models.
 
 cvar_t sv_gravity = { "sv_gravity", "800", FALSE, TRUE };
 cvar_t sv_friction = { "sv_friction", "4", FALSE, TRUE };
-cvar_t sv_edgefriction = { "sv_edgefriction", "2", FALSE, TRUE };
 cvar_t sv_stopspeed = { "sv_stopspeed", "100", FALSE, TRUE };
-cvar_t sv_maxspeed = { "sv_maxspeed", "320", FALSE, TRUE };
-cvar_t sv_accelerate = { "sv_accelerate", "10", FALSE, TRUE };
 cvar_t sv_stepsize = { "sv_stepsize", "18", FALSE, TRUE };
 cvar_t sv_clipmode = { "sv_clipmode", "0", FALSE, TRUE };
 cvar_t sv_bounce = { "sv_bounce", "1", FALSE, TRUE };

@@ -623,7 +623,7 @@ void MSG_WriteHiresAngle( sizebuf_t* sb, float f )
 	MSG_WriteShort(sb, ((int)f * 65536 / 360) & 65535);
 }
 
-void MSG_WriteUsercmd( sizebuf_t* buf, usercmd_t* from, usercmd_t* cmd )
+void MSG_WriteDeltaUsercmd( sizebuf_t* buf, usercmd_t* from, usercmd_t* cmd )
 {
 	int		bits;
 
@@ -862,42 +862,42 @@ float MSG_ReadHiresAngle( void )
 	return MSG_ReadShort() * (360.0 / 65536);
 }
 
-void MSG_ReadUsercmd( usercmd_t* from, usercmd_t* move )
+void MSG_ReadDeltaUsercmd( usercmd_t* move, usercmd_t* from )
 {
 	int bits;
 
-	memcpy(from, move, sizeof(usercmd_t));
+	memcpy(move, from, sizeof(usercmd_t));
 
 	bits = MSG_ReadByte();
 
 // read current angles
 	if (bits & CM_ANGLE1)
-		from->angles[0] = MSG_ReadHiresAngle();
+		move->angles[0] = MSG_ReadHiresAngle();
 	if (bits & CM_ANGLE2)
-		from->angles[1] = MSG_ReadHiresAngle();
+		move->angles[1] = MSG_ReadHiresAngle();
 	if (bits & CM_ANGLE3)
-		from->angles[2] = MSG_ReadAngle();
+		move->angles[2] = MSG_ReadAngle();
 
 // read movement
 	if (bits & CM_FORWARD)
-		from->forwardmove = MSG_ReadFloat();
+		move->forwardmove = MSG_ReadFloat();
 	if (bits & CM_SIDE)
-		from->sidemove = MSG_ReadFloat();
+		move->sidemove = MSG_ReadFloat();
 	if (bits & CM_UP)
-		from->upmove = MSG_ReadFloat();
+		move->upmove = MSG_ReadFloat();
 
 // read buttons
 	if (bits & CM_BUTTONS)
-		from->buttons = MSG_ReadShort();
+		move->buttons = MSG_ReadShort();
 
 	if (bits & CM_IMPULSE)
-		from->impulse = MSG_ReadByte();
+		move->impulse = MSG_ReadByte();
 
 // read lightlevel
-	from->lightlevel = MSG_ReadByte();
+	move->lightlevel = MSG_ReadByte();
 
 // read time to run command
-	from->msec = MSG_ReadByte();
+	move->msec = MSG_ReadByte();
 }
 
 

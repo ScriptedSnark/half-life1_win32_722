@@ -60,6 +60,8 @@ cvar_t sv_maxvelocity = { "sv_maxvelocity", "2000" };
 
 cvar_t sv_netsize = { "sv_netsize", "0" };
 
+cvar_t sv_showcmd = { "sv_showcmd", "0" };
+
 /*
 ================
 SV_RejectConnection
@@ -803,6 +805,7 @@ void SV_Init( void )
 	Cvar_RegisterVariable(&sv_cheats);
 	Cvar_RegisterVariable(&sv_spectatormaxspeed);
 	Cvar_RegisterVariable(&sv_netsize);
+	Cvar_RegisterVariable(&sv_showcmd);
 
 	// TODO: Implement
 

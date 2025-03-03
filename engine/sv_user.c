@@ -14,13 +14,10 @@ float* velocity;
 
 usercmd_t	cmd;
 
-void SV_PostRunCmd(	void );
-
 cvar_t	sv_idealpitchscale = { "sv_idealpitchscale", "0.8" };
-
-
-
-
+cvar_t	sv_edgefriction = { "edgefriction", "2", FALSE, TRUE };
+cvar_t	sv_maxspeed = { "sv_maxspeed", "320", FALSE, TRUE };
+cvar_t	sv_accelerate = { "sv_accelerate", "10", FALSE, TRUE };
 
 /*
 ===============
@@ -502,19 +499,20 @@ The current net_message is parsed for the given client
 */
 void SV_ExecuteClientMessage( client_t* cl )
 {
-	int				c, nCommandValidatedStatus;
-	char*			s;
-	usercmd_t		oldest, oldcmd, newcmd, nullcmd;
+	int		c;
+	char* s;
+	usercmd_t	oldest, oldcmd, newcmd;
 	client_frame_t* frame;
-	vec3_t			o;
-	qboolean		move_issued = FALSE; //only allow one move command
-	int				checksumIndex;
-	byte			checksum, calculatedChecksum;
+	vec3_t o;
+	qboolean	move_issued = FALSE; //only allow one move command
+	int		checksumIndex;
+	byte	checksum, calculatedChecksum;
+	int		seq_hash;
+	int		commandstatus;
 
 	// calc ping time
 	frame = &cl->frames[cl->netchan.incoming_acknowledged & UPDATE_MASK];
-	frame->ping_time = realtime - cl->frames[cl->netchan.incoming_acknowledged & UPDATE_MASK].frame_time - frame->senttime; //cl->frames[cl->netchan.incoming_acknowledged & UPDATE_MASK].entities.num_entities wtf?
-
+	frame->ping_time = realtime - frame->frame_time - frame->senttime;
 
 	// make sure the reply sequence number matches the incoming
 	// sequence number 
@@ -529,14 +527,16 @@ void SV_ExecuteClientMessage( client_t* cl )
 	cl->frames[cl->netchan.outgoing_sequence & UPDATE_MASK].ping_time = -1;
 
 	host_client = cl;
-	sv_player = host_client->edict;
+	sv_player = cl->edict;
+
+//	seq_hash = (cl->netchan.incoming_sequence & 0xffff) ; // ^ QW_CHECK_HASH;
+	seq_hash = cl->netchan.incoming_sequence;
 
 	// mark time so clients will know how much to predict
 	// other players
 	cl->localtime = sv.time;
 	cl->delta_sequence = -1;	// no delta unless requested
-
-	while (2)
+	while (1)
 	{
 		if (msg_badread)
 		{
@@ -547,49 +547,60 @@ void SV_ExecuteClientMessage( client_t* cl )
 
 		c = MSG_ReadByte();
 		if (c == -1)
-			break;
+			return;
 
 		switch (c)
 		{
-			default:
-				Con_Printf("SV_ReadClientMessage: unknown command char\n");
-				SV_DropClient(cl, FALSE);
-				return;
+		default:
+			Con_Printf("SV_ReadClientMessage: unknown command char\n");
+			SV_DropClient(cl, FALSE);
+			return;
+
 		case clc_nop:
 			break;
+
 		case clc_move:
 			if (move_issued)
 				return;		// someone is trying to cheat...
 
 			move_issued = TRUE;
-			memset(&nullcmd, 0, sizeof(nullcmd));
-			checksumIndex = msg_readcount;
-			checksum = MSG_ReadByte();
-			MSG_ReadUsercmd(&oldest, &nullcmd);
-			MSG_ReadUsercmd(&oldcmd, &oldest);
-			MSG_ReadUsercmd(&newcmd, &oldcmd);
 
-			// don't move if haven't spawned yet
+			usercmd_t nullcmd;
+			memset(&nullcmd, 0, sizeof(nullcmd));
+
+			checksumIndex = msg_readcount;
+			checksum = (byte)MSG_ReadByte();
+
+			MSG_ReadDeltaUsercmd(&oldest, &nullcmd);
+			MSG_ReadDeltaUsercmd(&oldcmd, &oldest);
+			MSG_ReadDeltaUsercmd(&newcmd, &oldcmd);
+
 			if (!cl->active && !cl->spawned || !sv.active)
-				break;
+				continue;
 
 			// if the checksum fails, ignore the rest of the packet
 			calculatedChecksum = COM_BlockSequenceCRCByte(
-							   net_message.data + checksumIndex + 1,
-							   msg_readcount - checksumIndex - 1,
-							   cl->netchan.incoming_sequence);
+				net_message.data + checksumIndex + 1,
+				msg_readcount - checksumIndex - 1,
+				seq_hash);
 
 			if (calculatedChecksum != checksum)
 			{
-				Con_DPrintf("Failed command checksum for %s (%d != %d)/%d\n", cl->name, calculatedChecksum, checksum, cl->netchan.incoming_sequence);
+				Con_DPrintf("Failed command checksum for %s (%d != %d)/%d\n",
+					cl->name, calculatedChecksum, checksum, cl->netchan.incoming_sequence);
 				return;
+			}
+
+			if (sv_showcmd.value)
+			{
+				Con_Printf("MSEC %i IMP %i Buttons:  %i:%i FWD %i\n", newcmd.msec, newcmd.impulse,
+					newcmd.buttons & IN_ATTACK, newcmd.buttons & IN_ATTACK2, (int)newcmd.forwardmove);
 			}
 
 			if (sv.paused || svs.maxclients <= 1 && key_dest != key_game || (sv_player->v.flags & FL_FROZEN) != 0)
 			{
 				newcmd.buttons = 0;
 				newcmd.msec = 0;
-
 				newcmd.forwardmove = 0;
 				newcmd.sidemove = 0;
 				newcmd.upmove = 0;
@@ -614,15 +625,13 @@ void SV_ExecuteClientMessage( client_t* cl )
 			host_client->edict->v.light_level = newcmd.lightlevel;
 
 			SV_PreRunCmd();
+
 			if (net_drop < 16)
 			{
-				if (net_drop > 2)
+				while (net_drop > 2)
 				{
-					while (net_drop > 2)
-					{
-						SV_RunCmd(&cl->lastcmd);
-						net_drop--;
-					}
+					SV_RunCmd(&cl->lastcmd);
+					net_drop--;
 				}
 				if (net_drop > 1)
 					SV_RunCmd(&oldest);
@@ -630,71 +639,105 @@ void SV_ExecuteClientMessage( client_t* cl )
 					SV_RunCmd(&oldcmd);
 			}
 			SV_RunCmd(&newcmd);
+
 			cl->lastcmd = newcmd;
 			cl->lastcmd.buttons = 0; // avoid multiple fires on lag
 			break;
+
 		case clc_stringcmd:
 			s = MSG_ReadString();
-			nCommandValidatedStatus = !host_client->privileged ? 0 : 2;
-			if (!Q_strncasecmp(s, "status", sizeof("status") - 1)
-				  || !Q_strncasecmp(s, "god", sizeof("god") - 1)
-				  || !Q_strncasecmp(s, "customrsrclist", sizeof("customrsrclist") - 1)
-				  || !Q_strncasecmp(s, "notarget", sizeof("notarget") - 1)
-				  || !Q_strncasecmp(s, "fly", sizeof("fly") - 1)
-				  || !Q_strncasecmp(s, "name", sizeof("name") - 1)
-				  || !Q_strncasecmp(s, "noclip", sizeof("noclip") - 1)
-				  || !Q_strncasecmp(s, "tell", sizeof("tell") - 1)
-				  || !Q_strncasecmp(s, "color", sizeof("color") - 1)
-				  || !Q_strncasecmp(s, "kill", sizeof("kill") - 1)
-				  || !Q_strncasecmp(s, "pause", sizeof("pause") - 1)
-				  || !Q_strncasecmp(s, "spawn", sizeof("spawn") - 1)
-				  || !Q_strncasecmp(s, "new", sizeof("new") - 1)
-				  || !Q_strncasecmp(s, "dropclient", sizeof("dropclient") - 1)
-				  || !Q_strncasecmp(s, "begin", sizeof("begin") - 1)
-				  || !Q_strncasecmp(s, "prespawn", sizeof("prespawn") - 1)
-				  || !Q_strncasecmp(s, "kick", sizeof("kick") - 1)
-				  || !Q_strncasecmp(s, "ping", sizeof("ping") - 1)
-				  || !Q_strncasecmp(s, "download", sizeof("download") - 1)
-				  || !Q_strncasecmp(s, "resourcelist", sizeof("resourcelist") - 1)
-				  || !Q_strncasecmp(s, "nextdl", sizeof("nextdl") - 1)
-				  || !Q_strncasecmp(s, "sv_print_custom", sizeof("sv_print_custom") - 1)
-				  || !Q_strncasecmp(s, "ban", sizeof("ban") - 1)
-				  || !Q_strncasecmp(s, "ptrack", sizeof("ptrack") - 1)) {
-				nCommandValidatedStatus = 1; // this is a command which does varying results for every player
+			if (host_client->privileged)
+				commandstatus = COMMAND_STATUS_PRIVILEGED;
+			else
+				commandstatus = COMMAND_STATUS_NORMAL;
+
+			if (!Q_strncasecmp(s, "status", 6) ||
+				!Q_strncasecmp(s, "god", 3) ||
+				!Q_strncasecmp(s, "customrsrclist", 14) ||
+				!Q_strncasecmp(s, "notarget", 8) ||
+				!Q_strncasecmp(s, "fly", 3) ||
+				!Q_strncasecmp(s, "name", 4) ||
+				!Q_strncasecmp(s, "noclip", 6) ||
+				!Q_strncasecmp(s, "tell", 4) ||
+				!Q_strncasecmp(s, "color", 5) ||
+				!Q_strncasecmp(s, "kill", 4) ||
+				!Q_strncasecmp(s, "pause", 5) ||
+				!Q_strncasecmp(s, "spawn", 5) ||
+				!Q_strncasecmp(s, "new", 3) ||
+				!Q_strncasecmp(s, "dropclient", 10) ||
+				!Q_strncasecmp(s, "begin", 5) ||
+				!Q_strncasecmp(s, "prespawn", 8) ||
+				!Q_strncasecmp(s, "kick", 4) ||
+				!Q_strncasecmp(s, "ping", 4) ||
+				!Q_strncasecmp(s, "download", 8) ||
+				!Q_strncasecmp(s, "resourcelist", 11) ||
+				!Q_strncasecmp(s, "nextdl", 6) ||
+				!Q_strncasecmp(s, "sv_print_custom", 15) ||
+				!Q_strncasecmp(s, "ban", 3) ||
+				!Q_strncasecmp(s, "ptrack", 6))
+			{
+				commandstatus = COMMAND_STATUS_CLIENT;
 			}
-			if (nCommandValidatedStatus == 2) // the player is privileged, he can execute anything on the server
+
+			if (commandstatus == COMMAND_STATUS_PRIVILEGED)
 			{
 				Cbuf_InsertText(s);
 			}
-			else if (nCommandValidatedStatus == 1)
+			else if (commandstatus == COMMAND_STATUS_CLIENT)
 			{
 				Cmd_ExecuteString(s, src_client);
 			}
-			else // we don't know this command, let the game dll handle it
+			else
 			{
 				Cmd_TokenizeString(s);
 				gEntityInterface.pfnClientCommand(host_client->edict);
 			}
 			break;
+
 		case clc_delta:
 			cl->delta_sequence = MSG_ReadByte();
 			break;
+
 		case clc_tmove:
 			o[0] = MSG_ReadCoord();
 			o[1] = MSG_ReadCoord();
 			o[2] = MSG_ReadCoord();
+			// only allowed by spectators
 			if (host_client->spectator)
 			{
 				VectorCopy(o, sv_player->v.origin);
 				SV_LinkEdict(sv_player, FALSE);
 			}
 			break;
+
 		case clc_upload:
-//			SV_NextUpload(); TODO
+			SV_ParseUpload();
 			break;
+
 		case clc_resourcelist:
 			SV_ParseResourceList();
 			break;
 		}
 	}
+}
+
+/*
+=================
+SV_Drop_f
+
+The client is going to disconnect, so remove the connection immediately
+=================
+*/
+void SV_Drop_f( void )
+{
+	if (cmd_source == src_command)
+	{
+		Cmd_ForwardToServer();
+		return;
+	}
+
+	Host_EndRedirect();
+	if (!host_client->spectator)
+		SV_BroadcastPrintf("%s dropped\n", host_client->name);
+	SV_DropClient(host_client, FALSE);
 }

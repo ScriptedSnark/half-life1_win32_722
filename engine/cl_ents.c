@@ -1069,7 +1069,7 @@ void CL_ParsePlayerinfo( void )
 	{
 		usercmd_t nullcmd;
 		memset(&nullcmd, 0, sizeof(nullcmd));
-		MSG_ReadUsercmd(&state->command, &nullcmd);
+		MSG_ReadDeltaUsercmd(&state->command, &nullcmd);
 		VectorCopy(state->command.angles, state->viewangles);
 	}
 	else

@@ -169,6 +169,10 @@
 #define	GAME_COOP			0
 #define	GAME_DEATHMATCH		1
 
+#define COMMAND_STATUS_NORMAL		0
+#define COMMAND_STATUS_CLIENT		1
+#define COMMAND_STATUS_PRIVILEGED	2
+
 //==============================================
 
 // playerinfo flags from server

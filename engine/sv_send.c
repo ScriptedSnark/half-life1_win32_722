@@ -57,10 +57,20 @@ void SV_InactivateClients( void )
 
 /*
 ==================
-SV_FlushRedirect
+Host_FlushRedirect
 ==================
 */
-void SV_FlushRedirect( void )
+void Host_FlushRedirect( void )
+{
+	// TODO: Implement
+}
+
+/*
+==================
+Host_EndRedirect
+==================
+*/
+void Host_EndRedirect( void )
 {
 	// TODO: Implement
 }
@@ -727,7 +737,7 @@ void SV_WritePlayersToClient( client_t* client, byte* pvs, sizebuf_t* msg )
 
 			memset(&nullcmd, 0, sizeof(nullcmd));
 
-			MSG_WriteUsercmd(msg, &cmd, &nullcmd);
+			MSG_WriteDeltaUsercmd(msg, &cmd, &nullcmd);
 		}
 
 		for (i = 0; i < 3; i++)
