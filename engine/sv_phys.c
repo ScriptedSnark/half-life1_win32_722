@@ -524,13 +524,123 @@ Toss, bounce, and fly movement.  When onground, do nothing.
 */
 void SV_Physics_Toss( edict_t* ent )
 {
+	trace_t trace;
+	vec3_t	move;
+	float	backoff;
+
 	SV_CheckWater(ent);
 
 // regular thinking
 	if (!SV_RunThink(ent))
 		return;
 
-	// TODO: Implement
+	if (ent->v.velocity[2] > 0.0 || !ent->v.groundentity || (ent->v.groundentity->v.flags & (FL_MONSTER | FL_CLIENT)))
+	{
+		ent->v.flags &= ~FL_ONGROUND;
+	}
+
+// if on ground and not moving, return.
+	if ((ent->v.flags & FL_ONGROUND) && VectorCompare(ent->v.velocity, vec_origin))
+	{
+		VectorCopy(vec3_origin, ent->v.avelocity);
+
+		if (VectorCompare(ent->v.basevelocity, vec_origin))
+		{
+			return; // at rest
+		}
+	}
+
+	SV_CheckVelocity(ent);
+
+// add gravity
+	switch (ent->v.movetype)
+	{
+	case MOVETYPE_FLY:
+	case MOVETYPE_FLYMISSILE:
+	case MOVETYPE_BOUNCEMISSILE:
+		break;
+	default:
+		SV_AddGravity(ent);
+		break;
+	}
+
+// move angles
+	// Compute new angles based on the angular velocity
+	VectorMA(ent->v.angles, host_frametime, ent->v.avelocity, ent->v.angles);
+
+// move origin
+	VectorAdd(ent->v.velocity, ent->v.basevelocity, ent->v.velocity);
+	SV_CheckVelocity(ent);
+
+	VectorScale(ent->v.velocity, host_frametime, move);
+	VectorSubtract(ent->v.velocity, ent->v.basevelocity, ent->v.velocity);
+
+	trace = SV_PushEntity(ent, move);
+	SV_CheckVelocity(ent);
+
+	// If we started in a solid object, or we were in solid space the whole way, zero out our velocity.
+	if (trace.allsolid)
+	{
+		// entity is trapped in another solid
+		VectorCopy(vec3_origin, ent->v.velocity);
+		VectorCopy(vec3_origin, ent->v.avelocity);
+		return;
+	}
+
+	if (trace.fraction == 1)
+	{
+		// moved the entire distance
+		SV_CheckWaterTransition(ent);
+		return;
+	}
+
+	if (ent->free)
+		return;
+
+	if (ent->v.movetype == MOVETYPE_BOUNCE)
+		backoff = 2.0 - ent->v.friction;
+	else if (ent->v.movetype == MOVETYPE_BOUNCEMISSILE)
+		backoff = 2.0; // A backoff of 2.0 is a reflection
+	else
+		backoff = 1.0;
+
+	ClipVelocity(ent->v.velocity, trace.plane.normal, ent->v.velocity, backoff);
+
+// stop if on ground
+	if (trace.plane.normal[2] > 0.7)
+	{
+		// Get the total velocity (player + conveyors, etc.)
+		VectorAdd(ent->v.velocity, ent->v.basevelocity, move);
+		float vel = DotProduct(move, move);
+
+		// Are we on the ground?
+		if (move[2] < (sv_gravity.value * host_frametime))
+		{
+			// we're rolling on the ground, add static friction
+			ent->v.flags |= FL_ONGROUND;
+			ent->v.groundentity = trace.ent;
+			ent->v.velocity[2] = 0.0;
+		}
+
+		//Con_DPrintf("%f %f: %.0f %.0f %.0f\n", vel, trace.fraction, ent->velocity[0], ent->velocity[1], ent->velocity[2]);
+
+		if (vel < (30 * 30) || (ent->v.movetype != MOVETYPE_BOUNCE && ent->v.movetype != MOVETYPE_BOUNCEMISSILE))
+		{
+			ent->v.flags |= FL_ONGROUND;
+			ent->v.groundentity = trace.ent;
+			VectorCopy(vec3_origin, ent->v.velocity);
+			VectorCopy(vec3_origin, ent->v.avelocity);
+		}
+		else
+		{
+			VectorScale(ent->v.velocity, (1.0 - trace.fraction) * host_frametime * 0.9, move);
+			VectorMA(move, (1.0 - trace.fraction) * host_frametime * 0.9, ent->v.basevelocity, move);
+			trace = SV_PushEntity(ent, move);
+		}
+	}
+
+// check for in water
+	SV_CheckWaterTransition(ent);
 }
 
 /*
