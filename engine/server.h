@@ -262,9 +262,10 @@ extern	cvar_t	sv_cheats;
 
 
 
-extern	cvar_t	sv_gravity;
 extern	cvar_t	sv_friction;
 extern	cvar_t	sv_stopspeed;
+extern	cvar_t	sv_gravity;
+extern	cvar_t	sv_maxvelocity;
 extern	cvar_t	sv_stepsize;
 extern	cvar_t	sv_clipmode;
 extern	cvar_t	sv_bounce;
@@ -273,19 +274,9 @@ extern	cvar_t	sv_spectatormaxspeed;
 extern	cvar_t	sv_airaccelerate;
 extern	cvar_t	sv_wateraccelerate;
 extern	cvar_t	sv_waterfriction;
-
-
-
-
 extern	cvar_t	sv_zmax;
 extern	cvar_t	sv_wateramp;
 extern	cvar_t	sv_skyname;
-extern	cvar_t	sv_maxvelocity;
-
-
-
-
-
 
 extern	cvar_t	sv_idealpitchscale;
 extern	cvar_t	sv_edgefriction;

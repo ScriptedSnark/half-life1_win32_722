@@ -22,21 +22,91 @@ solid_edge items only clip against bsp models.
 
 */
 
-// TODO: Recheck these cvars from scratch
+cvar_t	sv_friction = { "sv_friction", "4", FALSE, TRUE };
+cvar_t	sv_stopspeed = { "sv_stopspeed", "100", FALSE, TRUE };
+cvar_t	sv_gravity = { "sv_gravity", "800", FALSE, TRUE };
+cvar_t	sv_maxvelocity = { "sv_maxvelocity", "2000" };
+cvar_t	sv_stepsize = { "sv_stepsize", "18", FALSE, TRUE };
+cvar_t	sv_clipmode = { "sv_clipmode", "0", FALSE, TRUE };
+cvar_t	sv_bounce = { "sv_bounce", "1", FALSE, TRUE };
+cvar_t	sv_airmove = { "sv_airmove", "1", FALSE, TRUE };
+cvar_t	sv_spectatormaxspeed = { "sv_spectatormaxspeed", "500", FALSE, TRUE };
+cvar_t	sv_airaccelerate = { "sv_airaccelerate", "10", FALSE, TRUE };
+cvar_t	sv_wateraccelerate = { "sv_wateraccelerate", "10", FALSE, TRUE };
+cvar_t	sv_waterfriction = { "sv_waterfriction", "1", FALSE, TRUE };
+cvar_t	sv_zmax = { "sv_zmax", "4096" };
+cvar_t	sv_wateramp = { "sv_wateramp", "0" };
 
-cvar_t sv_gravity = { "sv_gravity", "800", FALSE, TRUE };
-cvar_t sv_friction = { "sv_friction", "4", FALSE, TRUE };
-cvar_t sv_stopspeed = { "sv_stopspeed", "100", FALSE, TRUE };
-cvar_t sv_stepsize = { "sv_stepsize", "18", FALSE, TRUE };
-cvar_t sv_clipmode = { "sv_clipmode", "0", FALSE, TRUE };
-cvar_t sv_bounce = { "sv_bounce", "1", FALSE, TRUE };
-cvar_t sv_airmove = { "sv_airmove", "1", FALSE, TRUE };
-cvar_t sv_spectatormaxspeed = { "sv_spectatormaxspeed", "500", FALSE, TRUE };
-cvar_t sv_airaccelerate = { "sv_airaccelerate", "10", FALSE, TRUE };
-cvar_t sv_wateraccelerate = { "sv_wateraccelerate", "10", FALSE, TRUE };
-cvar_t sv_waterfriction = { "sv_waterfriction", "1", FALSE, TRUE };
+cvar_t	sv_skyname = { "sv_skyname", "desert" };
 
-// TODO: Implement
+
+#define	MOVE_EPSILON	0.01
+
+void SV_Physics_Toss( edict_t* ent );
+
+/*
+================
+SV_CheckAllEnts
+================
+*/
+void SV_CheckAllEnts( void )
+{
+	int			e;
+	edict_t* check;
+
+// see if any solid entities are inside the final position
+	check = sv.edicts;
+	for (e = 1; e < sv.num_edicts; e++, check++)
+	{
+		if (check->free)
+			continue;
+		if (check->v.movetype == MOVETYPE_PUSH
+		|| check->v.movetype == MOVETYPE_NONE
+		|| check->v.movetype == MOVETYPE_FOLLOW
+		|| check->v.movetype == MOVETYPE_NOCLIP)
+			continue;
+
+		if (SV_TestEntityPosition(check))
+			Con_Printf("entity in invalid position\n");
+	}
+}
+
+/*
+================
+SV_CheckVelocity
+================
+*/
+void SV_CheckVelocity( edict_t* ent )
+{
+	int		i;
+
+//
+// bound velocity
+//
+	for (i = 0; i < 3; i++)
+	{
+		if (IS_NAN(ent->v.velocity[i]))
+		{
+			Con_Printf("Got a NaN velocity on %s\n", &pr_strings[ent->v.classname]);
+			ent->v.velocity[i] = 0;
+		}
+		if (IS_NAN(ent->v.origin[i]))
+		{
+			Con_Printf("Got a NaN origin on %s\n", &pr_strings[ent->v.classname]);
+			ent->v.origin[i] = 0;
+		}
+		if (ent->v.velocity[i] > sv_maxvelocity.value)
+		{
+			Con_DPrintf("Got a velocity too high on %s\n", &pr_strings[ent->v.classname]);
+			ent->v.velocity[i] = sv_maxvelocity.value;
+		}
+		else if (ent->v.velocity[i] < -sv_maxvelocity.value)
+		{
+			Con_DPrintf("Got a velocity too low on %s\n", &pr_strings[ent->v.classname]);
+			ent->v.velocity[i] = -sv_maxvelocity.value;
+		}
+	}
+}
 
 /*
 =============
@@ -87,7 +157,6 @@ void SV_Impact( edict_t* e1, edict_t* e2, trace_t* ptrace )
 {
 	gGlobalVariables.time = sv.time;
 
-	// Don't do impacts between entities that are flagged for deletion
 	if ((e1->v.flags & FL_KILLME) || (e2->v.flags & FL_KILLME))
 		return;
 
@@ -106,6 +175,209 @@ void SV_Impact( edict_t* e1, edict_t* e2, trace_t* ptrace )
 
 
 /*
+==================
+ClipVelocity
+
+Slide off of the impacting object
+returns the blocked flags (1 = floor, 2 = step / wall)
+==================
+*/
+#define	STOP_EPSILON	0.1
+
+int ClipVelocity( vec_t* in, vec_t* normal, vec_t* out, float overbounce )
+{
+	float	backoff;
+	float	change;
+	float	angle = 0.0;
+	int		i, blocked;
+
+	blocked = 0;
+	if (normal[2] > 0)
+		blocked |= 1;		// floor
+	if (!normal[2])
+		blocked |= 2;		// step
+
+	backoff = DotProduct(in, normal) * overbounce;
+
+	for (i = 0; i < 3; i++)
+	{
+		change = normal[i] * backoff;
+		out[i] = in[i] - change;
+		if (out[i] > -STOP_EPSILON && out[i] < STOP_EPSILON)
+			out[i] = 0;
+	}
+
+	return blocked;
+}
+
+
+/*
+============
+SV_FlyMove
+
+The basic solid body movement clip that slides along multiple planes
+Returns the clipflags if the velocity was modified (hit something solid)
+1 = floor
+2 = wall / step
+4 = dead stop
+If steptrace is not NULL, the trace of any vertical wall hit will be stored
+============
+*/
+#define	MAX_CLIP_PLANES	5
+int SV_FlyMove( edict_t* ent, float time, trace_t* steptrace )
+{
+	// TODO: Implement
+	return 0;
+}
+
+
+/*
+============
+SV_AddGravity
+
+============
+*/
+void SV_AddGravity( edict_t* ent )
+{
+	float ent_gravity;
+
+	if (ent->v.gravity)
+		ent_gravity = ent->v.gravity;
+	else		
+		ent_gravity = 1.0;
+
+	ent->v.velocity[2] -= (ent_gravity * sv_gravity.value * host_frametime);
+	ent->v.velocity[2] += (ent->v.basevelocity[2] * host_frametime);
+	ent->v.basevelocity[2] = 0;
+
+	SV_CheckVelocity(ent);
+}
+
+
+void SV_AddCorrectGravity( edict_t* ent )
+{
+	float	ent_gravity;
+
+	if (ent->v.gravity)
+		ent_gravity = ent->v.gravity;
+	else	
+		ent_gravity = 1.0;
+
+	// Add gravity so they'll be in the correct position during movement
+	// yes, this 0.5 looks wrong, but it's not.  
+	ent->v.velocity[2] -= (ent_gravity * sv_gravity.value * host_frametime * 0.5);
+	ent->v.velocity[2] += (ent->v.basevelocity[2] * host_frametime);
+	ent->v.basevelocity[2] = 0;
+
+	SV_CheckVelocity(ent);
+}
+
+
+void SV_FixupGravityVelocity( edict_t* ent )
+{
+	float	ent_gravity;
+
+	if (ent->v.gravity)
+		ent_gravity = ent->v.gravity;
+	else
+		ent_gravity = 1.0;
+
+	// Get the correct velocity for the end of the dt 
+	ent->v.velocity[2] -= (ent_gravity * sv_gravity.value * host_frametime * 0.5);
+
+	SV_CheckVelocity(ent);
+}
+
+/*
+===============================================================================
+
+PUSHMOVE
+
+===============================================================================
+*/
+
+/*
+============
+SV_PushEntity
+
+Does not change the entities velocity at all
+============
+*/
+trace_t SV_PushEntity( edict_t* ent, vec_t* push )
+{
+	// TODO: Implement
+	trace_t trace;
+	memset(&trace, 0, sizeof(trace));
+	return trace;
+}
+
+edict_t** g_moved_edict;
+vec3_t* g_moved_from;
+
+/*
+============
+SV_PushMove
+
+============
+*/
+void SV_PushMove( edict_t* pusher, float movetime )
+{
+	// TODO: Implement
+}
+
+/*
+============
+SV_PushRotate
+
+Returns FALSE if the pusher can't push
+============
+*/
+int SV_PushRotate( edict_t* pusher, float movetime )
+{
+	// TODO: Implement
+	return FALSE;
+}
+
+/*
+================
+SV_Physics_Pusher
+
+================
+*/
+void SV_Physics_Pusher( edict_t* ent )
+{
+	// TODO: Implement
+}
+
+/*
+================
+SV_CheckWater
+
+Computes the water level + type also checks if entity is in the water
+and applies any current to velocity and sets appropriate water flags
+================
+*/
+qboolean SV_CheckWater( edict_t* ent )
+{
+	// TODO: Implement
+	return FALSE;
+}
+
+// Recursively determine the water level at a given position
+float SV_RecursiveWaterLevel( vec_t* center, float out, float in, int count )
+{
+	// TODO: Implement
+	return 0.0f;
+}
+
+// Determine the depth that an entity is submerged in water
+float SV_Submerged( edict_t* ent )
+{
+	// TODO: Implement
+	return 0.0f;
+}
+
+/*
 =============
 SV_Physics_None
 
@@ -118,20 +390,123 @@ void SV_Physics_None( edict_t* ent )
 	SV_RunThink(ent);
 }
 
+/*
+=============
+SV_Physics_Follow
 
-// TODO: Implement
+Copy the angles and origin of the parent
+=============
+*/
+void SV_Physics_Follow( edict_t* ent )
+{
+// regular thinking
+	if (!SV_RunThink(ent))
+		return;
+	
+	// no entity to follow
+	if (!ent->v.aiment)
+	{
+		Con_DPrintf("%s movetype FOLLOW with NULL aiment\n", &pr_strings[ent->v.classname]);
+		ent->v.movetype = MOVETYPE_NONE;
+		return;
+	}
 
-edict_t** g_moved_edict;
-vec3_t* g_moved_from;
+	VectorAdd(ent->v.aiment->v.origin, ent->v.v_angle, ent->v.origin);
+	VectorCopy(ent->v.aiment->v.angles, ent->v.angles);
+
+	SV_LinkEdict(ent, TRUE);
+}
 
 /*
-============
-SV_PushMove
+=============
+SV_Physics_Noclip
 
-============
+A moving object that doesn't obey physics
+=============
+*/
+void SV_Physics_Noclip( edict_t* ent )
+{
+// regular thinking
+	if (!SV_RunThink(ent))
+		return;
+
+	VectorMA(ent->v.angles, host_frametime, ent->v.avelocity, ent->v.angles);
+	VectorMA(ent->v.origin, host_frametime, ent->v.velocity, ent->v.origin);
+
+	SV_LinkEdict(ent, FALSE);
+}
+
+/*
+==============================================================================
+
+TOSS / BOUNCE
+
+==============================================================================
 */
 
-// TODO: Implement
+/*
+=============
+SV_CheckWaterTransition
+
+=============
+*/
+void SV_CheckWaterTransition( edict_t* ent )
+{
+	// TODO: Implement
+}
+
+/*
+=============
+SV_Physics_Toss
+
+Toss, bounce, and fly movement.  When onground, do nothing.
+=============
+*/
+void SV_Physics_Toss( edict_t* ent )
+{
+	SV_CheckWater(ent);
+
+// regular thinking
+	if (!SV_RunThink(ent))
+		return;
+
+	// TODO: Implement
+}
+
+/*
+===============================================================================
+
+STEPPING MOVEMENT
+
+===============================================================================
+*/
+
+void PF_WaterMove( edict_t* pSelf )
+{
+	// TODO: Implement
+}
+
+/*
+=============
+SV_Physics_Step
+
+Monsters freefall when they don't have a ground entity, otherwise
+all movement is done with discrete steps.
+
+This is also used for objects that have become still on the ground, but
+will fall if the floor is pulled out from under them.
+FIXME: is this true?
+=============
+*/
+void SV_Physics_Step( edict_t* ent )
+{
+	// TODO: Implement
+
+// regular thinking
+	SV_RunThink(ent);
+
+	SV_CheckWaterTransition(ent);
+}
 
 /*
 =============
@@ -200,13 +575,31 @@ void SV_Physics( void )
 
 		switch (ent->v.movetype)
 		{
+		case MOVETYPE_PUSH:
+			SV_Physics_Pusher(ent);
+			break;
 		case MOVETYPE_NONE:
 			SV_Physics_None(ent);
 			break;
-
-		//default:
-		//	Sys_Error("SV_Physics: %s bad movetype %d", &pr_strings[ent->v.classname], ent->v.movetype);
-		//	break;
+		case MOVETYPE_NOCLIP:
+			SV_Physics_Noclip(ent);
+			break;
+		case MOVETYPE_STEP:
+		case MOVETYPE_PUSHSTEP:
+			SV_Physics_Step(ent);
+			break;
+		case MOVETYPE_FOLLOW:
+			SV_Physics_Follow(ent);
+			break;
+		case MOVETYPE_TOSS:
+		case MOVETYPE_BOUNCE:
+		case MOVETYPE_BOUNCEMISSILE:
+		case MOVETYPE_FLY:
+		case MOVETYPE_FLYMISSILE:
+			SV_Physics_Toss(ent);
+			break;
+		default:
+			Sys_Error("SV_Physics: %s bad movetype %d", &pr_strings[ent->v.classname], ent->v.movetype);
 		}
 
 		if (ent->v.flags & FL_KILLME)
@@ -219,7 +612,13 @@ void SV_Physics( void )
 	sv.time += host_frametime;
 }
 
-// TODO: Implement
+trace_t SV_Trace_Toss( edict_t* ent, edict_t* ignore )
+{
+	// TODO: Implement
+	trace_t trace;
+	memset(&trace, 0, sizeof(trace));
+	return trace;
+}
 
 void SV_SetMoveVars( void )
 {
@@ -241,15 +640,3 @@ void SV_SetMoveVars( void )
 	movevars.waveHeight = sv_wateramp.value;
 	strcpy(movevars.skyName, sv_skyname.string);
 }
-
-// TODO: Implement
-
-trace_t SV_Trace_Toss( edict_t* ent, edict_t* ignore )
-{
-	// TODO: Implement
-	trace_t trace;
-	memset(&trace, 0, sizeof(trace));
-	return trace;
-}
-
-// TODO: Implement

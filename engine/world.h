@@ -42,7 +42,7 @@ int SV_PointContents( const vec_t* p );
 // returns the CONTENTS_* value from the world at the given point.
 // does not check any entities at all
 
-
+edict_t* SV_TestEntityPosition( edict_t* ent );
 
 
 
