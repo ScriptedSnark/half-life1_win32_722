@@ -614,9 +614,30 @@ void SV_Physics( void )
 
 trace_t SV_Trace_Toss( edict_t* ent, edict_t* ignore )
 {
-	// TODO: Implement
+	edict_t tempent, * tent;
 	trace_t trace;
-	memset(&trace, 0, sizeof(trace));
+	vec3_t	move;
+	vec3_t	end;
+	double	save_frametime;
+
+	save_frametime = host_frametime;
+	host_frametime = 0.05;
+
+	memcpy(&tempent, ent, sizeof(tempent));
+	tent = &tempent;
+
+	do
+	{
+		SV_CheckVelocity(tent);
+		SV_AddGravity(tent);
+		VectorMA(tent->v.angles, host_frametime, tent->v.avelocity, tent->v.angles);
+		VectorScale(tent->v.velocity, host_frametime, move);
+		VectorAdd(tent->v.origin, move, end);
+		trace = SV_Move(tent->v.origin, tent->v.mins, tent->v.maxs, end, MOVE_NORMAL, tent, FALSE);
+		VectorCopy(trace.endpos, tent->v.origin);
+	} while (!trace.ent || trace.ent == ignore);
+
+	host_frametime = save_frametime;
 	return trace;
 }
 
