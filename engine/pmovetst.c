@@ -640,11 +640,13 @@ pmtrace_t PM_PlayerMove( vec_t* start, vec_t* end, int traceFlags )
 
 				if (j == 0 || testtrace.allsolid || testtrace.startsolid || testtrace.fraction < trace.fraction)
 				{
-					qboolean remember = (trace.startsolid == FALSE);
-					trace = testtrace;
-
-					if (!remember)
+					if (trace.startsolid)
+					{
+						trace = testtrace;
 						trace.startsolid = TRUE;
+					}
+					else
+						trace = testtrace;
 
 					closest = j;
 				}
@@ -917,11 +919,13 @@ pmtrace_t PM_PlayerMove2( vec_t* start, vec_t* end )
 
 				if (j == 0 || testtrace.allsolid || testtrace.startsolid || testtrace.fraction < trace.fraction)
 				{
-					qboolean remember = (trace.startsolid == FALSE);
-					trace = testtrace;
-
-					if (!remember)
+					if (trace.startsolid)
+					{
+						trace = testtrace;
 						trace.startsolid = TRUE;
+					}
+					else
+						trace = testtrace;
 
 					closest = j;
 				}
