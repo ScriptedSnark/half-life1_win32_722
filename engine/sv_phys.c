@@ -455,7 +455,64 @@ SV_CheckWaterTransition
 */
 void SV_CheckWaterTransition( edict_t* ent )
 {
-	// TODO: Implement
+	int		cont;
+
+	vec3_t	point;
+
+	point[0] = (ent->v.absmin[0] + ent->v.absmax[0]) * 0.5;
+	point[1] = (ent->v.absmin[1] + ent->v.absmax[1]) * 0.5;
+	point[2] = (ent->v.absmin[2] + 1.0);
+
+	cont = SV_PointContents(point);
+	if (!ent->v.watertype)
+	{	// just spawned here
+		ent->v.watertype = cont;
+		ent->v.waterlevel = 1;
+		return;
+	}
+
+	if (cont <= CONTENTS_WATER && cont > CONTENTS_TRANSLUCENT)
+	{
+		if (watertype == -1)
+		{	// just crossed into water
+			SV_StartSound(ent, CHAN_AUTO, "player/pl_wade1.wav", 255, 1.0, 0, PITCH_NORM);
+			ent->v.velocity[2] *= 0.5;
+		}
+		ent->v.watertype = cont;
+		ent->v.waterlevel = 1;
+
+		if (ent->v.absmin[2] == ent->v.absmax[2])
+		{
+			// a point entity
+			ent->v.waterlevel = 3;
+			return;
+		}
+
+		point[2] = (ent->v.absmin[2] + ent->v.absmax[2]) * 0.5;
+
+		cont = SV_PointContents(point);
+		if (cont <= CONTENTS_WATER && cont > CONTENTS_TRANSLUCENT)
+		{
+			ent->v.waterlevel = 2;
+
+			point[2] += ent->v.view_ofs[2];
+
+			cont = SV_PointContents(point);
+			if (cont <= CONTENTS_WATER && cont > CONTENTS_TRANSLUCENT)
+			{
+				ent->v.waterlevel = 3;
+			}
+		}
+	}
+	else
+	{
+		if (ent->v.watertype != CONTENTS_EMPTY)
+		{	// just crossed into water
+			SV_StartSound(ent, CHAN_AUTO, "player/pl_wade2.wav", 255, 1.0, 0, PITCH_NORM);
+		}
+		ent->v.watertype = CONTENTS_EMPTY;
+		ent->v.waterlevel = 0;
+	}
 }
 
 /*
