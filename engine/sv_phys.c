@@ -349,7 +349,51 @@ SV_Physics_Pusher
 */
 void SV_Physics_Pusher( edict_t* ent )
 {
-	// TODO: Implement
+	float	thinktime;
+	float	oldltime;
+	float	movetime;
+
+	oldltime = ent->v.ltime;
+
+	thinktime = ent->v.nextthink;
+	if (thinktime < ent->v.ltime + host_frametime)
+	{
+		movetime = thinktime - ent->v.ltime;
+		if (movetime < 0)
+			movetime = 0;
+	}
+	else
+		movetime = host_frametime;
+
+	if (movetime)
+	{
+		if (!ent->v.avelocity[0] && !ent->v.avelocity[1] && !ent->v.avelocity[2])
+		{
+			SV_PushMove(ent, movetime);
+		}
+		else if (!ent->v.velocity[0] && !ent->v.velocity[1] && !ent->v.velocity[2])
+		{
+			SV_PushRotate(ent, movetime);
+		}
+		else if (SV_PushRotate(ent, movetime))
+		{
+			float savetime = ent->v.ltime;
+
+			// reset the local time to what it was before we rotated
+			ent->v.ltime = oldltime;
+			SV_PushMove(ent, movetime);
+
+			if (ent->v.ltime < savetime)
+				ent->v.ltime = savetime;
+		}
+	}
+
+	if (thinktime > oldltime && ((ent->v.flags & FL_ALWAYSTHINK) || thinktime <= ent->v.ltime))
+	{
+		ent->v.nextthink = 0;
+		gGlobalVariables.time = sv.time;
+		gEntityInterface.pfnThink(ent);
+	}
 }
 
 /*
