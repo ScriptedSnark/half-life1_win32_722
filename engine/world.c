@@ -1,6 +1,7 @@
 // world.c -- world query functions
 
 #include "quakedef.h"
+#include "sv_proto.h"
 
 areanode_t	sv_areanodes[AREA_NODES];
 int			sv_numareanodes;

@@ -3,6 +3,7 @@
 #include "quakedef.h"
 #include "pmove.h"
 #include "sv_proto.h"
+#include "pr_cmds.h"
 
 /*
 
@@ -483,7 +484,122 @@ STEPPING MOVEMENT
 
 void PF_WaterMove( edict_t* pSelf )
 {
-	// TODO: Implement
+	int		flags;
+	int		waterlevel;
+	int		watertype;
+	float	drownlevel;
+
+	if (pSelf->v.movetype == MOVETYPE_NOCLIP)
+	{
+		pSelf->v.air_finished = sv.time + 12;
+		return;
+	}
+
+	if (pSelf->v.health < 0.0)
+		return;
+
+	drownlevel = (pSelf->v.deadflag == DEAD_NO) ? 3 : 1;
+	flags = pSelf->v.flags;
+	waterlevel = pSelf->v.waterlevel;
+	watertype = pSelf->v.watertype;
+
+	if (!(flags & (FL_IMMUNE_WATER | FL_GODMODE)))
+	{
+		if ((flags & FL_SWIM) && (waterlevel < drownlevel) || (waterlevel >= drownlevel))
+		{
+			if (pSelf->v.air_finished < sv.time && pSelf->v.pain_finished < sv.time)
+			{
+				pSelf->v.dmg += 2;
+				if (pSelf->v.dmg > 15)
+					pSelf->v.dmg = 10;
+
+				pSelf->v.pain_finished = sv.time + 1;
+			}
+		}
+		else
+		{
+			pSelf->v.dmg = 2;
+			pSelf->v.air_finished = sv.time + 12;
+		}
+	}
+
+	if (waterlevel == 0)
+	{
+		// play leave water sound
+		if (flags & FL_INWATER)
+		{
+			switch (RandomLong(0, 3))
+			{
+			case 0:
+				SV_StartSound(pSelf, CHAN_BODY, "player/pl_wade1.wav", 255, ATTN_NORM, 0, PITCH_NORM);
+				break;
+			case 1:
+				SV_StartSound(pSelf, CHAN_BODY, "player/pl_wade2.wav", 255, ATTN_NORM, 0, PITCH_NORM);
+				break;
+			case 2:
+				SV_StartSound(pSelf, CHAN_BODY, "player/pl_wade3.wav", 255, ATTN_NORM, 0, PITCH_NORM);
+				break;
+			case 3:
+				SV_StartSound(pSelf, CHAN_BODY, "player/pl_wade4.wav", 255, ATTN_NORM, 0, PITCH_NORM);
+				break;
+			}
+
+			pSelf->v.flags &= ~FL_INWATER;
+		}
+
+		pSelf->v.air_finished = sv.time + 12;
+		return;
+	}
+
+	if (watertype == CONTENTS_LAVA)
+	{
+		if (!(flags & (FL_IMMUNE_LAVA | FL_GODMODE)) && pSelf->v.dmgtime < sv.time)
+		{
+			if (pSelf->v.radsuit_finished < sv.time)
+				pSelf->v.dmgtime = sv.time + 0.2;
+			else
+				pSelf->v.dmgtime = sv.time + 1.0;
+		}
+	}
+	else if (watertype == CONTENTS_SLIME)
+	{
+		if (!(flags & (FL_IMMUNE_SLIME | FL_GODMODE)) && pSelf->v.dmgtime < sv.time)
+		{
+			if (pSelf->v.radsuit_finished < sv.time)
+				pSelf->v.dmgtime = sv.time + 1.0;
+		}
+	}
+
+	if (!(flags & FL_INWATER))
+	{
+		// player enter water sound
+		if (watertype == CONTENTS_WATER)
+		{
+			switch (RandomLong(0, 3))
+			{
+			case 0:
+				SV_StartSound(pSelf, CHAN_BODY, "player/pl_wade1.wav", 255, ATTN_NORM, 0, PITCH_NORM);
+				break;
+			case 1:
+				SV_StartSound(pSelf, CHAN_BODY, "player/pl_wade2.wav", 255, ATTN_NORM, 0, PITCH_NORM);
+				break;
+			case 2:
+				SV_StartSound(pSelf, CHAN_BODY, "player/pl_wade3.wav", 255, ATTN_NORM, 0, PITCH_NORM);
+				break;
+			case 3:
+				SV_StartSound(pSelf, CHAN_BODY, "player/pl_wade4.wav", 255, ATTN_NORM, 0, PITCH_NORM);
+				break;
+			}
+		}
+
+		pSelf->v.dmgtime = 0;
+		pSelf->v.flags |= FL_INWATER;
+	}
+
+	if (!(flags & FL_WATERJUMP))
+	{
+		VectorMA(pSelf->v.velocity, (-0.8 * pSelf->v.waterlevel * host_frametime), pSelf->v.velocity, pSelf->v.velocity);
+	}
 }
 
 /*
