@@ -40,6 +40,8 @@ cvar_t	sv_wateramp = { "sv_wateramp", "0" };
 
 cvar_t	sv_skyname = { "sv_skyname", "desert" };
 
+vec3_t	vec_origin = { 0, 0, 0 };
+
 
 #define	MOVE_EPSILON	0.01
 
@@ -616,7 +618,114 @@ FIXME: is this true?
 */
 void SV_Physics_Step( edict_t* ent )
 {
-	// TODO: Implement
+	qboolean	wasonground;
+	qboolean	inwater;
+	qboolean	hitsound = FALSE;
+	float* vel = NULL;
+	float		speed, newspeed, control;
+	float		friction;
+
+	PF_WaterMove(ent);
+
+	SV_CheckVelocity(ent);
+
+	wasonground = (ent->v.flags & FL_ONGROUND) ? TRUE : FALSE;
+	inwater = SV_CheckWater(ent);
+
+	if ((ent->v.flags & FL_FLOAT) && ent->v.waterlevel > 0)
+	{
+		float buoyancy = SV_Submerged(ent) * ent->v.skin * host_frametime;
+
+		SV_AddGravity(ent);
+		ent->v.velocity[2] += buoyancy;
+	}
+
+	// add gravity except:
+	//  flying monsters
+	//  swimming monsters who are in the water
+	if (!wasonground && !(ent->v.flags & FL_FLY) && (!(ent->v.flags & FL_SWIM) || ent->v.waterlevel <= 0))
+	{
+		if (!inwater)
+		{
+			SV_AddGravity(ent);
+		}
+	}
+
+	if (!VectorCompare(ent->v.velocity, vec_origin) || !VectorCompare(ent->v.basevelocity, vec_origin))
+	{
+		ent->v.flags &= ~FL_ONGROUND;
+
+		// apply friction
+		// let dead monsters who aren't completely onground slide
+		if (wasonground && (ent->v.health > 0.0 || SV_CheckBottom(ent)))
+		{
+			speed = sqrt(ent->v.velocity[0] * ent->v.velocity[0] + ent->v.velocity[1] * ent->v.velocity[1]);
+			if (speed)
+			{
+				friction = ent->v.friction * sv_friction.value;
+				ent->v.friction = 1.0;
+
+				control = (sv_stopspeed.value < speed) ? speed : sv_stopspeed.value;
+				newspeed = speed - (control * friction * host_frametime);
+				if (newspeed < 0.0)
+					newspeed = 0.0;
+
+				newspeed = newspeed / speed;
+
+				ent->v.velocity[0] *= newspeed;
+				ent->v.velocity[1] *= newspeed;
+			}
+		}
+
+		VectorAdd(ent->v.velocity, ent->v.basevelocity, ent->v.velocity);
+		SV_CheckVelocity(ent);
+
+		SV_FlyMove(ent, host_frametime, NULL);
+		SV_CheckVelocity(ent);
+
+		VectorSubtract(ent->v.velocity, ent->v.basevelocity, ent->v.velocity);
+		SV_CheckVelocity(ent);
+
+		// determine if it's on solid ground at all
+		vec3_t mins, maxs, point;
+		int x, y;
+
+		VectorAdd(ent->v.origin, ent->v.mins, mins);
+		VectorAdd(ent->v.origin, ent->v.maxs, maxs);
+
+		point[2] = mins[2] - 1.0;
+
+		for (x = 0; x <= 1; x++)
+		{
+			for (y = 0; y <= 1; y++)
+			{
+				point[0] = x ? maxs[0] : mins[0];
+				point[1] = y ? maxs[1] : mins[1];
+
+				if (SV_PointContents(point) == CONTENTS_SOLID)
+				{
+					ent->v.flags |= FL_ONGROUND;
+					break;
+				}
+			}
+		}
+
+		SV_LinkEdict(ent, TRUE);
+	}
+	else
+	{
+		if (gGlobalVariables.force_retouch != 0)
+		{
+			trace_t trace = SV_Move(ent->v.origin, ent->v.mins, ent->v.maxs, ent->v.origin, MOVE_NORMAL, ent, (ent->v.flags & FL_MONSTERCLIP) ? TRUE : FALSE);
+
+			// tentacle impact code
+			if (trace.fraction < 1.0 || trace.startsolid)
+			{
+				if (trace.ent)
+					SV_Impact(ent, trace.ent, &trace);
+			}
+		}
+	}
 
 // regular thinking
 	SV_RunThink(ent);
