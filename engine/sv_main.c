@@ -53,11 +53,6 @@ cvar_t sv_maxspectators = { "sv_maxspectators", "8", FALSE, TRUE };
 
 cvar_t sv_cheats = { "sv_cheats", "0", FALSE, TRUE };
 
-cvar_t sv_zmax = { "sv_zmax", "4096" };
-cvar_t sv_wateramp = { "sv_wateramp", "0" };
-cvar_t sv_skyname = { "sv_skyname", "desert" };
-cvar_t sv_maxvelocity = { "sv_maxvelocity", "2000" };
-
 cvar_t sv_netsize = { "sv_netsize", "0" };
 
 cvar_t sv_showcmd = { "sv_showcmd", "0" };

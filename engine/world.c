@@ -475,7 +475,32 @@ int SV_PointContents( const vec_t* p )
 	return cont;
 }
 
-// TODO: Implement
+//===========================================================================
+
+/*
+===============
+SV_TestEntityPosition
+
+Returns true if the entity is in solid currently
+===============
+*/
+edict_t* SV_TestEntityPosition( edict_t* ent )
+{
+	trace_t trace;
+	qboolean monsterClip;
+
+	monsterClip = (ent->v.flags & FL_MONSTERCLIP) ? TRUE : FALSE;
+
+	trace = SV_Move(ent->v.origin, ent->v.mins, ent->v.maxs, ent->v.origin, MOVE_NORMAL, ent, monsterClip);
+
+	if (trace.startsolid)
+	{
+		SV_SetGlobalTrace(&trace);
+		return trace.ent;
+	}
+
+	return NULL;
+}
 
 /*
 ===============================================================================
