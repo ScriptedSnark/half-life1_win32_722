@@ -376,8 +376,37 @@ float SV_RecursiveWaterLevel( vec_t* center, float out, float in, int count )
 // Determine the depth that an entity is submerged in water
 float SV_Submerged( edict_t* ent )
 {
-	// TODO: Implement
-	return 0.0f;
+	float	bottom;
+	vec3_t	center;
+
+	center[0] = (ent->v.absmin[0] + ent->v.absmax[0]) * 0.5;
+	center[1] = (ent->v.absmin[1] + ent->v.absmax[1]) * 0.5;
+	center[2] = (ent->v.absmin[2] + ent->v.absmax[2]) * 0.5;
+
+	bottom = ent->v.absmin[2] - center[2];
+
+	switch (ent->v.waterlevel)
+	{
+	case 1:
+		return SV_RecursiveWaterLevel(center, 0.0, bottom, 0) - bottom;
+	case 2:
+		return SV_RecursiveWaterLevel(center, ent->v.absmax[2] - center[2], 0.0, 0) - bottom;
+	case 3:
+	{
+		vec3_t point;
+
+		point[0] = center[0];
+		point[1] = center[1];
+		point[2] = ent->v.absmax[2];
+
+		if (SV_PointContents(point) == CONTENTS_WATER)
+			return ent->v.maxs[2] - ent->v.mins[2];
+
+		return SV_RecursiveWaterLevel(center, ent->v.absmax[2] - center[2], 0.0, 0) - bottom;
+	}
+	}
+
+	return 0.0;
 }
 
 /*
