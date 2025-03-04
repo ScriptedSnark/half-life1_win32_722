@@ -33,7 +33,7 @@ void CL_WriteDLLUpdate( client_data_t* cdata );
 
 
 void CL_Stop_f( void );
-
+void CL_Record_f( void );
 
 
 

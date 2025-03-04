@@ -234,6 +234,10 @@ extern	cvar_t		host_speeds;
 // start of every frame, never reset
 
 
+extern cvar_t		rcon_password;
+extern cvar_t		rcon_address;
+extern cvar_t		rcon_port;
+
 void Host_ClearMemory( qboolean bQuiet );
 
 void Host_InitCommands( void );

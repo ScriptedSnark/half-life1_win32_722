@@ -476,8 +476,16 @@ void SV_RunCmd( usercmd_t* ucmd )
 	SV_PostRunCmd();
 }
 
+/*
+===========
+SV_PostRunCmd
+===========
+Done after running a player command.
+*/
 void SV_PostRunCmd( void )
 {
+	// run post-think
+
 	if (host_client->spectator)
 	{
 		gGlobalVariables.time = sv.time;
