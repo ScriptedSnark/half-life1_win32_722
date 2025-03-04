@@ -362,15 +362,88 @@ and applies any current to velocity and sets appropriate water flags
 */
 qboolean SV_CheckWater( edict_t* ent )
 {
-	// TODO: Implement
-	return FALSE;
+	vec3_t	point;
+	int		cont;
+	int		truecont;
+
+	// Pick a spot just above the players feet.
+	point[0] = (ent->v.absmin[0] + ent->v.absmax[0]) * 0.5;
+	point[1] = (ent->v.absmin[1] + ent->v.absmax[1]) * 0.5;
+	point[2] = (ent->v.absmin[2] + 1.0);
+
+//
+// get waterlevel
+//
+	ent->v.waterlevel = 0;
+	ent->v.watertype = CONTENTS_EMPTY;
+
+	// Grab point contents.
+	cont = SV_PointContents(point);
+	if (cont <= CONTENTS_WATER && cont > CONTENTS_TRANSLUCENT)
+	{	// just spawned here
+		ent->v.watertype = cont;
+		ent->v.waterlevel = 1;
+
+		if (ent->v.absmin[2] == ent->v.absmax[2])
+		{
+			ent->v.waterlevel = 3;
+		}
+		else
+		{
+			// Now check a point that is at the player hull midpoint.
+			point[2] = (ent->v.absmin[2] + ent->v.absmax[2]) * 0.5;
+			truecont = SV_PointContents(point);
+			// If that point is also under water...
+			if (truecont <= CONTENTS_WATER && truecont > CONTENTS_TRANSLUCENT)
+			{
+				// Set a higher water level.
+				ent->v.waterlevel = 2;
+
+				// Now check the eye position.  (view_ofs is relative to the origin)
+				point[2] += ent->v.view_ofs[2];
+
+				truecont = SV_PointContents(point);
+				if (truecont <= CONTENTS_WATER && truecont > CONTENTS_TRANSLUCENT)
+					ent->v.waterlevel = 3;  // In over our eyes
+			}
+		}
+
+		// Adjust velocity based on water current, if any.
+		if (cont <= CONTENTS_CURRENT_0)
+		{
+			// The deeper we are, the stronger the current.
+			static vec3_t current_table[] =
+			{
+				{1, 0, 0}, {0, 1, 0}, {-1, 0, 0},
+				{0, -1, 0}, {0, 0, 1}, {0, 0, -1}
+			};
+
+			VectorMA(ent->v.basevelocity, 50.0 * ent->v.waterlevel, current_table[CONTENTS_CURRENT_0 - cont], ent->v.basevelocity);
+		}
+	}
+
+	return ent->v.waterlevel > 1;
 }
 
 // Recursively determine the water level at a given position
 float SV_RecursiveWaterLevel( vec_t* center, float out, float in, int count )
 {
-	// TODO: Implement
-	return 0.0f;
+	vec3_t	test;
+	float	offset;
+
+	offset = (out - in) * 0.5 + in;
+	count++;
+
+	if (count >= 6)
+		return offset;
+
+	VectorCopy(center, test);
+	test[2] += offset;
+
+	if (SV_PointContents(test) == CONTENTS_WATER)
+		return SV_RecursiveWaterLevel(center, out, offset, count);
+
+	return SV_RecursiveWaterLevel(center, offset, in, count);
 }
 
 // Determine the depth that an entity is submerged in water
