@@ -55,6 +55,8 @@ cvar_t	cl_resend = { "cl_resend", "3.0" };
 
 
 
+cvar_t	rcon_address = { "rcon_address", "" };
+cvar_t	rcon_port = { "rcon_port", "0" };
 
 client_static_t	cls;
 client_state_t cl;
@@ -755,6 +757,63 @@ void CL_SignonReply( void )
 	}
 }
 
+// TODO: Implement
+
+/*
+=====================
+CL_Rcon_f
+
+  Send the rest of the command line over as
+  an unconnected command.
+=====================
+*/
+void CL_Rcon_f( void )
+{
+	int			port;
+	int			i;
+	netadr_t	to;
+	char		message[1024];
+
+	if (!rcon_password.string)
+	{
+		Con_Printf("You must set 'rcon_password' before\nissuing an rcon command.\n");
+		return;
+	}
+
+	if (cls.state >= ca_connected)
+	{
+		to = cls.netchan.remote_address;
+	}
+	else
+	{
+		if (!strlen(rcon_address.string))
+		{
+			Con_Printf("You must either be connected,\n"
+					   "or set the 'rcon_address' cvar\n"
+					   "to issue rcon commands\n");
+
+			return;
+		}
+
+		NET_StringToAdr(rcon_address.string, &to);
+	}
+
+	port = rcon_port.value;
+	if (port == 0) {
+		port = atoi("27015");
+	}
+	to.port = BigShort(port);
+
+	// construct the message
+	sprintf(message, "rcon ");
+	strcat(message, rcon_password.string);
+	for (i = 1, message[strlen(message)] = ' '; i < Cmd_Argc(); message[strlen(message)] = ' ', i++) {
+		strcat(message, Cmd_Argv(i));
+	}
+
+	Netchan_OutOfBandPrint(NS_CLIENT, to, "%s", message);
+}
+
 /*
 ==================
 CL_NextDemo
@@ -1401,6 +1460,8 @@ void CL_Init( void )
 
 	// TODO: Implement
 
+	Cvar_RegisterVariable(&rcon_address);
+	Cvar_RegisterVariable(&rcon_port);
 	Cvar_RegisterVariable(&cl_spectator_password);
 	Cvar_RegisterVariable(&cl_predict_players);
 	Cvar_RegisterVariable(&cl_solid_players);
@@ -1411,9 +1472,16 @@ void CL_Init( void )
 
 	Cmd_AddCommand("disconnect", CL_Disconnect_f);
 
+	Cmd_AddCommand("record", CL_Record_f);
+	Cmd_AddCommand("stop", CL_Stop_f);
+
 	// TODO: Implement
 
 	Cmd_AddCommand("snapshot", CL_TakeSnapshot_f);
+	// TODO: Implement
+
+	Cmd_AddCommand("rcon", CL_Rcon_f);
+
 	// TODO: Implement
 	
 	CL_InitPrediction();

@@ -9,6 +9,8 @@ int	gHostSpawnCount = 0;
 int	current_skill;
 qboolean noclip_anglehack;
 
+cvar_t rcon_password = { "rcon_password", "" };
+
 void Host_ClearGameState( void );
 
 
@@ -473,6 +475,7 @@ void Host_InitCommands( void )
 	// TODO: Implement
 
 	Cmd_AddCommand("resourcelist", SV_SendResourceListBlock_f);
+	Cvar_RegisterVariable(&rcon_password);
 
 	// TODO: Implement
 

@@ -108,3 +108,15 @@ void CL_Stop_f( void )
 {
 	// TODO: Implement
 }
+
+/*
+====================
+CL_Record_f
+
+//
+====================
+*/
+void CL_Record_f( void )
+{
+	// TODO: Implement
+}

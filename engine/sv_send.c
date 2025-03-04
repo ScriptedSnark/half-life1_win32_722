@@ -27,6 +27,8 @@ char	outputbuf[8000];
 
 redirect_t	sv_redirected;
 
+netadr_t sv_redirectto;
+
 extern int sv_playermodel;
 
 /*
@@ -62,17 +64,46 @@ Host_FlushRedirect
 */
 void Host_FlushRedirect( void )
 {
-	// TODO: Implement
+	if (sv_redirected == RD_PACKET)
+	{
+		SZ_Clear(&net_message);
+		MSG_WriteLong(&net_message, 0xffffffff);
+		MSG_WriteByte(&net_message, A2C_PRINT);
+		MSG_WriteString(&net_message, outputbuf);
+		NET_SendPacket(NS_SERVER, net_message.cursize, net_message.data, sv_redirectto);
+		SZ_Clear(&net_message);
+	}
+	else if (sv_redirected == RD_CLIENT)
+	{
+		MSG_WriteByte(&host_client->netchan.message, 8);
+		MSG_WriteString(&host_client->netchan.message, outputbuf);
+	}
+
+	// clear it
+	outputbuf[0] = 0;
 }
+
 
 /*
 ==================
-Host_EndRedirect
+SV_BeginRedirect
+
+  Send Con_Printf data to the remote client
+  instead of the console
 ==================
 */
+void Host_BeginRedirect( redirect_t rd, netadr_t* adr )
+{
+	sv_redirected = rd;
+	memcpy(&sv_redirectto, adr, sizeof(sv_redirectto));
+	outputbuf[0] = 0;
+}
+
 void Host_EndRedirect( void )
 {
-	// TODO: Implement
+	Host_FlushRedirect();
+
+	sv_redirected = RD_NONE;
 }
 
 /*
@@ -278,216 +309,226 @@ Can delta from either a baseline or a previous packet_entity
 */
 void SV_WriteDelta( entity_state_t* from, entity_state_t* to, sizebuf_t* msg, qboolean force )
 {
-	// TODO: Refactor
+	int     bits, bboxbits;
+	int		i, num;
+	float   miss;
 
-	unsigned int v4; // ebx
-	int v5; // ebp
-	int v6; // ecx
-	float *v7; // esi
-	int v8; // ecx
-	float *mins; // edx
-	float *v10; // esi
-	int number; // eax
-	int v12; // [esp-4h] [ebp-20h]
-	float a2c; // [esp+10h] [ebp-Ch]
-	double a2; // [esp+10h] [ebp-Ch]
-	float a2d; // [esp+10h] [ebp-Ch]
-	double a2a; // [esp+10h] [ebp-Ch]
-	float a2e; // [esp+10h] [ebp-Ch]
-	double a2b; // [esp+10h] [ebp-Ch]
-	int a2f; // [esp+10h] [ebp-Ch]
-	float *origin; // [esp+18h] [ebp-4h]
-
-	if (to->entityType)
+	if (to->entityType != ENTITY_NORMAL)
 	{
 		SV_WriteCustomEntityDeltaToClient(from, to, msg, force);
+		return;
 	}
-	else
+
+// send an update
+	bits = 0;
+	bboxbits = 0;
+
+	for (i = 0; i < 3; i++)
 	{
-		v4 = 0;
-		v5 = 0;
-		v6 = 0;
-		origin = to->origin;
-		v7 = from->origin;
-		do
-		{
-			a2c = *origin - *v7;
-			a2 = a2c;
-			if (a2 < -0.1 || a2 > 0.1)
-				v4 |= 2 << v6;
-			++v7;
-			++v6;
-			++origin;
-		} while (v6 < 3);
-		if (from->angles[0] != to->angles[0])
-			v4 |= U_ANGLE1;
-		if (from->angles[1] != to->angles[1])
-			v4 |= U_ANGLE2;
-		if (from->angles[2] != to->angles[2])
-			v4 |= U_ANGLE3;
-		if (from->movetype != to->movetype)
-			v4 |= U_MOVETYPE;
-		if (from->colormap != to->colormap)
-			v4 |= U_COLORMAP;
-		if (from->skin != to->skin || to->solid != from->solid)
-			v4 |= U_CONTENTS;
-		if (from->frame != to->frame)
-			v4 |= U_FRAME;
-		if (from->scale != to->scale)
-			v4 |= U_SCALE;
-		if (from->effects != to->effects)
-			v4 |= U_EFFECTS;
-		if (from->modelindex != to->modelindex)
-			v4 |= U_MODELINDEX;
-		if (from->animtime != to->animtime || to->sequence != from->sequence)
-			v4 |= U_SEQUENCE;
-		if (from->framerate != to->framerate)
-			v4 |= U_FRAMERATE;
-		if (from->body != to->body)
-			v4 |= U_BODY;
-		if (from->controller[0] != to->controller[0])
-			v4 |= U_CONTROLLER1;
-		if (from->controller[1] != to->controller[1])
-			v4 |= U_CONTROLLER2;
-		if (from->controller[2] != to->controller[2])
-			v4 |= U_CONTROLLER3;
-		if (from->controller[3] != to->controller[3])
-			v4 |= U_CONTROLLER4;
-		if (from->blending[0] != to->blending[0])
-			v4 |= U_BLENDING1;
-		if (from->blending[1] != to->blending[1])
-			v4 |= U_BLENDING2;
-		if (from->rendermode != to->rendermode
-		  || to->renderamt != from->renderamt
-		  || to->renderfx != from->renderfx
-		  || to->rendercolor.r != from->rendercolor.r
-		  || from->rendercolor.g != to->rendercolor.g
-		  || to->rendercolor.b != from->rendercolor.b)
-		{
-			v4 |= U_RENDER;
-		}
-		if (to->animtime != 0.0 && to->velocity[0] == 0.0 && to->velocity[1] == 0.0 && to->velocity[2] == 0.0)
-			v4 |= 0x200000u;
-		v8 = 0;
-		mins = from->mins;
-		v10 = to->mins;
-		do
-		{
-			a2d = *v10 - *mins;
-			a2a = a2d;
-			if (a2a < -0.1 || a2a > 0.1)
-				v5 |= 1 << v8;
-			a2e = v10[3] - mins[3];
-			a2b = a2e;
-			if (a2b < -0.1 || a2b > 0.1)
-				v5 |= 8 << v8;
-			++mins;
-			++v10;
-			++v8;
-		} while (v8 < 3);
-		number = to->number;
-		if (number >= 256)
-			v4 |= 0x8000u;
-		if (v4 >= U_EVENMOREBITS)
-			v4 |= 1u;
-		if (v4 >= U_FRAMERATE)
-			v4 |= 0x100u;
-		if (v4 >= U_CONTROLLER1)
-			v4 |= U_YETMOREBITS;
-		if (v5)
-			v4 |= U_YETMOREBITS | U_EVENMOREBITS | U_MOREBITS | 0x80000000;
-		if (!number)
-			Sys_Error("Unset entity number");
-		if (v4 || v5 || force)
-		{
-			MSG_WriteByte(msg, v4);
-			if ((v4 & U_MOREBITS) != 0)
-				MSG_WriteByte(msg, v4 >> 8);
-			if ((v4 & U_EVENMOREBITS) != 0)
-				MSG_WriteByte(msg, HIWORD(v4));
-			if ((v4 & U_YETMOREBITS) != 0)
-				MSG_WriteByte(msg, HIBYTE(v4));
-			if ((v4 & 0x80000000) != 0)
-				MSG_WriteByte(msg, v5);
-			v12 = to->number;
-			if ((v4 & U_FRAME) == 0)
-				MSG_WriteByte(msg, v12);
-			else
-				MSG_WriteShort(msg, v12);
-			if ((v4 & U_MODELINDEX) != 0)
-				MSG_WriteShort(msg, to->modelindex);
-			if ((v4 & U_FRAME) != 0)
-				MSG_WriteWord(msg, (__int64)(to->frame * 256.0));
-			if ((v4 & U_MOVETYPE) != 0)
-				MSG_WriteByte(msg, to->movetype);
-			if ((v4 & U_COLORMAP) != 0)
-				MSG_WriteByte(msg, to->colormap);
-			if ((v4 & U_CONTENTS) != 0)
-			{
-				MSG_WriteShort(msg, to->skin);
-				MSG_WriteByte(msg, to->solid);
-			}
-			if ((v4 & U_SCALE) != 0)
-				MSG_WriteWord(msg, (__int64)(to->scale * 256.0));
-			if ((v4 & U_EFFECTS) != 0)
-				MSG_WriteByte(msg, to->effects);
-			if ((v4 & U_ORIGIN1) != 0)
-				MSG_WriteCoord(msg, to->origin[0]);
-			if ((v4 & U_ANGLE1) != 0)
-				MSG_WriteHiresAngle(msg, to->angles[0]);
-			if ((v4 & U_ORIGIN2) != 0)
-				MSG_WriteCoord(msg, to->origin[1]);
-			if ((v4 & U_ANGLE2) != 0)
-				MSG_WriteHiresAngle(msg, to->angles[1]);
-			if ((v4 & U_ORIGIN3) != 0)
-				MSG_WriteCoord(msg, to->origin[2]);
-			if ((v4 & U_ANGLE3) != 0)
-				MSG_WriteHiresAngle(msg, to->angles[2]);
-			if ((v4 & U_SEQUENCE) != 0)
-			{
-				a2f = (unsigned __int8)(__int64)(to->animtime * 100.0);
-				MSG_WriteByte(msg, to->sequence);
-				MSG_WriteByte(msg, a2f);
-			}
-			if ((v4 & U_FRAMERATE) != 0)
-				MSG_WriteChar(msg, (__int64)(to->framerate * 16.0));
-			if ((v4 & U_CONTROLLER1) != 0)
-				MSG_WriteByte(msg, to->controller[0]);
-			if ((v4 & U_CONTROLLER2) != 0)
-				MSG_WriteByte(msg, to->controller[1]);
-			if ((v4 & U_CONTROLLER3) != 0)
-				MSG_WriteByte(msg, to->controller[2]);
-			if ((v4 & U_CONTROLLER4) != 0)
-				MSG_WriteByte(msg, to->controller[3]);
-			if ((v4 & U_BLENDING1) != 0)
-				MSG_WriteByte(msg, to->blending[0]);
-			if ((v4 & U_BLENDING2) != 0)
-				MSG_WriteByte(msg, to->blending[1]);
-			if ((v4 & U_BODY) != 0)
-				MSG_WriteByte(msg, to->body);
-			if ((v4 & U_RENDER) != 0)
-			{
-				MSG_WriteByte(msg, to->rendermode);
-				MSG_WriteByte(msg, to->renderamt);
-				MSG_WriteByte(msg, to->rendercolor.r);
-				MSG_WriteByte(msg, to->rendercolor.g);
-				MSG_WriteByte(msg, to->rendercolor.b);
-				MSG_WriteByte(msg, to->renderfx);
-			}
-			if ((v5 & 1) != 0)
-				MSG_WriteCoord(msg, to->mins[0]);
-			if ((v5 & 2) != 0)
-				MSG_WriteCoord(msg, to->mins[1]);
-			if ((v5 & 4) != 0)
-				MSG_WriteCoord(msg, to->mins[2]);
-			if ((v5 & 8) != 0)
-				MSG_WriteCoord(msg, to->maxs[0]);
-			if ((v5 & 0x10) != 0)
-				MSG_WriteCoord(msg, to->maxs[1]);
-			if ((v5 & 0x20) != 0)
-				MSG_WriteCoord(msg, to->maxs[2]);
-		}
+		miss = to->origin[i] - from->origin[i];
+		if (miss < -0.1 || miss > 0.1)
+			bits |= (U_ORIGIN1 << i);
 	}
+
+	if (from->angles[0] != to->angles[0])
+		bits |= U_ANGLE1;
+	if (from->angles[1] != to->angles[1])
+		bits |= U_ANGLE2;
+	if (from->angles[2] != to->angles[2])
+		bits |= U_ANGLE3;
+
+	if (from->movetype != to->movetype)
+		bits |= U_MOVETYPE;
+
+	if (from->colormap != to->colormap)
+		bits |= U_COLORMAP;
+
+	if (from->skin != to->skin || to->solid != from->solid)
+		bits |= U_CONTENTS;
+
+	if (from->frame != to->frame)
+		bits |= U_FRAME;
+
+	if (from->scale != to->scale)
+		bits |= U_SCALE;
+
+	if (from->effects != to->effects)
+		bits |= U_EFFECTS;
+
+	if (from->modelindex != to->modelindex)
+		bits |= U_MODELINDEX;
+
+	if (from->animtime != to->animtime || to->sequence != from->sequence)
+		bits |= U_SEQUENCE;
+
+	if (from->framerate != to->framerate)
+		bits |= U_FRAMERATE;
+
+	if (from->body != to->body)
+		bits |= U_BODY;
+
+	if (from->controller[0] != to->controller[0])
+		bits |= U_CONTROLLER1;
+	if (from->controller[1] != to->controller[1])
+		bits |= U_CONTROLLER2;
+	if (from->controller[2] != to->controller[2])
+		bits |= U_CONTROLLER3;
+	if (from->controller[3] != to->controller[3])
+		bits |= U_CONTROLLER4;
+
+	if (from->blending[0] != to->blending[0])
+		bits |= U_BLENDING1;
+	if (from->blending[1] != to->blending[1])
+		bits |= U_BLENDING2;
+
+	if (from->rendermode != to->rendermode
+		|| to->renderamt != from->renderamt
+		|| to->renderfx != from->renderfx
+		|| to->rendercolor.r != from->rendercolor.r
+		|| from->rendercolor.g != to->rendercolor.g
+		|| to->rendercolor.b != from->rendercolor.b)
+	{
+		bits |= U_RENDER;
+	}
+
+	if (to->animtime != 0.0 && to->velocity[0] == 0.0 && to->velocity[1] == 0.0 && to->velocity[2] == 0.0)
+		bits |= 0x200000u; //?
+
+	for (i = 0; i < 3; i++)
+	{
+		miss = to->mins[i] - from->mins[i];
+		if (miss < -0.1 || miss > 0.1)
+			bboxbits |= (U_BBOXMINS1 << i);
+
+		miss = to->maxs[i] - from->maxs[i];
+		if (miss < -0.1 || miss > 0.1)
+			bboxbits |= (U_BBOXMAXS1 << i);
+	}
+
+	// Check for large entity number
+	num = to->number;
+	if (num >= MAX_PACKET_ENTITIES)
+		bits |= U_LONGENTITY;
+
+	if (bits >= U_EVENMOREBITS)
+		bits |= U_MOREBITS;
+
+	if (bits >= U_FRAMERATE)
+		bits |= U_EVENMOREBITS;
+
+	if (bits >= U_CONTROLLER1)
+		bits |= U_YETMOREBITS;
+
+	if (bboxbits)
+		bits |= U_YETMOREBITS | U_EVENMOREBITS | U_MOREBITS | 0x80000000;
+
+	//
+	// write the message
+	//
+	if (!num)
+		Sys_Error("Unset entity number");
+
+	if (!bits && !bboxbits && !force)
+		return;		// nothing to send!
+
+	MSG_WriteByte(msg, bits & 255);
+
+	if (bits & U_MOREBITS)
+		MSG_WriteByte(msg, (bits >> 8) & 255);
+
+	if (bits & U_EVENMOREBITS)
+		MSG_WriteByte(msg, (bits >> 16) & 255);
+
+	if (bits & U_YETMOREBITS)
+		MSG_WriteByte(msg, (bits >> 24) & 255);
+
+	if (bits & 0x80000000)
+		MSG_WriteByte(msg, bboxbits);
+
+	if (bits & U_FRAME)
+		MSG_WriteShort(msg, to->number);
+	else
+		MSG_WriteByte(msg, to->number);
+
+	if (bits & U_MODELINDEX)
+		MSG_WriteShort(msg, to->modelindex);
+	if (bits & U_FRAME)
+		MSG_WriteWord(msg, to->frame * 256);
+	if (bits & U_MOVETYPE)
+		MSG_WriteByte(msg, to->movetype);
+	if (bits & U_COLORMAP)
+		MSG_WriteByte(msg, to->colormap);
+	if (bits & U_CONTENTS)
+	{
+		MSG_WriteShort(msg, to->skin);
+		MSG_WriteByte(msg, to->solid);
+	}
+	if (bits & U_SCALE)
+		MSG_WriteWord(msg, to->scale * 256);
+	if (bits & U_EFFECTS)
+		MSG_WriteByte(msg, to->effects);
+
+	if (bits & U_ORIGIN1)
+		MSG_WriteCoord(msg, to->origin[0]);
+	if (bits & U_ANGLE1)
+		MSG_WriteHiresAngle(msg, to->angles[0]);
+	if (bits & U_ORIGIN2)
+		MSG_WriteCoord(msg, to->origin[1]);
+	if (bits & U_ANGLE2)
+		MSG_WriteHiresAngle(msg, to->angles[1]);
+	if (bits & U_ORIGIN3)
+		MSG_WriteCoord(msg, to->origin[2]);
+	if (bits & U_ANGLE3)
+		MSG_WriteHiresAngle(msg, to->angles[2]);
+
+	if (bits & U_SEQUENCE)
+	{
+		MSG_WriteByte(msg, to->sequence);
+		MSG_WriteByte(msg, (byte)(to->animtime * 100));
+	}
+
+	if (bits & U_FRAMERATE)
+		MSG_WriteChar(msg, to->framerate * 16);
+
+	if (bits & U_CONTROLLER1)
+		MSG_WriteByte(msg, to->controller[0]);
+	if (bits & U_CONTROLLER2)
+		MSG_WriteByte(msg, to->controller[1]);
+	if (bits & U_CONTROLLER3)
+		MSG_WriteByte(msg, to->controller[2]);
+	if (bits & U_CONTROLLER4)
+		MSG_WriteByte(msg, to->controller[3]);
+
+	if (bits & U_BLENDING1)
+		MSG_WriteByte(msg, to->blending[0]);
+	if (bits & U_BLENDING2)
+		MSG_WriteByte(msg, to->blending[1]);
+
+	if (bits & U_BODY)
+		MSG_WriteByte(msg, to->body);
+
+	if (bits & U_RENDER)
+	{
+		MSG_WriteByte(msg, to->rendermode);
+		MSG_WriteByte(msg, to->renderamt);
+		MSG_WriteByte(msg, to->rendercolor.r);
+		MSG_WriteByte(msg, to->rendercolor.g);
+		MSG_WriteByte(msg, to->rendercolor.b);
+		MSG_WriteByte(msg, to->renderfx);
+	}
+
+	if (bboxbits & U_BBOXMINS1)
+		MSG_WriteCoord(msg, to->mins[0]);
+	if (bboxbits & U_BBOXMINS2)
+		MSG_WriteCoord(msg, to->mins[1]);
+	if (bboxbits & U_BBOXMINS3)
+		MSG_WriteCoord(msg, to->mins[2]);
+	if (bboxbits & U_BBOXMAXS1)
+		MSG_WriteCoord(msg, to->maxs[0]);
+	if (bboxbits & U_BBOXMAXS2)
+		MSG_WriteCoord(msg, to->maxs[1]);
+	if (bboxbits & U_BBOXMAXS3)
+		MSG_WriteCoord(msg, to->maxs[2]);
 }
 
 /*
@@ -502,52 +543,45 @@ void SV_EmitPacketEntities( client_t* client, packet_entities_t* to, sizebuf_t* 
 	int         oldnum, newnum;
 	int         oldindex;
 	int         newindex;
-	int         from_num_entities;
+	int         oldmax;
 	unsigned int        bits;
 	edict_t             *ent;
 	packet_entities_t   *from;
 	entity_state_t      *state;
 
-	// no delta update
-	if (client->delta_sequence == -1)
-	{
-		from_num_entities = 0;
-		from = NULL;
-		MSG_WriteByte(msg, svc_packetentities);
-		MSG_WriteShort(msg, to->num_entities);
-	}
-	else
+	// this is the frame that we are going to delta update from
+	if (client->delta_sequence != -1)
 	{
 		from = &client->frames[client->delta_sequence & UPDATE_MASK].entities;
-		from_num_entities = from->num_entities;
+		oldmax = from->num_entities;
+
 		MSG_WriteByte(msg, svc_deltapacketentities);
 		MSG_WriteShort(msg, to->num_entities);
 		MSG_WriteByte(msg, client->delta_sequence);
+	}
+	else
+	{
+		oldmax = 0;	// no delta update
+		from = NULL;
+
+		MSG_WriteByte(msg, svc_packetentities);
+		MSG_WriteShort(msg, to->num_entities);
 	}
 
 	newindex = 0;
 	oldindex = 0;
 
-	while (1)
-	{
-		// check if we're done
-		if (newindex >= to->num_entities)
-		{
-			if (oldindex >= from_num_entities)
-				break;
-			newnum = 9999;
-		}
-		else
-			newnum = to->entities[newindex].number;
+//Con_Printf ("---%i to %i ----\n", client->delta_sequence & UPDATE_MASK
+//			, client->netchan.outgoing_sequence & UPDATE_MASK);
 
-		if (oldindex >= from_num_entities)
-			oldnum = 9999;
-		else
-			oldnum = from->entities[oldindex].number;
+	while (newindex < to->num_entities || oldindex < oldmax)
+	{
+		newnum = newindex >= to->num_entities ? 9999 : to->entities[newindex].number;
+		oldnum = oldindex >= oldmax ? 9999 : from->entities[oldindex].number;
 
 		if (newnum == oldnum)
-		{
-			// delta update from old position
+		{	// delta update from old position
+//Con_Printf ("delta %i\n", newnum);
 			state = &to->entities[newindex];
 			SV_WriteDelta(&from->entities[oldindex], state, msg, FALSE);
 			newindex++;
@@ -555,8 +589,18 @@ void SV_EmitPacketEntities( client_t* client, packet_entities_t* to, sizebuf_t* 
 			continue;
 		}
 
+		if (newnum < oldnum)
+		{	// this is a new entity, send it from the baseline
+			ent = EDICT_NUM(newnum);
+//Con_Printf ("baseline %i\n", newnum);
+			SV_WriteDelta(&ent->baseline, &to->entities[newindex], msg, TRUE);
+			newindex++;
+			continue;
+		}
+
 		if (newnum > oldnum)
-		{
+		{	// the old entity isn't present in the new message
+//Con_Printf ("remove %i\n", oldnum);
 			bits = U_REMOVE;
 			if (oldnum >= MAX_PACKET_ENTITIES)
 				bits |= U_LONGENTITY;
@@ -590,15 +634,9 @@ void SV_EmitPacketEntities( client_t* client, packet_entities_t* to, sizebuf_t* 
 
 			continue;
 		}
-
-		// new entity
-		ent = EDICT_NUM(newnum);
-		SV_WriteDelta(&ent->baseline, &to->entities[newindex], msg, TRUE);
-		newindex++;
 	}
 
-	// end of message
-	MSG_WriteLong(msg, 0);
+	MSG_WriteLong(msg, 0);	// end of packetentities
 }
 
 /*
