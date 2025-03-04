@@ -27,6 +27,7 @@ decalname_t	sv_decalnames[MAX_BASE_DECALS];
 
 // TODO: Implement
 
+int gPacketSuppressed = 0;
 int			sv_decalnamecount;
 
 // Usermsg
@@ -844,6 +845,19 @@ void SV_CountPlayers( int* clients, int* spectators )
 
 // TODO: Implement
 
+int SV_PointLeafnum( vec_t* p )
+{
+	mleaf_t* pLeaf;
+
+	pLeaf = Mod_PointInLeaf(p, sv.worldmodel);
+	if (pLeaf)
+		return pLeaf - sv.worldmodel->leafs;
+
+	return 0;
+}
+
+// TODO: Implement
+
 /*
 =============================================================================
 
@@ -883,7 +897,88 @@ shift pitch higher, values lower than 100 lower the pitch.
 */
 void SV_StartSound( edict_t* entity, int channel, const char* sample, int volume, float attenuation, int fFlags, int pitch )
 {
-	// TODO: Implement
+	int         sound_num;
+	int			field_mask;
+	int			i;
+	int			ent;
+	vec3_t		origin;
+
+	if (volume < 0 || volume > 255)
+		Sys_Error("SV_StartSound: volume = %i", volume);
+
+	if (attenuation < 0 || attenuation > 4)
+		Sys_Error("SV_StartSound: attenuation = %f", attenuation);
+
+	if (channel < CHAN_AUTO || channel > CHAN_NETWORKVOICE_BASE)
+		Sys_Error("SV_StartSound: channel = %i", channel);
+
+	if (pitch < 0 || pitch > 255)
+		Sys_Error("SV_StartSound: pitch = %i", pitch);
+
+	// if this is a sentence, get sentence number
+	if (sample[0] == '!')
+	{
+		fFlags |= SND_SENTENCE;
+		sound_num = atoi(sample + 1);
+		if (sound_num >= CVOXFILESENTENCEMAX)
+		{
+			Con_Printf("invalid sentence number: %s", sample + 1);
+			return;
+		}
+	}
+	else
+	{
+// find precache number for sound
+		for (sound_num = 1; sound_num < MAX_SOUNDS
+			&& sv.sound_precache[sound_num]; sound_num++)
+			if (!strcmp(sample, sv.sound_precache[sound_num]))
+				break;
+
+		if (sound_num == MAX_SOUNDS || !sv.sound_precache[sound_num])
+		{
+			Con_Printf("SV_StartSound: %s not precached (%d)\n", sample, sound_num);
+			return;
+		}
+	}
+
+	ent = NUM_FOR_EDICT(entity);
+
+	for (i = 0; i < 3; i++)
+		origin[i] = entity->v.origin[i] + (entity->v.mins[i] + entity->v.maxs[i]) * 0.5;
+
+	channel = (ent << 3) | channel;
+
+	field_mask = fFlags;
+
+	if (volume != DEFAULT_SOUND_PACKET_VOLUME)
+		field_mask |= SND_VOLUME;
+	if (attenuation != DEFAULT_SOUND_PACKET_ATTENUATION)
+		field_mask |= SND_ATTENUATION;
+	if (pitch != DEFAULT_SOUND_PACKET_PITCH)
+		field_mask |= SND_PITCH;
+	if (sound_num > 255)
+		field_mask |= SND_LARGE_INDEX;
+
+// directed messages go only to the entity the are targeted on
+	MSG_WriteByte(&sv.multicast, svc_sound);
+	MSG_WriteByte(&sv.multicast, field_mask);
+	if (field_mask & SND_VOLUME)
+		MSG_WriteByte(&sv.multicast, volume);
+	if (field_mask & SND_ATTENUATION)
+		MSG_WriteByte(&sv.multicast, attenuation * 64);
+	MSG_WriteShort(&sv.multicast, channel);
+	if (sound_num > 255)
+		MSG_WriteShort(&sv.multicast, sound_num);
+	else
+		MSG_WriteByte(&sv.multicast, sound_num);
+	for (i = 0; i < 3; i++)
+		MSG_WriteCoord(&sv.multicast, origin[i]);
+	if ((field_mask & 8) != 0)
+		MSG_WriteByte(&sv.multicast, pitch);
+	if (channel == 6)
+		SV_Multicast(origin, MSG_BROADCAST, FALSE);
+	else
+		SV_Multicast(origin, MSG_ALL, FALSE);
 }
 
 // TODO: Implement
@@ -896,6 +991,45 @@ MULTICAST MESSAGE
 =============================================================================
 */
 
+qboolean IsSinglePlayerGame( void )
+{
+	return svs.maxclients == 1;
+}
+
+BOOL SV_ValidClientMulticast(client_t *a1, int leafnum, int ArgList)
+{
+	// TODO: Refactor
+
+	byte *v3; // esi
+	byte *v5; // eax
+	int v6; // eax
+
+	v3 = 0;
+	if (IsSinglePlayerGame())
+		return 1;
+	if (ArgList)
+	{
+		if (ArgList == 1)
+		{
+			v5 = CM_LeafPVS(leafnum);
+		}
+		else
+		{
+			if (ArgList != 2)
+			{
+				Con_Printf("MULTICAST: Error %d!\n", ArgList);
+				return 0;
+			}
+			v5 = CM_LeafPAS(leafnum);
+		}
+		v3 = v5;
+	}
+	if (!v3)
+		return 1;
+	v6 = SV_PointLeafnum(a1->edict->v.origin);
+	return (v3[(v6 - 1) >> 3] & (1 << ((v6 - 1) & 7))) != 0;
+}
+
 /*
 ==================
 SV_Multicast
@@ -905,7 +1039,35 @@ Write client buffers based on valid multicast recipients
 */
 void SV_Multicast( vec_t* origin, int to, qboolean reliable )
 {
-	// TODO: Implement
+	// TODO: Refactor
+
+	int i; // ebp
+	int v4; // ebx
+	client_t *client; // edi
+	sizebuf_t *p_message; // ecx
+
+	i = 0;
+	v4 = SV_PointLeafnum(origin);
+	for (client = svs.clients; svs.maxclients > i; ++client)
+	{
+		if (client->active)
+		{
+			if (SV_ValidClientMulticast(client, v4, to))
+			{
+				p_message = &client->netchan.message;
+				if (reliable == FALSE)
+					p_message = &client->datagram;
+				if (p_message->maxsize - p_message->cursize > sv.multicast.cursize)
+					SZ_Write(p_message, sv.multicast.data, sv.multicast.cursize);
+			}
+			else
+			{
+				gPacketSuppressed += sv.multicast.cursize;
+			}
+		}
+		++i;
+	}
+	SZ_Clear(&sv.multicast);
 }
 
 // TODO: Implement
@@ -1435,6 +1597,9 @@ int SV_SpawnServer( qboolean bIsDemo, char* server, char* startspot )
 	sv.signon.data = sv.signon_buffers[0];
 
 	sv.num_signon_buffers = 1;
+
+	sv.multicast.maxsize = sizeof(sv.multicast_buf);
+	sv.multicast.data = sv.multicast_buf;
 
 	// leave slots at start for clients only
 	sv.num_edicts = svs.maxclients + 1;

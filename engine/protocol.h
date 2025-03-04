@@ -279,8 +279,9 @@
 #define SND_CHANGE_PITCH	(1<<7)		// duplicated in dlls/util.h change sound pitch
 #define SND_SPAWNING		(1<<8)		// duplicated in dlls/util.h we're spawing, used in some cases for ambients 
 
-#define DEFAULT_SOUND_PACKET_VOLUME			1.0
+#define DEFAULT_SOUND_PACKET_VOLUME			255
 #define DEFAULT_SOUND_PACKET_ATTENUATION	1.0
+#define DEFAULT_SOUND_PACKET_PITCH			100
 
 //==============================================
 

@@ -274,7 +274,7 @@ void CL_ParseStartSoundPacket( void )
 	if (field_mask & SND_VOLUME)
 		volume = MSG_ReadByte() / 255.0;		// reduce back to 0.0 - 1.0 range
 	else
-		volume = DEFAULT_SOUND_PACKET_VOLUME;
+		volume = DEFAULT_SOUND_PACKET_VOLUME / 255.0;
 
 	if (field_mask & SND_ATTENUATION)
 		attenuation = MSG_ReadByte() / 64.0;
@@ -299,7 +299,7 @@ void CL_ParseStartSoundPacket( void )
 	if (field_mask & SND_PITCH)
 		pitch = MSG_ReadByte();
 	else
-		pitch = PITCH_NORM;
+		pitch = DEFAULT_SOUND_PACKET_PITCH;
 
 	if (field_mask & SND_SENTENCE)
 	{
