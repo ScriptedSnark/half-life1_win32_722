@@ -229,8 +229,168 @@ If steptrace is not NULL, the trace of any vertical wall hit will be stored
 #define	MAX_CLIP_PLANES	5
 int SV_FlyMove( edict_t* ent, float time, trace_t* steptrace )
 {
-	// TODO: Implement
-	return 0;
+	int			bumpcount, numbumps;
+	vec3_t		dir;
+	float		d;
+	int			numplanes;
+	vec3_t		planes[MAX_CLIP_PLANES];
+	vec3_t		primal_velocity, original_velocity, new_velocity;
+	int			i, j;
+	trace_t		trace;
+	vec3_t		end;
+	float		time_left;
+	int			blocked;
+	qboolean	monsterClip = (ent->v.flags & FL_MONSTERCLIP) ? TRUE : FALSE;
+
+	numbumps = 4;
+
+	blocked = 0;
+	VectorCopy(ent->v.velocity, original_velocity);
+	VectorCopy(ent->v.velocity, primal_velocity);
+	numplanes = 0;
+
+	time_left = time;
+
+	for (bumpcount = 0; bumpcount < numbumps; bumpcount++)
+	{
+		if (!ent->v.velocity[0] && !ent->v.velocity[1] && !ent->v.velocity[2])
+			break;
+
+		for (i = 0; i < 3; i++)
+			end[i] = ent->v.origin[i] + time_left * ent->v.velocity[i];
+
+		trace = SV_Move(ent->v.origin, ent->v.mins, ent->v.maxs, end, MOVE_NORMAL, ent, monsterClip);
+
+		if (trace.allsolid)
+		{	// entity is trapped in another solid
+			VectorCopy(vec3_origin, ent->v.velocity);
+			//Con_DPrintf("Trapped 4\n");
+			return 4;
+		}
+
+		if (trace.fraction > 0)
+		{	// actually covered some distance
+			VectorCopy(trace.endpos, ent->v.origin);
+			VectorCopy(ent->v.velocity, original_velocity);
+			numplanes = 0;
+		}
+
+		if (trace.fraction == 1)
+			break;		// moved the entire distance
+
+		if (!trace.ent)
+			Sys_Error("SV_FlyMove: !trace.ent");
+
+		if (trace.plane.normal[2] > 0.7)
+		{
+			blocked |= 1;		// floor
+			if (trace.ent->v.solid == SOLID_BSP ||
+				trace.ent->v.solid == SOLID_SLIDEBOX ||
+				trace.ent->v.movetype == MOVETYPE_PUSHSTEP ||
+				(ent->v.flags & FL_CLIENT))
+			{
+				ent->v.flags |= FL_ONGROUND;
+				ent->v.groundentity = trace.ent;
+			}
+		}
+		if (!trace.plane.normal[2])
+		{
+			blocked |= 2;		// step
+			//Con_DPrintf("Blocked by %i\n", trace.ent);
+			if (steptrace)
+				*steptrace = trace;	// save for player extrafriction
+		}
+
+//
+// run the impact function
+//
+		SV_Impact(ent, trace.ent, &trace);
+		if (ent->free)
+			break;		// removed by the impact function
+
+
+		time_left -= time_left * trace.fraction;
+
+	// cliped to another plane
+		if (numplanes >= MAX_CLIP_PLANES)
+		{	// this shouldn't really happen
+			VectorCopy(vec3_origin, ent->v.velocity);
+			return blocked;
+		}
+
+		VectorCopy(trace.plane.normal, planes[numplanes]);
+		numplanes++;
+
+		if (ent->v.movetype == MOVETYPE_WALK && (!(ent->v.flags & FL_ONGROUND) || ent->v.friction != 1.0))
+		{
+			for (i = 0; i < numplanes; i++)
+			{
+				if (planes[i][2] <= 0.7)
+				{
+					d = (1.0 - ent->v.friction) * sv_bounce.value + 1.0;
+				}
+				else
+				{
+					d = 1.0;
+				}
+
+				ClipVelocity(original_velocity, planes[i], new_velocity, d);
+				VectorCopy(new_velocity, original_velocity);
+			}
+			VectorCopy(new_velocity, ent->v.velocity);
+			VectorCopy(new_velocity, original_velocity);
+		}
+		else
+		{
+//
+// modify original_velocity so it parallels all of the clip planes
+//
+			for (i = 0; i < numplanes; i++)
+			{
+				ClipVelocity(original_velocity, planes[i], new_velocity, 1);
+				for (j = 0; j < numplanes; j++)
+					if (j != i)
+					{
+						if (DotProduct(new_velocity, planes[j]) < 0)
+							break; // not ok
+					}
+				if (j == numplanes)
+					break;
+			}
+
+			if (i != numplanes)
+			{	// go along this plane
+				VectorCopy(new_velocity, ent->v.velocity);
+			}
+			else
+			{
+				// go along the crease
+				if (numplanes != 2)
+				{
+//					Con_Printf("clip velocity, numplanes == %i\n", numplanes);
+					//VectorCopy(vec3_origin, ent->v.velocity);
+					//Con_DPrintf("Trapped 4\n");
+
+					return blocked;
+				}
+				CrossProduct(planes[0], planes[1], dir);
+				d = DotProduct(dir, ent->v.velocity);
+				VectorScale(dir, d, ent->v.velocity);
+			}
+
+//
+// if original velocity is against the original velocity, stop dead
+// to avoid tiny occilations in sloping corners
+//
+			if (DotProduct(ent->v.velocity, primal_velocity) <= 0)
+			{
+				VectorCopy(vec3_origin, ent->v.velocity);
+				return blocked;
+			}
+		}
+	}
+
+	return blocked;
 }
 
 
@@ -308,9 +468,33 @@ Does not change the entities velocity at all
 */
 trace_t SV_PushEntity( edict_t* ent, vec_t* push )
 {
-	// TODO: Implement
 	trace_t trace;
-	memset(&trace, 0, sizeof(trace));
+	vec3_t	end;
+	qboolean monsterClip = FALSE;
+	int		moveType;
+
+	VectorAdd(push, ent->v.origin, end);
+
+	monsterClip = (ent->v.flags & FL_MONSTERCLIP) ? TRUE : FALSE;
+
+	if (ent->v.movetype == MOVETYPE_FLYMISSILE)
+		moveType = MOVE_MISSILE;
+	else if (ent->v.solid == SOLID_TRIGGER || ent->v.solid == SOLID_NOT)
+	// only clip against bmodels
+		moveType = MOVE_NOMONSTERS;
+	else
+		moveType = MOVE_NORMAL;
+
+	trace = SV_Move(ent->v.origin, ent->v.mins, ent->v.maxs, end, moveType, ent, monsterClip);
+
+	if (trace.fraction != 0)
+		VectorCopy(trace.endpos, ent->v.origin);
+
+	SV_LinkEdict(ent, TRUE);
+
+	if (trace.ent)
+		SV_Impact(ent, trace.ent, &trace);
+
 	return trace;
 }
 
@@ -325,7 +509,118 @@ SV_PushMove
 */
 void SV_PushMove( edict_t* pusher, float movetime )
 {
-	// TODO: Implement
+	int			i, e;
+	edict_t* check;
+	vec3_t		mins, maxs, move;
+	vec3_t		entorig, pushorig;
+	int			num_moved;
+
+	if (!pusher->v.velocity[0] && !pusher->v.velocity[1] && !pusher->v.velocity[2])
+	{
+		pusher->v.ltime += movetime;
+		return;
+	}
+
+	for (i = 0; i < 3; i++)
+	{
+		move[i] = pusher->v.velocity[i] * movetime;
+		mins[i] = pusher->v.absmin[i] + move[i];
+		maxs[i] = pusher->v.absmax[i] + move[i];
+	}
+
+	VectorCopy(pusher->v.origin, pushorig);
+
+	// move the pusher to it's final position
+	VectorAdd(pusher->v.origin, move, pusher->v.origin);
+	pusher->v.ltime += movetime;
+	SV_LinkEdict(pusher, FALSE);
+
+	if (pusher->v.solid == SOLID_NOT)
+		return;
+
+// see if any solid entities are inside the final position
+	num_moved = 0;
+	check = sv.edicts;
+	for (e = 1; e < sv.num_edicts; e++, check++)
+	{
+		if (check->free)
+			continue;
+		if (check->v.movetype == MOVETYPE_PUSH
+		|| check->v.movetype == MOVETYPE_NONE
+		|| check->v.movetype == MOVETYPE_FOLLOW
+		|| check->v.movetype == MOVETYPE_NOCLIP)
+			continue;
+
+		// if the entity is standing on the pusher, it will definately be moved
+		if (!(check->v.flags & FL_ONGROUND) || check->v.groundentity != pusher)
+		{
+			if (check->v.absmin[0] >= maxs[0] ||
+				check->v.absmin[1] >= maxs[1] ||
+				check->v.absmin[2] >= maxs[2] ||
+				check->v.absmax[0] <= mins[0] ||
+				check->v.absmax[1] <= mins[1] ||
+				check->v.absmax[2] <= mins[2])
+				continue;
+
+			// see if the ent's bbox is inside the pusher's final position
+			if (!SV_TestEntityPosition(check))
+				continue;
+		}
+
+		// remove the onground flag for non-players
+		if (check->v.movetype != MOVETYPE_WALK)
+			check->v.flags &= ~FL_ONGROUND;
+
+		VectorCopy(check->v.origin, entorig);
+		VectorCopy(check->v.origin, g_moved_from[num_moved]);
+		g_moved_edict[num_moved] = check;
+		num_moved++;
+
+		// try moving the contacted entity
+		pusher->v.solid = SOLID_NOT;
+		SV_PushEntity(check, move);
+		pusher->v.solid = SOLID_BSP;
+
+		// if it is still inside the pusher, block
+		if (SV_TestEntityPosition(check))
+		{
+			// fail the move
+			if (check->v.mins[0] == check->v.maxs[0])
+				continue;
+
+			if (check->v.solid <= SOLID_TRIGGER)
+			{
+				// corpse
+				check->v.mins[0] = 0;
+				check->v.mins[1] = 0;
+				check->v.maxs[0] = 0;
+				check->v.maxs[1] = 0;
+				check->v.maxs[2] = check->v.mins[2];
+				continue;
+			}
+
+			VectorCopy(entorig, check->v.origin);
+			SV_LinkEdict(check, TRUE);
+
+			VectorCopy(pushorig, pusher->v.origin);
+			SV_LinkEdict(pusher, FALSE);
+
+			pusher->v.ltime -= movetime;
+
+			// Notify Game DLL that the pushing entity attempted
+			// to move but was blocked by another entity
+			gEntityInterface.pfnBlocked(pusher, check);
+
+			// move back any entities we already moved
+			for (i = 0; i < num_moved; i++)
+			{
+				VectorCopy(g_moved_from[i], g_moved_edict[i]->v.origin);
+				SV_LinkEdict(g_moved_edict[i], FALSE);
+			}
+
+			return;
+		}
+	}
 }
 
 /*
