@@ -337,8 +337,173 @@ Returns FALSE if the pusher can't push
 */
 int SV_PushRotate( edict_t* pusher, float movetime )
 {
-	// TODO: Implement
-	return FALSE;
+	int			i, e;
+	edict_t* check;
+	vec3_t		move, amove;
+	vec3_t		entorig, pushorig;
+	int			num_moved;
+
+	vec3_t		org, start, end;
+	vec3_t		forward, right, up;
+	vec3_t		forwardNow, rightNow, upNow;
+
+	if (!pusher->v.avelocity[0] && !pusher->v.avelocity[1] && !pusher->v.avelocity[2])
+	{
+		pusher->v.ltime += movetime;
+		return TRUE;
+	}
+
+	for (i = 0; i < 3; i++)
+		amove[i] = pusher->v.avelocity[i] * movetime;
+
+	AngleVectors(pusher->v.angles, forward, right, up);
+	VectorCopy(pusher->v.angles, pushorig);
+
+// move the pusher to it's final position
+
+	VectorAdd(pusher->v.angles, amove, pusher->v.angles);
+
+	AngleVectorsTranspose(pusher->v.angles, forwardNow, rightNow, upNow);
+
+	pusher->v.ltime += movetime;
+	SV_LinkEdict(pusher, FALSE);
+
+	// non-solid pushers can't push anything
+	if (pusher->v.solid == SOLID_NOT)
+		return TRUE;
+
+	// see if any solid entities are inside the final position
+	num_moved = 0;
+	check = sv.edicts;
+	for (e = 1; e < sv.num_edicts; e++, check++)
+	{
+		if (check->free)
+			continue;
+		if (check->v.movetype == MOVETYPE_PUSH
+		|| check->v.movetype == MOVETYPE_NONE
+		|| check->v.movetype == MOVETYPE_FOLLOW
+		|| check->v.movetype == MOVETYPE_NOCLIP)
+			continue;
+
+		// if the entity is standing on the pusher, it will definately be moved
+		if (!(check->v.flags & FL_ONGROUND) || check->v.groundentity != pusher)
+		{
+			if (check->v.absmin[0] >= pusher->v.absmax[0] ||
+				check->v.absmin[1] >= pusher->v.absmax[1] ||
+				check->v.absmin[2] >= pusher->v.absmax[2] ||
+				check->v.absmax[0] <= pusher->v.absmin[0] ||
+				check->v.absmax[1] <= pusher->v.absmin[1] ||
+				check->v.absmax[2] <= pusher->v.absmin[2])
+				continue;
+
+			// see if the ent's bbox is inside the pusher's final position
+			if (!SV_TestEntityPosition(check))
+				continue;
+		}
+
+		// remove the onground flag for non-players
+		if (check->v.movetype != MOVETYPE_WALK)
+			check->v.flags &= ~FL_ONGROUND;
+
+		VectorCopy(check->v.origin, entorig);
+		VectorCopy(check->v.origin, g_moved_from[num_moved]);
+		g_moved_edict[num_moved] = check;
+		num_moved++;
+
+		if (num_moved >= sv.max_edicts)
+			Sys_Error("Out of edicts in simulator!\n");
+
+		if (check->v.movetype == MOVETYPE_PUSHSTEP)
+		{
+			org[0] = (check->v.absmin[0] + check->v.absmax[0]) * 0.5;
+			org[1] = (check->v.absmin[1] + check->v.absmax[1]) * 0.5;
+			org[2] = (check->v.absmin[2] + check->v.absmax[2]) * 0.5;
+			VectorSubtract(org, pusher->v.origin, start);
+		}
+		else
+		{
+			VectorSubtract(check->v.origin, pusher->v.origin, start);
+		}
+
+		move[0] = DotProduct(forward, start);
+		move[1] = -DotProduct(right, start);
+		move[2] = DotProduct(up, start);
+		end[0] = DotProduct(forwardNow, move);
+		end[1] = DotProduct(rightNow, move);
+		end[2] = DotProduct(upNow, move);
+
+		vec3_t push;
+		VectorSubtract(end, start, push);
+
+		// try moving the contacted entity
+		pusher->v.solid = SOLID_NOT;
+		SV_PushEntity(check, push);
+		pusher->v.solid = SOLID_BSP;
+
+		if (check->v.movetype != MOVETYPE_PUSHSTEP)
+		{
+			if (check->v.flags & FL_CLIENT) // don't fixup angles on bots - they don't ever reset avelocity
+			{
+				check->v.fixangle = 2;
+				check->v.avelocity[1] += amove[1];
+			}
+			else
+			{
+				check->v.angles[1] += amove[1];
+			}
+		}
+
+		// if it is still inside the pusher, block
+		if (SV_TestEntityPosition(check))
+		{
+			if (check->v.mins[0] == check->v.maxs[0])
+				continue;
+
+			if (check->v.solid <= SOLID_TRIGGER)
+			{
+				// corpse
+				check->v.mins[0] = 0;
+				check->v.mins[1] = 0;
+				check->v.maxs[0] = 0;
+				check->v.maxs[1] = 0;
+				check->v.maxs[2] = check->v.mins[2];
+				continue;
+			}
+
+			VectorCopy(entorig, check->v.origin);
+			SV_LinkEdict(check, TRUE);
+
+			VectorCopy(pushorig, pusher->v.angles);
+			SV_LinkEdict(pusher, FALSE);
+
+			pusher->v.ltime -= movetime;
+
+			// Notify Game DLL that the pushing entity attempted
+			// to move but was blocked by another entity
+			gEntityInterface.pfnBlocked(pusher, check);
+
+			// Move back any entities we already moved
+			for (i = 0; i < num_moved; i++)
+			{
+				VectorCopy(g_moved_from[i], g_moved_edict[i]->v.origin);
+
+				if (g_moved_edict[i]->v.flags & FL_CLIENT)
+				{
+					g_moved_edict[i]->v.avelocity[1] = 0;
+				}
+				else if (g_moved_edict[i]->v.movetype != MOVETYPE_PUSHSTEP)
+				{
+					g_moved_edict[i]->v.angles[1] -= amove[1];
+				}
+
+				SV_LinkEdict(g_moved_edict[i], FALSE);
+			}
+
+			return FALSE;
+		}
+	}
+
+	return TRUE;
 }
 
 /*
