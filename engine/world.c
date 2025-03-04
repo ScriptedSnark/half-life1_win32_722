@@ -2,15 +2,166 @@
 
 #include "quakedef.h"
 #include "sv_proto.h"
+#include "r_studio.h"
 
-areanode_t	sv_areanodes[AREA_NODES];
-int			sv_numareanodes;
+/*
 
-// TODO: Implement
+entities never clip against themselves, or their owner
+
+line of sight checks trace->crosscontent, but bullets don't
+
+*/
+
+
+typedef struct
+{
+	vec3_t		boxmins, boxmaxs;	// enclose the test object along entire move
+	const float*	mins, * maxs;		// size of the moving object
+	vec3_t		mins2, maxs2;		// size when clipping against mosnters
+	const float*	start, * end;
+	trace_t		trace;
+	short		type;
+	short		ignoretrans;
+	edict_t*	passedict;
+	qboolean	monsterClipBrush;
+} moveclip_t;
+
 
 int SV_HullPointContents( hull_t* hull, int num, const vec_t* p );
 
-// TODO: Implement
+/*
+===============================================================================
+
+HULL BOXES
+
+===============================================================================
+*/
+
+
+static	hull_t		box_hull, beam_hull;
+static	dclipnode_t	box_clipnodes[6];
+static	mplane_t	box_planes[6], beam_planes[6];
+
+/*
+===============
+SV_InitBoxHull
+
+Set up the planes and clipnodes so that the six floats of a bounding box
+can just be stored out and get a proper hull_t structure
+===============
+*/
+void SV_InitBoxHull( void )
+{
+	int		i;
+	int		side;
+
+	box_hull.clipnodes = box_clipnodes;
+	box_hull.planes = box_planes;
+	box_hull.firstclipnode = 0;
+	box_hull.lastclipnode = 5;
+
+	beam_hull = box_hull;
+	beam_hull.planes = beam_planes;
+
+	for (i = 0; i < 6; i++)
+	{
+		box_clipnodes[i].planenum = i;
+
+		side = i & 1;
+
+		box_clipnodes[i].children[side] = CONTENTS_EMPTY;
+		if (i != 5)
+			box_clipnodes[i].children[side ^ 1] = i + 1;
+		else
+			box_clipnodes[i].children[side ^ 1] = CONTENTS_SOLID;
+
+		box_planes[i].type = i >> 1;
+		box_planes[i].normal[i >> 1] = 1;
+
+		beam_planes[i].type = PLANE_ANYZ;
+	}
+}
+
+/*
+===============
+SV_HullForBox
+
+To keep everything totally uniform, bounding boxes are turned into small
+BSP trees instead of being compared directly
+============== =
+*/
+hull_t* SV_HullForBox( const vec_t* mins, const vec_t* maxs )
+{
+	box_planes[0].dist = maxs[0];
+	box_planes[1].dist = mins[0];
+	box_planes[2].dist = maxs[1];
+	box_planes[3].dist = mins[1];
+	box_planes[4].dist = maxs[2];
+	box_planes[5].dist = mins[2];
+
+	return &box_hull;
+}
+
+/*
+===============
+SV_HullForBeam
+
+===============
+*/
+hull_t* SV_HullForBeam( const vec_t* start, const vec_t* end, const vec_t* size )
+{
+	vec3_t tmp;
+
+	VectorSubtract(end, start, beam_planes[0].normal);
+	VectorNormalize(beam_planes[0].normal);
+	VectorCopy(beam_planes[0].normal, beam_planes[1].normal);
+
+	beam_planes[0].dist = DotProduct(end, beam_planes[0].normal);
+	beam_planes[1].dist = DotProduct(start, beam_planes[0].normal);
+
+	if (fabs(beam_planes[0].normal[2]) < 0.9)
+	{
+		tmp[2] = 1.0;
+		tmp[1] = 0.0;
+		tmp[0] = 0.0;
+	}
+	else
+	{
+		tmp[0] = 1.0;
+		tmp[2] = 0.0;
+		tmp[1] = 0.0;
+	}
+
+	CrossProduct(beam_planes[0].normal, tmp, beam_planes[2].normal);
+	VectorNormalize(beam_planes[2].normal);
+	VectorCopy(beam_planes[2].normal, beam_planes[3].normal);
+
+	beam_planes[2].dist = (start[0] + beam_planes[2].normal[0]) * beam_planes[2].normal[0] + 
+		(start[1] + beam_planes[2].normal[1]) * beam_planes[2].normal[1] + 
+		(start[2] + beam_planes[2].normal[2]) * beam_planes[2].normal[2];
+
+	VectorSubtract(start, beam_planes[2].normal, tmp);
+
+	beam_planes[3].dist = DotProduct(tmp, beam_planes[2].normal);
+	CrossProduct(beam_planes[2].normal, beam_planes[0].normal, beam_planes[4].normal);
+	VectorNormalize(beam_planes[4].normal);
+
+	VectorCopy(beam_planes[4].normal, beam_planes[5].normal);
+
+	beam_planes[4].dist = DotProduct(start, beam_planes[4].normal);
+	beam_planes[5].dist = (start[0] - beam_planes[4].normal[0]) * beam_planes[4].normal[0] + 
+		(start[1] - beam_planes[4].normal[1]) * beam_planes[4].normal[1] + 
+		(start[2] - beam_planes[4].normal[2]) * beam_planes[4].normal[2];
+
+	beam_planes[0].dist += fabs(beam_planes[0].normal[0] * size[0]) + fabs(beam_planes[0].normal[1] * size[1]) + fabs(beam_planes[0].normal[2] * size[2]);
+	beam_planes[1].dist -= fabs(beam_planes[1].normal[0] * size[0]) + fabs(beam_planes[1].normal[1] * size[1]) + fabs(beam_planes[1].normal[2] * size[2]);
+	beam_planes[2].dist += fabs(beam_planes[2].normal[0] * size[0]) + fabs(beam_planes[2].normal[1] * size[1]) + fabs(beam_planes[2].normal[2] * size[2]);
+	beam_planes[3].dist -= fabs(beam_planes[3].normal[0] * size[0]) + fabs(beam_planes[3].normal[1] * size[1]) + fabs(beam_planes[3].normal[2] * size[2]);
+	beam_planes[4].dist += fabs(beam_planes[4].normal[0] * size[0]) + fabs(beam_planes[4].normal[1] * size[1]) + fabs(beam_planes[4].normal[2] * size[2]);
+	beam_planes[5].dist -= fabs(beam_planes[4].normal[0] * size[0]) + fabs(beam_planes[4].normal[1] * size[1]) + fabs(beam_planes[4].normal[2] * size[2]);
+
+	return &beam_hull;
+}
 
 /*
 ===============
@@ -29,7 +180,10 @@ hull_t* SV_HullForBsp( edict_t* ent, const vec_t* mins, const vec_t* maxs, vec_t
 	if (!model)
 		Sys_Error("Hit a %s with no model (%s)", &pr_strings[ent->v.classname], &pr_strings[ent->v.model]);
 	if (model->type != mod_brush)
+	{
 		Sys_Error("Hit a %s with no model (%s)", &pr_strings[ent->v.classname], &pr_strings[ent->v.model]);
+		Sys_Error("MOVETYPE_PUSH with a non bsp model");
+	}
 
 	VectorSubtract(maxs, mins, size);
 
@@ -48,7 +202,7 @@ hull_t* SV_HullForBsp( edict_t* ent, const vec_t* mins, const vec_t* maxs, vec_t
 			hull = &model->hulls[3];
 		}
 
-		// calculate an offset value to center the origin
+		// calculate offset to center the origin
 		VectorSubtract(hull->clip_mins, mins, offset);
 	}
 	else
@@ -58,10 +212,56 @@ hull_t* SV_HullForBsp( edict_t* ent, const vec_t* mins, const vec_t* maxs, vec_t
 	}
 
 	VectorAdd(offset, ent->v.origin, offset);
+
 	return hull;
 }
 
-// TODO: Implement
+/*
+================
+SV_HullForEntity
+
+Returns a hull that can be used for testing or clipping an object of mins/maxs
+size.
+Offset is filled in to contain the adjustment that must be added to the
+testing object's origin to get a point to use with the returned hull.
+================
+*/
+hull_t* SV_HullForEntity( edict_t* ent, const vec_t* mins, const vec_t* maxs, vec_t* offset )
+{
+	vec3_t		hullmins, hullmaxs;
+	hull_t*		hull;
+
+	// decide which clipping hull to use, based on the size
+	if (ent->v.solid == SOLID_BSP)
+	{
+		// explicit hulls in the BSP model
+		if (ent->v.movetype != MOVETYPE_PUSH)
+			Sys_Error("SOLID_BSP without MOVETYPE_PUSH");
+
+		return SV_HullForBsp(ent, mins, maxs, offset);
+	}
+
+	// create a temp hull from bounding box sizes
+
+	VectorSubtract(ent->v.mins, maxs, hullmins);
+	VectorSubtract(ent->v.maxs, mins, hullmaxs);
+	hull = SV_HullForBox(hullmins, hullmaxs);
+
+	VectorCopy(ent->v.origin, offset);
+
+	return hull;
+}
+
+/*
+===============================================================================
+
+ENTITY AREA CHECKING
+
+===============================================================================
+*/
+
+areanode_t	sv_areanodes[AREA_NODES];
+int			sv_numareanodes;
 
 /*
 ===============
@@ -94,7 +294,7 @@ areanode_t* SV_CreateAreaNode( int depth, vec_t* mins, vec_t* maxs )
 	else
 		anode->axis = 1;
 
-	anode->dist = 0.5 * (maxs[anode->axis] + mins[anode->axis]);
+	anode->dist = 0.5 * (mins[anode->axis] + maxs[anode->axis]);
 	VectorCopy(mins, mins1);
 	VectorCopy(mins, mins2);
 	VectorCopy(maxs, maxs1);
@@ -116,12 +316,13 @@ SV_ClearWorld
 */
 void SV_ClearWorld( void )
 {
-	// TODO: Implement
+	SV_InitBoxHull();
 
 	memset(sv_areanodes, 0, sizeof(sv_areanodes));
 	sv_numareanodes = 0;
 	SV_CreateAreaNode(0, sv.worldmodel->mins, sv.worldmodel->maxs);
 }
+
 
 /*
 ===============
@@ -137,6 +338,7 @@ void SV_UnlinkEdict( edict_t* ent )
 	ent->area.prev = ent->area.next = NULL;
 }
 
+
 /*
 ====================
 SV_TouchLinks
@@ -148,7 +350,7 @@ void SV_TouchLinks( edict_t* ent, areanode_t* node )
 	edict_t* touch;
 	model_t* pModel;
 
-	// touch linked edicts
+// touch linked edicts
 	for (l = node->trigger_edicts.next; l != &node->trigger_edicts; l = next)
 	{
 		next = l->next;
@@ -167,7 +369,6 @@ void SV_TouchLinks( edict_t* ent, areanode_t* node )
 
 		// check brush triggers accuracy
 		pModel = sv.models[touch->v.modelindex];
-
 		if (pModel && pModel->type == mod_brush)
 		{
 			// force to select bsp-hull
@@ -208,7 +409,7 @@ SV_FindTouchedLeafs
 
 ===============
 */
-void SV_FindTouchedLeafs( edict_t *ent, mnode_t *node, int *topnode )
+void SV_FindTouchedLeafs( edict_t* ent, mnode_t* node, int* topnode )
 {
 	mplane_t* splitplane;
 	mleaf_t* leaf;
@@ -225,7 +426,7 @@ void SV_FindTouchedLeafs( edict_t *ent, mnode_t *node, int *topnode )
 		if (ent->num_leafs > (MAX_ENT_LEAFS - 1))
 		{
 			// continue counting leafs,
-			// so we know how many it's overrun
+			// so we know how many will overrun
 			ent->num_leafs = (MAX_ENT_LEAFS + 1);
 		}
 		else
@@ -244,7 +445,7 @@ void SV_FindTouchedLeafs( edict_t *ent, mnode_t *node, int *topnode )
 	splitplane = node->plane;
 	sides = BOX_ON_PLANE_SIDE(ent->v.absmin, ent->v.absmax, splitplane);
 
-	if (sides == 3 && *topnode == -1)
+	if ((sides & 3) && *topnode == -1)
 		*topnode = node - sv.worldmodel->nodes;
 
 // recurse down the contacted sides
@@ -261,7 +462,7 @@ SV_LinkEdict
 
 ===============
 */
-void SV_LinkEdict( edict_t *ent, qboolean touch_triggers )
+void SV_LinkEdict( edict_t* ent, qboolean touch_triggers )
 {
 	areanode_t* node;
 	int topnode;
@@ -275,7 +476,7 @@ void SV_LinkEdict( edict_t *ent, qboolean touch_triggers )
 	if (ent->free)
 		return;
 
-	// set the abs box
+// set the abs box
 	gEntityInterface.pfnSetAbsBox(ent);
 
 	if (ent->v.movetype == MOVETYPE_FOLLOW && ent->v.aiment)
@@ -289,7 +490,6 @@ void SV_LinkEdict( edict_t *ent, qboolean touch_triggers )
 
 		// link to PVS leafs
 		ent->num_leafs = 0;
-
 		if (ent->v.modelindex)
 			SV_FindTouchedLeafs(ent, sv.worldmodel->nodes, &topnode);
 
@@ -336,7 +536,7 @@ void SV_LinkEdict( edict_t *ent, qboolean touch_triggers )
 		SV_TouchLinks(ent, sv_areanodes);
 }
 
-// TODO: Implement
+
 
 /*
 ===============================================================================
@@ -383,8 +583,6 @@ int SV_HullPointContents( hull_t* hull, int num, const vec_t* p )
 
 #endif	// !id386
 
-// TODO: Implement
-
 /*
 ===============
 SV_LinkContents
@@ -395,36 +593,32 @@ int SV_LinkContents( areanode_t* node, const vec_t* pos )
 {
 	link_t* l, * next;
 	edict_t* touch;
-	int contents;
+	int			contents;
 	hull_t* hull;
-	vec3_t offset;
-	vec3_t localPosition;
-
+	vec3_t		offset, localPosition;
 	model_t* pModel;
 
 	for (l = node->solid_edicts.next; l != &node->solid_edicts; l = next)
 	{
-		touch = EDICT_FROM_AREA(l);
 		next = l->next;
+		touch = EDICT_FROM_AREA(l);
 
 		if (touch->v.solid != SOLID_NOT)
 			continue;
 
 		pModel = sv.models[touch->v.modelindex];
-
 		if (!pModel || pModel->type != mod_brush)
 			continue;
 
-		if (pos[0] > touch->v.absmax[0]
-			|| pos[1] > touch->v.absmax[1]
-			|| pos[2] > touch->v.absmax[2]
-			|| pos[0] < touch->v.absmin[0]
-			|| pos[1] < touch->v.absmin[1]
-			|| pos[2] < touch->v.absmin[2])
+		if (touch->v.absmax[0] < pos[0]
+			|| touch->v.absmax[1] < pos[1]
+			|| touch->v.absmax[2] < pos[2]
+			|| touch->v.absmin[0] > pos[0]
+			|| touch->v.absmin[1] > pos[1]
+			|| touch->v.absmin[2] > pos[2])
 			continue;
 
 		contents = touch->v.skin;
-
 		if (contents < -100 || contents > 100)
 			Con_DPrintf("Invalid contents on trigger field: %s\n", &pr_strings[touch->v.classname]);
 
@@ -444,7 +638,6 @@ int SV_LinkContents( areanode_t* node, const vec_t* pos )
 
 	if (pos[node->axis] > node->dist)
 		return SV_LinkContents(node->children[0], pos);
-
 	else if (pos[node->axis] < node->dist)
 		return SV_LinkContents(node->children[1], pos);
 
@@ -466,12 +659,13 @@ int SV_PointContents( const vec_t* p )
 	cont = SV_HullPointContents(sv.worldmodel->hulls, 0, p);
 	if (cont <= CONTENTS_CURRENT_0 && cont >= CONTENTS_CURRENT_DOWN)
 		cont = CONTENTS_WATER;
-	else if (cont == CONTENTS_SOLID)
-		return CONTENTS_SOLID;
 
-	entityContents = SV_LinkContents(&sv_areanodes[0], p);
-	if (entityContents != CONTENTS_EMPTY)
-		return entityContents;
+	if (cont != CONTENTS_SOLID)
+	{
+		entityContents = SV_LinkContents(sv_areanodes, p);
+		if (entityContents != CONTENTS_EMPTY)
+			return entityContents;
+	}
 
 	return cont;
 }
@@ -502,6 +696,7 @@ edict_t* SV_TestEntityPosition( edict_t* ent )
 
 	return NULL;
 }
+
 
 /*
 ===============================================================================
@@ -657,6 +852,138 @@ qboolean SV_RecursiveHullCheck( hull_t* hull, int num, float p1f, float p2f, vec
 
 /*
 ===============
+SV_SingleClipMoveToEntity
+
+===============
+*/
+void SV_SingleClipMoveToEntity( edict_t* ent, const vec_t* start, const vec_t* mins, const vec_t* maxs, const vec_t* end, trace_t* trace )
+{
+	vec3_t		offset;
+	vec3_t		start_l, end_l;
+	hull_t*	hull;
+	model_t* pmodel;
+	int			numhulls, i, rotated;
+
+// fill in a default trace
+	memset(trace, 0, sizeof(trace_t));
+	trace->fraction = 1;
+	trace->allsolid = TRUE;
+	VectorCopy(end, trace->endpos);
+
+	pmodel = sv.models[ent->v.modelindex];
+
+	if (pmodel->type == mod_studio)
+	{
+		// get the clipping hull for studio model
+		hull = SV_HullForStudioModel(ent, mins, maxs, offset, &numhulls);
+	}
+	else
+	{
+		// get the clipping hull
+		hull = SV_HullForEntity(ent, mins, maxs, offset);
+		numhulls = 1;
+	}
+
+	VectorSubtract(start, offset, start_l);
+	VectorSubtract(end, offset, end_l);
+
+// rotate start and end into the models frame of reference
+	if (ent->v.solid == SOLID_BSP &&
+		(ent->v.angles[0] != 0.0 || ent->v.angles[1] != 0.0 || ent->v.angles[2] != 0.0))
+	{
+		rotated = TRUE;
+	}
+	else
+	{
+		rotated = FALSE;
+	}
+
+	if (rotated)
+	{
+		vec3_t forward, right, up;
+		vec3_t temp;
+
+		AngleVectors(ent->v.angles, forward, right, up);
+
+		VectorCopy(start_l, temp);
+		start_l[0] = DotProduct(temp, forward);
+		start_l[1] = -DotProduct(temp, right);
+		start_l[2] = DotProduct(temp, up);
+
+		VectorCopy(end_l, temp);
+		end_l[0] = DotProduct(temp, forward);
+		end_l[1] = -DotProduct(temp, right);
+		end_l[2] = DotProduct(temp, up);
+	}
+
+// trace a line through the apropriate clipping hull
+	if (numhulls == 1)
+	{
+		SV_RecursiveHullCheck(hull, hull->firstclipnode, 0, 1, start_l, end_l, trace);
+	}
+	else
+	{
+		int closest = 0;
+		trace_t testtrace;
+
+		for (i = 0; i < numhulls; i++)
+		{
+			memset(&testtrace, 0, sizeof(testtrace));
+			testtrace.fraction = 1;
+			testtrace.allsolid = TRUE;
+			VectorCopy(end, testtrace.endpos);
+
+			SV_RecursiveHullCheck(&hull[i], hull[i].firstclipnode, 0, 1, start_l, end_l, &testtrace);
+
+			if (i == 0 || testtrace.allsolid || testtrace.startsolid || testtrace.fraction < trace->fraction)
+			{
+				if (trace->startsolid)
+				{
+					*trace = testtrace;
+					trace->startsolid = TRUE;
+				}
+				else
+				{
+					*trace = testtrace;
+				}
+
+				closest = i;
+			}
+		}
+
+		trace->hitgroup = SV_HitgroupForStudioHull(closest);
+	}
+
+// fix trace up by the offset
+	if (trace->fraction != 1)
+	{
+		if (rotated)
+		{
+			vec3_t forward, right, up;
+			vec3_t temp;
+
+			AngleVectorsTranspose(ent->v.angles, forward, right, up);
+			VectorCopy(trace->plane.normal, temp);
+
+			trace->plane.normal[0] = DotProduct(temp, forward);
+			trace->plane.normal[1] = DotProduct(temp, right);
+			trace->plane.normal[2] = DotProduct(temp, up);
+		}
+
+		// Compute the end position of the trace.
+
+		trace->endpos[0] = start[0] + trace->fraction * (end[0] - start[0]);
+		trace->endpos[1] = start[1] + trace->fraction * (end[1] - start[1]);
+		trace->endpos[2] = start[2] + trace->fraction * (end[2] - start[2]);
+	}
+
+// did we clip the move?
+	if (trace->fraction < 1 || trace->startsolid)
+		trace->ent = ent;
+}
+
+/*
+===============
 SV_ClipMoveToEntity
 
 Handles selection or creation of a clipping hull, and offseting (and
@@ -665,11 +992,12 @@ eventually rotation) of the end points
 */
 trace_t SV_ClipMoveToEntity( edict_t* ent, const vec_t* start, const vec_t* mins, const vec_t* maxs, const vec_t* end )
 {
-	// TODO: Implement
-	trace_t t = { 0 };
-
-	return t;
+	trace_t	goodtrace;
+	SV_SingleClipMoveToEntity(ent, start, mins, maxs, end, &goodtrace);
+	return goodtrace;
 }
+
+//===========================================================================
 
 // TODO: Implement
 

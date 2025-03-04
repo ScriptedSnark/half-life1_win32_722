@@ -658,6 +658,7 @@ pmtrace_t PM_PlayerMove( vec_t* start, vec_t* end, int traceFlags )
 		if (trace.startsolid)
 			trace.fraction = 0;
 
+// fix trace up by the offset
 		if (trace.fraction != 1)
 		{
 			if (rotated)

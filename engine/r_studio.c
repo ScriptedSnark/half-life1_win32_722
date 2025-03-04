@@ -1079,6 +1079,20 @@ void GetAttachment( const edict_t* pEdict, int iAttachment, float* rgflOrigin, f
 
 // TODO: Implement
 
+/*
+====================
+SV_HullForStudioModel
+
+====================
+*/
+hull_t* SV_HullForStudioModel( const edict_t* pEdict, const vec_t* mins, const vec_t* maxs, vec_t* offset, int* pNumHulls )
+{
+	// TODO: Implement
+	return NULL;
+}
+
+// TODO: Implement
+
 hull_t* R_StudioHull( model_t* pModel, float frame, int sequence, const vec_t* angles, const vec_t* origin, const vec_t* size, const byte* pcontroller, const byte* pblending, int* pNumHulls )
 {
 	// TODO: Implement
