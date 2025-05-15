@@ -291,8 +291,6 @@ void CPython::WeaponIdle( void )
 	SendWeaponAnim( iAnim );
 }
 
-LINK_ENTITY_TO_CLASS(ammo_357, CPythonAmmo);
-
 class CPythonAmmo : public CBasePlayerAmmo
 {
 	void Spawn( void )
@@ -316,5 +314,7 @@ class CPythonAmmo : public CBasePlayerAmmo
 		return FALSE;
 	}
 };
+
+LINK_ENTITY_TO_CLASS(ammo_357, CPythonAmmo);
 
 #endif
