@@ -1474,7 +1474,6 @@ void SV_Physics_Step( edict_t* ent )
 			{
 				point[0] = x ? maxs[0] : mins[0];
 				point[1] = y ? maxs[1] : mins[1];
-
 				if (SV_PointContents(point) == CONTENTS_SOLID)
 				{
 					ent->v.flags |= FL_ONGROUND;
@@ -1501,7 +1500,7 @@ void SV_Physics_Step( edict_t* ent )
 	}
 
 // regular thinking
-	SV_RunThink(ent);
+//	SV_RunThink(ent);
 
 	SV_CheckWaterTransition(ent);
 }

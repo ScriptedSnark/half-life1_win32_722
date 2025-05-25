@@ -949,7 +949,7 @@ void CL_LinkPacketEntities( void )
 				dl = CL_AllocDlight(ent->index);
 				VectorCopy(ent->origin, dl->origin);
 				dl->color.r = dl->color.g = dl->color.b = 100;
-				dl->radius = RandomFloat(200.0, 231.0);
+				dl->radius = RandomFloat(200, 231);
 				dl->die = cl.time + 0.001;
 			}
 		}
