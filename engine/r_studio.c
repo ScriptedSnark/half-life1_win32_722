@@ -2275,9 +2275,55 @@ void R_StudioDrawPoints( void )
 	}
 }
 
+extern	vec3_t			lightspot;
+
 void GLR_StudioDrawShadow( void )
 {
-	// TODO: Implement
+	int			i, k;
+	vec3_t		point;
+	float		height;
+	auxvert_t* av;
+
+	height = lightspot[2] + 1.0;
+
+	for (i = 0; i < psubmodel->nummesh; i++)
+	{
+		short* ptricmds;
+
+		pmesh = (mstudiomesh_t*)((byte*)pstudiohdr + psubmodel->meshindex) + i;
+		c_alias_polys += pmesh->numtris;
+
+		ptricmds = (short*)((byte*)pstudiohdr + pmesh->triindex);
+
+		while (1)
+		{
+			// get the vertex count and primitive type
+			k = *(ptricmds++);
+			if (!k)
+				break;		// done
+			if (k < 0)
+			{
+				k = -k;
+				qglBegin(GL_TRIANGLE_FAN);
+			}
+			else
+			{
+				qglBegin(GL_TRIANGLE_STRIP);
+			}
+
+			for (; k > 0; k--, ptricmds += 4)
+			{
+				av = &pauxverts[ptricmds[0]];
+				VectorCopy(av->fv, point);
+				point[0] -= shadevector[0] * (av->fv[2] - lightspot[2]);
+				point[1] -= shadevector[1] * (av->fv[2] - lightspot[2]);
+				point[2] = height;
+				qglVertex3fv(point);
+			}
+
+			qglEnd();
+		}
+	}
 }
 #endif
 

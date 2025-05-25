@@ -1500,7 +1500,7 @@ void SV_Physics_Step( edict_t* ent )
 	}
 
 // regular thinking
-//	SV_RunThink(ent);
+	SV_RunThink(ent);
 
 	SV_CheckWaterTransition(ent);
 }
