@@ -3,6 +3,8 @@
 #include "quakedef.h"
 #include "winquake.h"
 #include "crc.h"
+#include "pmove.h"
+#include "decal.h"
 #include "hashpak.h"
 #include "cl_demo.h"
 #include "cl_tent.h"
@@ -310,14 +312,60 @@ CL_CreateCustomizationList
 */
 void CL_CreateCustomizationList( void )
 {
-	// TODO: Implement
+	int i;
+	customization_t* pCust;
+	resource_t* pResource;
+	player_info_t* pPlayer;
+
+	pPlayer = &cl.players[cl.playernum];
+	pPlayer->customdata.pNext = NULL;
+
+	for (i = 0, pResource = cl.resourcelist; i < cl.num_resources; i++, pResource++)
+	{
+		pCust = (customization_t*)malloc(sizeof(customization_t));
+		memset(pCust, 0, sizeof(customization_t));
+
+		memcpy(&pCust->resource, pResource, sizeof(pCust->resource));
+
+		if (pResource->nDownloadSize)
+		{
+			pCust->bInUse = TRUE;
+			pCust->pBuffer = COM_LoadFile(pResource->szFileName, 5, NULL);
+
+			if ((pCust->resource.ucFlags & RES_CUSTOM) && pCust->resource.type == t_decal)
+			{
+				pCust->resource.playernum = cl.playernum;
+
+				cachewad_t* pWad = (cachewad_t*)malloc(sizeof(cachewad_t));
+				pCust->pInfo = pWad;
+
+				memset(pWad, 0, sizeof(cachewad_t));
+				CustomDecal_Init(pWad, pCust->pBuffer, pResource->nDownloadSize);
+				pCust->bTranslated = TRUE;
+				pCust->nUserData1 = 0;
+				pCust->nUserData2 = pWad->lumpCount;
+			}
+		}
+
+		pCust->pNext = pPlayer->customdata.pNext;
+		pPlayer->customdata.pNext = pCust;
+	}
 }
 
 void CL_ClearClientState( void )
 {
 	int i;
+	packet_entities_t* pClientPack;
 
-	// TODO: Implement
+	for (i = 0; i < UPDATE_BACKUP; i++)
+	{
+		pClientPack = &cl.frames[i].packet_entities;
+		if (pClientPack->entities)
+			free(pClientPack->entities);
+
+		pClientPack->entities = NULL;
+		pClientPack->num_entities = 0;
+	}
 
 	CL_ClearResourceLists();
 
@@ -1487,6 +1535,12 @@ void CL_Init( void )
 	CL_InitPrediction();
 
 	// TODO: Implement
+
+	Pmove_Init();
+
+	memset(bitcounts, 0, sizeof(bitcounts));
+	memset(playerbitcounts, 0, sizeof(playerbitcounts));
+	memset(custombitcounts, 0, sizeof(custombitcounts));
 
 	memset(&cl, 0, sizeof(client_state_t));
 

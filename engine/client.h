@@ -497,7 +497,9 @@ extern	cvar_t	cl_showpred;
 
 extern qboolean cl_inmovie;
 
-extern int playerbitcounts[MAX_CLIENTS];
+extern int	bitcounts[32 + 8];
+extern int	playerbitcounts[MAX_CLIENTS];
+extern int	custombitcounts[32];
 
 // TODO: Implement
 
