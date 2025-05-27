@@ -2494,10 +2494,23 @@ void VOX_ReadSentenceFile( void )
 
 char* VOX_LookupString( char* pszin, int* psentencenum )
 {
-	// TODO: Implement
+	int i;
+	char* cptr;
+
+	for (i = 0; i < cszrawsentences; i++)
+	{
+		if (!Q_strcasecmp(pszin, rgpszrawsentence[i]))
+		{
+			if (psentencenum)
+				*psentencenum = i;
+
+			cptr = rgpszrawsentence[i] + Q_strlen(rgpszrawsentence[i]) + 1;
+			return cptr; // return sentence value
+		}
+	}
+
 	return NULL;
 }
-
 
 // trim the start and end times of a voice channel's audio data
 // based on specified start and end points
