@@ -2733,8 +2733,176 @@ sfxcache_t* VOX_LoadSound( channel_t* pchan, char* pszin )
 
 int	VOX_FPaintPitchChannelFrom8Offs( portable_samplepair_t* paintbuffer, channel_t* ch, sfxcache_t* sc, int count, int pitch, int timecompress, int offset )
 {
-	// TODO: Implement
-	return 0;
+	int		data;
+	int* lscale, * rscale;
+	unsigned char* sfx;
+	int		i;
+	int		posold;
+	int		samplefrac, fracstep, srcsample;
+	float	stepscale;
+	int		cb;
+	portable_samplepair_t* pbuffer;
+
+	pbuffer = &paintbuffer[offset];
+
+	if (ch->isentence < 0)
+		return 0;
+
+	if (ch->leftvol > 255)
+		ch->leftvol = 255;
+	if (ch->rightvol > 255)
+		ch->rightvol = 255;
+
+	lscale = snd_scaletable[ch->leftvol >> 3];
+	rscale = snd_scaletable[ch->rightvol >> 3];
+	sfx = sc->data;
+
+	int chunksize;
+	int skipbytes;
+	int lowsample;
+	int playcount;
+	int cdata = 0;
+	int j;
+
+	samplefrac = rgrgvoxword[ch->isentence][ch->iword].samplefrac;
+	cb = rgrgvoxword[ch->isentence][ch->iword].cbtrim;
+
+	// Calculate the step scale and fraction step for pitch adjustment
+	stepscale = pitch / 100.0;
+	fracstep = (stepscale * 256.0);
+
+	j = samplefrac >> 8;
+	samplefrac += fracstep;
+
+	if (timecompress == 0) // Process samples without time compression
+	{
+		i = 0;
+		while (i < count && j < cb)
+		{
+			data = sfx[j];
+			pbuffer[i].left += lscale[data];
+			pbuffer[i].right += rscale[data];
+			j = samplefrac >> 8;
+			samplefrac += fracstep;
+			i++;
+		}
+	}
+	else // Time-compressed samples
+	{
+		chunksize = cb >> 3;
+		skipbytes = chunksize * timecompress / 100;
+
+		i = 0;
+		while (i < count)
+		{
+			if (j >= cb)
+				break;
+
+			lowsample = (j % chunksize);
+			if (j >= skipbytes && lowsample < skipbytes)
+			{
+				srcsample = 0;
+				while (i < count && j < cb)
+				{
+					if (srcsample >= 255)
+						break;
+
+					data = sfx[j];
+					if (data <= 2)
+						break;
+
+					pbuffer[i].left += lscale[data];
+					pbuffer[i].right += rscale[data];
+					j = samplefrac >> 8;
+					samplefrac += fracstep;
+					srcsample++;
+					i++;
+				}
+
+				if (i > PAINTBUFFER_SIZE)
+					Con_DPrintf("timecompress scan forward: overwrote paintbuffer!");
+
+				if (j >= cb || i >= count)
+					break;
+
+				while (1)
+				{
+					lowsample = (j % chunksize);
+					if (lowsample < skipbytes)
+					{
+						j += (skipbytes - lowsample);
+						samplefrac += (skipbytes - lowsample) << 8;
+					}
+
+					srcsample = 0;
+					while (j < cb)
+					{
+						if (srcsample >= 255)
+							break;
+
+						data = sfx[j];
+						if (data <= 2)
+							break;
+
+						j = samplefrac >> 8;
+						samplefrac += fracstep;
+						srcsample++;
+					}
+
+					if (j >= cb)
+						break;
+
+					lowsample = (j % chunksize);
+					if (lowsample >= skipbytes)
+					{
+						// The remaining chunk data for playback
+						cdata = chunksize - lowsample;
+						break;
+					}
+				}
+			}
+			else
+			{
+				cdata = chunksize - lowsample;
+			}
+
+			playcount = (cdata << 8) / fracstep;
+			if (playcount + i > count)
+				playcount = count - i;
+
+			if (playcount == 0)
+				playcount = 1;
+
+			srcsample = 0;
+			while (i < count)
+			{
+				if (srcsample >= playcount)
+					break;
+
+				if (j >= cb)
+					break;
+
+				data = sfx[j];
+				pbuffer[i].left += lscale[data];
+				pbuffer[i].right += rscale[data];
+				j = samplefrac >> 8;
+				samplefrac += fracstep;
+				srcsample++;
+				i++;
+			}
+
+			if (i >= count)
+				break;
+		}
+	}
+
+	rgrgvoxword[ch->isentence][ch->iword].samplefrac = samplefrac;
+
+	posold = ch->pos - (samplefrac >> 8);
+	ch->pos = samplefrac >> 8;
+	ch->end += i + posold;
+
+	return j >= cb;
 }
 
 char szsentences[] = "sound/sentences.txt"; // sentence file
