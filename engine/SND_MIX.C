@@ -2335,7 +2335,75 @@ void VOX_Init( void )
 
 void VOX_ParseString( char* psz )
 {
-	// TODO: Implement
+	int i;
+	int fdone = 0;
+	char* pszscan = psz;
+	char c;
+
+	Q_memset(rgpparseword, 0, sizeof(char*) * CVOXWORDMAX);
+
+	if (!psz)
+		return;
+
+	i = 0;
+	rgpparseword[i++] = psz;
+
+	while (!fdone && i < CVOXWORDMAX)
+	{
+		// scan up to next word
+		c = *pszscan;
+		while (c && !(c == ' ' || c == '.' || c == ','))
+			c = *(++pszscan);
+
+		// if '(' then scan for matching ')'
+		if (c == '(')
+		{
+			c = *(++pszscan);
+			while (c)
+			{
+				if (c == ')')
+				{
+					c = *(++pszscan);
+					break;
+				}
+				c = *(++pszscan);
+			}
+			if (!c)
+				fdone = 1;
+		}
+
+		if (fdone || !c)
+			fdone = 1;
+		else
+		{
+			// if . or , insert pause into rgpparseword,
+			// unless this is the last character
+			if ((c == '.' || c == ',') && *(pszscan + 1) != '\n' && *(pszscan + 1) != '\r'
+				&& *(pszscan + 1) != 0)
+			{
+				if (c == '.')
+					rgpparseword[i++] = voxperiod;
+				else
+					rgpparseword[i++] = voxcomma;
+
+				if (i >= CVOXWORDMAX)
+					break;
+			}
+
+			// null terminate substring
+			*pszscan++ = 0;
+
+			// skip whitespace
+			c = *pszscan;
+			while (c && (c == ' ' || c == '.' || c == ','))
+				c = *(++pszscan);
+
+			if (!c)
+				fdone = 1;
+			else
+				rgpparseword[i++] = pszscan;
+		}
+	}
 }
 
 // backwards scan psz for last '/'
@@ -2344,8 +2412,29 @@ void VOX_ParseString( char* psz )
 
 char* VOX_GetDirectory( char* szpath, char* psz )
 {
-	// TODO: Implement
-	return NULL;
+	char c;
+	int cb = 0;
+	char* pszscan = psz + Q_strlen(psz) - 1;
+
+	// scan backwards until first '/' or start of string
+	c = *pszscan;
+	while (pszscan > psz && c != '/')
+	{
+		c = *(--pszscan);
+		cb++;
+	}
+
+	if (c != '/')
+	{
+		// didn't find '/', return default directory
+		Q_strcpy(szpath, "vox/");
+		return psz;
+	}
+
+	cb = Q_strlen(psz) - cb;
+	Q_memcpy(szpath, psz, cb);
+	szpath[cb] = 0;
+	return pszscan + 1;
 }
 
 // set channel volume based on volume of current word
