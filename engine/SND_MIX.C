@@ -2517,7 +2517,76 @@ char* VOX_LookupString( char* pszin, int* psentencenum )
 
 void VOX_TrimStartEndTimes( channel_t* ch, sfxcache_t* sc )
 {
-	// TODO: Implement
+	float sstart;
+	float send;
+	int	length;
+	int	i;
+	int	srcsample;
+	int	skiplen;
+	voxword_t* pvoxword;
+	char* pdata;
+	
+	if (ch->isentence < 0)
+		return;
+
+	length = sc->length;
+	pvoxword = &rgrgvoxword[ch->isentence][ch->iword];
+	pvoxword->cbtrim = sc->length;
+	sstart = pvoxword->start;
+	send = pvoxword->end;
+
+	// Negative length
+	if (sstart >= send)
+		return;
+
+	if (sstart > 0.0 && sstart < 100.0)
+	{
+		skiplen = (int)(sstart / 100.0 * length);
+		ch->pos += skiplen;
+
+		srcsample = 0;
+		i = ch->pos;
+		while (i < length && srcsample < 255)
+		{
+			pdata = (char*)&sc->data[i];
+			if (pdata[0] >= -2 && pdata[0] <= 2)
+			{
+				ch->pos = i;
+				ch->end -= skiplen + srcsample;
+				break;
+			}
+
+			i++;
+			srcsample++;
+		}
+
+		if (pvoxword->pitch != PITCH_NORM)
+		{
+			pvoxword->samplefrac += ch->pos << 8;
+		}
+	}
+
+	if (send > 0.0 && send < 100.0)
+	{
+		skiplen = (int)((100.0 - send) / 100.0 * length);
+		ch->end -= skiplen;
+
+		i = length - skiplen;
+		srcsample = 0;
+		while (i > ch->pos && srcsample < 255)
+		{
+			pdata = (char*)&sc->data[i];
+			if (pdata[0] >= -2 && pdata[0] <= 2)
+			{
+				ch->end -= srcsample;
+				pvoxword->cbtrim = length - srcsample - skiplen;
+				return;
+			}
+
+			i--;
+			srcsample++;
+		}
+	}
 }
 
 #if defined (__USEA3D)
