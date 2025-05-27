@@ -2486,8 +2486,99 @@ void VOX_SetChanVol( channel_t* ch )
 
 int VOX_ParseWordParams( char* psz, voxword_t* pvoxword, int fFirst )
 {
-	// TODO: Implement
-	return 0;
+	char* pszsave = psz;
+	char c;
+	char ct;
+	char sznum[8];
+	int i;
+	static voxword_t voxwordDefault;
+
+	// init to defaults if this is the first word in string.
+	if (fFirst)
+	{
+		voxwordDefault.pitch = -1;
+		voxwordDefault.volume = 100;
+		voxwordDefault.start = 0;
+		voxwordDefault.end = 100;
+		voxwordDefault.fKeepCached = 0;
+		voxwordDefault.timecompress = 0;
+	}
+
+	*pvoxword = voxwordDefault;
+
+	// look at next to last char to see if we have a 
+	// valid format:
+
+	c = *(psz + Q_strlen(psz) - 1);
+
+	if (c != ')')
+		return 1;		// no formatting, return
+
+	// scan forward to first '('
+
+	c = *psz;
+	while (!(c == '(' || c == ')'))
+		c = *(++psz);
+
+	if (c == ')')
+		return 0;		// bogus formatting
+
+	// null terminate
+
+	*psz = 0;
+	ct = *(++psz);
+
+	while (1)
+	{
+		// scan until we hit a character in the commandSet
+
+		while (ct && !(ct == 'v' || ct == 'p' || ct == 's' || ct == 'e' || ct == 't'))
+			ct = *(++psz);
+
+		if (ct == ')')
+			break;
+
+		Q_memset(sznum, 0, sizeof(sznum));
+		i = 0;
+
+		c = *(++psz);
+
+		if (!isdigit(c))
+			break;
+
+		// read number
+		while (isdigit(c) && i < sizeof(sznum) - 1)
+		{
+			sznum[i++] = c;
+			c = *(++psz);
+		}
+
+		// get value of number
+		i = Q_atoi(sznum);
+
+		switch (ct)
+		{
+			case 'v': pvoxword->volume = i; break;
+			case 'p': pvoxword->pitch = i; break;
+			case 's': pvoxword->start = i; break;
+			case 'e': pvoxword->end = i; break;
+			case 't': pvoxword->timecompress = i; break;
+		}
+
+		ct = c;
+	}
+
+	// if the string has zero length, this was an isolated
+	// parameter block.  Set default voxword to these
+	// values
+
+	if (Q_strlen(pszsave) == 0)
+	{
+		voxwordDefault = *pvoxword;
+		return 0;
+	}
+	else
+		return 1;
 }
 
 int VOX_IFindEmptySentence( void )
@@ -2506,7 +2597,36 @@ int VOX_IFindEmptySentence( void )
 
 void VOX_MakeSingleWordSentence( channel_t* ch, int pitch )
 {
-	// TODO: Implement
+	// Create a sentence with a single word
+
+	voxword_t voxword;
+	int k;
+
+	// Find empty sentence
+	k = VOX_IFindEmptySentence();
+
+	if (k < 0)
+	{
+		ch->pitch = PITCH_NORM;
+		ch->isentence = -1;
+		return;
+	}
+
+	voxword.volume = 100;
+	voxword.pitch = PITCH_NORM;
+	voxword.start = 0;
+	voxword.end = 100;
+	voxword.sfx = ch->sfx;
+	voxword.samplefrac = 0;
+	voxword.timecompress = 0;
+	voxword.fKeepCached = 1;
+
+	rgrgvoxword[k][0] = voxword;
+	rgrgvoxword[k][1].sfx = NULL;
+
+	ch->pitch = pitch;
+	ch->isentence = k;
+	ch->iword = 0;
 }
 
 // link all sounds in sentence, start playing first word.
