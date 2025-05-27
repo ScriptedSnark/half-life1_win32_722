@@ -2326,12 +2326,27 @@ void VOX_Init( void )
 {
 	Q_memset(rgrgvoxword, 0, sizeof(rgrgvoxword));
 
+	VOX_ReadSentenceFile();
+}
+
+// parse a null terminated string of text into component words, with
+// pointers to each word stored in rgpparseword
+// note: this code actually alters the passed in string!
+
+void VOX_ParseString( char* psz )
+{
 	// TODO: Implement
 }
 
+// backwards scan psz for last '/'
+// return substring in szpath null terminated
+// if '/' not found, return 'vox/'
 
-// TODO: Implement
-
+char* VOX_GetDirectory( char* szpath, char* psz )
+{
+	// TODO: Implement
+	return NULL;
+}
 
 // set channel volume based on volume of current word
 
@@ -2340,9 +2355,48 @@ void VOX_SetChanVol( channel_t* ch )
 	// TODO: Implement
 }
 
+//===============================================================================
+//  Get any pitch, volume, start, end params into voxword
+//  and null out trailing format characters
+//  Format: 
+//		someword(v100 p110 s10 e20)
+//		
+//		v is volume, 0% to n%
+//		p is pitch shift up 0% to n%
+//		s is start wave offset %
+//		e is end wave offset %
+//		t is timecompression %
+//
+//	pass fFirst == 1 if this is the first string in sentence
+//  returns 1 if valid string, 0 if parameter block only.
+//
+//  If a ( xxx ) parameter block does not directly follow a word, 
+//  then that 'default' parameter block will be used as the default value
+//  for all following words.  Default parameter values are reset
+//  by another 'default' parameter block.  Default parameter values
+//  for a single word are overridden for that word if it has a parameter block.
+// 
+//===============================================================================
 
-// TODO: Implement
+int VOX_ParseWordParams( char* psz, voxword_t* pvoxword, int fFirst )
+{
+	// TODO: Implement
+	return 0;
+}
 
+int VOX_IFindEmptySentence( void )
+{
+	int k;
+
+	for (k = 0; k < CBSENTENCENAME_MAX; k++)
+	{
+		if (!rgrgvoxword[k][0].sfx)
+			return k;
+	}
+
+	Con_DPrintf("Sentence or Pitch shift ignored. > 16 playing!\n");
+	return -1;
+}
 
 void VOX_MakeSingleWordSentence( channel_t* ch, int pitch )
 {
@@ -2363,14 +2417,86 @@ int	VOX_FPaintPitchChannelFrom8Offs( portable_samplepair_t* paintbuffer, channel
 	return 0;
 }
 
-// TODO: Implement
-
+char szsentences[] = "sound/sentences.txt"; // sentence file
 
 char* rgpszrawsentence[CVOXFILESENTENCEMAX];
 int cszrawsentences;
 
+// Load sentence file into memory, insert null terminators to
+// delimit sentence name/sentence pairs.  Keep pointer to each
+// sentence name so we can search later.
 
-// TODO: Implement
+void VOX_ReadSentenceFile( void )
+{
+	char* pBuf;
+	char* pch;
+	char* pchlast;
+	int nSentenceCount;
+	int nFileLength;
+
+	Q_memset(rgpszrawsentence, 0, sizeof(rgpszrawsentence));
+
+	// load file
+	pBuf = (char*)COM_LoadHunkFile(szsentences);
+	if (!pBuf)
+	{
+		Con_DPrintf("Couldn't load %s\n", szsentences);
+		return;
+	}
+
+	pch = pBuf;
+	nFileLength = com_filesize;
+	pchlast = pch + nFileLength;
+
+	nSentenceCount = 0;
+
+	while (pch < pchlast)
+	{
+		char c;
+
+		// skip newline, cr, tab, space
+
+		c = *pch;
+		while (pch < pchlast && (c == '\n' || c == '\r' || c == '\t' || c == ' '))
+			c = *(++pch);
+
+		// skip entire line if first char is /
+		if (*pch != '/')
+		{
+			rgpszrawsentence[nSentenceCount] = pch;
+			nSentenceCount++;
+
+			// scan forward to first space, insert null terminator
+			// after sentence name
+
+			c = *pch;
+			while (pch < pchlast && c != ' ')
+				c = *(++pch);
+
+			if (pch < pchlast)
+				*pch++ = 0;
+		}
+		// scan forward to end of sentence or eof
+		while (pch < pchlast && pch[0] != '\n' && pch[0] != '\r')
+			pch++;
+
+		// insert null terminator
+		if (pch < pchlast)
+			*pch++ = 0;
+	}
+	cszrawsentences = nSentenceCount;
+}
+
+// scan rgpszrawsentence, looking for pszin sentence name
+// return pointer to sentence data if found, null if not
+// CONSIDER: if we have a large number of sentences, should
+// CONSIDER: sort strings in rgpszrawsentence and do binary search.
+
+char* VOX_LookupString( char* pszin, int* psentencenum )
+{
+	// TODO: Implement
+	return NULL;
+}
 
 
 // trim the start and end times of a voice channel's audio data
@@ -2380,10 +2506,6 @@ void VOX_TrimStartEndTimes( channel_t* ch, sfxcache_t* sc )
 {
 	// TODO: Implement
 }
-
-
-// TODO: Implement
-
 
 #if defined (__USEA3D)
 int PaintToA3D( int iChannel, channel_t* ch, sfxcache_t* sc, int count, int feedStart, float flPitch )

@@ -238,9 +238,6 @@ extern int snd_blocked;
 
 extern int sound_started;
 
-extern char* rgpszrawsentence[CVOXFILESENTENCEMAX];
-extern int cszrawsentences;
-
 void S_LocalSound( char* sound );
 sfxcache_t* S_LoadSound( sfx_t* s, channel_t* channel );
 sfxcache_t* S_LoadStreamSound( sfx_t* s, channel_t* ch );
@@ -258,6 +255,9 @@ void ResampleSfx( sfx_t* sfx, int inrate, int inwidth, byte* data );
 void SND_PaintChannelFrom8Offs( portable_samplepair_t* paintbuffer, channel_t* ch, sfxcache_t* sc, int count, int offset );
 void SND_PaintChannelFrom16Offs( portable_samplepair_t* paintbuffer, channel_t* ch, sfxcache_t* sc, int count, int offset );
 
+DLL_EXPORT void Snd_ReleaseBuffer( void );
+DLL_EXPORT void Snd_AcquireBuffer( void );
+
 //=============================================================================
 
 void S_TransferStereo16( int end );
@@ -266,11 +266,8 @@ void S_MixChannelsToPaintbuffer( int end, int fPaintHiresSounds );
 qboolean S_CheckWavEnd( channel_t* ch, sfxcache_t** psc, int ltime, int ichan );
 
 extern void SND_MoveMouth( channel_t* ch, sfxcache_t* sc, int count );
-
 extern void SND_CloseMouth( channel_t* ch );
 extern void SND_InitMouth( int entnum, int entchannel );
-
-
 
 // DSP Routines
 
@@ -283,29 +280,25 @@ void SX_RoomFX( int count, int fFilter, int fTimefx );
 
 extern wavstream_t wavstreams[MAX_CHANNELS];
 
-qboolean Wavstream_Init( void );
-void Wavstream_Close( int i );
-void Wavstream_GetNextChunk( channel_t* ch, sfx_t* s );
+qboolean	Wavstream_Init( void );
+void		Wavstream_Close( int i );
+void		Wavstream_GetNextChunk( channel_t* ch, sfx_t* s );
 
+// VOX
 
-DLL_EXPORT void Snd_ReleaseBuffer( void );
-DLL_EXPORT void Snd_AcquireBuffer( void );
+extern char* rgpszrawsentence[CVOXFILESENTENCEMAX];
+extern int cszrawsentences;
 
 extern void				VOX_Init( void );
-
-
+extern char*			VOX_GetDirectory( char* szpath, char* psz );
 extern void				VOX_SetChanVol( channel_t* ch );
-
-
-
+extern int				VOX_ParseWordParams( char* psz, voxword_t* pvoxword, int fFirst );
+extern void				VOX_ReadSentenceFile( void );
 extern sfxcache_t*		VOX_LoadSound( channel_t* pchan, char* pszin );
-
+extern char*			VOX_LookupString( char* pszin, int* psentencenum );
 extern void				VOX_MakeSingleWordSentence( channel_t* ch, int pitch );
 extern void				VOX_TrimStartEndTimes( channel_t* ch, sfxcache_t* sc );
 extern int				VOX_FPaintPitchChannelFrom8Offs( portable_samplepair_t* paintbuffer, channel_t* ch, sfxcache_t* sc, int count, int pitch, int timecompress, int offset );
-
-
-
 
 extern portable_samplepair_t paintbuffer[];
 extern portable_samplepair_t drybuffer[];
