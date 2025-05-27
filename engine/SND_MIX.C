@@ -2441,7 +2441,24 @@ char* VOX_GetDirectory( char* szpath, char* psz )
 
 void VOX_SetChanVol( channel_t* ch )
 {
-	// TODO: Implement
+	float scale;
+	int vol;
+
+	if (ch->isentence < 0)
+		return;
+
+	vol = rgrgvoxword[ch->isentence][ch->iword].volume;
+	if (vol == 100)
+		return;
+
+	scale = vol / 100.0;
+
+	// Remains the same
+	if (scale == 1.0)
+		return;
+
+	ch->rightvol = (int)(ch->rightvol * scale);
+	ch->leftvol = (int)(ch->leftvol * scale);
 }
 
 //===============================================================================
