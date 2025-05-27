@@ -2633,8 +2633,102 @@ void VOX_MakeSingleWordSentence( channel_t* ch, int pitch )
 
 sfxcache_t* VOX_LoadSound( channel_t* pchan, char* pszin )
 {
-	// TODO: Implement
-	return NULL;
+	char buffer[512];
+	int i, j, k, cword;
+	char	pathbuffer[64];
+	char	szpath[32];
+	sfxcache_t* sc;
+	voxword_t rgvoxword[CVOXWORDMAX];
+	char* psz;
+
+	if (!pszin)
+		return NULL;
+
+	Q_memset(rgvoxword, 0, sizeof(voxword_t) * CVOXWORDMAX);
+	Q_memset(buffer, 0, sizeof(buffer));
+
+	// lookup actual string in rgpszrawsentence, 
+	// set pointer to string data
+
+	psz = VOX_LookupString(pszin, NULL);
+
+	if (!psz)
+	{
+		Con_DPrintf("VOX_LoadSound: no sentence named %s\n", pszin);
+		return NULL;
+	}
+
+	// get directory from string, advance psz
+	psz = VOX_GetDirectory(szpath, psz);
+
+	if (Q_strlen(psz) > sizeof(buffer) - 1)
+	{
+		Con_DPrintf("VOX_LoadSound: sentence is too long %s\n", psz);
+		return NULL;
+	}
+
+	// copy into buffer
+	Q_strcpy(buffer, psz);
+	psz = buffer;
+
+	// parse sentence (also inserts null terminators between words)
+
+	VOX_ParseString(psz);
+
+	// for each word in the sentence, construct the filename,
+	// lookup the sfx and save each pointer in a temp array	
+
+	i = 0;
+	cword = 0;
+	while (rgpparseword[i])
+	{
+		// Get any pitch, volume, start, end params into voxword
+
+		if (VOX_ParseWordParams(rgpparseword[i], &rgvoxword[cword], i == 0))
+		{
+			// this is a valid word (as opposed to a parameter block)
+			Q_strcpy(pathbuffer, szpath);
+			Q_strcat(pathbuffer, rgpparseword[i]);
+			Q_strcat(pathbuffer, ".wav");
+
+			// find name, if already in cache, mark voxword
+			// so we don't discard when word is done playing
+			rgvoxword[cword].sfx = S_FindName(pathbuffer,
+					&(rgvoxword[cword].fKeepCached));
+			cword++;
+		}
+		i++;
+	}
+
+	k = VOX_IFindEmptySentence();
+	if (k < 0)
+		return NULL;
+
+	// copy each pointer in the sfx temp array into the
+	// sentence array, and set the channel to point to the
+	// sentence array
+	j = 0;
+	while (rgvoxword[j].sfx != NULL)
+	{
+		rgrgvoxword[k][j] = rgvoxword[j];
+		j++;
+	}
+
+	rgrgvoxword[k][j].sfx = NULL;
+
+	pchan->isentence = k;
+	pchan->iword = 0;
+	pchan->sfx = rgrgvoxword[k][0].sfx;
+
+	sc = S_LoadSound(rgvoxword[0].sfx, NULL);
+
+	if (!sc)
+	{
+		S_FreeChannel(pchan);
+		return NULL;
+	}
+
+	return sc;
 }
 
 int	VOX_FPaintPitchChannelFrom8Offs( portable_samplepair_t* paintbuffer, channel_t* ch, sfxcache_t* sc, int count, int pitch, int timecompress, int offset )
