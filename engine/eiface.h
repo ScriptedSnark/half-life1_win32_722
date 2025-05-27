@@ -109,7 +109,7 @@ typedef struct enginefuncs_s
 	void		(*pfnTraceToss)				( edict_t* pent, edict_t* pentToIgnore, TraceResult* ptr );
 	int			(*pfnTraceMonsterHull)		( edict_t*, float*, float*, int, edict_t*, TraceResult*);
 	void		(*pfnTraceHull)				( float* v1, float* v2, int fNoMonsters, int hullNumber, edict_t* pentToSkip, TraceResult* ptr );
-	void		(*pfnTraceModel)			( float* v1, float* v2, edict_t* pent, TraceResult* ptr );
+	void		(*pfnTraceModel)			( const float* v1, const float* v2, edict_t* pent, TraceResult* ptr );
 	const char*	(*pfnTraceTexture)			( edict_t* pTextureEntity, const float* v1, const float* v2 );
 	void		(*pfnTraceSphere)			( float* v1, float* v2, int fNoMonsters, float radius, edict_t* pentToSkip, TraceResult* ptr );
 	void		(*pfnGetAimVector)			( edict_t* ent, float speed, float* rgflReturn );

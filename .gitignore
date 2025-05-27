@@ -411,3 +411,4 @@ FodyWeavers.xsd
 /engine/GLRelease
 *.RES
 *.mdp
+/projects/vs2022/hl/Debug - Address Sanitizer
