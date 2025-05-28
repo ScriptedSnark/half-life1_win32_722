@@ -445,7 +445,7 @@ void SV_WriteDelta( entity_state_t* from, entity_state_t* to, sizebuf_t* msg, qb
 	if (bits & 0x80000000)
 		MSG_WriteByte(msg, bboxbits);
 
-	if (bits & U_FRAME)
+	if (bits & U_LONGENTITY)
 		MSG_WriteShort(msg, to->number);
 	else
 		MSG_WriteByte(msg, to->number);

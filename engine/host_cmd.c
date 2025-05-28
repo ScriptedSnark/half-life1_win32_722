@@ -123,37 +123,36 @@ void Host_Map_f( void )
 	int		i;
 	char	name[MAX_QPATH];
 	char	mapstring[MAX_QPATH];
-	char*	s;
 
 	if (cmd_source != src_command)
 		return;
 
-	mapstring[0] = 0;
-	for (i = 0; i < Cmd_Argc(); i++, mapstring[strlen(mapstring)] = ' ')
+	for (name[0] = 0, i = 0; i < Cmd_Argc(); i++, *(unsigned short*) &name[strlen(name)] = ' ' /* write space and the zero terminator so if this is the last cycle, strlen would not crash us */)
 	{
-		strcat(mapstring, Cmd_Argv(i));
+		strcat(name, Cmd_Argv(i));
 	}
-	mapstring[strlen(mapstring)] = '\n';
+	// Write line feed and the zero terminator at the same time
+	*(unsigned short*) &name[strlen(name)] = '\n';
 
 	strcpy(mapstring, Cmd_Argv(1));
 
-	if (strlen(mapstring) > 4)
+	// If there is a .bsp on the end, strip it off!
+	i = strlen(mapstring);
+	if ( i > 4 && !_strcmpi(mapstring + i - 4, ".bsp") )
 	{
-		s = &mapstring[strlen(mapstring)];
-		if (!_strcmpi(s, ".bsp"))
-			*s = 0;
+		mapstring[i-4] = 0;
 	}
-	if (PF_IsMapValid_I(mapstring))
-	{
-		Cvar_Set("HostMap", mapstring);
-		Host_Map(FALSE, name, mapstring, 0);
-	}
-	else
+
+	if (!PF_IsMapValid_I(mapstring))
 	{
 		Con_Printf("map change failed: '");
 		Con_Printf(mapstring);
 		Con_Printf("' not found on server\n");
+		return;
 	}
+
+	Cvar_Set("HostMap", mapstring);
+	Host_Map(FALSE, name, mapstring, 0);
 }
 
 // TODO: Implement
