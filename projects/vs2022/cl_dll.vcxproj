@@ -83,7 +83,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <PostBuildEvent>
-      <Command>IF EXIST "$(ProjectDir)..\..\PostBuild.bat" (CALL "$(ProjectDir)..\..\PostBuild.bat" engine "$(OutDir)" "$(TargetName)$(TargetExt)")</Command>
+      <Command>IF EXIST "$(ProjectDir)..\..\PostBuild.bat" (CALL "$(ProjectDir)..\..\PostBuild.bat" cl_dll "$(OutDir)" "$(TargetName)$(TargetExt)")</Command>
     </PostBuildEvent>
     <PostBuildEvent>
       <Message>Automatic deployment script</Message>
@@ -101,7 +101,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <PostBuildEvent>
-      <Command>IF EXIST "$(ProjectDir)..\..\PostBuild.bat" (CALL "$(ProjectDir)..\..\PostBuild.bat" engine "$(OutDir)" "$(TargetName)$(TargetExt)")</Command>
+      <Command>IF EXIST "$(ProjectDir)..\..\PostBuild.bat" (CALL "$(ProjectDir)..\..\PostBuild.bat" cl_dll "$(OutDir)" "$(TargetName)$(TargetExt)")</Command>
     </PostBuildEvent>
     <PostBuildEvent>
       <Message>Automatic deployment script</Message>
@@ -123,7 +123,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <PostBuildEvent>
-      <Command>IF EXIST "$(ProjectDir)..\..\PostBuild.bat" (CALL "$(ProjectDir)..\..\PostBuild.bat" engine "$(OutDir)" "$(TargetName)$(TargetExt)")</Command>
+      <Command>IF EXIST "$(ProjectDir)..\..\PostBuild.bat" (CALL "$(ProjectDir)..\..\PostBuild.bat" cl_dll "$(OutDir)" "$(TargetName)$(TargetExt)")</Command>
     </PostBuildEvent>
     <PostBuildEvent>
       <Message>Automatic deployment script</Message>
