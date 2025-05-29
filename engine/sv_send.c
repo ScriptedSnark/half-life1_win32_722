@@ -33,32 +33,6 @@ extern int sv_playermodel;
 
 /*
 ==================
-SV_InactivateClients
-
-Prepare for level transition, etc.
-==================
-*/
-void SV_InactivateClients( void )
-{
-	int			i;
-	client_t*	cl;
-
-	for (i = 0, cl = svs.clients; i < svs.maxclients; i++, cl++)
-	{
-		if (cl->active || cl->connected || cl->spawned)
-		{
-			SZ_Clear(&cl->netchan.message);
-			cl->active = FALSE;
-			cl->connected = TRUE;
-			cl->spawned = FALSE;
-			COM_ClearCustomizationList(&cl->customdata, FALSE);
-			cl->maxspeed = 0;
-		}
-	}
-}
-
-/*
-==================
 Host_FlushRedirect
 ==================
 */

@@ -4,14 +4,45 @@
 #include "cl_demo.h"
 #include "pr_edict.h"
 
-
-int	gHostSpawnCount = 0;
+// Globals
 int	current_skill;
+int	gHostSpawnCount = 0;
 qboolean noclip_anglehack;
 
 cvar_t rcon_password = { "rcon_password", "" };
 
-void Host_ClearGameState( void );
+/*
+====================
+SV_InactivateClients
+
+Prepare for level transition, etc.
+====================
+*/
+void SV_InactivateClients( void )
+{
+	int i;
+	client_t* cl;
+
+	for (i = 0, cl = svs.clients; i < svs.maxclients; i++, cl++)
+	{
+		if (!cl->active && !cl->connected && !cl->spawned)
+			continue;
+
+		SZ_Clear(&cl->netchan.message);
+
+		cl->active = FALSE;
+		cl->connected = TRUE;
+		cl->spawned = FALSE;
+
+		COM_ClearCustomizationList(&cl->customdata, FALSE);
+		cl->maxspeed = 0.0;
+	}
+}
+
+
+
+
+//============================================================================= FINISH LINE
 
 
 /*

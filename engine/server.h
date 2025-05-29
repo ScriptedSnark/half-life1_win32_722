@@ -358,6 +358,7 @@ void SV_New_f( void );
 void SV_ActivateServer( qboolean runPhysics );
 int SV_SpawnServer( qboolean bIsDemo, char* server, char* startspot );
 void SV_LoadEntities( void );
+void SV_InactivateClients( void );
 
 int RegUserMsg( const char* pszName, int iSize );
 
@@ -377,7 +378,7 @@ void Host_EndRedirect( void );
 // sv_send.c
 //
 
-void SV_InactivateClients( void );
+
 void SV_SendUserReg( sizebuf_t* sb );
 void SV_SendBan( void );
 qboolean SV_FilterPacket( void );

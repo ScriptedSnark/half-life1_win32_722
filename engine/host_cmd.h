@@ -8,8 +8,10 @@
 extern int  gHostSpawnCount;
 extern int	current_skill;
 
-void Host_ClearSaveDirectory( void );
+void		Host_ClearGameState( void );
 
-void Host_EndSection( const char* pszSection );
+void		Host_EndSection( const char* pszSection );
+
+void		Host_ClearSaveDirectory( void );
 
 #endif // HOST_CMD_H
