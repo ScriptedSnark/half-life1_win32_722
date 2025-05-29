@@ -56,6 +56,7 @@ SV_NextUpload
 ================
 */
 extern cvar_t		scr_downloading;
+extern void			COM_CreatePath( char* path );
 void SV_ParseUpload( void )
 {
 	int					size, append, reason, percent;
@@ -163,12 +164,12 @@ void SV_ParseUpload( void )
 				pLocal->pBuffer = malloc(host_client->uploadingresource->nDownloadSize);
 				fread(pLocal->pBuffer, host_client->uploadingresource->nDownloadSize, sizeof(byte), host_client->upload);
 
-				pCust = host_client->customdata;
+				pCust = host_client->customdata.pNext;
 				if (pCust)
 				{
 					while (TRUE)
 					{
-						if (memcmp(pCust->resource.rgucMD5_hash, pLocal->resource.rgucMD5_hash, sizeof(res->resource.rgucMD5_hash)))
+						if (memcmp(pCust->resource.rgucMD5_hash, pLocal->resource.rgucMD5_hash, sizeof(pLocal->resource.rgucMD5_hash)))
 						{
 							pCust = pCust->pNext;
 							if (!pCust)
@@ -191,8 +192,8 @@ void SV_ParseUpload( void )
 				}
 				else
 				{
-					pLocal->pNext = host_client->customdata;
-					host_client->customdata = pLocal;
+					pLocal->pNext = host_client->customdata.pNext;
+					host_client->customdata.pNext = pLocal;
 				}
 
 				fclose(host_client->upload);
@@ -211,7 +212,7 @@ void SV_ParseUpload( void )
 		{
 			scr_downloading.value = (float)percent;
 			// Tell the client we're still listening
-			MSG_WriteByte(&host_client->netchan.message, svc_resourcerequest);
+			MSG_WriteByte(&host_client->netchan.message, 47); // TODO: Find out the message number
 		}
 	}
 }
@@ -596,7 +597,37 @@ SV_RequestResourceList_f
 */
 void SV_RequestResourceList_f( void )
 {
-	// TODO: Implement
+	char*	s;
+	int		i;
+
+	if (Cmd_Argc() == 3)
+	{
+		s = Cmd_Argv(1);
+		i = atoi(s);
+		if (cls.demoplayback || i == svs.spawncount)
+		{
+			s = Cmd_Argv(2);
+			i = atoi(s);
+			if (i >= 0)
+			{
+				MSG_WriteByte(&host_client->netchan.message, svc_resourcerequest);
+				MSG_WriteLong(&host_client->netchan.message, svs.spawncount);
+				MSG_WriteLong(&host_client->netchan.message, i);
+			}
+			else
+			{
+				Con_Printf("Resource request with bogus starting index %i\n", i);
+			}
+		}
+		else
+		{
+			Con_Printf("Resource request with mismatched servercount\n");
+		}
+	}
+	else
+	{
+		Con_Printf("Invalid resource request\n");
+	}
 }
 
 /*
@@ -606,7 +637,7 @@ SV_ParseResourceList
 */
 void SV_ParseResourceList( void )
 {
-	int				current, total, acknowledged;
+	int				total, acknowledged;
 	resource_t*		res;
 	byte			flags;
 	int				nWorldSize, nModelsSize, nDecalsSize, nSoundsSize, nSkinsSize;

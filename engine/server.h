@@ -242,9 +242,7 @@ typedef struct client_s
 
 	CRC32_t tempuploadCRC;
 
-	// TODO: Implement
-
-	customization_t* customdata;
+	customization_t customdata;
 } client_t;
 
 // server flags
@@ -439,8 +437,14 @@ void SV_AddResource( resourcetype_t type, const char* name, int size, byte flags
 void SV_CreateResourceList( void );
 void SV_ClearResourceLists( client_t* cl );
 void SV_RemoveFromResourceList( resource_t* pResource );
+qboolean SV_RequestMissingResources( void );
 void SV_RequestMissingResourcesFromClients( void );
 void SV_ParseResourceList( void );
 void SV_ParseUpload( void );
+void SV_PropagateCustomizations( void );
+void SV_MoveToOnHandList( resource_t* pResource );
+void SV_Customization( client_t* pPlayer, resource_t* pResource, qboolean bSkipPlayer );
+void SV_ClearResourceList( resource_t* pList );
+void SV_AddToResourceList( resource_t* pResource, resource_t* pList );
 
 #endif // SERVER_H
