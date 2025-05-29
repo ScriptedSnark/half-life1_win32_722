@@ -19,16 +19,6 @@ typedef enum
 	rt_max
 } resourcetype_t;
 
-typedef struct
-{
-	int				size;
-} _resourceinfo_t;
-
-typedef struct resourceinfo_s
-{
-	_resourceinfo_t info[rt_max];
-} resourceinfo_t;
-
 #define RES_FATALIFMISSING (1<<0)   // Disconnect if we can't get this file.
 #define RES_WASMISSING     (1<<1)   // Do we have the file locally, did we get it ok?
 #define RES_CUSTOM         (1<<2)   // Is this resource one that corresponds to another player's customization

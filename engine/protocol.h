@@ -121,9 +121,9 @@
 #define	svc_chokecount   		44		// # of packets held back on channel because too much data was flowing.
 #define svc_resourcelist		45
 #define svc_newmovevars			46
-
+#define svc_resourcerequest		47
 #define svc_resourcerequest		48
-
+#define svc_customization		49
 #define svc_crosshairangle		50		// [char] pitch * 5 [char] yaw * 5
 #define svc_soundfade			51      // char percent, char holdtime, char fadeouttime, char fadeintime
 #define svc_clientmaxspeed		52

@@ -3,6 +3,695 @@
 #include "decal.h"
 #include "hashpak.h"
 
+// Lookup the comments after SV_ParseResourceList.
+// TODO: Implement
+
+cvar_t	sv_uploadinterval = { "sv_uploadinterval", "1.0" };
+
+/*
+================
+SV_CheckOrUploadFile
+
+================
+*/
+qboolean SV_CheckOrUploadFile( char* filename )
+{
+	// TODO: Implement
+
+	return FALSE;
+}
+
+/*
+================
+SV_UpdateUploadCount
+
+Rate-limits the client if they're spamming with upload, as well as increments the uploads count.
+================
+*/
+void SV_UpdateUploadCount( void )
+{
+	downloadtime_t*		pStat;
+
+	if (sv_uploadinterval.value)
+	{
+		if (sv_uploadinterval.value < 0)
+			Cvar_SetValue("sv_uploadinterval", 1);
+
+		if (realtime - host_client->lastuploadtime >= sv_uploadinterval.value)
+		{
+			host_client->lastuploadtime = realtime;
+			host_client->numuploads++;
+
+			pStat = &host_client->uploads[host_client->numuploads & (MAX_DL_STATS - 1)]; // Mask the numuploads so we don't go over MAX_DL_STATS (like "cap")
+			pStat->bUsed = TRUE;
+			pStat->fTime = realtime;
+			pStat->nBytesRemaining = host_client->uploadsize;
+		}
+	}
+}
+
+/*
+================
+SV_NextUpload
+================
+*/
+extern cvar_t		scr_downloading;
+void SV_ParseUpload( void )
+{
+	int					size, append, reason, percent;
+	customization_t*	pLocal;
+	customization_t*	pCust;
+	qboolean			bDuplicate = FALSE;
+	char				file[MAX_OSPATH];
+	char				buffer[MAX_OSPATH];
+	char				filename[MAX_OSPATH];
+
+	size = MSG_ReadShort();
+	append = MSG_ReadShort();
+	reason = MSG_ReadLong();
+	percent = MSG_ReadByte();
+
+	host_client->uploadcount = percent;
+	COM_FileBase(host_client->extension, filename);
+
+	if (size == -1)
+	{
+		if (reason == -1)
+			Con_Printf("Client refused upload %s.\n", filename);
+		else
+			Con_Printf("File %s not on client.\n", filename);
+
+		if (host_client->upload)
+		{
+			Con_Printf("Error:  host_client->upload shouldn't have been set.\n");
+			fclose(host_client->upload);
+			host_client->upload = NULL;
+		}
+
+		host_client->isuploading = FALSE;
+		host_client->uploadingresource->ucFlags |= RES_WASMISSING;
+		SV_MoveToOnHandList(host_client->uploadingresource);
+	}
+	else
+	{
+		if (!host_client->upload)
+		{
+			sprintf(buffer, "%s/%s", com_gamedir, host_client->uploadfn);
+			COM_CreatePath(buffer);
+
+			if (append)
+			{
+				host_client->upload = fopen(buffer, "a+b");
+				host_client->tempuploadCRC = host_client->uploadCRC;
+			}
+			else
+			{
+				host_client->upload = fopen(buffer, "wb");
+				CRC32_Init(&host_client->tempuploadCRC);
+			}
+
+			if (!host_client->upload)
+			{
+				// suck out rest of packet
+				msg_readcount += size;
+
+				Con_Printf("Failed to open %s\n", host_client->uploadfn);
+				host_client->isuploading = FALSE;
+
+				return;
+			}
+
+			Con_Printf("uploading %s\n", filename);
+		}
+
+		CRC32_ProcessBuffer(&host_client->tempuploadCRC, &net_message.data[msg_readcount], size);
+		fwrite(&net_message.data[msg_readcount], sizeof(byte), size, host_client->upload);
+
+		msg_readcount += size;
+		host_client->uploadsize -= size;
+
+		SV_UpdateUploadCount();
+
+		// woohoo finished
+		if (percent == 100)
+		{
+			Con_Printf("100%%\n");
+
+			scr_downloading.value = -1;
+
+			fclose(host_client->upload);
+
+			sprintf(file, "%s/%s", com_gamedir, host_client->uploadfn);
+			host_client->upload = fopen(file, "rb");
+			setvbuf(host_client->upload, NULL, _IOFBF, 4096);
+
+			if (host_client->upload)
+			{
+				HPAK_AddLump("custom.hpk", host_client->uploadingresource, NULL, host_client->upload);
+
+				fseek(host_client->upload, 0, SEEK_SET);
+
+				host_client->uploadingresource->ucFlags &= ~RES_WASMISSING;
+
+				pLocal = (customization_t *)malloc(sizeof(customization_t));
+				memset(pLocal, 0, sizeof(*pLocal));
+
+				pLocal->bInUse = TRUE;
+
+				memcpy(&pLocal->resource, host_client->uploadingresource, sizeof(pLocal->resource));
+
+				pLocal->pBuffer = malloc(host_client->uploadingresource->nDownloadSize);
+				fread(pLocal->pBuffer, host_client->uploadingresource->nDownloadSize, sizeof(byte), host_client->upload);
+
+				pCust = host_client->customdata;
+				if (pCust)
+				{
+					while (TRUE)
+					{
+						if (memcmp(pCust->resource.rgucMD5_hash, pLocal->resource.rgucMD5_hash, sizeof(res->resource.rgucMD5_hash)))
+						{
+							pCust = pCust->pNext;
+							if (!pCust)
+							{
+								break;
+							}
+						}
+						else
+						{
+							bDuplicate = TRUE;
+							break;
+						}
+					}
+				}
+
+				if (bDuplicate)
+				{
+					Con_DPrintf("Duplicate resource received and ignored.\n");
+					free(pLocal);
+				}
+				else
+				{
+					pLocal->pNext = host_client->customdata;
+					host_client->customdata = pLocal;
+				}
+
+				fclose(host_client->upload);
+			}
+
+			// Erase the file
+			_unlink(file);
+
+			// Reset stuff
+			host_client->upload = NULL;
+			host_client->uploadcount = 0;
+			host_client->tempuploadCRC = 0;
+			host_client->isuploading = FALSE;
+		}
+		else
+		{
+			scr_downloading.value = (float)percent;
+			// Tell the client we're still listening
+			MSG_WriteByte(&host_client->netchan.message, svc_resourcerequest);
+		}
+	}
+}
+
+/*
+================
+SV_PrintResource
+
+Prints which data the resource passed contains.
+================
+*/
+void SV_PrintResource( int index, resource_t* pResource )
+{
+	static char fatal[8];
+	static char type[12];
+
+	sprintf(fatal, "N");
+
+	switch (pResource->type)
+	{
+		case t_sound:
+			sprintf(type, "sound");
+			break;
+		case t_skin:
+			sprintf(type, "skin");
+			break;
+		case t_model:
+			sprintf(type, "model");
+			break;
+		case t_decal:
+			sprintf(type, "decal");
+			break;
+		default:
+			sprintf(type, "unknown");
+			break;
+	}
+
+	Con_Printf(
+	  "%3i %i %s:%15s %i %s\n",
+	  index,
+	  pResource->nDownloadSize,
+	  type,
+	  pResource->szFileName,
+	  pResource->nIndex,
+	  fatal);
+}
+
+/*
+================
+SV_PrintResourceLists_f
+
+================
+*/
+void SV_PrintResourceLists_f( void )
+{
+	int				i;
+	resource_t*		res;
+
+	Con_Printf("- Needed -------------------------------------------\n");
+	Con_Printf("#   Name                  Size Type Index Fatal\n");
+	for (i = 1, res = host_client->resourcesneeded.pNext; res != &host_client->resourcesneeded; res = res->pNext, i++)
+	{
+		SV_PrintResource(i, res);
+	}
+	Con_Printf("- On hand ------------------------------------------\n");
+	Con_Printf("#   Name                  Size Type Index Fatal\n");
+	for (res = host_client->resourcesonhand.pNext; res != &host_client->resourcesonhand; res = res->pNext, i++)
+	{
+		SV_PrintResource(i, res);
+	}
+	Con_Printf("--------------------------------------------\n\n");
+}
+
+/*
+==================
+SV_ClearResourceLists
+
+Clears the resource lists of the client specified.
+==================
+*/
+void SV_ClearResourceLists( client_t* cl )
+{
+	if (!cl)
+		Sys_Error("SV_ClearResourceLists with NULL client!");
+
+	SV_ClearResourceList(&cl->resourcesneeded);
+	SV_ClearResourceList(&cl->resourcesonhand);
+}
+
+/*
+==================
+SV_PrintCusomizations_f
+
+==================
+*/
+void SV_PrintCusomizations_f( void )
+{
+	// TODO: Implement
+}
+
+/*
+==================
+SV_CreateCustomizationList
+
+Reinitializes customizations list. Tries to create customization for each resource in on-hands list.
+==================
+*/
+void SV_CreateCustomizationList( client_t* pHost )
+{
+	// TODO: Implement
+}
+
+/*
+==================
+SV_RegisterResources
+
+Creates customizations list for the current player and sends resources to other players.
+==================
+*/
+void SV_RegisterResources( void )
+{
+	client_t* pHost = host_client;
+
+	pHost->uploading = FALSE;
+	for (resource_t* pResource = pHost->resourcesonhand.pNext; pResource != &pHost->resourcesonhand; pResource = pResource->pNext)
+	{
+		SV_CreateCustomizationList(pHost);
+		SV_Customization(pHost, pResource, TRUE);
+	}
+}
+
+/*
+==================
+SV_MoveToOnHandList
+
+Adds pResource to the resourcesonhand in host_client
+==================
+*/
+void SV_MoveToOnHandList( resource_t* pResource )
+{
+	if (pResource)
+	{
+		if (pResource->type >= rt_max)
+			Con_DPrintf("Unknown resource type\n");
+
+		SV_RemoveFromResourceList(pResource);
+		SV_AddToResourceList(pResource, &host_client->resourcesonhand);
+	}
+	else
+	{
+		Con_DPrintf("Null resource passed to SV_MoveToOnHandList\n");
+	}
+}
+
+/*
+==================
+SV_SizeofResourceList
+
+Counts total size of the resources inside pList.
+==================
+*/
+int SV_SizeofResourceList( resource_t* pList, int* nWorldSize, int* nModelsSize, int* nDecalsSize, int* nSoundsSize, int* nSkinsSize )
+{
+	resource_t* p;
+	int nSize = 0;
+
+	*nModelsSize = 0;
+	*nWorldSize = 0;
+	*nDecalsSize = 0;
+	*nSoundsSize = 0;
+	*nSkinsSize = 0;
+
+	for (p = pList->pNext; p != pList; p = p->pNext)
+	{
+		nSize += p->nDownloadSize;
+
+		switch (p->type)
+		{
+			case t_sound:
+				*nSoundsSize += p->nDownloadSize;
+				break;
+			case t_skin:
+				*nSkinsSize += p->nDownloadSize;
+				break;
+			case t_model:
+				if (p->nIndex == 1) // worldmodel always take 1 slot
+				{
+					*nWorldSize = p->nDownloadSize;
+				}
+				else
+				{
+					*nModelsSize += p->nDownloadSize;
+				}
+				break;
+			case t_decal:
+				*nDecalsSize += p->nDownloadSize;
+				break;
+		}
+	}
+
+	return nSize;
+}
+
+/*
+==================
+SV_AddToResourceList
+
+Adds pResource into the pList linked list.
+==================
+*/
+void SV_AddToResourceList( resource_t* pResource, resource_t* pList )
+{
+	if (pResource->pPrev || pResource->pNext)
+	{
+		Con_Printf("Resource already linked\n");
+		return;
+	}
+
+	pResource->pPrev = pList->pPrev;
+	pResource->pNext = pList;
+	pList->pPrev->pNext = pResource;
+	pList->pPrev = pResource;
+}
+
+/*
+==================
+SV_ClearResourceList
+
+==================
+*/
+void SV_ClearResourceList( resource_t* pList )
+{
+	resource_t* p, *n;
+
+	for (p = pList->pNext; p && p != pList; p = n)
+	{
+		n = p->pNext;
+
+		SV_RemoveFromResourceList(p);
+		free(p);
+	}
+
+
+	pList->pPrev = pList;
+	pList->pNext = pList;
+}
+
+/*
+==================
+SV_RemoveFromResourceList
+
+==================
+*/
+void SV_RemoveFromResourceList( resource_t* pResource )
+{
+	pResource->pPrev->pNext = pResource->pNext;
+	pResource->pNext->pPrev = pResource->pPrev;
+	pResource->pPrev = NULL;
+	pResource->pNext = NULL;
+}
+
+/*
+==================
+SV_EstimateNeededResources
+
+For each t_decal and RES_CUSTOM resource the player had shown to us, tries to find it locally or count size required to be downloaded.
+==================
+*/
+int SV_EstimateNeededResources( void )
+{
+	resource_t* p;
+	int			nTotalSize = 0;
+	int			nSize, nDownloadSize;
+
+	for (p = host_client->resourcesneeded.pNext, nTotalSize = 0; p != &host_client->resourcesneeded; p = p->pNext)
+	{
+		nSize = 0;
+
+		if (p->type == t_decal)
+		{
+			nSize = -1;
+			if (HPAK_ResourceForHash("custom.hpk", p->rgucMD5_hash, NULL))
+				nSize = p->nDownloadSize;
+		}
+
+		if (nSize == -1)
+		{
+			p->ucFlags |= RES_CUSTOM;
+			nDownloadSize = p->nDownloadSize;
+		}
+		else
+		{
+			nDownloadSize = 0;
+		}
+
+		nTotalSize += nDownloadSize;
+	}
+
+	return nTotalSize;
+}
+
+/*
+==================
+SV_RequestMissingResourcesFromClients
+
+This is called each frame to do checks on players if they uploaded all files that where requested from them.
+==================
+*/
+void SV_RequestMissingResourcesFromClients( void )
+{
+	int i;
+
+	for (i = 0, host_client = svs.clients; i < svs.maxclients; host_client++, i++)
+	{
+		if (host_client->active || host_client->spawned)
+		{
+			while (SV_RequestMissingResources());
+		}
+	}
+}
+
+/*
+==================
+SV_RequestMissingResources
+
+This is called each frame to do checks on players if they uploaded all files that where requested from them.
+==================
+*/
+qboolean SV_RequestMissingResources( void )
+{
+	resource_t*		res;
+	char			buffer[MAX_OSPATH];
+
+	if (host_client->upload || host_client->isuploading)
+		return FALSE;
+	if (!host_client->uploading)
+		return FALSE;
+	if (host_client->uploaddoneregistering)
+		return FALSE;
+
+	res = host_client->resourcesneeded.pNext;
+	host_client->uploadingresource = res;
+
+	if (res != &host_client->resourcesneeded) {
+		SV_RegisterResources();
+		SV_PropagateCustomizations();
+		Con_DPrintf("Custom resource propagation complete.\n");
+		host_client->uploaddoneregistering = TRUE;
+		return FALSE;
+	}
+
+	if (!(res->ucFlags & RES_WASMISSING))
+	{
+		SV_MoveToOnHandList(res);
+		return 1;
+	}
+	if (res->type == t_decal)
+	{
+		if (res->ucFlags & RES_CUSTOM)
+		{
+			sprintf(buffer, "!MD5%s", MD5_Print(res->rgucMD5_hash));
+			if (SV_CheckOrUploadFile(buffer))
+			{
+				SV_MoveToOnHandList(res);
+				return TRUE;
+			}
+		}
+		else if (SV_CheckOrUploadFile(res->szFileName))
+		{
+			SV_MoveToOnHandList(res);
+		}
+	}
+
+	return TRUE;
+}
+
+/*
+================
+SV_RequestResourceList_f
+
+================
+*/
+void SV_RequestResourceList_f( void )
+{
+	// TODO: Implement
+}
+
+/*
+==================
+SV_ParseResourceList
+==================
+*/
+void SV_ParseResourceList( void )
+{
+	int				current, total, acknowledged;
+	resource_t*		res;
+	byte			flags;
+	int				nWorldSize, nModelsSize, nDecalsSize, nSoundsSize, nSkinsSize;
+
+	nWorldSize = MSG_ReadShort();
+	total = MSG_ReadShort();
+	acknowledged = MSG_ReadShort();
+
+	while (total < acknowledged)
+	{
+		res = (resource_t*)malloc(sizeof(resource_t));
+		memset(res, 0, sizeof(resource_t));
+		res->type = MSG_ReadByte();
+		strcpy(res->szFileName, MSG_ReadString());
+		res->nIndex = MSG_ReadShort();
+		res->nDownloadSize = MSG_ReadLong();
+		flags = MSG_ReadByte();
+		res->ucFlags = flags & (~RES_WASMISSING);
+		res->pNext = NULL;
+		res->pPrev = NULL;
+
+		if (flags & RES_CUSTOM)
+		{
+			MSG_ReadBuf(sizeof(res->rgucMD5_hash), res->rgucMD5_hash);
+		}
+		if (total == 0)
+		{
+			SV_ClearResourceList(&host_client->resourcesneeded);
+			SV_ClearResourceList(&host_client->resourcesonhand);
+		}
+
+		++total;
+		SV_AddToResourceList(res, &host_client->resourcesneeded);
+	}
+	if (acknowledged < nWorldSize)
+	{
+		host_client->uploading = FALSE;
+	}
+	else
+	{
+		Con_DPrintf("Verifying and uploading resources...\n");
+
+		host_client->nResourcesTotalSize = SV_SizeofResourceList(&host_client->resourcesneeded, &nWorldSize, &nModelsSize, &nDecalsSize, &nSoundsSize, &nSkinsSize);
+		host_client->nRemainingToTransfer = SV_EstimateNeededResources();
+
+		if (host_client->nResourcesTotalSize != 0)
+		{
+			Con_DPrintf("Custom resources total %.2fK\n", (float)host_client->nResourcesTotalSize / 1024.0f);
+			if (nModelsSize > 0)
+			{
+				Con_DPrintf("  Models:  %.2fK\n", (float)nModelsSize / 1024.f);
+			}
+			if (nSoundsSize)
+			{
+				Con_DPrintf("  Sounds:  %.2fK\n", (float)nSoundsSize / 1024.0f);
+			}
+			if (nDecalsSize)
+			{
+				Con_DPrintf("  Decals:  %.2fK\n", (float)nDecalsSize / 1024.0f);
+			}
+			if (nSkinsSize)
+			{
+				Con_DPrintf("  Skins :  %.2fK\n", (float)nSkinsSize / 1024.0f);
+			}
+			Con_DPrintf("----------------------\n");
+			if (host_client->nRemainingToTransfer > 1024)
+				Con_DPrintf("Resources to request: %iK\n", host_client->nRemainingToTransfer / 1024);
+			else
+				Con_DPrintf("Resources to request: %i bytes\n", host_client->nRemainingToTransfer);
+		}
+		host_client->uploading = TRUE;
+		host_client->uploaddoneregistering = FALSE;
+		host_client->isuploading = FALSE; // TODO: See if the name is really correct
+										  // TODO: Implement
+		host_client->uploadstarttime = realtime;
+		host_client->lastuploadtime = realtime;
+		host_client->uploadsize = host_client->nRemainingToTransfer;
+		memset(host_client->uploads, 0, sizeof(host_client->uploads));
+		host_client->numuploads = 0;
+	}
+}
+
+// Functions below do NOT belong to sv_upld.c, move them away from here.
+// TODO: Implement
+
 /*
 ================
 SV_ModelIndex
@@ -119,8 +808,6 @@ void SV_SendResourceListBlock_f( void )
 	}
 }
 
-// TODO: Implement
-
 /*
 ================
 SV_AddResource
@@ -227,207 +914,65 @@ void SV_CreateResourceList( void )
 
 /*
 ==================
-SV_ClearResourceLists
+SV_Customization
 
+Sends resource to all other players, optionally skipping originating player.
 ==================
 */
-void SV_ClearResourceLists( client_t* cl )
+void SV_Customization( client_t* pPlayer, resource_t* pResource, qboolean bSkipPlayer )
 {
-	// TODO: Implement
-}
+	int			i;
+	int			nPlayerNumber;
+	client_t*	pHost;
 
-int SV_SizeofResourceList( resource_t *pList, resourceinfo_t *ri )
-{
-	int				size;
-	resource_t*		res;
-
-	size = 0;
-
-	for (res = pList->pNext; pList != res; res = res->pNext)
+	// Get originating player id
+	for (nPlayerNumber = -1, i = 0, pHost = svs.clients; i < svs.maxclients; i++, pHost++)
 	{
-		size += res->nDownloadSize;
-		// TODO: Implement (switch)
+		if (pHost == pPlayer)
+		{
+			nPlayerNumber = i;
+			break;
+		}
 	}
-	return size;
+	if (i == svs.maxclients || nPlayerNumber == -1)
+	{
+		Sys_Error("Couldn't find player index for customization.");
+	}
+
+	// Send resource to all other active players
+	for (i = 0, pHost = svs.clients; i < svs.maxclients; i++, pHost++)
+	{
+		if (pHost->fakeclient)
+			continue;
+
+		if (!pHost->active && !pHost->spawned)
+			continue;
+
+		if (pHost == pPlayer && bSkipPlayer)
+			continue;
+
+		MSG_WriteByte(&pHost->netchan.message, svc_customization);
+		MSG_WriteByte(&pHost->netchan.message, nPlayerNumber);
+		MSG_WriteByte(&pHost->netchan.message, pResource->type);
+		MSG_WriteString(&pHost->netchan.message, pResource->szFileName);
+		MSG_WriteShort(&pHost->netchan.message, pResource->nIndex);
+		MSG_WriteLong(&pHost->netchan.message, pResource->nDownloadSize);
+		MSG_WriteByte(&pHost->netchan.message, pResource->ucFlags);
+		if (pResource->ucFlags & RES_CUSTOM)
+		{
+			SZ_Write(&pHost->netchan.message, pResource->rgucMD5_hash, sizeof(pResource->rgucMD5_hash));
+		}
+	}
 }
 
 /*
 ==================
-SV_AddToResourceList
+SV_PropagateCustomizations
 
+Sends customizations from all active players to the current player.
 ==================
 */
-void SV_AddToResourceList( resource_t *pResource, resource_t *pList )
-{
-	if (pResource->pPrev || pResource->pNext)
-	{
-		Con_Printf("Resource already linked\n");
-		return;
-	}
-
-	pResource->pPrev = pList->pPrev;
-	pResource->pNext = pList;
-	pList->pPrev->pNext = pResource;
-	pList->pPrev = pResource;
-}
-
-/*
-==================
-SV_ClearResourceLists
-
-==================
-*/
-void SV_ClearResourceList( resource_t *pList )
-{
-	resource_t *p, *n;
-
-	for (p = pList->pNext; p && p != pList; p = n)
-	{
-		n = p->pNext;
-
-		SV_RemoveFromResourceList(p);
-		free(p);
-	}
-
-
-	pList->pPrev = pList;
-	pList->pNext = pList;
-}
-
-/*
-==================
-SV_RemoveFromResourceList
-
-==================
-*/
-void SV_RemoveFromResourceList( resource_t *pResource )
-{
-	pResource->pPrev->pNext = pResource->pNext;
-	pResource->pNext->pPrev = pResource->pPrev;
-	pResource->pPrev = NULL;
-	pResource->pNext = NULL;
-}
-
-/*
-==================
-SV_EstimateNeededResources
-
-For each t_decal and RES_CUSTOM resource the player had shown to us, tries to find it locally or count size required to be downloaded.
-==================
-*/
-int SV_EstimateNeededResources( void )
-{
-	// TODO: Implement
-
-	return 0;
-}
-
-/*
-==================
-SV_RequestMissingResourcesFromClients
-
-This is called each frame to do checks on players if they uploaded all files that where requested from them.
-==================
-*/
-void SV_RequestMissingResourcesFromClients( void )
-{
-	// TODO: Implement
-}
-
-// TODO: Implement
-
-/*
-==================
-SV_ParseResourceList
-==================
-*/
-void SV_ParseResourceList( void )
-{
-	int				current, total, acknowledged;
-	resource_t*		res;
-	byte			flags;
-	resourceinfo_t	ri;
-
-	current = MSG_ReadShort();
-	total = MSG_ReadShort();
-	acknowledged = MSG_ReadShort();
-
-	while (total < acknowledged)
-	{
-		res = (resource_t*)malloc(sizeof(resource_t));
-		memset(res, 0, sizeof(resource_t));
-		res->type = MSG_ReadByte();
-		strcpy(res->szFileName, MSG_ReadString());
-		res->nIndex = MSG_ReadShort();
-		res->nDownloadSize = MSG_ReadLong();
-		flags = MSG_ReadByte();
-		res->ucFlags = flags & (~RES_WASMISSING);
-		res->pNext = NULL;
-		res->pPrev = NULL;
-
-		if (flags & RES_CUSTOM)
-		{
-			MSG_ReadBuf(sizeof(res->rgucMD5_hash), res->rgucMD5_hash);
-		}
-		if (total == 0)
-		{
-			SV_ClearResourceList(&host_client->resourcesneeded);
-			SV_ClearResourceList(&host_client->resourcesonhand);
-		}
-
-		++total;
-		SV_AddToResourceList(res, &host_client->resourcesneeded);
-	}
-	if (acknowledged < current)
-	{
-		host_client->uploading = FALSE;
-	}
-	else
-	{
-		Con_DPrintf("Verifying and uploading resources...\n");
-	}
-
-	// TODO: Implement
-	
-	host_client->nResourcesTotalSize = SV_SizeofResourceList(&host_client->resourcesneeded, &ri);
-	
-	host_client->nResourcesUploadLeftPercent = SV_EstimateNeededResources();
-	if (host_client->nResourcesTotalSize != 0)
-	{
-		Con_DPrintf("Custom resources total %.2fK\n", (float) host_client->nResourcesTotalSize / 1024.0f);
-		if (ri.info[1].size)
-		{
-			Con_DPrintf("  Models:  %.2fK\n", (float) ri.info[1].size / 1024.0f);
-		}
-		if (ri.info[2].size)
-		{
-			Con_DPrintf("  Sounds:  %.2fK\n", (float) ri.info[2].size / 1024.0f);
-		}
-		if (ri.info[3].size)
-		{
-			Con_DPrintf("  Decals:  %.2fK\n", (float) ri.info[3].size / 1024.0f);
-		}
-		if (ri.info[4].size)
-		{
-			Con_DPrintf("  Skins :  %.2fK\n", (float) ri.info[4].size / 1024.0f);
-		}
-		Con_DPrintf("----------------------\n");
-		if (host_client->nResourcesUploadLeftPercent > 1024)
-			Con_DPrintf("Resources to request: %iK\n", host_client->nResourcesUploadLeftPercent / 1024);
-		else
-			Con_DPrintf("Resources to request: %i bytes\n", host_client->nResourcesUploadLeftPercent);
-	}
-	host_client->uploading = TRUE;
-	host_client->uploaddoneregistering = FALSE;
-	host_client->bUploading = FALSE; // TODO: Implement
-	//*(float *)host_client->pad_11 = realtime; // TODO: Implement
-	host_client->flLastUploadTime = realtime;
-	host_client->uploadsize = host_client->nResourcesUploadLeftPercent;
-	//memset(host_client->pad_22, 0, sizeof(host_client->pad_22)); // TODO: Implement
-	host_client->numuploads = 0;
-}
-
-void SV_ParseUpload( void )
+void SV_PropagateCustomizations( void )
 {
 	// TODO: Implement
 }

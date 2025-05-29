@@ -204,7 +204,10 @@ typedef struct client_s
 
 	int saverestoredatasize; // the amount this client's edict is taking in our SAVERESTOREDATA
 
-	FILE *download;			// file being downloaded
+	// FF: If changing ANYTHING below, also insert the changes into sv_upld.c and other files!
+	// FF: Some fields may have wrong names e.g. isuploading. These names were just straight guessing
+
+	FILE* download;			// file being downloaded
 	int downloadsize;		// total bytes
 	int downloadcount;		// bytes sent
 	qboolean downloading;	// true = client is downloading a file
@@ -213,30 +216,35 @@ typedef struct client_s
 	resource_t resourcesonhand; // Head of resources accounted for list
 	resource_t resourcesneeded; // Head of resources to download list
 
-	FILE *upload; // file being uploaded (by the client)
-	resource_t *uploadingresource; //the resource we're trying to retrieve from the client (e.g. spray)
+	FILE* upload; // file being uploaded (by the client)
+	resource_t* uploadingresource; //the resource we're trying to retrieve from the client (e.g. spray)
 
 	char uploadfn[MAX_QPATH];
 
-	// TODO: Implement
+	CRC32_t uploadCRC;
+
+	char extension[MAX_QPATH];
 
 	int uploadcount;
-	qboolean bUploading;
+
+	qboolean isuploading;
+
 	int nResourcesTotalSize;
-	int nResourcesUploadLeftPercent;
+	int nRemainingToTransfer;
+
 	int uploadsize;
-
-	// TODO: Implement
-
-	float flLastUploadTime;
-
-	// TODO: Implement
-
+	float uploadstarttime;
+	float lastuploadtime;
+	downloadtime_t uploads[MAX_DL_STATS];
 	int numuploads;
 
 	qboolean uploaddoneregistering;
 
-	customization_t customdata;
+	CRC32_t tempuploadCRC;
+
+	// TODO: Implement
+
+	customization_t* customdata;
 } client_t;
 
 // server flags
@@ -289,6 +297,7 @@ extern	cvar_t	sv_aim;
 
 extern	cvar_t	sv_showcmd;
 
+extern cvar_t	sv_uploadinterval;
 
 extern float		g_LastScreenUpdateTime;
 extern float		scr_centertime_off;
@@ -415,6 +424,8 @@ void SV_MoveToOrigin_I( edict_t* ent, const float* pflGoal, float dist, int iStr
 //
 // sv_upld.c
 //
+// Wrong functions, wrong function order. fixme
+// TODO: Implement
 int SV_ModelIndex( char* name );
 void SV_FlushSignon( void );
 void SV_SendResourceListBlock_f( void );

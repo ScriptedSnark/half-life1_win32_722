@@ -6,5 +6,6 @@
 #endif
 
 void	HPAK_AddLump( char* pakname, resource_t* pResource, void* pData, FILE* fpSource );
+qboolean HPAK_ResourceForHash( char *pakname, byte *hash, struct resource_s *pResourceEntry );
 
 #endif // HASHPAK_H
