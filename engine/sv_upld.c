@@ -556,7 +556,7 @@ qboolean SV_RequestMissingResources( void )
 	res = host_client->resourcesneeded.pNext;
 	host_client->uploadingresource = res;
 
-	if (res != &host_client->resourcesneeded) {
+	if (res == &host_client->resourcesneeded) {
 		SV_RegisterResources();
 		SV_PropagateCustomizations();
 		Con_DPrintf("Custom resource propagation complete.\n");
@@ -639,7 +639,6 @@ void SV_ParseResourceList( void )
 {
 	int				total, acknowledged;
 	resource_t*		res;
-	byte			flags;
 	int				nWorldSize, nModelsSize, nDecalsSize, nSoundsSize, nSkinsSize;
 
 	nWorldSize = MSG_ReadShort();
@@ -649,17 +648,16 @@ void SV_ParseResourceList( void )
 	while (total < acknowledged)
 	{
 		res = (resource_t*)malloc(sizeof(resource_t));
-		memset(res, 0, sizeof(resource_t));
+		memset(res, 0, sizeof(*res));
 		res->type = MSG_ReadByte();
 		strcpy(res->szFileName, MSG_ReadString());
 		res->nIndex = MSG_ReadShort();
 		res->nDownloadSize = MSG_ReadLong();
-		flags = MSG_ReadByte();
-		res->ucFlags = flags & (~RES_WASMISSING);
+		res->ucFlags = MSG_ReadByte() & (~RES_WASMISSING);
 		res->pNext = NULL;
 		res->pPrev = NULL;
 
-		if (flags & RES_CUSTOM)
+		if (res->ucFlags & RES_CUSTOM)
 		{
 			MSG_ReadBuf(sizeof(res->rgucMD5_hash), res->rgucMD5_hash);
 		}
