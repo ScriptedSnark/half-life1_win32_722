@@ -6,7 +6,6 @@
 
 int	current_skill;
 int	gHostSpawnCount = 0;
-qboolean noclip_anglehack;
 
 cvar_t rcon_password = { "rcon_password", "" };
 
@@ -288,7 +287,158 @@ void Host_Status_f( void )
 	}
 }
 
+/*
+==================
+Host_God_f
 
+Sets client to godmode
+==================
+*/
+void Host_God_f( void )
+{
+	if (cmd_source == src_command)
+	{
+		Cmd_ForwardToServer();
+		return;
+	}
+
+	if (gGlobalVariables.deathmatch && !host_client->privileged)
+		return;
+
+	if (!allow_cheats)
+		return;
+
+	sv_player->v.flags = (int)sv_player->v.flags ^ FL_GODMODE;
+	if (!((int)sv_player->v.flags & FL_GODMODE))
+		SV_ClientPrintf("godmode ON\n");
+	else
+		SV_ClientPrintf("godmode OFF\n");
+}
+
+void Host_Notarget_f( void )
+{
+	if (cmd_source == src_command)
+	{
+		Cmd_ForwardToServer();
+		return;
+	}
+
+	if (gGlobalVariables.deathmatch && !host_client->privileged)
+		return;
+
+	sv_player->v.flags = (int)sv_player->v.flags ^ FL_NOTARGET;
+	if (!((int)sv_player->v.flags & FL_NOTARGET))
+		SV_ClientPrintf("notarget OFF\n");
+	else
+		SV_ClientPrintf("notarget ON\n");
+}
+
+/*
+==================
+FindPassableSpace
+
+Searches along the direction ray in steps of "step" to see if
+the entity position is passible
+Used for putting the player in valid space when toggling off noclip mode
+==================
+*/
+int FindPassableSpace( edict_t* pEdict, vec_t* direction, float step )
+{
+    int		i;
+
+    for (i = 0; i < 100; i++)
+    {
+        VectorMA(pEdict->v.origin, step, direction, pEdict->v.origin);
+
+		if (!SV_TestEntityPosition(pEdict))
+        {
+            // Store old origin
+            VectorCopy(pEdict->v.origin, pEdict->v.oldorigin);
+            return TRUE;
+        }
+    }
+
+	return FALSE;
+}
+
+qboolean noclip_anglehack;
+
+void Host_Noclip_f( void )
+{
+	if (cmd_source == src_command)
+	{
+		Cmd_ForwardToServer();
+		return;
+	}
+
+	if (gGlobalVariables.deathmatch && !host_client->privileged)
+		return;
+
+	if (!allow_cheats)
+		return;
+
+	if (sv_player->v.movetype != MOVETYPE_NOCLIP)
+    {
+		noclip_anglehack = TRUE;
+		sv_player->v.movetype = MOVETYPE_NOCLIP;
+		SV_ClientPrintf("noclip ON\n");
+    }
+    else
+    {
+		noclip_anglehack = FALSE;
+        sv_player->v.movetype = MOVETYPE_WALK;
+        VectorCopy(sv_player->v.origin, sv_player->v.oldorigin);
+		SV_ClientPrintf("noclip OFF\n");
+
+		if (SV_TestEntityPosition(sv_player))
+        {
+            vec3_t forward, right, up;
+			AngleVectors(sv_player->v.v_angle, forward, right, up);
+
+			if (!FindPassableSpace(sv_player, forward, 1.0)
+                && !FindPassableSpace(sv_player, right, 1.0)
+                && !FindPassableSpace(sv_player, right, -1.0)		// left
+                && !FindPassableSpace(sv_player, up, 1.0)			// up
+                && !FindPassableSpace(sv_player, up, -1.0)			// down
+                && !FindPassableSpace(sv_player, forward, -1.0))	// back
+            {
+				Con_DPrintf("Can't find the world\n");
+            }
+
+            VectorCopy(sv_player->v.oldorigin, sv_player->v.origin);
+        }
+    }
+}
+
+/*
+==================
+Host_Fly_f
+
+Sets client to flymode
+==================
+*/
+void Host_Fly_f( void )
+{
+	if (cmd_source == src_command)
+	{
+		Cmd_ForwardToServer();
+		return;
+	}
+
+	if (gGlobalVariables.deathmatch && !host_client->privileged)
+		return;
+	
+	if (sv_player->v.movetype != MOVETYPE_FLY)
+	{
+		sv_player->v.movetype = MOVETYPE_FLY;
+		SV_ClientPrintf("flymode ON\n");
+	}
+	else
+	{
+		sv_player->v.movetype = MOVETYPE_WALK;
+		SV_ClientPrintf("flymode OFF\n");
+	}
+}
 
 
 
@@ -725,6 +875,13 @@ void Host_InitCommands( void )
 	Cmd_AddCommand("spawn", Host_Spawn_f);
 	Cmd_AddCommand("begin", Host_Begin_f);
 	Cmd_AddCommand("prespawn", Host_PreSpawn_f);
+
+	// TODO: Implement
+	
+	Cmd_AddCommand("god", Host_God_f);
+	Cmd_AddCommand("notarget", Host_Notarget_f);
+	Cmd_AddCommand("fly", Host_Fly_f);
+	Cmd_AddCommand("noclip", Host_Noclip_f);
 
 	// TODO: Implement
 

@@ -304,6 +304,8 @@ extern int		nReliables;
 extern int		nDatagrams;
 extern qboolean bUnreliableOverflow;
 
+extern	qboolean	allow_cheats;
+
 extern	server_static_t	svs;				// persistant server info
 extern	server_t		sv;					// local server
 
