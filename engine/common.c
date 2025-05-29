@@ -615,12 +615,12 @@ void MSG_WriteCoord( sizebuf_t* sb, float f )
 
 void MSG_WriteAngle( sizebuf_t* sb, float f )
 {
-	MSG_WriteByte(sb, ((int)f * 256 / 360) & 255);
+	MSG_WriteByte(sb, (f * 256.f / 360.f));
 }
 
 void MSG_WriteHiresAngle( sizebuf_t* sb, float f )
 {
-	MSG_WriteShort(sb, ((int)f * 65536 / 360) & 65535);
+	MSG_WriteShort(sb, (f * 65536.f / 360.f));
 }
 
 void MSG_WriteDeltaUsercmd( sizebuf_t* buf, usercmd_t* from, usercmd_t* cmd )
