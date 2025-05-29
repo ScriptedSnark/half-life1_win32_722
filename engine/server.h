@@ -313,6 +313,8 @@ extern int		nReliables;
 extern int		nDatagrams;
 extern qboolean bUnreliableOverflow;
 
+extern	qboolean	allow_cheats;
+
 extern	server_static_t	svs;				// persistant server info
 extern	server_t		sv;					// local server
 
@@ -357,7 +359,7 @@ void SV_Multicast( vec_t* origin, int to, qboolean reliable );
 
 
 
-
+void SV_ClientPrintf( char* fmt, ... );
 void SV_BroadcastPrintf( char* fmt, ... );
 
 void SV_ClearChannel( qboolean forceclear );
@@ -367,6 +369,7 @@ void SV_New_f( void );
 void SV_ActivateServer( qboolean runPhysics );
 int SV_SpawnServer( qboolean bIsDemo, char* server, char* startspot );
 void SV_LoadEntities( void );
+void SV_InactivateClients( void );
 
 int RegUserMsg( const char* pszName, int iSize );
 
@@ -380,13 +383,16 @@ typedef enum
 } redirect_t;
 extern redirect_t	sv_redirected;
 void Host_FlushRedirect( void );
+void Host_BeginRedirect( redirect_t rd, netadr_t* addr );
 void Host_EndRedirect( void );
+
+void Host_RemoteCommand( netadr_t* net_from );
 
 //
 // sv_send.c
 //
 
-void SV_InactivateClients( void );
+
 void SV_SendUserReg( sizebuf_t* sb );
 void SV_SendBan( void );
 qboolean SV_FilterPacket( void );

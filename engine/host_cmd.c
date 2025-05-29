@@ -4,14 +4,447 @@
 #include "cl_demo.h"
 #include "pr_edict.h"
 
-
-int	gHostSpawnCount = 0;
 int	current_skill;
-qboolean noclip_anglehack;
+int	gHostSpawnCount = 0;
 
 cvar_t rcon_password = { "rcon_password", "" };
 
-void Host_ClearGameState( void );
+/*
+====================
+SV_InactivateClients
+
+Prepare for level transition, etc.
+====================
+*/
+void SV_InactivateClients( void )
+{
+	int i;
+	client_t* cl;
+
+	for (i = 0, cl = svs.clients; i < svs.maxclients; i++, cl++)
+	{
+		if (!cl->active && !cl->connected && !cl->spawned)
+			continue;
+
+		SZ_Clear(&cl->netchan.message);
+
+		cl->active = FALSE;
+		cl->connected = TRUE;
+		cl->spawned = FALSE;
+
+		COM_ClearCustomizationList(&cl->customdata, FALSE);
+		cl->maxspeed = 0.0;
+	}
+}
+
+/*
+=============================================================================
+
+Con_Printf redirection
+
+=============================================================================
+*/
+
+char	outputbuf[8000];
+
+redirect_t	sv_redirected;
+
+netadr_t sv_redirectto;
+
+/*
+==================
+Host_FlushRedirect
+==================
+*/
+void Host_FlushRedirect( void )
+{
+	if (sv_redirected == RD_PACKET)
+	{
+		SZ_Clear(&net_message);
+		MSG_WriteLong(&net_message, 0xffffffff); // -1 -1 -1 -1 signal
+		MSG_WriteByte(&net_message, A2C_PRINT);
+		MSG_WriteString(&net_message, outputbuf);
+		NET_SendPacket(NS_SERVER, net_message.cursize, net_message.data, sv_redirectto);
+		SZ_Clear(&net_message);
+		
+	}
+	else if (sv_redirected == RD_CLIENT)   // Send to client on message stream.
+	{
+		MSG_WriteByte(&host_client->netchan.message, svc_print);
+		MSG_WriteString(&host_client->netchan.message, outputbuf);
+	}
+
+	// clear it
+	outputbuf[0] = 0;
+}
+
+
+/*
+==================
+Host_BeginRedirect
+
+  Send Con_Printf data to the remote client
+  instead of the console
+==================
+*/
+void Host_BeginRedirect( redirect_t rd, netadr_t* addr )
+{
+	sv_redirected = rd;
+	sv_redirectto = *addr;
+	outputbuf[0] = 0;
+}
+
+void Host_EndRedirect( void )
+{
+	Host_FlushRedirect();
+	sv_redirected = RD_NONE;
+}
+
+int Rcon_Validate( void )
+{
+	if (!strlen(rcon_password.string))
+		return 0;
+
+	if (strcmp(Cmd_Argv(1), rcon_password.string))
+		return 0;
+
+	return 1;
+}
+
+/*
+===============
+Host_RemoteCommand
+
+A client issued an rcon command.
+Shift down the remaining args
+Redirect all printfs
+===============
+*/
+void Host_RemoteCommand( netadr_t* net_from )
+{
+	int		i;
+	int		invalid;
+	char	remaining[1024];
+
+	// Verify this user has access rights.
+	invalid = Rcon_Validate();
+	if (!invalid)
+	{
+		Con_Printf("Bad rcon from %s:\n%s\n", NET_AdrToString(*net_from), net_message.data + 4);
+	}
+	else
+	{
+		Con_Printf("Rcon from %s:\n%s\n", NET_AdrToString(*net_from), net_message.data + 4);
+	}
+
+	invalid = Rcon_Validate();
+	if (!invalid)
+	{
+		Con_Printf("Bad rcon_password.\n");
+		return;
+	}
+
+	remaining[0] = 0;
+
+	for (i = 2; i < Cmd_Argc(); i++)
+	{
+		strcat(remaining, Cmd_Argv(i));
+		strcat(remaining, " ");
+	}
+
+	Host_BeginRedirect(RD_PACKET, net_from);
+	Cmd_ExecuteString(remaining, src_command);
+	Host_EndRedirect();
+}
+
+/*
+==================
+Host_Quit_f
+==================
+*/
+void Host_Quit_f( void )
+{
+	if (Cmd_Argc() == 1)
+	{
+		giActive = DLL_CLOSE;
+
+		if (cls.state != ca_dedicated)
+			CL_Disconnect();
+
+		Host_ShutdownServer(FALSE);
+		Sys_Quit();
+	}
+
+	giActive = DLL_PAUSED;
+	giStateInfo = 4;
+}
+
+/*
+==================
+Host_Status_PrintClient
+
+Print client info to console
+==================
+*/
+void Host_Status_PrintClient( char* pszState, qboolean fromcbuf, void (*print) ( char* fmt, ... ), int playernum, client_t* client )
+{
+	int			seconds;
+	int			minutes;
+	int			hours = 0;
+
+	seconds = (int)(realtime - client->netchan.connect_time);
+	minutes = seconds / 60;
+	if (minutes)
+	{
+		seconds %= 60;
+		hours = minutes / 60;
+		if (hours)
+			minutes %= 60;
+	}
+	else
+		hours = 0;
+
+	print("#%-2u %-12.12s\n", playernum + 1, client->name);
+	print("   frags:  %3i\n", client->edict->v.frags);
+
+	if (hours)
+		print("   time :  %2i:%02i:%02i\n", hours, minutes, seconds);
+	else
+		print("   time :  %02i:%02i\n", minutes, seconds);
+
+	print("   frame rate :  %4i\n", (int)(1000.0f * client->netchan.frame_rate));
+	print("   frame latency :  %4i\n", (int)(1000.0f * client->netchan.frame_latency));
+	print("   ping :  %4i\n", SV_CalcPing(client));
+	print("   drop :  %5.2f %%\n", 100.0f * client->netchan.drop_count / client->netchan.incoming_sequence);
+
+	if (pszState && pszState[0])
+		print("   %s\n", pszState);
+
+	if (client->spectator)
+	{
+		print("  (spectator) %s\n", NET_BaseAdrToString(client->netchan.remote_address));
+	}
+	else if (client->fakeclient)
+	{
+		print("  (fake)\n");
+	}
+	else if (fromcbuf)
+	{
+		print("   %s\n", NET_BaseAdrToString(client->netchan.remote_address));
+	}
+	print("\n");
+}
+
+
+/*
+==================
+Host_Status_f
+==================
+*/
+void Host_Status_f( void )
+{
+	client_t* client;
+	int			j;
+	int			players, spectators;
+	void		(*print) ( char* fmt, ... );
+
+	if (cmd_source == src_command)
+	{
+		if (sv.active == FALSE)
+		{
+			Cmd_ForwardToServer();
+			return;
+		}
+		print = Con_Printf;
+	}
+	else
+		print = SV_ClientPrintf;
+
+	// ============================================================
+	// Server status information.
+	print("hostname:  %s\n", Cvar_VariableString("hostname"));
+	print("build   :  %d\n", build_number());
+	print("tcp/ip  :  %s\n", NET_AdrToString(net_local_adr));
+	print(" map     :  %s\n", sv.name);
+
+	SV_CountPlayers(&players, &spectators);
+
+	if (spectators)
+		print(" players: %i active (%i spectators) (%i max)\n\n", players, spectators, svs.maxclients);
+	else
+		print(" players: %i active (%i max)\n\n", players, svs.maxclients);
+
+	for (j = 0, client = svs.clients; j < svs.maxclients; j++, client++)
+	{
+		if (!client->active)
+		{
+			if (client->connected)
+				Host_Status_PrintClient("CONNECTING", cmd_source == src_command, print, j, client);		
+			continue;
+		}
+
+		Host_Status_PrintClient(NULL, cmd_source == src_command, print, j, client);
+	}
+}
+
+/*
+==================
+Host_God_f
+
+Sets client to godmode
+==================
+*/
+void Host_God_f( void )
+{
+	if (cmd_source == src_command)
+	{
+		Cmd_ForwardToServer();
+		return;
+	}
+
+	if (gGlobalVariables.deathmatch && !host_client->privileged)
+		return;
+
+	if (!allow_cheats)
+		return;
+
+	sv_player->v.flags = (int)sv_player->v.flags ^ FL_GODMODE;
+	if (!((int)sv_player->v.flags & FL_GODMODE))
+		SV_ClientPrintf("godmode ON\n");
+	else
+		SV_ClientPrintf("godmode OFF\n");
+}
+
+void Host_Notarget_f( void )
+{
+	if (cmd_source == src_command)
+	{
+		Cmd_ForwardToServer();
+		return;
+	}
+
+	if (gGlobalVariables.deathmatch && !host_client->privileged)
+		return;
+
+	sv_player->v.flags = (int)sv_player->v.flags ^ FL_NOTARGET;
+	if (!((int)sv_player->v.flags & FL_NOTARGET))
+		SV_ClientPrintf("notarget OFF\n");
+	else
+		SV_ClientPrintf("notarget ON\n");
+}
+
+/*
+==================
+FindPassableSpace
+
+Searches along the direction ray in steps of "step" to see if
+the entity position is passible
+Used for putting the player in valid space when toggling off noclip mode
+==================
+*/
+int FindPassableSpace( edict_t* pEdict, vec_t* direction, float step )
+{
+    int		i;
+
+    for (i = 0; i < 100; i++)
+    {
+        VectorMA(pEdict->v.origin, step, direction, pEdict->v.origin);
+
+		if (!SV_TestEntityPosition(pEdict))
+        {
+            // Store old origin
+            VectorCopy(pEdict->v.origin, pEdict->v.oldorigin);
+            return TRUE;
+        }
+    }
+
+	return FALSE;
+}
+
+qboolean noclip_anglehack;
+
+void Host_Noclip_f( void )
+{
+	if (cmd_source == src_command)
+	{
+		Cmd_ForwardToServer();
+		return;
+	}
+
+	if (gGlobalVariables.deathmatch && !host_client->privileged)
+		return;
+
+	if (!allow_cheats)
+		return;
+
+	if (sv_player->v.movetype != MOVETYPE_NOCLIP)
+    {
+		noclip_anglehack = TRUE;
+		sv_player->v.movetype = MOVETYPE_NOCLIP;
+		SV_ClientPrintf("noclip ON\n");
+    }
+    else
+    {
+		noclip_anglehack = FALSE;
+        sv_player->v.movetype = MOVETYPE_WALK;
+        VectorCopy(sv_player->v.origin, sv_player->v.oldorigin);
+		SV_ClientPrintf("noclip OFF\n");
+
+		if (SV_TestEntityPosition(sv_player))
+        {
+            vec3_t forward, right, up;
+			AngleVectors(sv_player->v.v_angle, forward, right, up);
+
+			if (!FindPassableSpace(sv_player, forward, 1.0)
+                && !FindPassableSpace(sv_player, right, 1.0)
+                && !FindPassableSpace(sv_player, right, -1.0)		// left
+                && !FindPassableSpace(sv_player, up, 1.0)			// up
+                && !FindPassableSpace(sv_player, up, -1.0)			// down
+                && !FindPassableSpace(sv_player, forward, -1.0))	// back
+            {
+				Con_DPrintf("Can't find the world\n");
+            }
+
+            VectorCopy(sv_player->v.oldorigin, sv_player->v.origin);
+        }
+    }
+}
+
+/*
+==================
+Host_Fly_f
+
+Sets client to flymode
+==================
+*/
+void Host_Fly_f( void )
+{
+	if (cmd_source == src_command)
+	{
+		Cmd_ForwardToServer();
+		return;
+	}
+
+	if (gGlobalVariables.deathmatch && !host_client->privileged)
+		return;
+	
+	if (sv_player->v.movetype != MOVETYPE_FLY)
+	{
+		sv_player->v.movetype = MOVETYPE_FLY;
+		SV_ClientPrintf("flymode ON\n");
+	}
+	else
+	{
+		sv_player->v.movetype = MOVETYPE_WALK;
+		SV_ClientPrintf("flymode OFF\n");
+	}
+}
+
+
+
+
+
+//============================================================================= FINISH LINE
 
 
 /*
@@ -156,38 +589,6 @@ void Host_Map_f( void )
 }
 
 // TODO: Implement
-
-/*
-==================
-Host_Quit_f
-
-Shutdown the engine/program as soon as possible
-
-NOTE: The game must be shutdown before a new game can start,
-before a game can load, and before the system can be shutdown.
-==================
-*/
-void Host_Quit_f(void)
-{
-	if (Cmd_Argc() == 1)
-	{
-		giActive = DLL_CLOSE;
-
-		// disconnect if we are connected
-		if (cls.state)
-			CL_Disconnect();
-
-		// shutdown the server
-		Host_ShutdownServer(FALSE);
-
-		// exit the game
-		Sys_Quit();
-	}
-
-	// either argc isn't 1 or we haven't quitted, well just pause then
-	giActive = DLL_PAUSED;
-	giStateInfo = 4;
-}
 
 DLL_EXPORT BOOL SaveGame( char* pszSlot, char* pszComment )
 {
@@ -450,6 +851,10 @@ Host_InitCommands
 void Host_InitCommands( void )
 {
 	// TODO: Implement
+	
+	Cmd_AddCommand("status", Host_Status_f);
+
+	// TODO: Implement
 
 	Cmd_AddCommand("quit", Host_Quit_f);
 	Cmd_AddCommand("exit", Host_Quit_f);
@@ -470,6 +875,13 @@ void Host_InitCommands( void )
 	Cmd_AddCommand("spawn", Host_Spawn_f);
 	Cmd_AddCommand("begin", Host_Begin_f);
 	Cmd_AddCommand("prespawn", Host_PreSpawn_f);
+
+	// TODO: Implement
+	
+	Cmd_AddCommand("god", Host_God_f);
+	Cmd_AddCommand("notarget", Host_Notarget_f);
+	Cmd_AddCommand("fly", Host_Fly_f);
+	Cmd_AddCommand("noclip", Host_Noclip_f);
 
 	// TODO: Implement
 

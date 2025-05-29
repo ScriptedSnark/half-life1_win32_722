@@ -874,8 +874,6 @@ void SV_SingleClipMoveToEntity( edict_t* ent, const vec_t* start, const vec_t* m
 
 	if (pmodel->type == mod_studio)
 	{
-		return;
-
 		// get the clipping hull for studio model
 		hull = SV_HullForStudioModel(ent, mins, maxs, offset, &numhulls);
 	}
