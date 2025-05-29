@@ -901,21 +901,20 @@ void SV_WriteEntitiesToClient( client_t* client, sizebuf_t* msg )
 	pack->entities = NULL;
 
 	fullpack.num_entities = 0;
-
 	for (i = svs.maxclients + 1; i < sv.num_edicts; i++)
 	{
 		SV_AddToFullPack(&fullpack, i, pvs);
 	}
 
-	pack->num_entities = fullpack.num_entities;
+	pack->num_entities = i = fullpack.num_entities;
 
-	if (pack->num_entities == 0)
-		pack->num_entities = 1;
+	if (i == 0)
+		i = 1;
 
-	state = (entity_state_t *)malloc(sizeof(entity_state_t) * pack->num_entities);
+	state = (entity_state_t *)malloc(sizeof(entity_state_t) * i);
 	pack->entities = state;
 	if (!state)
-		Sys_Error("Failed to allocate space for %i packet entities\n", pack->num_entities);
+		Sys_Error("Failed to allocate space for %i packet entities\n", i);
 
 	if (pack->num_entities)
 		memcpy(pack->entities, fullpack.entities, sizeof(entity_state_t) * pack->num_entities); // TODO: There might be a problem
