@@ -180,9 +180,113 @@ void Host_Quit_f( void )
 	giStateInfo = 4;
 }
 
+/*
+==================
+Host_Status_PrintClient
+
+Print client info to console
+==================
+*/
+void Host_Status_PrintClient( char* pszState, qboolean fromcbuf, void (*print) ( char* fmt, ... ), int playernum, client_t* client )
+{
+	int			seconds;
+	int			minutes;
+	int			hours = 0;
+
+	seconds = (int)(realtime - client->netchan.connect_time);
+	minutes = seconds / 60;
+	if (minutes)
+	{
+		seconds %= 60;
+		hours = minutes / 60;
+		if (hours)
+			minutes %= 60;
+	}
+	else
+		hours = 0;
+
+	print("#%-2u %-12.12s\n", playernum + 1, client->name);
+	print("   frags:  %3i\n", client->edict->v.frags);
+
+	if (hours)
+		print("   time :  %2i:%02i:%02i\n", hours, minutes, seconds);
+	else
+		print("   time :  %02i:%02i\n", minutes, seconds);
+
+	print("   frame rate :  %4i\n", (int)(1000.0f * client->netchan.frame_rate));
+	print("   frame latency :  %4i\n", (int)(1000.0f * client->netchan.frame_latency));
+	print("   ping :  %4i\n", SV_CalcPing(client));
+	print("   drop :  %5.2f %%\n", 100.0f * client->netchan.drop_count / client->netchan.incoming_sequence);
+
+	if (pszState && pszState[0])
+		print("   %s\n", pszState);
+
+	if (client->spectator)
+	{
+		print("  (spectator) %s\n", NET_BaseAdrToString(client->netchan.remote_address));
+	}
+	else if (client->fakeclient)
+	{
+		print("  (fake)\n");
+	}
+	else if (fromcbuf)
+	{
+		print("   %s\n", NET_BaseAdrToString(client->netchan.remote_address));
+	}
+	print("\n");
+}
 
 
+/*
+==================
+Host_Status_f
+==================
+*/
+void Host_Status_f( void )
+{
+	client_t* client;
+	int			j;
+	int			players, spectators;
+	void		(*print) ( char* fmt, ... );
 
+	if (cmd_source == src_command)
+	{
+		if (sv.active == FALSE)
+		{
+			Cmd_ForwardToServer();
+			return;
+		}
+		print = Con_Printf;
+	}
+	else
+		print = SV_ClientPrintf;
+
+	// ============================================================
+	// Server status information.
+	print("hostname:  %s\n", Cvar_VariableString("hostname"));
+	print("build   :  %d\n", build_number());
+	print("tcp/ip  :  %s\n", NET_AdrToString(net_local_adr));
+	print(" map     :  %s\n", sv.name);
+
+	SV_CountPlayers(&players, &spectators);
+
+	if (spectators)
+		print(" players: %i active (%i spectators) (%i max)\n\n", players, spectators, svs.maxclients);
+	else
+		print(" players: %i active (%i max)\n\n", players, svs.maxclients);
+
+	for (j = 0, client = svs.clients; j < svs.maxclients; j++, client++)
+	{
+		if (!client->active)
+		{
+			if (client->connected)
+				Host_Status_PrintClient("CONNECTING", cmd_source == src_command, print, j, client);		
+			continue;
+		}
+
+		Host_Status_PrintClient(NULL, cmd_source == src_command, print, j, client);
+	}
+}
 
 
 
@@ -596,6 +700,10 @@ Host_InitCommands
 */
 void Host_InitCommands( void )
 {
+	// TODO: Implement
+	
+	Cmd_AddCommand("status", Host_Status_f);
+
 	// TODO: Implement
 
 	Cmd_AddCommand("quit", Host_Quit_f);

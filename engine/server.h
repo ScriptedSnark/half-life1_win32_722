@@ -348,7 +348,7 @@ void SV_Multicast( vec_t* origin, int to, qboolean reliable );
 
 
 
-
+void SV_ClientPrintf( char* fmt, ... );
 void SV_BroadcastPrintf( char* fmt, ... );
 
 void SV_ClearChannel( qboolean forceclear );
