@@ -15,70 +15,7 @@ typedef struct full_packet_entities_s
 	entity_state_t entities[MAX_PACKET_ENTITIES];
 } full_packet_entities_t;
 
-/*
-=============================================================================
-
-Con_Printf redirection
-
-=============================================================================
-*/
-
-char	outputbuf[8000];
-
-redirect_t	sv_redirected;
-
-netadr_t sv_redirectto;
-
 extern int sv_playermodel;
-
-/*
-==================
-Host_FlushRedirect
-==================
-*/
-void Host_FlushRedirect( void )
-{
-	if (sv_redirected == RD_PACKET)
-	{
-		SZ_Clear(&net_message);
-		MSG_WriteLong(&net_message, 0xffffffff);
-		MSG_WriteByte(&net_message, A2C_PRINT);
-		MSG_WriteString(&net_message, outputbuf);
-		NET_SendPacket(NS_SERVER, net_message.cursize, net_message.data, sv_redirectto);
-		SZ_Clear(&net_message);
-	}
-	else if (sv_redirected == RD_CLIENT)
-	{
-		MSG_WriteByte(&host_client->netchan.message, 8);
-		MSG_WriteString(&host_client->netchan.message, outputbuf);
-	}
-
-	// clear it
-	outputbuf[0] = 0;
-}
-
-
-/*
-==================
-SV_BeginRedirect
-
-  Send Con_Printf data to the remote client
-  instead of the console
-==================
-*/
-void Host_BeginRedirect( redirect_t rd, netadr_t* adr )
-{
-	sv_redirected = rd;
-	memcpy(&sv_redirectto, adr, sizeof(sv_redirectto));
-	outputbuf[0] = 0;
-}
-
-void Host_EndRedirect( void )
-{
-	Host_FlushRedirect();
-
-	sv_redirected = RD_NONE;
-}
 
 /*
 ==================

@@ -4,7 +4,6 @@
 #include "cl_demo.h"
 #include "pr_edict.h"
 
-// Globals
 int	current_skill;
 int	gHostSpawnCount = 0;
 qboolean noclip_anglehack;
@@ -38,6 +37,71 @@ void SV_InactivateClients( void )
 		cl->maxspeed = 0.0;
 	}
 }
+
+/*
+=============================================================================
+
+Con_Printf redirection
+
+=============================================================================
+*/
+
+char	outputbuf[8000];
+
+redirect_t	sv_redirected;
+
+netadr_t sv_redirectto;
+
+/*
+==================
+Host_FlushRedirect
+==================
+*/
+void Host_FlushRedirect( void )
+{
+	if (sv_redirected == RD_PACKET)
+	{
+		SZ_Clear(&net_message);
+		MSG_WriteLong(&net_message, 0xffffffff); // -1 -1 -1 -1 signal
+		MSG_WriteByte(&net_message, A2C_PRINT);
+		MSG_WriteString(&net_message, outputbuf);
+		NET_SendPacket(NS_SERVER, net_message.cursize, net_message.data, sv_redirectto);
+		SZ_Clear(&net_message);
+		
+	}
+	else if (sv_redirected == RD_CLIENT)   // Send to client on message stream.
+	{
+		MSG_WriteByte(&host_client->netchan.message, svc_print);
+		MSG_WriteString(&host_client->netchan.message, outputbuf);
+	}
+
+	// clear it
+	outputbuf[0] = 0;
+}
+
+
+/*
+==================
+Host_BeginRedirect
+
+  Send Con_Printf data to the remote client
+  instead of the console
+==================
+*/
+void Host_BeginRedirect( redirect_t rd, netadr_t* addr )
+{
+	sv_redirected = rd;
+	sv_redirectto = *addr;
+	outputbuf[0] = 0;
+}
+
+void Host_EndRedirect( void )
+{
+	Host_FlushRedirect();
+	sv_redirected = RD_NONE;
+}
+
+
 
 
 

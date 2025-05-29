@@ -372,6 +372,7 @@ typedef enum
 } redirect_t;
 extern redirect_t	sv_redirected;
 void Host_FlushRedirect( void );
+void Host_BeginRedirect( redirect_t rd, netadr_t* addr );
 void Host_EndRedirect( void );
 
 //
