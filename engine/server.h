@@ -375,6 +375,8 @@ void Host_FlushRedirect( void );
 void Host_BeginRedirect( redirect_t rd, netadr_t* addr );
 void Host_EndRedirect( void );
 
+void Host_RemoteCommand( netadr_t* net_from );
+
 //
 // sv_send.c
 //

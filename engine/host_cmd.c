@@ -101,6 +101,90 @@ void Host_EndRedirect( void )
 	sv_redirected = RD_NONE;
 }
 
+int Rcon_Validate( void )
+{
+	if (!strlen(rcon_password.string))
+		return 0;
+
+	if (strcmp(Cmd_Argv(1), rcon_password.string))
+		return 0;
+
+	return 1;
+}
+
+/*
+===============
+Host_RemoteCommand
+
+A client issued an rcon command.
+Shift down the remaining args
+Redirect all printfs
+===============
+*/
+void Host_RemoteCommand( netadr_t* net_from )
+{
+	int		i;
+	int		invalid;
+	char	remaining[1024];
+
+	// Verify this user has access rights.
+	invalid = Rcon_Validate();
+	if (!invalid)
+	{
+		Con_Printf("Bad rcon from %s:\n%s\n", NET_AdrToString(*net_from), net_message.data + 4);
+	}
+	else
+	{
+		Con_Printf("Rcon from %s:\n%s\n", NET_AdrToString(*net_from), net_message.data + 4);
+	}
+
+	invalid = Rcon_Validate();
+	if (!invalid)
+	{
+		Con_Printf("Bad rcon_password.\n");
+		return;
+	}
+
+	remaining[0] = 0;
+
+	for (i = 2; i < Cmd_Argc(); i++)
+	{
+		strcat(remaining, Cmd_Argv(i));
+		strcat(remaining, " ");
+	}
+
+	Host_BeginRedirect(RD_PACKET, net_from);
+	Cmd_ExecuteString(remaining, src_command);
+	Host_EndRedirect();
+}
+
+/*
+==================
+Host_Quit_f
+==================
+*/
+void Host_Quit_f( void )
+{
+	if (Cmd_Argc() == 1)
+	{
+		giActive = DLL_CLOSE;
+
+		if (cls.state != ca_dedicated)
+			CL_Disconnect();
+
+		Host_ShutdownServer(FALSE);
+		Sys_Quit();
+	}
+
+	giActive = DLL_PAUSED;
+	giStateInfo = 4;
+}
+
+
+
+
+
+
 
 
 
@@ -251,38 +335,6 @@ void Host_Map_f( void )
 }
 
 // TODO: Implement
-
-/*
-==================
-Host_Quit_f
-
-Shutdown the engine/program as soon as possible
-
-NOTE: The game must be shutdown before a new game can start,
-before a game can load, and before the system can be shutdown.
-==================
-*/
-void Host_Quit_f(void)
-{
-	if (Cmd_Argc() == 1)
-	{
-		giActive = DLL_CLOSE;
-
-		// disconnect if we are connected
-		if (cls.state)
-			CL_Disconnect();
-
-		// shutdown the server
-		Host_ShutdownServer(FALSE);
-
-		// exit the game
-		Sys_Quit();
-	}
-
-	// either argc isn't 1 or we haven't quitted, well just pause then
-	giActive = DLL_PAUSED;
-	giStateInfo = 4;
-}
 
 DLL_EXPORT BOOL SaveGame( char* pszSlot, char* pszComment )
 {

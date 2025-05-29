@@ -501,6 +501,7 @@ void SV_ConnectionlessPacket( void )
 	{
 		SVC_Heartbeat();
 	}
+	// TODO: Implement
 	else if (!strcmp(c, "getchallenge"))
 	{
 		SVC_GetChallenge();
@@ -508,6 +509,14 @@ void SV_ConnectionlessPacket( void )
 	else if (!strcmp(c, "connect"))
 	{
 		SV_ConnectClient();
+	}
+	else if (!strcmp(c, "rcon"))
+	{
+		Host_RemoteCommand(&net_from);
+	}
+	else
+	{
+		Con_Printf("bad connectionless packet from %s:\n%s\n", NET_AdrToString(net_from), s);
 	}
 
 	// TODO: Implement
