@@ -82,7 +82,7 @@ SV_SpawnSpectator
 */
 void SV_SpawnSpectator( void )
 {
-	__debugbreak();
+	_asm { int 3 };
 }
 
 // TODO: Implement

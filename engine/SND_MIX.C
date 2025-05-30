@@ -2742,6 +2742,12 @@ int	VOX_FPaintPitchChannelFrom8Offs( portable_samplepair_t* paintbuffer, channel
 	float	stepscale;
 	int		cb;
 	portable_samplepair_t* pbuffer;
+	int chunksize;
+	int skipbytes;
+	int lowsample;
+	int playcount;
+	int cdata = 0;
+	int j;
 
 	pbuffer = &paintbuffer[offset];
 
@@ -2756,13 +2762,6 @@ int	VOX_FPaintPitchChannelFrom8Offs( portable_samplepair_t* paintbuffer, channel
 	lscale = snd_scaletable[ch->leftvol >> 3];
 	rscale = snd_scaletable[ch->rightvol >> 3];
 	sfx = sc->data;
-
-	int chunksize;
-	int skipbytes;
-	int lowsample;
-	int playcount;
-	int cdata = 0;
-	int j;
 
 	samplefrac = rgrgvoxword[ch->isentence][ch->iword].samplefrac;
 	cb = rgrgvoxword[ch->isentence][ch->iword].cbtrim;

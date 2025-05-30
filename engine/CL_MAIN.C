@@ -334,9 +334,11 @@ void CL_CreateCustomizationList( void )
 
 			if ((pCust->resource.ucFlags & RES_CUSTOM) && pCust->resource.type == t_decal)
 			{
+				cachewad_t* pWad;
+
 				pCust->resource.playernum = cl.playernum;
 
-				cachewad_t* pWad = (cachewad_t*)malloc(sizeof(cachewad_t));
+				pWad = (cachewad_t*)malloc(sizeof(cachewad_t));
 				pCust->pInfo = pWad;
 
 				memset(pWad, 0, sizeof(cachewad_t));

@@ -419,10 +419,11 @@ void SV_RunCmd( usercmd_t* ucmd )
 	{
 		if (!host_client->spectator)
 		{
+			vec3_t save_velocity;
+
 			// link into place and touch triggers
 			SV_LinkEdict(sv_player, TRUE);
 
-			vec3_t save_velocity;
 			VectorCopy(sv_player->v.velocity, save_velocity);
 
 			// touch other objects
@@ -517,6 +518,7 @@ void SV_ExecuteClientMessage( client_t* cl )
 	byte	checksum, calculatedChecksum;
 	int		seq_hash;
 	int		commandstatus;
+	usercmd_t nullcmd;
 
 	// calc ping time
 	frame = &cl->frames[cl->netchan.incoming_acknowledged & UPDATE_MASK];
@@ -573,7 +575,6 @@ void SV_ExecuteClientMessage( client_t* cl )
 
 			move_issued = TRUE;
 
-			usercmd_t nullcmd;
 			memset(&nullcmd, 0, sizeof(nullcmd));
 
 			checksumIndex = msg_readcount;

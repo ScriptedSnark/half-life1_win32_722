@@ -496,9 +496,10 @@ Creates customizations list for the current player and sends resources to other 
 void SV_RegisterResources( void )
 {
 	client_t* pHost = host_client;
+	resource_t* pResource;
 
 	pHost->uploading = FALSE;
-	for (resource_t* pResource = pHost->resourcesonhand.pNext; pResource != &pHost->resourcesonhand; pResource = pResource->pNext)
+	for (pResource = pHost->resourcesonhand.pNext; pResource != &pHost->resourcesonhand; pResource = pResource->pNext)
 	{
 		SV_CreateCustomizationList(pHost);
 		SV_Customization(pHost, pResource, TRUE);

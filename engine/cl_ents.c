@@ -1014,6 +1014,7 @@ void CL_ParsePlayerinfo( void )
 	int				i;
 	cl_entity_t*	ent;
 	qboolean		spectator = FALSE;
+	vec3_t			prevorigin, prevangles;
 
 	num = MSG_ReadByte();
 	if (num & PN_SPECTATOR)
@@ -1214,7 +1215,6 @@ void CL_ParsePlayerinfo( void )
 
 	ent = &cl_entities[num + 1];
 
-	vec3_t prevorigin, prevangles;
 	VectorCopy(ent->origin, prevorigin);
 	VectorCopy(ent->angles, prevangles);
 

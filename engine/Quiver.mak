@@ -74,6 +74,7 @@ CLEAN :
 	-@erase "$(INTDIR)\crc.obj"
 	-@erase "$(INTDIR)\cvar.obj"
 	-@erase "$(INTDIR)\Gl_draw.obj"
+	-@erase "$(INTDIR)\GL_MESH.OBJ"
 	-@erase "$(INTDIR)\Gl_model.obj"
 	-@erase "$(INTDIR)\gl_refrag.obj"
 	-@erase "$(INTDIR)\gl_rlight.obj"
@@ -116,6 +117,7 @@ CLEAN :
 	-@erase "$(INTDIR)\snd_mixa.obj"
 	-@erase "$(INTDIR)\Snd_win.obj"
 	-@erase "$(INTDIR)\sv_main.obj"
+	-@erase "$(INTDIR)\sv_move.obj"
 	-@erase "$(INTDIR)\sv_phys.obj"
 	-@erase "$(INTDIR)\sv_send.obj"
 	-@erase "$(INTDIR)\sv_upld.obj"
@@ -185,6 +187,7 @@ LINK32_OBJS= \
 	"$(INTDIR)\crc.obj" \
 	"$(INTDIR)\cvar.obj" \
 	"$(INTDIR)\Gl_draw.obj" \
+	"$(INTDIR)\GL_MESH.OBJ" \
 	"$(INTDIR)\Gl_model.obj" \
 	"$(INTDIR)\gl_refrag.obj" \
 	"$(INTDIR)\gl_rlight.obj" \
@@ -227,6 +230,7 @@ LINK32_OBJS= \
 	"$(INTDIR)\snd_mixa.obj" \
 	"$(INTDIR)\Snd_win.obj" \
 	"$(INTDIR)\sv_main.obj" \
+	"$(INTDIR)\sv_move.obj" \
 	"$(INTDIR)\sv_phys.obj" \
 	"$(INTDIR)\sv_send.obj" \
 	"$(INTDIR)\sv_upld.obj" \
@@ -286,6 +290,7 @@ CLEAN :
 	-@erase "$(INTDIR)\crc.obj"
 	-@erase "$(INTDIR)\cvar.obj"
 	-@erase "$(INTDIR)\Gl_draw.obj"
+	-@erase "$(INTDIR)\GL_MESH.OBJ"
 	-@erase "$(INTDIR)\Gl_model.obj"
 	-@erase "$(INTDIR)\gl_refrag.obj"
 	-@erase "$(INTDIR)\gl_rlight.obj"
@@ -328,6 +333,7 @@ CLEAN :
 	-@erase "$(INTDIR)\snd_mixa.obj"
 	-@erase "$(INTDIR)\Snd_win.obj"
 	-@erase "$(INTDIR)\sv_main.obj"
+	-@erase "$(INTDIR)\sv_move.obj"
 	-@erase "$(INTDIR)\sv_phys.obj"
 	-@erase "$(INTDIR)\sv_send.obj"
 	-@erase "$(INTDIR)\sv_upld.obj"
@@ -401,6 +407,7 @@ LINK32_OBJS= \
 	"$(INTDIR)\crc.obj" \
 	"$(INTDIR)\cvar.obj" \
 	"$(INTDIR)\Gl_draw.obj" \
+	"$(INTDIR)\GL_MESH.OBJ" \
 	"$(INTDIR)\Gl_model.obj" \
 	"$(INTDIR)\gl_refrag.obj" \
 	"$(INTDIR)\gl_rlight.obj" \
@@ -443,6 +450,7 @@ LINK32_OBJS= \
 	"$(INTDIR)\snd_mixa.obj" \
 	"$(INTDIR)\Snd_win.obj" \
 	"$(INTDIR)\sv_main.obj" \
+	"$(INTDIR)\sv_move.obj" \
 	"$(INTDIR)\sv_phys.obj" \
 	"$(INTDIR)\sv_send.obj" \
 	"$(INTDIR)\sv_upld.obj" \
@@ -974,6 +982,7 @@ DEP_CPP_CL_DE=\
 	".\spritegn.h"\
 	".\studio.h"\
 	".\sys.h"\
+	".\tmessage.h"\
 	".\vid.h"\
 	".\view.h"\
 	".\vmodes.h"\
@@ -1092,6 +1101,9 @@ SOURCE=.\cl_draw.h
 # Begin Source File
 
 SOURCE=.\cl_ents.c
+
+!IF  "$(CFG)" == "Quiver - Win32 Release"
+
 DEP_CPP_CL_EN=\
 	"..\common\dll_state.h"\
 	"..\common\platform.h"\
@@ -1100,6 +1112,7 @@ DEP_CPP_CL_EN=\
 	".\bothdefs.h"\
 	".\bspfile.h"\
 	".\cdll_int.h"\
+	".\cl_demo.h"\
 	".\cl_tent.h"\
 	".\client.h"\
 	".\cmd.h"\
@@ -1110,6 +1123,7 @@ DEP_CPP_CL_EN=\
 	".\crc.h"\
 	".\cshift.h"\
 	".\custom.h"\
+	".\customentity.h"\
 	".\cvar.h"\
 	".\cvardef.h"\
 	".\draw.h"\
@@ -1157,6 +1171,78 @@ NODEP_CPP_CL_EN=\
 
 "$(INTDIR)\cl_ents.obj" : $(SOURCE) $(DEP_CPP_CL_EN) "$(INTDIR)"
 
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+DEP_CPP_CL_EN=\
+	"..\common\dll_state.h"\
+	"..\common\platform.h"\
+	"..\common\qfont.h"\
+	".\beamdef.h"\
+	".\bothdefs.h"\
+	".\bspfile.h"\
+	".\cdll_int.h"\
+	".\cl_demo.h"\
+	".\cl_tent.h"\
+	".\client.h"\
+	".\cmd.h"\
+	".\color.h"\
+	".\common.h"\
+	".\Console.h"\
+	".\const.h"\
+	".\crc.h"\
+	".\cshift.h"\
+	".\custom.h"\
+	".\customentity.h"\
+	".\cvar.h"\
+	".\cvardef.h"\
+	".\draw.h"\
+	".\eiface.h"\
+	".\Gl_model.h"\
+	".\Glquake.h"\
+	".\host_cmd.h"\
+	".\input.h"\
+	".\keys.h"\
+	".\mathlib.h"\
+	".\modelgen.h"\
+	".\net.h"\
+	".\pmove.h"\
+	".\pr_cmds.h"\
+	".\pr_dlls.h"\
+	".\progdefs.h"\
+	".\Progs.h"\
+	".\protocol.h"\
+	".\qgl.h"\
+	".\quakedef.h"\
+	".\r_shared.h"\
+	".\render.h"\
+	".\sbar.h"\
+	".\screen.h"\
+	".\server.h"\
+	".\sound.h"\
+	".\spritegn.h"\
+	".\studio.h"\
+	".\sys.h"\
+	".\vid.h"\
+	".\view.h"\
+	".\vmodes.h"\
+	".\wad.h"\
+	".\world.h"\
+	".\wrect.h"\
+	".\zone.h"\
+	{$(INCLUDE)}"\GL\gl.h"\
+	
+NODEP_CPP_CL_EN=\
+	".\cmdlib.h"\
+	".\lbmlib.h"\
+	".\scriplib.h"\
+	".\trilib.h"\
+	
+
+"$(INTDIR)\cl_ents.obj" : $(SOURCE) $(DEP_CPP_CL_EN) "$(INTDIR)"
+
+
+!ENDIF 
 
 # End Source File
 ################################################################################
@@ -1232,6 +1318,9 @@ NODEP_CPP_CL_IN=\
 # Begin Source File
 
 SOURCE=.\Cl_main.c
+
+!IF  "$(CFG)" == "Quiver - Win32 Release"
+
 DEP_CPP_CL_MA=\
 	"..\common\dll_state.h"\
 	"..\common\platform.h"\
@@ -1253,6 +1342,7 @@ DEP_CPP_CL_MA=\
 	".\custom.h"\
 	".\cvar.h"\
 	".\cvardef.h"\
+	".\decal.h"\
 	".\draw.h"\
 	".\eiface.h"\
 	".\Gl_model.h"\
@@ -1264,6 +1354,7 @@ DEP_CPP_CL_MA=\
 	".\mathlib.h"\
 	".\modelgen.h"\
 	".\net.h"\
+	".\pmove.h"\
 	".\pr_dlls.h"\
 	".\progdefs.h"\
 	".\Progs.h"\
@@ -1279,6 +1370,7 @@ DEP_CPP_CL_MA=\
 	".\spritegn.h"\
 	".\studio.h"\
 	".\sys.h"\
+	".\tmessage.h"\
 	".\vid.h"\
 	".\view.h"\
 	".\vmodes.h"\
@@ -1298,6 +1390,80 @@ NODEP_CPP_CL_MA=\
 
 "$(INTDIR)\Cl_main.obj" : $(SOURCE) $(DEP_CPP_CL_MA) "$(INTDIR)"
 
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+DEP_CPP_CL_MA=\
+	"..\common\dll_state.h"\
+	"..\common\platform.h"\
+	"..\common\qfont.h"\
+	".\beamdef.h"\
+	".\bothdefs.h"\
+	".\bspfile.h"\
+	".\cdll_int.h"\
+	".\cl_demo.h"\
+	".\cl_tent.h"\
+	".\client.h"\
+	".\cmd.h"\
+	".\color.h"\
+	".\common.h"\
+	".\Console.h"\
+	".\const.h"\
+	".\crc.h"\
+	".\cshift.h"\
+	".\custom.h"\
+	".\cvar.h"\
+	".\cvardef.h"\
+	".\decal.h"\
+	".\draw.h"\
+	".\eiface.h"\
+	".\Gl_model.h"\
+	".\Glquake.h"\
+	".\hashpak.h"\
+	".\host_cmd.h"\
+	".\input.h"\
+	".\keys.h"\
+	".\mathlib.h"\
+	".\modelgen.h"\
+	".\net.h"\
+	".\pmove.h"\
+	".\pr_dlls.h"\
+	".\progdefs.h"\
+	".\Progs.h"\
+	".\protocol.h"\
+	".\qgl.h"\
+	".\quakedef.h"\
+	".\r_shared.h"\
+	".\render.h"\
+	".\sbar.h"\
+	".\screen.h"\
+	".\server.h"\
+	".\sound.h"\
+	".\spritegn.h"\
+	".\studio.h"\
+	".\sys.h"\
+	".\tmessage.h"\
+	".\vid.h"\
+	".\view.h"\
+	".\vmodes.h"\
+	".\wad.h"\
+	".\winquake.h"\
+	".\world.h"\
+	".\wrect.h"\
+	".\zone.h"\
+	{$(INCLUDE)}"\GL\gl.h"\
+	
+NODEP_CPP_CL_MA=\
+	".\cmdlib.h"\
+	".\lbmlib.h"\
+	".\scriplib.h"\
+	".\trilib.h"\
+	
+
+"$(INTDIR)\Cl_main.obj" : $(SOURCE) $(DEP_CPP_CL_MA) "$(INTDIR)"
+
+
+!ENDIF 
 
 # End Source File
 ################################################################################
@@ -2539,11 +2705,19 @@ NODEP_CPP_GL_RL=\
 # Begin Source File
 
 SOURCE=.\Gl_rmain.c
+
+"$(INTDIR)\Gl_rmain.obj" : $(SOURCE) "$(INTDIR)"
+
+
+# End Source File
+################################################################################
+# Begin Source File
+
+SOURCE=.\Gl_rmisc.c
 DEP_CPP_GL_RM=\
 	"..\common\dll_state.h"\
 	"..\common\platform.h"\
 	"..\common\qfont.h"\
-	".\anorms.h"\
 	".\beamdef.h"\
 	".\bothdefs.h"\
 	".\bspfile.h"\
@@ -2576,13 +2750,10 @@ DEP_CPP_GL_RM=\
 	".\qgl.h"\
 	".\quakedef.h"\
 	".\r_shared.h"\
-	".\r_studio.h"\
-	".\r_trans.h"\
 	".\render.h"\
 	".\sbar.h"\
 	".\screen.h"\
 	".\server.h"\
-	".\shake.h"\
 	".\sound.h"\
 	".\spritegn.h"\
 	".\studio.h"\
@@ -2603,75 +2774,7 @@ NODEP_CPP_GL_RM=\
 	".\trilib.h"\
 	
 
-"$(INTDIR)\Gl_rmain.obj" : $(SOURCE) $(DEP_CPP_GL_RM) "$(INTDIR)"
-
-
-# End Source File
-################################################################################
-# Begin Source File
-
-SOURCE=.\Gl_rmisc.c
-DEP_CPP_GL_RMI=\
-	"..\common\dll_state.h"\
-	"..\common\platform.h"\
-	"..\common\qfont.h"\
-	".\beamdef.h"\
-	".\bothdefs.h"\
-	".\bspfile.h"\
-	".\cdll_int.h"\
-	".\client.h"\
-	".\cmd.h"\
-	".\color.h"\
-	".\common.h"\
-	".\Console.h"\
-	".\const.h"\
-	".\crc.h"\
-	".\cshift.h"\
-	".\custom.h"\
-	".\cvar.h"\
-	".\cvardef.h"\
-	".\draw.h"\
-	".\eiface.h"\
-	".\Gl_model.h"\
-	".\Glquake.h"\
-	".\host_cmd.h"\
-	".\input.h"\
-	".\keys.h"\
-	".\mathlib.h"\
-	".\modelgen.h"\
-	".\net.h"\
-	".\pr_dlls.h"\
-	".\progdefs.h"\
-	".\Progs.h"\
-	".\protocol.h"\
-	".\qgl.h"\
-	".\quakedef.h"\
-	".\r_shared.h"\
-	".\render.h"\
-	".\sbar.h"\
-	".\screen.h"\
-	".\server.h"\
-	".\sound.h"\
-	".\spritegn.h"\
-	".\studio.h"\
-	".\sys.h"\
-	".\vid.h"\
-	".\view.h"\
-	".\vmodes.h"\
-	".\wad.h"\
-	".\world.h"\
-	".\wrect.h"\
-	".\zone.h"\
-	{$(INCLUDE)}"\GL\gl.h"\
-	
-NODEP_CPP_GL_RMI=\
-	".\cmdlib.h"\
-	".\lbmlib.h"\
-	".\scriplib.h"\
-	".\trilib.h"\
-	
-
-"$(INTDIR)\Gl_rmisc.obj" : $(SOURCE) $(DEP_CPP_GL_RMI) "$(INTDIR)"
+"$(INTDIR)\Gl_rmisc.obj" : $(SOURCE) $(DEP_CPP_GL_RM) "$(INTDIR)"
 
 
 # End Source File
@@ -3389,6 +3492,7 @@ DEP_CPP_HOST_C=\
 	".\net.h"\
 	".\pr_cmds.h"\
 	".\pr_dlls.h"\
+	".\pr_edict.h"\
 	".\progdefs.h"\
 	".\Progs.h"\
 	".\protocol.h"\
@@ -4182,6 +4286,7 @@ DEP_CPP_PMOVE=\
 	".\modelgen.h"\
 	".\net.h"\
 	".\pmove.h"\
+	".\pr_cmds.h"\
 	".\pr_dlls.h"\
 	".\progdefs.h"\
 	".\Progs.h"\
@@ -4196,6 +4301,7 @@ DEP_CPP_PMOVE=\
 	".\sound.h"\
 	".\spritegn.h"\
 	".\studio.h"\
+	".\sv_proto.h"\
 	".\sys.h"\
 	".\vid.h"\
 	".\view.h"\
@@ -4270,6 +4376,7 @@ DEP_CPP_PMOVET=\
 	".\qgl.h"\
 	".\quakedef.h"\
 	".\r_shared.h"\
+	".\r_studio.h"\
 	".\render.h"\
 	".\sbar.h"\
 	".\screen.h"\
@@ -4312,6 +4419,7 @@ DEP_CPP_PR_CM=\
 	".\cdll_int.h"\
 	".\client.h"\
 	".\cmd.h"\
+	".\cmodel.h"\
 	".\color.h"\
 	".\common.h"\
 	".\Console.h"\
@@ -4321,6 +4429,7 @@ DEP_CPP_PR_CM=\
 	".\custom.h"\
 	".\cvar.h"\
 	".\cvardef.h"\
+	".\decal.h"\
 	".\draw.h"\
 	".\eiface.h"\
 	".\Gl_model.h"\
@@ -4331,6 +4440,7 @@ DEP_CPP_PR_CM=\
 	".\mathlib.h"\
 	".\modelgen.h"\
 	".\net.h"\
+	".\pr_cmds.h"\
 	".\pr_dlls.h"\
 	".\progdefs.h"\
 	".\Progs.h"\
@@ -4345,6 +4455,7 @@ DEP_CPP_PR_CM=\
 	".\sound.h"\
 	".\spritegn.h"\
 	".\studio.h"\
+	".\sv_proto.h"\
 	".\sys.h"\
 	".\vid.h"\
 	".\view.h"\
@@ -5335,6 +5446,7 @@ DEP_CPP_SV_MA=\
 	".\cdll_int.h"\
 	".\client.h"\
 	".\cmd.h"\
+	".\cmodel.h"\
 	".\color.h"\
 	".\common.h"\
 	".\Console.h"\
@@ -5426,6 +5538,7 @@ DEP_CPP_SV_PH=\
 	".\modelgen.h"\
 	".\net.h"\
 	".\pmove.h"\
+	".\pr_cmds.h"\
 	".\pr_dlls.h"\
 	".\progdefs.h"\
 	".\Progs.h"\
@@ -5440,6 +5553,7 @@ DEP_CPP_SV_PH=\
 	".\sound.h"\
 	".\spritegn.h"\
 	".\studio.h"\
+	".\sv_proto.h"\
 	".\sys.h"\
 	".\vid.h"\
 	".\view.h"\
@@ -5475,6 +5589,7 @@ DEP_CPP_SV_SE=\
 	".\cdll_int.h"\
 	".\client.h"\
 	".\cmd.h"\
+	".\cmodel.h"\
 	".\color.h"\
 	".\common.h"\
 	".\Console.h"\
@@ -5632,6 +5747,7 @@ DEP_CPP_SV_US=\
 	".\mathlib.h"\
 	".\modelgen.h"\
 	".\net.h"\
+	".\pmove.h"\
 	".\pr_dlls.h"\
 	".\progdefs.h"\
 	".\Progs.h"\
@@ -5639,6 +5755,7 @@ DEP_CPP_SV_US=\
 	".\qgl.h"\
 	".\quakedef.h"\
 	".\r_shared.h"\
+	".\r_studio.h"\
 	".\render.h"\
 	".\sbar.h"\
 	".\screen.h"\
@@ -5714,7 +5831,9 @@ DEP_CPP_SYS_W=\
 	".\mathlib.h"\
 	".\modelgen.h"\
 	".\net.h"\
+	".\pr_cmds.h"\
 	".\pr_dlls.h"\
+	".\pr_edict.h"\
 	".\profile.h"\
 	".\progdefs.h"\
 	".\Progs.h"\
@@ -5722,6 +5841,7 @@ DEP_CPP_SYS_W=\
 	".\qgl.h"\
 	".\quakedef.h"\
 	".\r_shared.h"\
+	".\r_studio.h"\
 	".\render.h"\
 	".\sbar.h"\
 	".\screen.h"\
@@ -6223,6 +6343,7 @@ DEP_CPP_WORLD=\
 	".\qgl.h"\
 	".\quakedef.h"\
 	".\r_shared.h"\
+	".\r_studio.h"\
 	".\render.h"\
 	".\sbar.h"\
 	".\screen.h"\
@@ -6230,6 +6351,7 @@ DEP_CPP_WORLD=\
 	".\sound.h"\
 	".\spritegn.h"\
 	".\studio.h"\
+	".\sv_proto.h"\
 	".\sys.h"\
 	".\vid.h"\
 	".\view.h"\
@@ -6510,6 +6632,7 @@ DEP_CPP_PR_ED=\
 	".\modelgen.h"\
 	".\net.h"\
 	".\pr_dlls.h"\
+	".\pr_edict.h"\
 	".\progdefs.h"\
 	".\Progs.h"\
 	".\protocol.h"\
@@ -6541,6 +6664,143 @@ NODEP_CPP_PR_ED=\
 	
 
 "$(INTDIR)\pr_edict.obj" : $(SOURCE) $(DEP_CPP_PR_ED) "$(INTDIR)"
+
+
+# End Source File
+################################################################################
+# Begin Source File
+
+SOURCE=.\sv_move.c
+DEP_CPP_SV_MO=\
+	"..\common\dll_state.h"\
+	"..\common\platform.h"\
+	"..\common\qfont.h"\
+	".\beamdef.h"\
+	".\bothdefs.h"\
+	".\bspfile.h"\
+	".\cdll_int.h"\
+	".\client.h"\
+	".\cmd.h"\
+	".\color.h"\
+	".\common.h"\
+	".\Console.h"\
+	".\const.h"\
+	".\crc.h"\
+	".\cshift.h"\
+	".\custom.h"\
+	".\cvar.h"\
+	".\cvardef.h"\
+	".\draw.h"\
+	".\eiface.h"\
+	".\Gl_model.h"\
+	".\Glquake.h"\
+	".\host_cmd.h"\
+	".\input.h"\
+	".\keys.h"\
+	".\mathlib.h"\
+	".\modelgen.h"\
+	".\net.h"\
+	".\pr_cmds.h"\
+	".\pr_dlls.h"\
+	".\progdefs.h"\
+	".\Progs.h"\
+	".\protocol.h"\
+	".\qgl.h"\
+	".\quakedef.h"\
+	".\r_shared.h"\
+	".\render.h"\
+	".\sbar.h"\
+	".\screen.h"\
+	".\server.h"\
+	".\sound.h"\
+	".\spritegn.h"\
+	".\studio.h"\
+	".\sys.h"\
+	".\vid.h"\
+	".\view.h"\
+	".\vmodes.h"\
+	".\wad.h"\
+	".\world.h"\
+	".\wrect.h"\
+	".\zone.h"\
+	{$(INCLUDE)}"\GL\gl.h"\
+	
+NODEP_CPP_SV_MO=\
+	".\cmdlib.h"\
+	".\lbmlib.h"\
+	".\scriplib.h"\
+	".\trilib.h"\
+	
+
+"$(INTDIR)\sv_move.obj" : $(SOURCE) $(DEP_CPP_SV_MO) "$(INTDIR)"
+
+
+# End Source File
+################################################################################
+# Begin Source File
+
+SOURCE=.\GL_MESH.C
+DEP_CPP_GL_ME=\
+	"..\common\dll_state.h"\
+	"..\common\platform.h"\
+	"..\common\qfont.h"\
+	".\beamdef.h"\
+	".\bothdefs.h"\
+	".\bspfile.h"\
+	".\cdll_int.h"\
+	".\client.h"\
+	".\cmd.h"\
+	".\color.h"\
+	".\common.h"\
+	".\Console.h"\
+	".\const.h"\
+	".\crc.h"\
+	".\cshift.h"\
+	".\custom.h"\
+	".\cvar.h"\
+	".\cvardef.h"\
+	".\draw.h"\
+	".\eiface.h"\
+	".\Gl_model.h"\
+	".\Glquake.h"\
+	".\host_cmd.h"\
+	".\input.h"\
+	".\keys.h"\
+	".\mathlib.h"\
+	".\modelgen.h"\
+	".\net.h"\
+	".\pr_dlls.h"\
+	".\progdefs.h"\
+	".\Progs.h"\
+	".\protocol.h"\
+	".\qgl.h"\
+	".\quakedef.h"\
+	".\r_shared.h"\
+	".\render.h"\
+	".\sbar.h"\
+	".\screen.h"\
+	".\server.h"\
+	".\sound.h"\
+	".\spritegn.h"\
+	".\studio.h"\
+	".\sys.h"\
+	".\vid.h"\
+	".\view.h"\
+	".\vmodes.h"\
+	".\wad.h"\
+	".\world.h"\
+	".\wrect.h"\
+	".\zone.h"\
+	{$(INCLUDE)}"\GL\gl.h"\
+	
+NODEP_CPP_GL_ME=\
+	".\cmdlib.h"\
+	".\lbmlib.h"\
+	".\scriplib.h"\
+	".\trilib.h"\
+	
+
+"$(INTDIR)\GL_MESH.OBJ" : $(SOURCE) $(DEP_CPP_GL_ME) "$(INTDIR)"
 
 
 # End Source File

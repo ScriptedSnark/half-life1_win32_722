@@ -642,6 +642,8 @@ int SV_PushRotate( edict_t* pusher, float movetime )
 	vec3_t		forward, right, up;
 	vec3_t		forwardNow, rightNow, upNow;
 
+	vec3_t		push;
+
 	if (!pusher->v.avelocity[0] && !pusher->v.avelocity[1] && !pusher->v.avelocity[2])
 	{
 		pusher->v.ltime += movetime;
@@ -727,7 +729,6 @@ int SV_PushRotate( edict_t* pusher, float movetime )
 		end[1] = DotProduct(rightNow, move);
 		end[2] = DotProduct(upNow, move);
 
-		vec3_t push;
 		VectorSubtract(end, start, push);
 
 		// try moving the contacted entity
@@ -1215,9 +1216,11 @@ void SV_Physics_Toss( edict_t* ent )
 // stop if on ground
 	if (trace.plane.normal[2] > 0.7)
 	{
+		float vel;
+
 		// Get the total velocity (player + conveyors, etc.)
 		VectorAdd(ent->v.velocity, ent->v.basevelocity, move);
-		float vel = DotProduct(move, move);
+		vel = DotProduct(move, move);
 
 		// Are we on the ground?
 		if (move[2] < (sv_gravity.value * host_frametime))
@@ -1426,6 +1429,9 @@ void SV_Physics_Step( edict_t* ent )
 
 	if (!VectorCompare(ent->v.velocity, vec_origin) || !VectorCompare(ent->v.basevelocity, vec_origin))
 	{
+		vec3_t mins, maxs, point;
+		int x, y;
+
 		ent->v.flags &= ~FL_ONGROUND;
 
 		// apply friction
@@ -1460,9 +1466,6 @@ void SV_Physics_Step( edict_t* ent )
 		SV_CheckVelocity(ent);
 
 		// determine if it's on solid ground at all
-		vec3_t mins, maxs, point;
-		int x, y;
-
 		VectorAdd(ent->v.origin, ent->v.mins, mins);
 		VectorAdd(ent->v.origin, ent->v.maxs, maxs);
 

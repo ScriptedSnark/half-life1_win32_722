@@ -16,6 +16,7 @@ CL_PredictUsercmd
 void CL_PredictUsercmd( player_state_t* from, player_state_t* to, usercmd_t* u, qboolean spectator )
 {
 	usercmd_t   cmd;
+	float		maxspeed;
 
 	// chop up very long commands
 	if (u->msec > 50)
@@ -74,8 +75,6 @@ void CL_PredictUsercmd( player_state_t* from, player_state_t* to, usercmd_t* u, 
 
 	pmove.cmd = cmd;
 	pmove.player_index = to->number;
-
-	float maxspeed;
 
 	maxspeed = cl.players[pmove.player_index].maxspeed;
 	if (maxspeed)
