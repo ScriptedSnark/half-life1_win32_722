@@ -9,6 +9,8 @@ int	gHostSpawnCount = 0;
 
 cvar_t rcon_password = { "rcon_password", "" };
 
+cvar_t gHostMap = { "HostMap", "C1A0" };
+
 /*
 ====================
 SV_InactivateClients
@@ -510,7 +512,7 @@ void Host_Map( qboolean bIsDemo, char* mapstring, char* mapName, qboolean loadGa
 			SV_LoadEntities();
 		}
 
-		sv.paused = TRUE;
+		sv.paused = TRUE;		// pause until all clients connect
 		sv.loadgame = TRUE;
 		SV_ActivateServer(FALSE);
 	}
@@ -551,6 +553,7 @@ void Host_Map( qboolean bIsDemo, char* mapstring, char* mapName, qboolean loadGa
 		sv_gpNewUserMsgs = NULL;
 	}
 
+	// Connect the local client when a "map" command is issued.
 	if (cls.state != ca_dedicated)
 	{
 		Cmd_ExecuteString("connect local", src_command);
@@ -568,39 +571,234 @@ command from the console.  Active clients are kicked off.
 */
 void Host_Map_f( void )
 {
-	int		i;
-	char	name[MAX_QPATH];
+	int		i, len;
 	char	mapstring[MAX_QPATH];
+	char	name[MAX_QPATH];
 
 	if (cmd_source != src_command)
 		return;
 
-	for (name[0] = 0, i = 0; i < Cmd_Argc(); i++, *(unsigned short*) &name[strlen(name)] = ' ' /* write space and the zero terminator so if this is the last cycle, strlen would not crash us */)
+	mapstring[0] = 0;
+	for (i = 0; i < Cmd_Argc(); i++)
 	{
-		strcat(name, Cmd_Argv(i));
+		strcat(mapstring, Cmd_Argv(i));
+		strcat(mapstring, " ");
 	}
-	// Write line feed and the zero terminator at the same time
-	*(unsigned short*) &name[strlen(name)] = '\n';
+	strcat(mapstring, "\n");
 
-	strcpy(mapstring, Cmd_Argv(1));
+	strcpy(name, Cmd_Argv(1));
 
-	// If there is a .bsp on the end, strip it off!
-	i = strlen(mapstring);
-	if ( i > 4 && !_strcmpi(mapstring + i - 4, ".bsp") )
-	{
-		mapstring[i-4] = 0;
-	}
+	len = strlen(name);
+	if (len > 4 && !_stricmp(&name[len - 4], ".bsp"))
+		name[len - 4] = 0;
 
-	if (!PF_IsMapValid_I(mapstring))
+	if (!PF_IsMapValid_I(name))
 	{
 		Con_Printf("map change failed: '");
-		Con_Printf(mapstring);
+		Con_Printf(name);
 		Con_Printf("' not found on server\n");
 		return;
 	}
 
-	Cvar_Set("HostMap", mapstring);
-	Host_Map(FALSE, name, mapstring, 0);
+	Cvar_Set("HostMap", name);
+
+	Host_Map(FALSE, mapstring, name, FALSE);
+}
+
+/*
+======================
+Host_Maps_f
+
+======================
+*/
+void Host_Maps_f( void )
+{
+	char	szMapName[MAX_QPATH];
+	char* pszSubString;
+
+	if (Cmd_Argc() != 2)
+	{
+		Con_Printf("Usage:  maps <substring>\nmaps * for full listing\n");
+		return;
+	}
+
+	pszSubString = Cmd_Argv(1);
+	if (!pszSubString || !pszSubString[0])
+		return;
+
+	if (pszSubString[0] == '*')
+		pszSubString = NULL;
+
+	// Print all maps
+	while (COM_ListMaps(szMapName, pszSubString))
+	{
+		Con_Printf("     %s\n", szMapName);
+	}
+}
+
+/*
+==================
+Host_Changelevel_f
+
+Goes to a new map, taking all clients along
+==================
+*/
+void Host_Changelevel_f( void )
+{
+	char	level[MAX_QPATH];
+	char	_startspot[MAX_QPATH];
+	char*   startspot;
+
+
+	if (Cmd_Argc() < 2)
+	{
+		Con_Printf("changelevel <levelname> : continue game on a new level\n");
+		return;
+	}
+
+	if (!sv.active || cls.demoplayback)
+	{
+		Con_Printf("Only the server may changelevel\n");
+		return;
+	}
+
+	if (!PF_IsMapValid_I(Cmd_Argv(1)))
+	{
+		Con_Printf("changelevel failed: '");
+		Con_Printf(Cmd_Argv(1));
+		Con_Printf("' not found on server\n");
+		return;
+	}
+
+	SCR_BeginLoadingPlaque();
+
+	// stop sounds (especially looping!)
+	S_StopAllSounds(TRUE);
+
+	strcpy(level, Cmd_Argv(1));
+	if (Cmd_Argc() == 2)
+		startspot = NULL;
+	else
+	{
+		strcpy(_startspot, Cmd_Argv(2));
+		startspot = _startspot;
+	}
+
+	SV_InactivateClients();
+
+	SV_SpawnServer(FALSE, level, startspot);
+	SV_LoadEntities();
+	SV_ActivateServer(TRUE);
+}
+
+/*
+===============================================================================
+
+LOAD / SAVE GAME
+
+===============================================================================
+*/
+
+char* Host_FindRecentSave( char* pNameBuf )
+{
+	HANDLE		findfn;
+	BOOL		nextfile;
+	WIN32_FIND_DATAA ffd;
+	int	        found;
+	FILETIME	newest;
+
+	sprintf(pNameBuf, "%s*.sav", Host_SaveGameDirectory());
+
+	findfn = FindFirstFile(pNameBuf, &ffd);
+	if (findfn == INVALID_HANDLE_VALUE)
+		return NULL;
+
+	found = 0;
+
+	do
+	{
+		// Don't load HLSave.sav -- it's a temporary file used by the launcher when switching video modes
+		if (_stricmp(ffd.cFileName, "HLSave.sav"))
+		{
+			// Should we use the matche?
+			if (!found || CompareFileTime(&newest, &ffd.ftLastWriteTime) < 0)
+			{
+				newest = ffd.ftLastWriteTime;
+				strcpy(pNameBuf, ffd.cFileName);
+				found = 1;
+			}
+		}
+
+		// Any more save files
+		nextfile = FindNextFile(findfn, &ffd);
+	} while (nextfile);
+
+	FindClose(findfn);
+
+	if (found)
+		return pNameBuf;
+
+	return NULL;
+}
+
+/*
+==================
+Host_Restart_f
+
+Restarts the current server for a dead player
+==================
+*/
+void Host_Restart_f( void )
+{
+	char	name[MAX_PATH];
+
+	if (cls.demoplayback || !sv.active)
+		return;
+
+	if (cmd_source != src_command)
+		return;
+
+	Host_ClearGameState();
+	SV_InactivateClients();
+
+	strcpy(name, sv.name);	// must copy out, because it gets cleared
+							// in sv_spawnserver
+	SV_SpawnServer(FALSE, name, NULL);
+	SV_LoadEntities();
+	SV_ActivateServer(TRUE);
+}
+
+/*
+==================
+Host_Reload_f
+
+Restarts the current server for a dead player
+==================
+*/
+void Host_Reload_f( void )
+{
+	char* pSaveName;
+	char name[MAX_PATH];
+
+	if (cls.demoplayback || !sv.active)
+		return;
+
+	if (cmd_source != src_command)
+		return;
+
+	Host_ClearGameState();
+	SV_InactivateClients();
+
+	// See if there is a most recently saved game
+	// Restart that game if there is
+	// Otherwise, restart the starting game map
+	pSaveName = Host_FindRecentSave(name);
+	if (pSaveName && Host_Load(pSaveName))
+		return;
+
+	SV_SpawnServer(FALSE, gHostMap.string, NULL);
+	SV_LoadEntities();
+	SV_ActivateServer(TRUE);
 }
 
 
@@ -649,29 +847,12 @@ void Host_Connect_f( void )
 	CL_Connect_f();
 }
 
-/*
-======================
-Host_Maps_f
+// TODO: Implement
 
-======================
-*/
-void Host_Maps_f( void )
+int Host_Load( const char* pName )
 {
-	char*	s;
-	char	szMapName[MAX_QPATH];
-
-	if (Cmd_Argc() != 2)
-	{
-		Con_Printf("Usage:  maps <substring>\nmaps * for full listing\n");
-		return;
-	}
-
-	s = Cmd_Argv(1);
-	if (s && s[0])
-	{
-		while (COM_ListMaps(szMapName, s[0] == '*' ? NULL : s))
-			Con_Printf("     %s\n", szMapName);
-	}
+	// TODO: Implement
+	return FALSE;
 }
 
 // TODO: Implement
@@ -692,6 +873,19 @@ DLL_EXPORT int LoadGame( char* pName )
 void Host_ClearSaveDirectory( void )
 {
 	// TODO: Implement
+}
+
+/*
+==================
+Host_SaveGameDirectory
+
+Return the save directory
+==================
+*/
+char* Host_SaveGameDirectory( void )
+{
+	// TODO: Implement
+	return NULL;
 }
 
 void Host_ClearGameState( void )
@@ -975,6 +1169,9 @@ void Host_InitCommands( void )
 	Cmd_AddCommand("exit", Host_Quit_f);
 	Cmd_AddCommand("map", Host_Map_f);
 	Cmd_AddCommand("maps", Host_Maps_f);
+	Cmd_AddCommand("restart", Host_Restart_f);
+	Cmd_AddCommand("reload", Host_Reload_f);
+	Cmd_AddCommand("changelevel", Host_Changelevel_f);
 
 	// TODO: Implement
 
@@ -1011,6 +1208,10 @@ void Host_InitCommands( void )
 	// TODO: Implement
 
 	Cmd_AddCommand("new", SV_New_f);
+
+	// TODO: Implement
+	
+	Cvar_RegisterVariable(&gHostMap);
 
 	// TODO: Implement
 }

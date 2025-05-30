@@ -9,7 +9,7 @@ extern int  gHostSpawnCount;
 extern int	current_skill;
 
 void		Host_ClearGameState( void );
-
+int			Host_Load( const char* pName );
 
 
 int			LoadGamestate( char* level, int createPlayers );
@@ -18,6 +18,7 @@ int			LoadGamestate( char* level, int createPlayers );
 
 void		Host_EndSection( const char* pszSection );
 
+char*		Host_SaveGameDirectory( void );
 void		Host_ClearSaveDirectory( void );
 
 #endif // HOST_CMD_H

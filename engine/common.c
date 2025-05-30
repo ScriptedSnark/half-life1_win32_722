@@ -2138,8 +2138,8 @@ int COM_ListMaps( char* pszFileName, char* pszSubString )
 	char			szFilePath[MAX_OSPATH];
 	searchpath_t* search;
 	pack_t* pak;
+	HANDLE			findfn;
 	WIN32_FIND_DATAA ffd;
-	HANDLE			findhandle;
 	qboolean		found;
 	static HANDLE	file = INVALID_HANDLE_VALUE;
 	static char		filename[MAX_PATH];
@@ -2164,7 +2164,7 @@ int COM_ListMaps( char* pszFileName, char* pszSubString )
 			{
 				for (i = 0; i < pak->numfiles; i++)
 				{
-					if (!_strcmpi(pak->files[i].name, filename))
+					if (!_stricmp(pak->files[i].name, filename))
 					{
 						i++;
 						break;
@@ -2180,7 +2180,7 @@ int COM_ListMaps( char* pszFileName, char* pszSubString )
 
 				_splitpath(pak->files[i].name, NULL, szSearchPath, szFilePath, szExt);
 
-				if (_strcmpi(szExt, ".bsp"))
+				if (_stricmp(szExt, ".bsp"))
 					continue;
 
 				if (nSubStringLen)
@@ -2204,8 +2204,8 @@ int COM_ListMaps( char* pszFileName, char* pszSubString )
 			if (file == INVALID_HANDLE_VALUE)
 			{
 				sprintf(szSearchPath, "%s/maps/*.bsp", com_gamedir);
-				findhandle = FindFirstFile(szSearchPath, &ffd);
-				file = findhandle;
+				findfn = FindFirstFile(szSearchPath, &ffd);
+				file = findfn;
 				if (file == INVALID_HANDLE_VALUE)
 					break;
 
@@ -2216,7 +2216,7 @@ int COM_ListMaps( char* pszFileName, char* pszSubString )
 				}
 				else
 				{
-					while (FindNextFile(findhandle, &ffd))
+					while (FindNextFile(findfn, &ffd))
 					{
 						if (!_strnicmp(ffd.cFileName, pszSubString, nSubStringLen))
 						{
