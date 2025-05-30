@@ -765,6 +765,18 @@ void CL_Connect_f( void )
 	cls.connect_retry = 0;
 }
 
+/*
+=====================
+CL_Spectate_f
+
+User command to connect to server as spectator
+=====================
+*/
+void CL_Spectate_f( void )
+{
+	// TODO: Implement
+}
+
 // TODO: Implement
 
 

@@ -801,22 +801,30 @@ void Host_Reload_f( void )
 	SV_ActivateServer(TRUE);
 }
 
+/*
+==================
+Host_Reconnect_f
 
+This command causes the client to wait for the signon messages again.
+This is sent just before a server changes levels
+==================
+*/
+void Host_Reconnect_f( void )
+{
+	if (cls.state == ca_dedicated ||
+		cls.state == ca_disconnected ||
+		cls.state == ca_connecting)
+		return;
 
+	SCR_BeginLoadingPlaque();
 
+	cls.signon = 0;		// need new connection messages
+	cls.state = ca_connected;	// not active anymore, but not disconnected
 
-
-
-
-
-
-
-
-
-
-
-//============================================================================= FINISH LINE
-
+	// Write a "new" command into client's buffer.
+	MSG_WriteChar(&cls.netchan.message, clc_stringcmd);
+	MSG_WriteString(&cls.netchan.message, "new");
+}
 
 /*
 =====================
@@ -835,7 +843,7 @@ void Host_Connect_f( void )
 		CL_Disconnect();
 	}
 
-	if (Cmd_Argc() < 2 || Cmd_Args() == 0)
+	if (Cmd_Argc() < 2 || !Cmd_Args())
 	{
 		Con_Printf("Usage:  connect <server>\n");
 		return;
@@ -843,11 +851,53 @@ void Host_Connect_f( void )
 
 	strcpy(name, Cmd_Args());
 	strncpy(cls.servername, name, sizeof(cls.servername) - 1);
-
 	CL_Connect_f();
 }
 
-// TODO: Implement
+/*
+=====================
+Host_Spectate_f
+
+User command to connect to server as spectator
+=====================
+*/
+void Host_Spectate_f( void )
+{
+	char	name[MAX_QPATH];
+
+	cls.demonum = -1;		// stop demo loop in case this fails
+	if (cls.demoplayback)
+	{
+		CL_StopPlayback();
+		CL_Disconnect();
+	}
+
+	if (Cmd_Argc() < 2 || !Cmd_Args())
+	{
+		Con_Printf("Usage:  spectate <server>\n");
+		return;
+	}
+
+	strcpy(name, Cmd_Args());
+	strncpy(cls.servername, name, sizeof(cls.servername) - 1);
+	CL_Spectate_f();
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//============================================================================= FINISH LINE
 
 int Host_Load( const char* pName )
 {
@@ -1176,6 +1226,7 @@ void Host_InitCommands( void )
 	// TODO: Implement
 
 	Cmd_AddCommand("connect", Host_Connect_f);
+	Cmd_AddCommand("reconnect", Host_Reconnect_f);
 
 
 	// TODO: Implement
@@ -1199,6 +1250,7 @@ void Host_InitCommands( void )
 	Cmd_AddCommand("notarget", Host_Notarget_f);
 	Cmd_AddCommand("fly", Host_Fly_f);
 	Cmd_AddCommand("noclip", Host_Noclip_f);
+	Cmd_AddCommand("spectate", Host_Spectate_f);
 
 	// TODO: Implement
 
