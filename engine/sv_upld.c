@@ -14,10 +14,138 @@ SV_CheckOrUploadFile
 
 ================
 */
+extern void COM_HexConvert( const char* pszInput, int nInputLength, unsigned char* pOutput );
 qboolean SV_CheckOrUploadFile( char* filename )
 {
-	// TODO: Implement
+	qboolean	bDoWeHaveOnlyAPartOfTheFile = FALSE;
+	qboolean	bIsCustom = FALSE;
+	int			nNumChunksRead;
+	char*		pszStuffText;
+	char		extension[8];
+	int			filesize;
+	FILE*		f = NULL;
+	CRC32_t		crc;
+	char		fbuf[MAX_QPATH];
+	resource_t	nullres;
+	char		buffer[1024];
 
+	memset(&nullres, 0, sizeof(nullres));
+
+	if (strstr(filename, ".."))
+	{
+		Con_Printf("Refusing to upload a path with '..'\n");
+		return 1;
+	}
+
+	sprintf(fbuf, filename);
+
+	// If this is an MD5 hash, handle it differently.
+	if (strlen(filename) == 36 && !_strnicmp(filename, "!MD5", 4))
+	{
+		bIsCustom = TRUE;
+		COM_HexConvert(filename + 4, 32, nullres.rgucMD5_hash);
+		if (HPAK_GetDataPointer("custom.hpk", &nullres, &filesize))
+		{
+			//Con_DPrintf("SV_CheckOrUploadFile:  file was on hand\n");
+			fclose(filesize);
+			return TRUE;
+		}
+
+		//Con_DPrintf("SV_CheckOrUploadFile:  file was missing\n");
+		sprintf(host_client->extension, "cust%02i.dat ", host_client->pViewEntity);
+		//Con_DPrintf("SV_CheckOrUploadFile:  upload will be put in %s\n", host_client->extension);
+	}
+	else
+	{
+		//Con_DPrintf("Non custom upload!!!!\n");
+		// check if the file exists on our side
+		if (COM_FindFile(fbuf, NULL, &f) != -1)
+		{
+			if (f)
+				fclose(f);
+
+			// the file exists, return TRUE
+			return TRUE;
+		}
+
+		// if it doesn't, save the name
+		strcpy(host_client->extension, fbuf);
+	}
+
+	COM_StripExtension(host_client->extension, host_client->uploadfn);
+
+	if (bIsCustom)
+	{
+		sprintf(extension, ".t%02i", host_client->pViewEntity);
+		memcpy(&host_client->uploadfn[strlen(host_client->uploadfn)], extension, strlen(extension) + 1);
+	}
+	else
+	{
+		strcat(host_client->uploadfn, ".tmp");
+	}
+
+	// reset the crc
+	host_client->uploadCRC = 0;
+
+	if (bIsCustom)
+	{
+		filesize = -1;
+	}
+	else
+	{
+		filesize = COM_FindFile(host_client->uploadfn, NULL, &f);
+	}
+
+	if (filesize != -1) {
+		bDoWeHaveOnlyAPartOfTheFile = TRUE;
+		nNumChunksRead = 0;
+		CRC32_Init(&crc);
+		if ((filesize / 1024) > 0)
+		{
+			while (TRUE)
+			{
+				// let's see if we can successfully read the first 1024 bytes chunk
+				if (fread(buffer, sizeof(buffer), sizeof(byte), f) == 1)
+				{
+					// we'll try reading another 1024 bytes chunk, but the file may run out of bytes, so we need to keep an eye on that
+					nNumChunksRead++;
+					CRC32_ProcessBuffer(&crc, buffer, sizeof(buffer));
+					if (nNumChunksRead >= (filesize / 1024))
+						break;
+				}
+				else
+				{
+					bDoWeHaveOnlyAPartOfTheFile = TRUE;
+					break;
+				}
+			}
+		}
+
+		host_client->uploadCRC = crc = CRC32_Final(crc);
+		if (f)
+		{
+			fclose(f);
+		}
+	}
+
+	MSG_WriteByte(&host_client->netchan.message, svc_stufftext);
+	if (bIsCustom)
+	{
+		pszStuffText = va("upload \"!MD5%s\"\n", MD5_Print(nullres.rgucMD5_hash));
+	}
+	else if (!bDoWeHaveOnlyAPartOfTheFile || filesize % 1024)
+	{
+		pszStuffText = va("upload %s\n", buffer);
+	}
+	else
+	{
+		pszStuffText = va("upload %s %i %i\n", buffer, filesize / 1024, crc);
+	}
+	MSG_WriteString(&host_client->netchan.message, pszStuffText);
+
+	host_client->isuploading = TRUE;
+
+	// the file doesn't exist, initiate an upload
 	return FALSE;
 }
 
@@ -310,7 +438,40 @@ SV_PrintCusomizations_f
 */
 void SV_PrintCusomizations_f( void )
 {
-	// TODO: Implement
+	int					i;
+	client_t*			cl;
+	int					j;
+	customization_t*	pCust;
+
+	if (cmd_source == src_command && !sv.active)
+	{
+		Cmd_ForwardToServer();
+		return;
+	}
+
+	// Redirect the output so we print the stuff to the client's console, not ours.
+	if (!NET_IsLocalAddress(net_from))
+		Host_BeginRedirect(RD_CLIENT, &net_from);
+
+	for (i = 0, cl = svs.clients; i < svs.maxclients; ++cl)
+	{
+		if ((cl->active || cl->spawned) && cl->customdata.pNext)
+		{
+			Con_DPrintf("SV Customizations:\nPlayer %i:%s\n", i + 1, cl->name);
+			for (j = 1, pCust = cl->customdata.pNext; pCust; pCust = pCust->pNext, j++)
+			{
+				if (pCust->bInUse)
+				{
+					SV_PrintResource(j, &pCust->resource);
+				}
+			}
+			Con_DPrintf("-----------------\n\n");
+		}
+	}
+
+	// End redirecting in case we were doing that.
+	if (!NET_IsLocalAddress(net_from))
+		Host_EndRedirect();
 }
 
 /*
@@ -546,10 +707,13 @@ qboolean SV_RequestMissingResources( void )
 	resource_t*		res;
 	char			buffer[MAX_OSPATH];
 
+	// If the client is uploading a resource right now, wait for the them to finish uploading.
 	if (host_client->upload || host_client->isuploading)
 		return FALSE;
 	if (!host_client->uploading)
 		return FALSE;
+
+	// If the client has finished uploading all the needed resources, just return FALSE.
 	if (host_client->uploaddoneregistering)
 		return FALSE;
 
@@ -564,11 +728,13 @@ qboolean SV_RequestMissingResources( void )
 		return FALSE;
 	}
 
+	// If the resource isn't missing on our side, just add it into the list of resources on hand.
 	if (!(res->ucFlags & RES_WASMISSING))
 	{
 		SV_MoveToOnHandList(res);
 		return 1;
 	}
+
 	if (res->type == t_decal)
 	{
 		if (res->ucFlags & RES_CUSTOM)
@@ -593,6 +759,7 @@ qboolean SV_RequestMissingResources( void )
 ================
 SV_RequestResourceList_f
 
+Request resource with i index from host_client.
 ================
 */
 void SV_RequestResourceList_f( void )

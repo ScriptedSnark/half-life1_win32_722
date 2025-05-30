@@ -22,7 +22,14 @@ void HPAK_AddLump( char* pakname, resource_t* pResource, void* pData, FILE* fpSo
 	// TODO: Implement
 }
 
-qboolean HPAK_ResourceForHash(char *pakname, byte *hash, struct resource_s *pResourceEntry)
+qboolean HPAK_ResourceForHash( char* pakname, byte* hash, resource_t* pResourceEntry )
+{
+	// TODO: Implement
+
+	return FALSE;
+}
+
+qboolean HPAK_GetDataPointer( char* pakname, resource_t* pResource, FILE** pfOutput )
 {
 	// TODO: Implement
 

@@ -2131,54 +2131,138 @@ If the substring is empty, or "*", then lists all maps
 */
 int COM_ListMaps( char* pszFileName, char* pszSubString )
 {
-	searchpath_t* search;
-	static char		filename[MAX_PATH];
 	static HANDLE	file = INVALID_HANDLE_VALUE;
+	static char		filename[MAX_PATH];
 	static qboolean	bFound = FALSE;
-	pack_t* pak;
-	int                     i;
-	int						nSubStringLen;
 
+	searchpath_t*	search;
+	pack_t*			pak;
+	int				i;
+	int				nSubStringLen;
+	char			ext[MAX_QPATH];
+	char			searchpath[MAX_PATH];
+	char			filepath[MAX_OSPATH];
+	WIN32_FIND_DATA	ffd;
+	HANDLE			findhandle;
+	qboolean		found;
+
+	// get substring length so we can filter the maps
 	nSubStringLen = 0;
 	if (pszSubString && pszSubString[0])
 		nSubStringLen = strlen(pszSubString);
 
-//
-// search through the path, one element at a time
-//
-	search = com_searchpaths;
-	for (; search; search = search->next)
+	// search through all search paths
+	for (search = com_searchpaths; search; search = search->next)
 	{
-		// TODO: Implement ???
+		pak = search->pack;
 
-	// is the element a pak file?
-		if (search->pack)
+		// handle .pak files
+		if (pak && !bFound)
 		{
-		// look through all the pak file elements
-			pak = search->pack;
-			for (i = 0; i < pak->numfiles; i++)
+		// start from last found position or beginning
+			i = 0;
+			if (filename[0])
 			{
-				// TODO: Implement
+				for (i = 0; i < pak->numfiles; i++)
+				{
+					if (!_strcmpi(pak->files[i].name, filename))
+					{
+						i++;
+						break;
+					}
+				}
 			}
 
-			// TODO: Implement
+			// search for maps in pak
+			for (; i < pak->numfiles; i++)
+			{
+				if (_strnicmp(pak->files[i].name, "maps/", 5))
+					continue;
+
+				_splitpath(pak->files[i].name, NULL, searchpath, filepath, ext);
+
+				if (_strcmpi(ext, ".bsp"))
+					continue;
+
+				if (nSubStringLen)
+				{
+					if (_strnicmp(filepath, pszSubString, nSubStringLen)) // the map doesn't match our substring (the filter), skip it
+						continue;
+				}
+
+				// found the needle!
+				strcpy(filename, pak->files[i].name);
+				strcpy(pszFileName, pak->files[i].name + 5);  // skip "maps/" so we don't print that to the player
+
+				return 1;
+			}
+
+			bFound = TRUE;
 		}
-		else
+
+		// directory search
+		if (!pak || bFound)
 		{
-			// TODO: Implement
+			if (file == INVALID_HANDLE_VALUE)
+			{
+				sprintf(searchpath, "%s/maps/*.bsp", com_gamedir);
+				findhandle = FindFirstFile(searchpath, &ffd);
+				file = findhandle;
+
+				if (findhandle == INVALID_HANDLE_VALUE)
+					break;
+
+				found = FALSE;
+				if (!nSubStringLen || !_strnicmp(ffd.cFileName, pszSubString, nSubStringLen))
+					found = TRUE;
+				else
+				{
+					while (FindNextFile(findhandle, &ffd))
+					{
+						if (!_strnicmp(ffd.cFileName, pszSubString, nSubStringLen))
+						{
+							found = TRUE; // found a match!
+							break;
+						}
+					}
+				}
+
+				if (!found)
+					break;
+			}
+			else
+			{
+				found = FALSE;
+				while (FindNextFile(file, &ffd))
+				{
+					if (!nSubStringLen || !_strnicmp(ffd.cFileName, pszSubString, nSubStringLen))
+					{
+						found = TRUE;
+						break;
+					}
+				}
+
+				if (!found)
+					break;
+			}
+
+			// we found the last map
+			strcpy(pszFileName, ffd.cFileName);
+			return 1;
 		}
 	}
 
+	// no more maps found, cleanup the shit left by us
 	if (file != INVALID_HANDLE_VALUE)
+	{
 		FindClose(file);
+		file = INVALID_HANDLE_VALUE;
+	}
 
 	filename[0] = 0;
-
 	bFound = FALSE;
 
-	file = INVALID_HANDLE_VALUE;
-
-	return FALSE;
+	return 0;
 }
 
 #define DIB_HEADER_MARKER   ((WORD) ('M' << 8) | 'B')

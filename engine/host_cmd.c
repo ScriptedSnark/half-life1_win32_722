@@ -588,6 +588,31 @@ void Host_Map_f( void )
 	Host_Map(FALSE, name, mapstring, 0);
 }
 
+/*
+======================
+Host_Maps_f
+
+======================
+*/
+void Host_Maps_f( void )
+{
+	char*	s;
+	char	szMapName[MAX_QPATH];
+
+	if (Cmd_Argc() != 2)
+	{
+		Con_Printf("Usage:  maps <substring>\nmaps * for full listing\n");
+		return;
+	}
+
+	s = Cmd_Argv(1);
+	if (s && s[0])
+	{
+		while (COM_ListMaps(szMapName, s[0] == '*' ? NULL : s))
+			Con_Printf("     %s\n", szMapName);
+	}
+}
+
 // TODO: Implement
 
 DLL_EXPORT BOOL SaveGame( char* pszSlot, char* pszComment )
@@ -824,6 +849,20 @@ void Host_Begin_f( void )
 // TODO: Implement
 
 /*
+==================
+COM_HexConvert
+
+Convert a string containing hexadecimal characters into the hexadecimal number itself.
+==================
+*/
+void COM_HexConvert( const char* pszInput, int nInputLength, unsigned char* pOutput )
+{
+	// TODO: Implement
+}
+
+// TODO: Implement
+
+/*
 ==============================
 Host_EndSection
 
@@ -859,6 +898,7 @@ void Host_InitCommands( void )
 	Cmd_AddCommand("quit", Host_Quit_f);
 	Cmd_AddCommand("exit", Host_Quit_f);
 	Cmd_AddCommand("map", Host_Map_f);
+	Cmd_AddCommand("maps", Host_Maps_f);
 
 	// TODO: Implement
 
