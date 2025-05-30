@@ -2131,20 +2131,20 @@ If the substring is empty, or "*", then lists all maps
 */
 int COM_ListMaps( char* pszFileName, char* pszSubString )
 {
-	static HANDLE	file = INVALID_HANDLE_VALUE;
-	static char		filename[MAX_PATH];
-	static qboolean	bFound = FALSE;
+	static HANDLE		file = INVALID_HANDLE_VALUE;
+	static char			filename[MAX_PATH];
+	static qboolean		bFound = FALSE;
 
-	searchpath_t*	search;
-	pack_t*			pak;
-	int				i;
-	int				nSubStringLen;
-	char			ext[MAX_QPATH];
-	char			searchpath[MAX_PATH];
-	char			filepath[MAX_OSPATH];
-	WIN32_FIND_DATA	ffd;
-	HANDLE			findhandle;
-	qboolean		found;
+	searchpath_t*		search;
+	pack_t*				pak;
+	int					i;
+	int					nSubStringLen;
+	char				ext[MAX_QPATH];
+	char				searchpath[MAX_PATH];
+	char				filepath[MAX_OSPATH];
+	WIN32_FIND_DATAA	ffd;
+	HANDLE				findhandle;
+	qboolean			found;
 
 	// get substring length so we can filter the maps
 	nSubStringLen = 0;
@@ -2206,7 +2206,7 @@ int COM_ListMaps( char* pszFileName, char* pszSubString )
 			if (file == INVALID_HANDLE_VALUE)
 			{
 				sprintf(searchpath, "%s/maps/*.bsp", com_gamedir);
-				findhandle = FindFirstFile(searchpath, &ffd);
+				findhandle = FindFirstFileA(searchpath, &ffd);
 				file = findhandle;
 
 				if (findhandle == INVALID_HANDLE_VALUE)
@@ -2217,7 +2217,7 @@ int COM_ListMaps( char* pszFileName, char* pszSubString )
 					found = TRUE;
 				else
 				{
-					while (FindNextFile(findhandle, &ffd))
+					while (FindNextFileA(findhandle, &ffd))
 					{
 						if (!_strnicmp(ffd.cFileName, pszSubString, nSubStringLen))
 						{
@@ -2233,7 +2233,7 @@ int COM_ListMaps( char* pszFileName, char* pszSubString )
 			else
 			{
 				found = FALSE;
-				while (FindNextFile(file, &ffd))
+				while (FindNextFileA(file, &ffd))
 				{
 					if (!nSubStringLen || !_strnicmp(ffd.cFileName, pszSubString, nSubStringLen))
 					{
