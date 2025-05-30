@@ -615,12 +615,12 @@ void MSG_WriteCoord( sizebuf_t* sb, float f )
 
 void MSG_WriteAngle( sizebuf_t* sb, float f )
 {
-	MSG_WriteByte(sb, (f * 256.f / 360.f));
+	MSG_WriteByte(sb, (int)(f * 256 / 360.0));
 }
 
 void MSG_WriteHiresAngle( sizebuf_t* sb, float f )
 {
-	MSG_WriteShort(sb, (f * 65536.f / 360.f));
+	MSG_WriteShort(sb, (int)(f * 65536 / 360.0));
 }
 
 void MSG_WriteDeltaUsercmd( sizebuf_t* buf, usercmd_t* from, usercmd_t* cmd )
@@ -2131,35 +2131,34 @@ If the substring is empty, or "*", then lists all maps
 */
 int COM_ListMaps( char* pszFileName, char* pszSubString )
 {
-	static HANDLE		file = INVALID_HANDLE_VALUE;
-	static char			filename[MAX_PATH];
-	static qboolean		bFound = FALSE;
+	int				i;
+	int				nSubStringLen;
+	char			szExt[MAX_QPATH];
+	char			szSearchPath[MAX_PATH];
+	char			szFilePath[MAX_OSPATH];
+	searchpath_t* search;
+	pack_t* pak;
+	WIN32_FIND_DATAA ffd;
+	HANDLE			findhandle;
+	qboolean		found;
+	static HANDLE	file = INVALID_HANDLE_VALUE;
+	static char		filename[MAX_PATH];
+	static qboolean	bFound = FALSE;
 
-	searchpath_t*		search;
-	pack_t*				pak;
-	int					i;
-	int					nSubStringLen;
-	char				ext[MAX_QPATH];
-	char				searchpath[MAX_PATH];
-	char				filepath[MAX_OSPATH];
-	WIN32_FIND_DATAA	ffd;
-	HANDLE				findhandle;
-	qboolean			found;
-
-	// get substring length so we can filter the maps
+	// Get substring length so we can filter the maps
 	nSubStringLen = 0;
 	if (pszSubString && pszSubString[0])
 		nSubStringLen = strlen(pszSubString);
 
-	// search through all search paths
+	// Search through all search paths
 	for (search = com_searchpaths; search; search = search->next)
 	{
 		pak = search->pack;
 
-		// handle .pak files
+		// Handle .pak files
 		if (pak && !bFound)
 		{
-		// start from last found position or beginning
+			// Start from last found position or beginning
 			i = 0;
 			if (filename[0])
 			{
@@ -2173,55 +2172,55 @@ int COM_ListMaps( char* pszFileName, char* pszSubString )
 				}
 			}
 
-			// search for maps in pak
+			// Search for maps in pak
 			for (; i < pak->numfiles; i++)
 			{
 				if (_strnicmp(pak->files[i].name, "maps/", 5))
 					continue;
 
-				_splitpath(pak->files[i].name, NULL, searchpath, filepath, ext);
+				_splitpath(pak->files[i].name, NULL, szSearchPath, szFilePath, szExt);
 
-				if (_strcmpi(ext, ".bsp"))
+				if (_strcmpi(szExt, ".bsp"))
 					continue;
 
 				if (nSubStringLen)
 				{
-					if (_strnicmp(filepath, pszSubString, nSubStringLen)) // the map doesn't match our substring (the filter), skip it
+					if (_strnicmp(szFilePath, pszSubString, nSubStringLen)) // The map doesn't match our substring (the filter), skip it
 						continue;
 				}
 
-				// found the needle!
+				// Found the needle!
 				strcpy(filename, pak->files[i].name);
-				strcpy(pszFileName, pak->files[i].name + 5);  // skip "maps/" so we don't print that to the player
-
-				return 1;
+				strcpy(pszFileName, pak->files[i].name + 5);  // Skip "maps/" so we don't print that to the player
+				return TRUE;
 			}
 
 			bFound = TRUE;
 		}
 
-		// directory search
+		// Directory search
 		if (!pak || bFound)
 		{
 			if (file == INVALID_HANDLE_VALUE)
 			{
-				sprintf(searchpath, "%s/maps/*.bsp", com_gamedir);
-				findhandle = FindFirstFileA(searchpath, &ffd);
+				sprintf(szSearchPath, "%s/maps/*.bsp", com_gamedir);
+				findhandle = FindFirstFile(szSearchPath, &ffd);
 				file = findhandle;
-
-				if (findhandle == INVALID_HANDLE_VALUE)
+				if (file == INVALID_HANDLE_VALUE)
 					break;
 
 				found = FALSE;
 				if (!nSubStringLen || !_strnicmp(ffd.cFileName, pszSubString, nSubStringLen))
+				{
 					found = TRUE;
+				}
 				else
 				{
-					while (FindNextFileA(findhandle, &ffd))
+					while (FindNextFile(findhandle, &ffd))
 					{
 						if (!_strnicmp(ffd.cFileName, pszSubString, nSubStringLen))
 						{
-							found = TRUE; // found a match!
+							found = TRUE;
 							break;
 						}
 					}
@@ -2233,7 +2232,7 @@ int COM_ListMaps( char* pszFileName, char* pszSubString )
 			else
 			{
 				found = FALSE;
-				while (FindNextFileA(file, &ffd))
+				while (FindNextFile(file, &ffd))
 				{
 					if (!nSubStringLen || !_strnicmp(ffd.cFileName, pszSubString, nSubStringLen))
 					{
@@ -2246,13 +2245,13 @@ int COM_ListMaps( char* pszFileName, char* pszSubString )
 					break;
 			}
 
-			// we found the last map
+			// Found the last map
 			strcpy(pszFileName, ffd.cFileName);
-			return 1;
+			return TRUE;
 		}
 	}
 
-	// no more maps found, cleanup the shit left by us
+	// No more maps found
 	if (file != INVALID_HANDLE_VALUE)
 	{
 		FindClose(file);
@@ -2262,7 +2261,7 @@ int COM_ListMaps( char* pszFileName, char* pszSubString )
 	filename[0] = 0;
 	bFound = FALSE;
 
-	return 0;
+	return FALSE;
 }
 
 #define DIB_HEADER_MARKER   ((WORD) ('M' << 8) | 'B')

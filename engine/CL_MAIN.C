@@ -789,7 +789,7 @@ void CL_SignonReply( void )
 		MSG_WriteString(&cls.netchan.message, va("color %i %i\n", ((int)cl_color.value) >> 4, ((int)cl_color.value) & 15));
 
 		MSG_WriteByte(&cls.netchan.message, clc_stringcmd);
-		sprintf(str, "spawn %i %s", cl.servercount, cls.spawnparams);
+		sprintf(str, "spawn %i %s", cl.servercount, cls.spawnparms);
 		MSG_WriteString(&cls.netchan.message, str);
 		break;
 

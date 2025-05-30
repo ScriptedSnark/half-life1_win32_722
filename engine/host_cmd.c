@@ -441,104 +441,119 @@ void Host_Fly_f( void )
 }
 
 
-
-
-
-//============================================================================= FINISH LINE
-
-
 /*
-=====================
-Host_Connect_f
+==================
+Host_Ping_f
 
-User command to connect to server
-=====================
+==================
 */
-void Host_Connect_f( void )
+void Host_Ping_f( void )
 {
-	char	name[MAX_QPATH];
+	int		i;
+	client_t* client;
 
-	if (cls.demoplayback)
+	if (cmd_source == src_command)
 	{
-		CL_StopPlayback();
-		CL_Disconnect();
-	}
-
-	if (Cmd_Argc() < 2 || Cmd_Args() == 0)
-	{
-		Con_Printf("Usage:  connect <server>\n");
+		Cmd_ForwardToServer();
 		return;
 	}
 
-	strcpy(name, Cmd_Args());
-	strncpy(cls.servername, name, sizeof(cls.servername) - 1);
-
-	CL_Connect_f();
+	SV_ClientPrintf("Client ping times:\n");
+	for (i = 0, client = svs.clients; i < svs.maxclients; i++, client++)
+	{
+		if (!client->active)
+			continue;
+		SV_ClientPrintf("%4i %s\n", SV_CalcPing(client), client->name);
+	}
 }
+
+/*
+===============================================================================
+
+SERVER TRANSITIONS
+
+===============================================================================
+*/
+
 
 /*
 ======================
 Host_Map
 ======================
 */
-void Host_Map( qboolean bIsDemo, const char *szMapString, char *szMapName, int nSpawnParms )
+void Host_Map( qboolean bIsDemo, char* mapstring, char* mapName, qboolean loadGame )
 {
-	UserMsg*	pMsg;
+	int		i;
 
 	CL_Disconnect();
 	Host_ShutdownServer(FALSE);
 
-	key_dest = key_game;		// remove console or menu
-
+	key_dest = key_game;			// remove console or menu
 	SCR_BeginLoadingPlaque();
-	if (!nSpawnParms)
+
+	if (!loadGame)
 	{
 		Host_ClearGameState();
 		SV_InactivateClients();
-		svs.serverflags = 0;	// haven't completed an episode yet
+		svs.serverflags = 0;			// haven't completed an episode yet
 	}
-	strcpy(cls.mapstring, szMapString);
 
-	if (SV_SpawnServer(bIsDemo, szMapName, NULL))
+	strcpy(cls.mapstring, mapstring);
+
+	if (!SV_SpawnServer(bIsDemo, mapName, NULL))
+		return;
+
+	if (loadGame)
 	{
-		if (nSpawnParms)
+		if (!LoadGamestate(mapName, TRUE))
 		{
-			// TODO: Implement
+			SV_LoadEntities();
+		}
 
-			//if (!LoadGamestate(szMapName, 1))
-				//SV_LoadEntities();
-			sv.paused = TRUE;
-			sv.loadgame = TRUE;
-			SV_ActivateServer(0);
+		sv.paused = TRUE;
+		sv.loadgame = TRUE;
+		SV_ActivateServer(FALSE);
+	}
+	else
+	{
+		SV_LoadEntities();
+		SV_ActivateServer(TRUE);
+
+		if (!sv.active)
+			return;
+
+		if (cls.state != ca_dedicated)
+		{
+			strcpy(cls.spawnparms, "");
+
+			for (i = 2; i < Cmd_Argc(); i++)
+			{
+				strcat(cls.spawnparms, Cmd_Argv(i));
+				strcat(cls.spawnparms, " ");
+			}
+		}
+	}
+
+	// Link usermsgs
+	if (sv_gpNewUserMsgs)
+	{
+		UserMsg* pMsg = sv_gpUserMsgs;
+		if (pMsg)
+		{
+			while (pMsg->next)
+				pMsg = pMsg->next;
+			pMsg->next = sv_gpNewUserMsgs;
 		}
 		else
 		{
-			SV_LoadEntities();
-			SV_ActivateServer(1);
+			sv_gpUserMsgs = sv_gpNewUserMsgs;
 		}
+		sv_gpNewUserMsgs = NULL;
+	}
 
-		// Link new user messages to the global messages chain
-		if (sv_gpNewUserMsgs)
-		{
-			pMsg = sv_gpUserMsgs;
-			if (pMsg != NULL)
-			{
-				while (pMsg->next)
-				{
-					pMsg = pMsg->next;
-				}
-				pMsg->next = sv_gpNewUserMsgs;
-			}
-			else
-			{
-				sv_gpUserMsgs = sv_gpNewUserMsgs;
-			}
-			sv_gpNewUserMsgs = NULL;
-		}
-
-		// connect to the listen server if we aren't in the dedicated mode
-		if (cls.state != ca_dedicated)
-			Cmd_ExecuteString("connect local", src_command);
+	if (cls.state != ca_dedicated)
+	{
+		Cmd_ExecuteString("connect local", src_command);
 	}
 }
 
@@ -586,6 +601,52 @@ void Host_Map_f( void )
 
 	Cvar_Set("HostMap", mapstring);
 	Host_Map(FALSE, name, mapstring, 0);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//============================================================================= FINISH LINE
+
+
+/*
+=====================
+Host_Connect_f
+
+User command to connect to server
+=====================
+*/
+void Host_Connect_f( void )
+{
+	char	name[MAX_QPATH];
+
+	if (cls.demoplayback)
+	{
+		CL_StopPlayback();
+		CL_Disconnect();
+	}
+
+	if (Cmd_Argc() < 2 || Cmd_Args() == 0)
+	{
+		Con_Printf("Usage:  connect <server>\n");
+		return;
+	}
+
+	strcpy(name, Cmd_Args());
+	strncpy(cls.servername, name, sizeof(cls.servername) - 1);
+
+	CL_Connect_f();
 }
 
 /*
@@ -657,6 +718,21 @@ void Host_Version_f( void )
 {
 	Con_Printf("Build %d\n", build_number());
 	Con_Printf("Exe: " __TIME__ " " __DATE__ "\n");
+}
+
+// TODO: Implement
+
+/*
+==================
+LoadGamestate
+
+Loads game state
+==================
+*/
+int LoadGamestate( char* level, int createPlayers )
+{
+	// TODO: Implement
+	return 0;
 }
 
 // TODO: Implement
@@ -915,6 +991,10 @@ void Host_InitCommands( void )
 	Cmd_AddCommand("spawn", Host_Spawn_f);
 	Cmd_AddCommand("begin", Host_Begin_f);
 	Cmd_AddCommand("prespawn", Host_PreSpawn_f);
+
+	// TODO: Implement
+	
+	Cmd_AddCommand("ping", Host_Ping_f);
 
 	// TODO: Implement
 	

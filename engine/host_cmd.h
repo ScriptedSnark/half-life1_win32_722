@@ -10,6 +10,12 @@ extern int	current_skill;
 
 void		Host_ClearGameState( void );
 
+
+
+int			LoadGamestate( char* level, int createPlayers );
+
+
+
 void		Host_EndSection( const char* pszSection );
 
 void		Host_ClearSaveDirectory( void );

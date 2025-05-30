@@ -159,7 +159,7 @@ typedef struct
 	char		servername[128];	// name of server from original connect
 	char		mapstring[MAX_QPATH];
 
-	char		spawnparams[MAX_MAPSTRING];
+	char		spawnparms[MAX_MAPSTRING];
 
 // demo loop control
 	int			demonum;							// -1 = don't play demos
