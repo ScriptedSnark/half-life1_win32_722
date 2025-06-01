@@ -1185,6 +1185,20 @@ void CL_ParseMovevars( void )
 
 // TODO: Implement
 
+/*
+===============
+CL_Restore
+
+Restores a saved game.
+===============
+*/
+void CL_Restore( char* fileName )
+{
+	// TODO: Implement
+}
+
+// TODO: Implement
+
 
 void CL_PlayerDropped( int nPlayerNumber )
 {
@@ -1453,7 +1467,9 @@ void CL_ParseServerMessage( void )
 			}
 			break;
 
-		// TODO: Implement
+		case svc_restore:
+			CL_Restore(MSG_ReadString());
+			break;
 		
 		case svc_weaponanim:
 			cl.weaponstarttime = 0.0f;

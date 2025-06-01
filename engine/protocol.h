@@ -107,7 +107,7 @@
 #define svc_intermission		30		// [string] music
 #define svc_finale				31		// [string] music [string] text
 #define	svc_cdtrack				32		// [byte] track [byte] looptrack
-
+#define svc_restore				33
 #define svc_cutscene			34
 #define svc_weaponanim			35
 

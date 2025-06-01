@@ -2598,9 +2598,11 @@ Host_Spawn_f
 */
 void Host_Spawn_f( void )
 {
-	int		i;
-	client_t*	client;
+	int			i;
+	client_t* client;
 	edict_t* ent;
+	char			name[256];
+	SAVERESTOREDATA currentLevelData;
 
 	if (cmd_source == src_command)
 	{
@@ -2622,7 +2624,8 @@ void Host_Spawn_f( void )
 	}
 
 	if (sv.loadgame)
-	{	// loaded games are fully inited allready
+	{
+		// loaded games are fully inited already
 		// if this is the last client to be connected, unpause
 		sv.paused = FALSE;
 	}
@@ -2696,9 +2699,24 @@ void Host_Spawn_f( void )
 	MSG_WriteByte(&host_client->netchan.message, 2);
 	host_client->sendsignon = TRUE;
 
-	if (sv.loadgame)
+	if (sv.loadgame) // REMOVE ME (reminder): This block is done.
 	{
-		// TODO: Implement
+		memset(&currentLevelData, 0, sizeof(currentLevelData));
+		gGlobalVariables.pSaveData = &currentLevelData;
+
+		gEntityInterface.pfnParmsChangeLevel();
+
+		MSG_WriteByte(&host_client->netchan.message, svc_restore);
+		sprintf(name, "%s%s.HL2", Host_SaveGameDirectory(), sv.name);
+		COM_FixSlashes(name);
+		MSG_WriteString(&host_client->netchan.message, name);
+		MSG_WriteByte(&host_client->netchan.message, currentLevelData.connectionCount);
+		for (i = 0; i < currentLevelData.connectionCount; i++)
+		{
+			MSG_WriteString(&host_client->netchan.message, currentLevelData.levelList[i].mapName);
+		}
+
+		// Reset
 		sv.loadgame = FALSE;
 		gGlobalVariables.pSaveData = NULL;
 	}
