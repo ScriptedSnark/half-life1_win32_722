@@ -208,6 +208,46 @@ void DispatchUserMsg( int iMsg )
 	}
 }
 
+/*
+===============
+DispatchDirectUserMsg
+
+Returns true on success
+===============
+*/
+int DispatchDirectUserMsg( const char* pszName, int iSize, void* pBuf )
+{
+	int	fFound;
+	UserMsg* pList;
+	pfnUserMsgHook pfnRet;
+	int	iMsgSize;
+
+	fFound = 0;
+
+	for (pList = gClientUserMsgs; pList; pList = pList->next)
+	{
+		if (!_stricmp(pszName, pList->szName))
+		{
+			fFound = 1;
+
+			iMsgSize = pList->iSize;
+			if (iMsgSize == -1)
+				iMsgSize = iSize;
+
+			pfnRet = pList->pfn;
+			if (!pfnRet)
+			{
+				Con_DPrintf("UserMsg: No pfn %s %d\n", pList->szName, pList->iMsg);
+				continue;
+			}
+
+			pfnRet(pList->szName, iMsgSize, pBuf);
+		}
+	}
+
+	return fFound;
+}
+
 // TODO: Implement
 
 pfnUserMsgHook HookServerMsg( const char* pszName, pfnUserMsgHook pfn )

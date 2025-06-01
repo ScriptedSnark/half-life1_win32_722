@@ -63,6 +63,7 @@
     <ClInclude Include="..\..\engine\r_shared.h" />
     <ClInclude Include="..\..\engine\r_trans.h" />
     <ClInclude Include="..\..\engine\r_triangle.h" />
+    <ClInclude Include="..\..\engine\save.h" />
     <ClInclude Include="..\..\engine\sbar.h" />
     <ClInclude Include="..\..\engine\screen.h" />
     <ClInclude Include="..\..\engine\server.h" />

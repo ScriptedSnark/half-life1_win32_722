@@ -52,6 +52,8 @@ cvar_t sv_password = { "sv_password", "" };
 cvar_t sv_spectator_password = { "sv_spectator_password", "" };
 cvar_t sv_maxspectators = { "sv_maxspectators", "8", FALSE, TRUE };
 
+cvar_t sv_newunit = { "sv_newunit", "0" };
+
 cvar_t sv_cheats = { "sv_cheats", "0", FALSE, TRUE };
 
 cvar_t sv_netsize = { "sv_netsize", "0" };
@@ -783,6 +785,7 @@ void SV_Init( void )
 
 	// TODO: Implement
 	
+	Cvar_RegisterVariable(&sv_newunit);
 	Cvar_RegisterVariable(&sv_gravity);
 	Cvar_RegisterVariable(&sv_friction);
 	Cvar_RegisterVariable(&sv_edgefriction);

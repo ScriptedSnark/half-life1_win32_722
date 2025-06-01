@@ -1531,7 +1531,7 @@ COM_CreatePath
 Only used for CopyFile
 ============
 */
-void    COM_CreatePath( char* path )
+void COM_CreatePath( char* path )
 {
 	char* ofs;
 	char old;

@@ -107,6 +107,8 @@
 typedef int (*pfnUserMsgHook)( const char* pszName, int iSize, void* pbuf );
 pfnUserMsgHook HookServerMsg( const char* pszName, pfnUserMsgHook pfn );
 
+int DispatchDirectUserMsg( const char* pszName, int iSize, void* pBuf );
+
 typedef struct _UserMsg UserMsg;
 
 typedef struct _UserMsg
@@ -183,6 +185,7 @@ typedef struct _UserMsg
 #include "world.h"
 #include "keys.h"
 #include "console.h"
+#include "save.h"
 #include "view.h"
 #include "crc.h"
 #include "beamdef.h"

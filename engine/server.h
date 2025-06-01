@@ -264,6 +264,8 @@ extern	cvar_t	coop;
 
 
 
+extern	cvar_t	sv_newunit;
+
 extern	cvar_t	sv_cheats;
 
 

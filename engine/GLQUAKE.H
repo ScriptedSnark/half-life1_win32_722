@@ -246,5 +246,6 @@ void GL_BuildLightmaps( void );
 void R_DecalInit( void );
 void R_DrawDecals( void );
 void R_DrawMTexDecals( void );
+int DecalListCreate( DECALLIST* pList );
 
 #endif // GLQUAKE_H

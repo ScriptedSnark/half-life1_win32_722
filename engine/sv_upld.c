@@ -184,7 +184,6 @@ SV_NextUpload
 ================
 */
 extern cvar_t		scr_downloading;
-extern void			COM_CreatePath( char* path );
 void SV_ParseUpload( void )
 {
 	int					size, append, reason, percent;
