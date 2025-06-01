@@ -371,9 +371,9 @@ void Host_God_f( void )
 
 	sv_player->v.flags = (int)sv_player->v.flags ^ FL_GODMODE;
 	if (!((int)sv_player->v.flags & FL_GODMODE))
-		SV_ClientPrintf("godmode ON\n");
-	else
 		SV_ClientPrintf("godmode OFF\n");
+	else
+		SV_ClientPrintf("godmode ON\n");
 }
 
 void Host_Notarget_f( void )
@@ -2873,35 +2873,14 @@ void Host_Pause_f( void )
 //===========================================================================
 
 
-
-
-
-
-
-
-
-
-
-//============================================================================= FINISH LINE
-
-// TODO: Implement
-
-void Profile_Init( void )
-{
-	// TODO: Implement
-}
-
-
-// TODO: Implement
-
 /*
 ==================
 Host_PreSpawn_f
 ==================
 */
-void Host_PreSpawn_f(void)
+void Host_PreSpawn_f( void )
 {
-	unsigned	buf;
+	int i;
 
 	if (cmd_source == src_command)
 	{
@@ -2923,24 +2902,23 @@ void Host_PreSpawn_f(void)
 		return;
 	}
 
-	buf = atoi(Cmd_Argv(2));
-	if (buf >= sv.num_signon_buffers)
-		buf = 0;
+	i = atoi(Cmd_Argv(2));
+	if (i >= sv.num_signon_buffers)
+		i = 0;
 
-	SZ_Write(&host_client->netchan.message, sv.signon_buffers[buf], sv.signon_buffer_size[buf]);
+	SZ_Write(&host_client->netchan.message, sv.signon_buffers[i], sv.signon_buffer_size[i]);
+	i++;
 
-	buf++;
-	if (buf == sv.num_signon_buffers)
-	{	// all done prespawning
+	if (i == sv.num_signon_buffers)
+	{
 		MSG_WriteByte(&host_client->netchan.message, svc_signonnum);
 		MSG_WriteByte(&host_client->netchan.message, 1);
 		host_client->sendsignon = TRUE;
 	}
 	else
-	{	// need to prespawn more
+	{
 		MSG_WriteByte(&host_client->netchan.message, svc_stufftext);
-		MSG_WriteString(&host_client->netchan.message,
-			va("cmd prespawn %i %i\n", svs.spawncount, buf));
+		MSG_WriteString(&host_client->netchan.message, va("cmd prespawn %i %i\n", svs.spawncount, i));
 	}
 }
 
@@ -2951,10 +2929,10 @@ Host_Spawn_f
 */
 void Host_Spawn_f( void )
 {
-	int			i;
+	int		i;
 	client_t* client;
 	edict_t* ent;
-	char			name[256];
+	char	name[256];
 	SAVERESTOREDATA currentLevelData;
 
 	if (cmd_source == src_command)
@@ -2969,16 +2947,16 @@ void Host_Spawn_f( void )
 		return;
 	}
 
-	if (!cls.demoplayback && svs.spawncount != atoi(Cmd_Argv(1)))
+	if (!cls.demoplayback && atoi(Cmd_Argv(1)) != svs.spawncount)
 	{
 		Con_Printf("SV_Spawn_f from different level\n");
 		SV_New_f();
 		return;
 	}
 
+// run the entrance script
 	if (sv.loadgame)
-	{
-		// loaded games are fully inited already
+	{	// loaded games are fully inited already
 		// if this is the last client to be connected, unpause
 		sv.paused = FALSE;
 	}
@@ -2987,20 +2965,25 @@ void Host_Spawn_f( void )
 		// set up the edict
 		ent = host_client->edict;
 
+		// we're spawning
 		sv.state = ss_loading;
 
 		ReleaseEntityDLLFields(ent);
 		memset(&ent->v, 0, sizeof(ent->v));
 		InitEntityDLLFields(ent);
-
 		ent->v.colormap = NUM_FOR_EDICT(ent);
-		ent->v.netname = host_client->name - pr_strings;
 		ent->v.team = (host_client->colors & 15) + 1;
+		ent->v.netname = host_client->name - pr_strings;
+
+		// make sure the time is set
 		gGlobalVariables.time = sv.time;
-		gEntityInterface.pfnClientPutInServer(ent);
+
+		// call the spawn function
+		gEntityInterface.pfnClientPutInServer(sv_player);
+
+		// all setup is completed, any further precache statements are errors
 		sv.state = ss_active;
 	}
-
 
 // send all current names, colors, and frag counts
 	SZ_Clear(&host_client->netchan.message);
@@ -3052,7 +3035,7 @@ void Host_Spawn_f( void )
 	MSG_WriteByte(&host_client->netchan.message, 2);
 	host_client->sendsignon = TRUE;
 
-	if (sv.loadgame) // REMOVE ME (reminder): This block is done.
+	if (sv.loadgame)
 	{
 		memset(&currentLevelData, 0, sizeof(currentLevelData));
 		gGlobalVariables.pSaveData = &currentLevelData;
@@ -3074,6 +3057,24 @@ void Host_Spawn_f( void )
 		gGlobalVariables.pSaveData = NULL;
 	}
 }
+
+
+
+
+
+
+
+//============================================================================= FINISH LINE
+
+// TODO: Implement
+
+void Profile_Init( void )
+{
+	// TODO: Implement
+}
+
+
+// TODO: Implement
 
 /*
 ==================
