@@ -2511,7 +2511,133 @@ void Host_Changelevel2_f( void )
 	SV_ActivateServer(FALSE);
 }
 
+char* GetProfilePath( void )
+{
+	static char szProfilePath[128];
 
+	memset(szProfilePath, 0, sizeof(szProfilePath));
+	sprintf(szProfilePath, "PROFILES/%s.cfg", MakeProfileName(cl_name.string));
+	return szProfilePath;
+}
+
+void Cvar_SetProfile( char* name )
+{
+	cvar_t* var;
+
+	if (!name || !name[0])
+		return;
+
+	var = Cvar_FindVar(name);
+	if (!var)
+		return;
+	var->profile = TRUE;
+}
+
+/*
+===============
+Host_LoadProfileFile
+
+Loads and processes profile.lst configuration file
+===============
+*/
+void Host_LoadProfileFile( void )
+{
+	byte* file;
+	char* data;
+	char szProfileFile[128];
+
+	sprintf(szProfileFile, "profile.lst");
+	file = COM_LoadFile(szProfileFile, 5, NULL);
+	if (!file)
+		Con_Printf("Could not open file %s\n", szProfileFile);
+
+	data = (char*)file;
+	if (!file)
+		return;
+
+	while (1)
+	{
+		data = COM_Parse(data);
+		if (!data)
+			break;
+		Cvar_SetProfile(com_token);
+	}
+	free(file);
+}
+
+void Host_WriteProfile_f( void )
+{
+}
+
+void Host_RevertProfile_f( void )
+{
+}
+
+//============================================================================
+
+/*
+======================
+Host_Name_f
+======================
+*/
+void Host_Name_f( void )
+{
+	char* newName;
+
+	if (Cmd_Argc() == 1)
+	{
+		Con_Printf("\"name\" is \"%s\"\n", cl_name.string);
+		return;
+	}
+	if (Cmd_Argc() == 2)
+		newName = Cmd_Argv(1);
+	else
+		newName = Cmd_Args();
+
+	if (!newName || !newName[0])
+	{
+		Con_Printf("Usage:  name <name>\n");
+		return;
+	}
+
+	newName[15] = 0;
+
+	if (cmd_source == src_command)
+	{
+		if (!Q_strcmp(cl_name.string, newName))
+			return;
+		Cvar_Set("_cl_name", newName);
+
+		Host_ClearSaveDirectory();
+
+		if (cls.state == ca_connected || cls.state == ca_uninitialized || cls.state == ca_active)
+		{
+			Cmd_ForwardToServer();
+		}
+		return;
+	}
+
+	if (host_client->name[0] && strcmp(host_client->name, "unconnected"))
+	{
+		if (Q_strcmp(host_client->name, newName) != 0)
+			Con_Printf("%s renamed to %s\n", host_client->name, newName);
+	}
+
+	Q_strcpy(host_client->name, newName);
+	host_client->edict->v.netname = host_client->name - pr_strings;
+
+// send notification to all clients
+
+	MSG_WriteByte(&sv.reliable_datagram, svc_updatename);
+	MSG_WriteByte(&sv.reliable_datagram, host_client - svs.clients);
+	MSG_WriteString(&sv.reliable_datagram, host_client->name);
+}
+
+void Host_Version_f( void )
+{
+	Con_Printf("Build %d\n", build_number());
+	Con_Printf("Exe: " __TIME__ " " __DATE__ "\n");
+}
 
 
 
@@ -2525,19 +2651,6 @@ void Profile_Init( void )
 	// TODO: Implement
 }
 
-
-/*
-==================
-Host_Version_f
-
-Print current protocol version and build date
-==================
-*/
-void Host_Version_f( void )
-{
-	Con_Printf("Build %d\n", build_number());
-	Con_Printf("Exe: " __TIME__ " " __DATE__ "\n");
-}
 
 // TODO: Implement
 
@@ -2803,11 +2916,7 @@ void Host_InitCommands( void )
 	Cmd_AddCommand("changelevel2", Host_Changelevel2_f);
 	Cmd_AddCommand("connect", Host_Connect_f);
 	Cmd_AddCommand("reconnect", Host_Reconnect_f);
-
-
-	// TODO: Implement
-
-
+	Cmd_AddCommand("name", Host_Name_f);
 	Cmd_AddCommand("version", Host_Version_f);
 
 	// TODO: Implement
@@ -2826,6 +2935,8 @@ void Host_InitCommands( void )
 	// TODO: Implement
 	
 	Cmd_AddCommand("shortname", Host_ShortName_f);
+	Cmd_AddCommand("writeprofile", Host_WriteProfile_f);
+	Cmd_AddCommand("revertprofile", Host_RevertProfile_f);
 
 	// TODO: Implement
 	
