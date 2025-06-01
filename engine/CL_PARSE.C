@@ -1194,10 +1194,43 @@ Restores a saved game.
 */
 void CL_Restore( char* fileName )
 {
-	int i, mapCount;
+	DECALLIST decalList;
+	int i, decalCount, temp, mapCount;
+	FILE* pFile;
+	char name[16];
 	char* pMapName;
 
-	// TODO: Implement
+	pFile = fopen(fileName, "rb");
+	if (pFile)
+	{
+		setvbuf(pFile, NULL, _IOFBF, 0x1000);
+		fread(&temp, sizeof(int), 1, pFile);
+		fread(&i, sizeof(int), 1, pFile);
+
+		if (temp == SAVEFILE_HEADER)
+		{
+			fread(&decalCount, sizeof(int), 1, pFile);
+
+			for (i = 0; i < decalCount; i++)
+			{
+				fread(name, sizeof(char), 16, pFile);
+				fread(&decalList.entityIndex, sizeof(short), 1, pFile);
+				fread(&decalList.depth, sizeof(byte), 1, pFile);
+				fread(&decalList.flags, sizeof(byte), 1, pFile);
+				fread(decalList.position, sizeof(vec3_t), 1, pFile);
+
+				if (r_decals.value)
+				{
+					temp = Draw_DecalIndexFromName(name);
+
+					// Spawn decals
+					R_DecalShoot(Draw_DecalIndex(temp), decalList.entityIndex, 0, decalList.position, decalList.flags);
+				}
+			}
+		}
+
+		fclose(pFile);
+	}
 
 	mapCount = MSG_ReadByte();
 
