@@ -4,6 +4,7 @@
 #include "hashpak.h"
 
 // Lookup the comments after SV_ParseResourceList.
+//FF: The commented out Printf's in COM_CheckOrUploadFile are from the Linux build of HLDS. Don't cut them out
 // TODO: Implement
 
 cvar_t	sv_uploadinterval = { "sv_uploadinterval", "1.0" };
@@ -17,6 +18,8 @@ SV_CheckOrUploadFile
 extern void COM_HexConvert( const char* pszInput, int nInputLength, unsigned char* pOutput );
 qboolean SV_CheckOrUploadFile( char* filename )
 {
+	// TODO: Reimplement (If needed)
+
 	qboolean	bDoWeHaveOnlyAPartOfTheFile = FALSE;
 	qboolean	bIsCustom = FALSE;
 	int			nNumChunksRead;
@@ -43,11 +46,11 @@ qboolean SV_CheckOrUploadFile( char* filename )
 	if (strlen(filename) == 36 && !_strnicmp(filename, "!MD5", 4))
 	{
 		bIsCustom = TRUE;
-		COM_HexConvert(filename + 4, 32, nullres.rgucMD5_hash);
-		if (HPAK_GetDataPointer("custom.hpk", &nullres, &filesize))
+		COM_HexConvert(&filename[4] /* skip !MD5 */, 32, nullres.rgucMD5_hash);
+		if (HPAK_GetDataPointer("custom.hpk", &nullres, &f))
 		{
 			//Con_DPrintf("SV_CheckOrUploadFile:  file was on hand\n");
-			fclose(filesize);
+			fclose(f);
 			return TRUE;
 		}
 
@@ -58,17 +61,18 @@ qboolean SV_CheckOrUploadFile( char* filename )
 	else
 	{
 		//Con_DPrintf("Non custom upload!!!!\n");
-		// check if the file exists on our side
+		// 
+		// Check if the file exists on our side
 		if (COM_FindFile(fbuf, NULL, &f) != -1)
 		{
 			if (f)
 				fclose(f);
 
-			// the file exists, return TRUE
+			// The file exists, return TRUE
 			return TRUE;
 		}
 
-		// if it doesn't, save the name
+		// If it doesn't, save the name
 		strcpy(host_client->extension, fbuf);
 	}
 
@@ -84,7 +88,7 @@ qboolean SV_CheckOrUploadFile( char* filename )
 		strcat(host_client->uploadfn, ".tmp");
 	}
 
-	// reset the crc
+	// Reset the crc
 	host_client->uploadCRC = 0;
 
 	if (bIsCustom)
@@ -104,10 +108,10 @@ qboolean SV_CheckOrUploadFile( char* filename )
 		{
 			while (TRUE)
 			{
-				// let's see if we can successfully read the first 1024 bytes chunk
+				// Let's see if we can successfully read the first 1024 bytes chunk
 				if (fread(buffer, sizeof(buffer), sizeof(byte), f) == 1)
 				{
-					// we'll try reading another 1024 bytes chunk, but the file may run out of bytes, so we need to keep an eye on that
+					// We'll try reading another 1024 bytes chunk, but the file may run out of bytes, so we need to keep an eye on that
 					nNumChunksRead++;
 					CRC32_ProcessBuffer(&crc, buffer, sizeof(buffer));
 					if (nNumChunksRead >= (filesize / 1024))
@@ -145,7 +149,7 @@ qboolean SV_CheckOrUploadFile( char* filename )
 
 	host_client->isuploading = TRUE;
 
-	// the file doesn't exist, initiate an upload
+	// The file doesn't exist, initiate an upload
 	return FALSE;
 }
 
@@ -482,7 +486,75 @@ Reinitializes customizations list. Tries to create customization for each resour
 */
 void SV_CreateCustomizationList( client_t* pHost )
 {
-	// TODO: Implement
+	resource_t *i; // ebx
+	int v2; // edx
+	customization_t *pNext; // ebp
+	customization_t *v4; // ebp
+	void *v5; // eax
+	size_t nDownloadSize; // ecx
+	void *v7; // edi
+	cachewad_t *pInfo; // esi
+	cacheentry_t *cache; // edx
+	FILE *Stream; // [esp+10h] [ebp-4h] BYREF
+
+	pHost->customdata.pNext = 0;
+	for (i = pHost->resourcesonhand.pNext; i != &pHost->resourcesonhand; i = i->pNext)
+	{
+		v2 = 0;
+		pNext = pHost->customdata.pNext;
+		if (pNext)
+		{
+			while (memcmp(pNext->resource.rgucMD5_hash, i->rgucMD5_hash, 0x10u))
+			{
+				pNext = pNext->pNext;
+				if (!pNext)
+					goto LABEL_7;
+			}
+			v2 = 1;
+		}
+	LABEL_7:
+		if (v2)
+		{
+			Con_DPrintf("SV_CreateCustomization list, ignoring dup. resource for player %s\n", pHost->name);
+		}
+		else
+		{
+			v4 = (customization_t *)malloc(0x84u);
+			memset(v4, 0, sizeof(customization_t));
+			memcpy(&v4->resource, i, sizeof(v4->resource));
+			if (i->nDownloadSize)
+			{
+				v4->bInUse = 1;
+				if (HPAK_GetDataPointer("custom.hpk", i, &Stream))
+				{
+					if (i->nDownloadSize <= 0)
+						Sys_Error("SV_CreateCustomizationList with resource download size <= 0");
+					v5 = malloc(i->nDownloadSize);
+					nDownloadSize = i->nDownloadSize;
+					v4->pBuffer = v5;
+					fread(v4->pBuffer, nDownloadSize, 1u, Stream);
+					fclose(Stream);
+					v4->resource.playernum = cl.playernum;
+					v7 = malloc(0x24u);
+					v4->pInfo = v7;
+					memset(v7, 0, 0x24u);
+					pInfo = (cachewad_t *)v4->pInfo;
+					CustomDecal_Init(pInfo, v4->pBuffer, i->nDownloadSize);
+					cache = pInfo->cache;
+					v4->nUserData2 = pInfo->lumpCount;
+					v4->bTranslated = 0;
+					v4->nUserData1 = 0;
+					free(cache);
+					free(pInfo->lumps);
+					free(v4->pInfo);
+					v4->pInfo = 0;
+				}
+			}
+			v4->pNext = pHost->customdata.pNext;
+			pHost->customdata.pNext = v4;
+			gEntityInterface.pfnPlayerCustomization(pHost->edict, v4);
+		}
+	}
 }
 
 /*
@@ -688,10 +760,10 @@ void SV_RequestMissingResourcesFromClients( void )
 
 	for (i = 0, host_client = svs.clients; i < svs.maxclients; host_client++, i++)
 	{
-		if (host_client->active || host_client->spawned)
-		{
-			while (SV_RequestMissingResources());
-		}
+		if (!host_client->active && !host_client->spawned)
+			continue;
+
+		while (SV_RequestMissingResources());
 	}
 }
 
@@ -732,7 +804,7 @@ qboolean SV_RequestMissingResources( void )
 	if (!(res->ucFlags & RES_WASMISSING))
 	{
 		SV_MoveToOnHandList(res);
-		return 1;
+		return TRUE;
 	}
 
 	if (res->type == t_decal)
@@ -1119,44 +1191,40 @@ void SV_Customization( client_t* pPlayer, resource_t* pResource, qboolean bSkipP
 {
 	int			i;
 	int			nPlayerNumber;
-	client_t*	pHost;
 
 	// Get originating player id
-	for (nPlayerNumber = -1, i = 0, pHost = svs.clients; i < svs.maxclients; i++, pHost++)
+	for (nPlayerNumber = -1, i = 0, host_client = svs.clients; i < svs.maxclients; i++, host_client++)
 	{
-		if (pHost == pPlayer)
+		if (host_client == pPlayer)
 		{
 			nPlayerNumber = i;
 			break;
 		}
 	}
-	if (i == svs.maxclients || nPlayerNumber == -1)
+	if (i >= svs.maxclients || nPlayerNumber == -1)
 	{
 		Sys_Error("Couldn't find player index for customization.");
 	}
 
 	// Send resource to all other active players
-	for (i = 0, pHost = svs.clients; i < svs.maxclients; i++, pHost++)
+	for (i = 0, host_client = svs.clients; i < svs.maxclients; i++, host_client++)
 	{
-		if (pHost->fakeclient)
+		if (!host_client->active && !host_client->spawned)
 			continue;
 
-		if (!pHost->active && !pHost->spawned)
+		if (host_client == pPlayer && bSkipPlayer)
 			continue;
 
-		if (pHost == pPlayer && bSkipPlayer)
-			continue;
-
-		MSG_WriteByte(&pHost->netchan.message, svc_customization);
-		MSG_WriteByte(&pHost->netchan.message, nPlayerNumber);
-		MSG_WriteByte(&pHost->netchan.message, pResource->type);
-		MSG_WriteString(&pHost->netchan.message, pResource->szFileName);
-		MSG_WriteShort(&pHost->netchan.message, pResource->nIndex);
-		MSG_WriteLong(&pHost->netchan.message, pResource->nDownloadSize);
-		MSG_WriteByte(&pHost->netchan.message, pResource->ucFlags);
+		MSG_WriteByte(&host_client->netchan.message, svc_customization);
+		MSG_WriteByte(&host_client->netchan.message, nPlayerNumber);
+		MSG_WriteByte(&host_client->netchan.message, pResource->type);
+		MSG_WriteString(&host_client->netchan.message, pResource->szFileName);
+		MSG_WriteShort(&host_client->netchan.message, pResource->nIndex);
+		MSG_WriteLong(&host_client->netchan.message, pResource->nDownloadSize);
+		MSG_WriteByte(&host_client->netchan.message, pResource->ucFlags);
 		if (pResource->ucFlags & RES_CUSTOM)
 		{
-			SZ_Write(&pHost->netchan.message, pResource->rgucMD5_hash, sizeof(pResource->rgucMD5_hash));
+			SZ_Write(&host_client->netchan.message, pResource->rgucMD5_hash, sizeof(pResource->rgucMD5_hash));
 		}
 	}
 }
@@ -1170,5 +1238,31 @@ Sends customizations from all active players to the current player.
 */
 void SV_PropagateCustomizations( void )
 {
-	// TODO: Implement
+	int					i;
+	customization_t*	pCust;
+	client_t*			pOriginalHost;
+
+	pOriginalHost = host_client;
+	for (i = 0, host_client = svs.clients; i < svs.maxclients; host_client++, i++)
+	{
+		if (!host_client->active && !host_client->spawned)
+			continue;
+
+		for (pCust = host_client->customdata.pNext; pCust; pCust = pCust->pNext)
+		{
+			if (!pCust->bInUse)
+				continue;
+
+			MSG_WriteByte(&pOriginalHost->netchan.message, svc_customization);
+			MSG_WriteByte(&pOriginalHost->netchan.message, i);
+			MSG_WriteByte(&pOriginalHost->netchan.message, pCust->resource.type);
+			MSG_WriteString(&pOriginalHost->netchan.message, pCust->resource.szFileName);
+			MSG_WriteShort(&pOriginalHost->netchan.message, pCust->resource.nIndex);
+			MSG_WriteLong(&pOriginalHost->netchan.message, pCust->resource.nDownloadSize);
+			MSG_WriteByte(&pOriginalHost->netchan.message, pCust->resource.ucFlags);
+			if (pCust->resource.ucFlags & RES_CUSTOM)
+				SZ_Write(&pOriginalHost->netchan.message, pCust->resource.rgucMD5_hash, sizeof(pCust->resource.rgucMD5_hash));
+		}
+	}
+	host_client = pOriginalHost;
 }

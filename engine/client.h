@@ -41,6 +41,8 @@ typedef struct
 	CRC32_t		crcFile;				// For detecting that client's resource is different
 	char		filename[MAX_QPATH];	// The filename
 
+	int			nNumFileChunksRead;		// How much chunks of the incoming transfer (the file itself) have we read?
+
 	// TODO: Implement
 
 	int			percent;
@@ -494,6 +496,10 @@ extern	cvar_t	cl_nopred;
 extern	cvar_t	cl_pushlatency;
 extern	cvar_t	cl_dumpents;
 extern	cvar_t	cl_showpred;
+
+extern	cvar_t cl_allowdownload;
+extern	cvar_t cl_download_ingame;
+extern	cvar_t cl_download_max;
 
 extern qboolean cl_inmovie;
 
