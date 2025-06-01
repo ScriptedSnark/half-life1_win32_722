@@ -2383,7 +2383,7 @@ void DirectoryClear( const char* pPath )
 	BOOL			nextfile;
 	WIN32_FIND_DATAA ffd;
 
-	findfn = FindFirstFileA(pPath, &ffd);
+	findfn = FindFirstFile(pPath, &ffd);
 	if (findfn == INVALID_HANDLE_VALUE)
 		return;
 

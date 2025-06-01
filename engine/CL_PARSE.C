@@ -1194,7 +1194,20 @@ Restores a saved game.
 */
 void CL_Restore( char* fileName )
 {
+	int i, mapCount;
+	char* pMapName;
+
 	// TODO: Implement
+
+	mapCount = MSG_ReadByte();
+
+	for (i = 0; i < mapCount; i++)
+	{
+		pMapName = MSG_ReadString();
+
+		// JAY UNDONE:  Actually load decals that transferred through the transition!!!
+		Con_Printf("Loading decals from %s\n", pMapName);
+	}
 }
 
 // TODO: Implement
