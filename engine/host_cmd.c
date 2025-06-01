@@ -2611,9 +2611,7 @@ void Host_Name_f( void )
 		Host_ClearSaveDirectory();
 
 		if (cls.state == ca_connected || cls.state == ca_uninitialized || cls.state == ca_active)
-		{
 			Cmd_ForwardToServer();
-		}
 		return;
 	}
 
@@ -2638,6 +2636,216 @@ void Host_Version_f( void )
 	Con_Printf("Build %d\n", build_number());
 	Con_Printf("Exe: " __TIME__ " " __DATE__ "\n");
 }
+
+void Host_Say( qboolean teamonly )
+{
+	client_t* client;
+	client_t* save;
+	int			j;
+	char* p;
+	char		text[64];
+
+	if (cls.state != ca_dedicated)
+	{
+		if (cmd_source == src_command)
+			Cmd_ForwardToServer();  // this will only happen if the game engine handles the say command instead of the entity dll;  that shouldn't happen
+
+		return;
+	}
+
+	if (Cmd_Argc() < 2)
+		return;
+
+	p = Cmd_Args();
+	if (!p)
+		return;
+
+	save = host_client;
+
+// remove quotes if present
+	if (*p == '"')
+	{
+		p++;
+		p[Q_strlen(p) - 1] = 0;
+	}
+
+	sprintf(text, "%c<%s> ", 1, host_name.string);
+
+	j = sizeof(text) - 2 - Q_strlen(text);  // -2 for /n and null terminator
+	if (Q_strlen(p) > j)
+		p[j] = 0;
+
+	strcat(text, p);
+	strcat(text, "\n");
+
+	for (j = 0, client = svs.clients; j < svs.maxclients; j++, client++)
+	{
+		if (!client || !client->active || !client->spawned)
+			continue;
+
+		host_client = client;
+		PF_MessageBegin_I(MSG_ONE, RegUserMsg("SayText", -1), NULL, &sv.edicts[j + 1]);
+		PF_WriteByte_I(0);
+		PF_WriteString_I(text);
+		PF_MessageEnd_I();
+	}
+	host_client = save;
+
+	Sys_Printf("%s", &text[1]);
+}
+
+
+void Host_Say_f( void )
+{
+	Host_Say(FALSE);
+}
+
+
+void Host_Say_Team_f( void )
+{
+	Host_Say(TRUE);
+}
+
+
+void Host_Tell_f( void )
+{
+	client_t* client;
+	client_t* save;
+	int		j;
+	char* p;
+	char	text[64];
+
+	if (cmd_source == src_command)
+	{
+		Cmd_ForwardToServer();
+		return;
+	}
+
+	if (Cmd_Argc() < 3)
+		return;
+
+	Q_strcpy(text, host_client->name);
+	Q_strcat(text, ": ");
+
+	p = Cmd_Args();
+	if (!p)
+		return;
+
+// remove quotes if present
+	if (*p == '"')
+	{
+		p++;
+		p[Q_strlen(p) - 1] = 0;
+	}
+
+// check length & truncate if necessary
+	j = sizeof(text) - 2 - Q_strlen(text);  // -2 for /n and null terminator
+	if (Q_strlen(p) > j)
+		p[j] = 0;
+
+	strcat(text, p);
+	strcat(text, "\n");
+
+	save = host_client;
+	for (j = 0, client = svs.clients; j < svs.maxclients; j++, client++)
+	{
+		if (!client->active || !client->spawned)
+			continue;
+		if (Q_strcasecmp(client->name, Cmd_Argv(1)))
+			continue;
+		host_client = client;
+		SV_ClientPrintf("%s", text);
+		break;
+	}
+	host_client = save;
+}
+
+
+/*
+==================
+Host_Color_f
+==================
+*/
+void Host_Color_f( void )
+{
+	int		top, bottom;
+	int		playercolor;
+
+	if (Cmd_Argc() == 1)
+	{
+		Con_Printf("\"color\" is \"%i %i\"\n", ((int)cl_color.value) >> 4, ((int)cl_color.value) & 0x0f);
+		Con_Printf("color <0-13> [0-13]\n");
+		return;
+	}
+
+	if (Cmd_Argc() == 2)
+		top = bottom = atoi(Cmd_Argv(1));
+	else
+	{
+		top = atoi(Cmd_Argv(1));
+		bottom = atoi(Cmd_Argv(2));
+	}
+
+	top &= 15;
+	if (top > 13)
+		top = 13;
+	bottom &= 15;
+	if (bottom > 13)
+		bottom = 13;
+
+	playercolor = top * 16 + bottom;
+
+	if (cmd_source == src_command)
+	{
+		Cvar_SetValue("_cl_color", playercolor);
+		if (cls.state == ca_connected || cls.state == ca_uninitialized || cls.state == ca_active)
+			Cmd_ForwardToServer();
+		return;
+	}
+
+	host_client->colors = playercolor;
+	host_client->edict->v.team = bottom + 1;
+
+// send notification to all clients
+	MSG_WriteByte(&sv.reliable_datagram, svc_updatecolors);
+	MSG_WriteByte(&sv.reliable_datagram, host_client - svs.clients);
+	MSG_WriteByte(&sv.reliable_datagram, host_client->colors);
+}
+
+/*
+==================
+Host_Kill_f
+==================
+*/
+void Host_Kill_f( void )
+{
+	if (cmd_source == src_command)
+	{
+		Cmd_ForwardToServer();
+		return;
+	}
+
+	if (sv_player->v.health <= 0)
+	{
+		SV_ClientPrintf("Can't suicide -- allready dead!\n");
+		return;
+	}
+
+	gGlobalVariables.time = sv.time;
+	gEntityInterface.pfnClientKill(sv_player);
+}
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -2918,6 +3126,11 @@ void Host_InitCommands( void )
 	Cmd_AddCommand("reconnect", Host_Reconnect_f);
 	Cmd_AddCommand("name", Host_Name_f);
 	Cmd_AddCommand("version", Host_Version_f);
+	Cmd_AddCommand("say", Host_Say_f);
+	Cmd_AddCommand("say_team", Host_Say_Team_f);
+	Cmd_AddCommand("tell", Host_Tell_f);
+	Cmd_AddCommand("color", Host_Color_f);
+	Cmd_AddCommand("kill", Host_Kill_f);
 
 	// TODO: Implement
 
