@@ -2535,12 +2535,12 @@ void Cvar_SetProfile( char* name )
 
 /*
 ===============
-Host_LoadProfileFile
+LoadProfileFile
 
 Loads and processes profile.lst configuration file
 ===============
 */
-void Host_LoadProfileFile( void )
+void LoadProfileFile( void )
 {
 	byte* file;
 	char* data;
@@ -3058,24 +3058,6 @@ void Host_Spawn_f( void )
 	}
 }
 
-
-
-
-
-
-
-//============================================================================= FINISH LINE
-
-// TODO: Implement
-
-void Profile_Init( void )
-{
-	// TODO: Implement
-}
-
-
-// TODO: Implement
-
 /*
 ==================
 Host_Begin_f
@@ -3091,12 +3073,125 @@ void Host_Begin_f( void )
 
 	host_client->active = TRUE;
 	host_client->connected = FALSE;
-	host_client->netchan.frame_latency = 0;
-	host_client->netchan.frame_rate = 0;
+	host_client->netchan.frame_latency = 0.0;
+	host_client->netchan.frame_rate = 0.0;
 	host_client->netchan.drop_count = 0;
 	host_client->netchan.good_count = 0;
 	host_client->spawned = TRUE;
 }
+
+//===========================================================================
+
+
+/*
+==================
+Host_Kick_f
+
+Kicks a user off of the server
+==================
+*/
+void Host_Kick_f( void )
+{
+	char* who;
+	char* message = NULL;
+	client_t* save;
+	int			i;
+	qboolean	byNumber = FALSE;
+
+	if (cmd_source == src_command)
+	{
+		if (!sv.active)
+		{
+			Cmd_ForwardToServer();
+			return;
+		}
+	}
+	else if (gGlobalVariables.deathmatch && !host_client->privileged)
+		return;
+
+	save = host_client;
+
+	if (Cmd_Argc() > 2 && Q_strcmp(Cmd_Argv(1), "#") == 0)
+	{
+		i = Q_atof(Cmd_Argv(2)) - 1;
+		if (i < 0 || i >= svs.maxclients)
+			return;
+		if (!svs.clients[i].active)
+			return;
+		host_client = &svs.clients[i];
+		byNumber = TRUE;
+	}
+	else
+	{
+		for (i = 0, host_client = svs.clients; i < svs.maxclients; i++, host_client++)
+		{
+			if (!host_client->active && !host_client->connected)
+				continue;
+			if (Q_strcasecmp(host_client->name, Cmd_Argv(1)) == 0)
+				break;
+		}
+	}
+
+	if (i < svs.maxclients)
+	{
+		if (cmd_source == src_command)
+		{
+			if (cls.state == ca_dedicated)
+				who = "Console";
+			else
+				who = cl_name.string;
+		}
+		else
+			who = save->name;
+
+		// can't kick yourself!
+		if (host_client == save)
+			return;
+
+		if (Cmd_Argc() > 2)
+		{
+			message = COM_Parse(Cmd_Args());
+			if (byNumber)
+			{
+				message++;							// skip the #
+				while (*message == ' ')				// skip white space
+					message++;
+				message += Q_strlen(Cmd_Argv(2));	// skip the number
+			}
+			while (*message && *message == ' ')
+				message++;
+		}
+		if (message)
+			SV_ClientPrintf("Kicked by %s: %s\n", who, message);
+		else
+			SV_ClientPrintf("Kicked by %s\n", who);
+		SV_DropClient(host_client, FALSE);
+	}
+
+	host_client = save;
+}
+
+/*
+===============================================================================
+
+DEBUGGING TOOLS
+
+===============================================================================
+*/
+
+
+
+
+
+
+
+
+
+
+
+
+
+//============================================================================= FINISH LINE
 
 // TODO: Implement
 
@@ -3168,9 +3263,7 @@ void Host_InitCommands( void )
 	Cmd_AddCommand("spawn", Host_Spawn_f);
 	Cmd_AddCommand("begin", Host_Begin_f);
 	Cmd_AddCommand("prespawn", Host_PreSpawn_f);
-
-	// TODO: Implement
-	
+	Cmd_AddCommand("kick", Host_Kick_f);	
 	Cmd_AddCommand("ping", Host_Ping_f);
 	Cmd_AddCommand("load", Host_Loadgame_f);	
 	Cmd_AddCommand("save", Host_Savegame_f);

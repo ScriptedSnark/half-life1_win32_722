@@ -491,8 +491,6 @@ cvar_t	sk_player_leg3 = { "sk_player_leg3","1" };
 
 cvar_t	developer = { "developer", "0" };
 
-void Profile_Init( void );
-
 /*
 ================
 COM_EntsForPlayerSlots
@@ -2032,7 +2030,7 @@ int Host_Init( quakeparms_t* parms )
 	Hunk_AllocName(0, "-HOST_HUNKLEVEL-");
 	host_hunklevel = Hunk_LowMark();
 
-	Profile_Init();
+	LoadProfileFile();
 
 	// Mark DLL as active
 	giActive = DLL_ACTIVE;

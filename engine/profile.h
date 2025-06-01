@@ -44,6 +44,7 @@ void	GetProfileRegKeyValue( char* pszName, char* pszPath, char* pszSetting, char
 void	ClearProfileKeyBindings( profile_t* profile );
 
 int		LoadProfile( char* pszName, profile_t* profile );
+void	LoadProfileFile( void );
 void	LoadProfileKeyBindings( char* pszName, profile_t* profile );
 void	LoadProfileCvars( char* pszName, profile_t* profile );
 
