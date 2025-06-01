@@ -2836,9 +2836,41 @@ void Host_Kill_f( void )
 }
 
 
+/*
+==================
+Host_Pause_f
+==================
+*/
+void Host_Pause_f( void )
+{
+	if (cmd_source == src_command)
+	{
+		Cmd_ForwardToServer();
+		return;
+	}
 
+	if (!pausable.value)
+		SV_ClientPrintf("Pause not allowed.\n");
+	else
+	{
+		sv.paused ^= 1;
 
+		if (sv.paused)
+		{
+			SV_BroadcastPrintf("%s paused the game\n", pr_strings + sv_player->v.netname);
+		}
+		else
+		{
+			SV_BroadcastPrintf("%s unpaused the game\n", pr_strings + sv_player->v.netname);
+		}
 
+	// send notification to all clients
+		MSG_WriteByte(&sv.reliable_datagram, svc_setpause);
+		MSG_WriteByte(&sv.reliable_datagram, sv.paused);
+	}
+}
+
+//===========================================================================
 
 
 
@@ -3131,9 +3163,7 @@ void Host_InitCommands( void )
 	Cmd_AddCommand("tell", Host_Tell_f);
 	Cmd_AddCommand("color", Host_Color_f);
 	Cmd_AddCommand("kill", Host_Kill_f);
-
-	// TODO: Implement
-
+	Cmd_AddCommand("pause", Host_Pause_f);
 	Cmd_AddCommand("spawn", Host_Spawn_f);
 	Cmd_AddCommand("begin", Host_Begin_f);
 	Cmd_AddCommand("prespawn", Host_PreSpawn_f);
@@ -3143,10 +3173,7 @@ void Host_InitCommands( void )
 	Cmd_AddCommand("ping", Host_Ping_f);
 	Cmd_AddCommand("load", Host_Loadgame_f);	
 	Cmd_AddCommand("save", Host_Savegame_f);
-	Cmd_AddCommand("autosave", Host_AutoSave_f);
-
-	// TODO: Implement
-	
+	Cmd_AddCommand("autosave", Host_AutoSave_f);	
 	Cmd_AddCommand("shortname", Host_ShortName_f);
 	Cmd_AddCommand("writeprofile", Host_WriteProfile_f);
 	Cmd_AddCommand("revertprofile", Host_RevertProfile_f);

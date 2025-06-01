@@ -1462,7 +1462,13 @@ void CL_ParseServerMessage( void )
 			CL_ParseTEnt();
 			break;
 
-		// TODO: Implement
+		case svc_setpause:
+			cl.paused = MSG_ReadByte();
+			if (cl.paused)
+				CDAudio_Pause();
+			else
+				CDAudio_Resume();
+			break;
 
 		case svc_signonnum:
 			i = MSG_ReadByte();

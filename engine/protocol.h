@@ -97,7 +97,7 @@
 
 #define svc_spawnbaseline		22
 #define svc_tempentity			23
-
+#define svc_setpause			24
 #define svc_signonnum			25		// [byte]  used for the signon sequence
 #define svc_centerprint			26		// [string] to put in center of the screen
 #define svc_killedmonster		27

@@ -260,6 +260,7 @@ extern	cvar_t	teamplay;
 extern	cvar_t	skill;
 extern	cvar_t	deathmatch;
 extern	cvar_t	coop;
+extern	cvar_t	pausable;
 
 
 
