@@ -193,7 +193,7 @@ void SV_ParseUpload( void )
 	int					size, append, reason, percent;
 	customization_t*	pLocal;
 	customization_t*	pCust;
-	qboolean			bDuplicate = FALSE;
+	qboolean			bDuplicate;
 	char				file[MAX_OSPATH];
 	char				buffer[MAX_OSPATH];
 	char				filename[MAX_OSPATH];
@@ -279,6 +279,8 @@ void SV_ParseUpload( void )
 
 			if (host_client->upload)
 			{
+				bDuplicate = FALSE;
+
 				HPAK_AddLump("custom.hpk", host_client->uploadingresource, NULL, host_client->upload);
 
 				fseek(host_client->upload, 0, SEEK_SET);
@@ -296,24 +298,15 @@ void SV_ParseUpload( void )
 				fread(pLocal->pBuffer, host_client->uploadingresource->nDownloadSize, sizeof(byte), host_client->upload);
 
 				pCust = host_client->customdata.pNext;
-				if (pCust)
+				while (pCust)
 				{
-					while (TRUE)
+					if (!memcmp(pCust->resource.rgucMD5_hash, pLocal->resource.rgucMD5_hash, sizeof(pLocal->resource.rgucMD5_hash)))
 					{
-						if (memcmp(pCust->resource.rgucMD5_hash, pLocal->resource.rgucMD5_hash, sizeof(pLocal->resource.rgucMD5_hash)))
-						{
-							pCust = pCust->pNext;
-							if (!pCust)
-							{
-								break;
-							}
-						}
-						else
-						{
-							bDuplicate = TRUE;
-							break;
-						}
+						bDuplicate = TRUE;
+						break;
 					}
+
+					pCust = pCust->pNext;
 				}
 
 				if (bDuplicate)
@@ -360,8 +353,13 @@ void SV_PrintResource( int index, resource_t* pResource )
 	static char fatal[8];
 	static char type[12];
 
-	sprintf(fatal, "N");
+	// If the resource was missing, let the player know about that
+	//if (pResource->ucFlags & RES_WASMISSING)
+	//	sprintf(fatal, "Y");
+	//else
+		sprintf(fatal, "N");
 
+	// Now let the player know which type this resource has
 	switch (pResource->type)
 	{
 		case t_sound:
@@ -381,6 +379,7 @@ void SV_PrintResource( int index, resource_t* pResource )
 			break;
 	}
 
+	// Here we spit out the whole resource data
 	Con_Printf(
 	  "%3i %i %s:%15s %i %s\n",
 	  index,
@@ -389,6 +388,12 @@ void SV_PrintResource( int index, resource_t* pResource )
 	  pResource->szFileName,
 	  pResource->nIndex,
 	  fatal);
+
+	// If the resource is a custom resource uploaded by somebody, print its MD5 hash
+	//if (pResource->ucFlags & RES_CUSTOM)
+	//{
+	//	Con_Printf("MD5:  %s\n", MD5_Print(pResource->rgucMD5_hash));
+	//}
 }
 
 /*
@@ -486,74 +491,70 @@ Reinitializes customizations list. Tries to create customization for each resour
 */
 void SV_CreateCustomizationList( client_t* pHost )
 {
-	resource_t *i; // ebx
-	int v2; // edx
-	customization_t *pNext; // ebp
-	customization_t *v4; // ebp
-	void *v5; // eax
-	size_t nDownloadSize; // ecx
-	void *v7; // edi
-	cachewad_t *pInfo; // esi
-	cacheentry_t *cache; // edx
-	FILE *Stream; // [esp+10h] [ebp-4h] BYREF
+	resource_t*			pResource;
+	qboolean			bDuplicate;
+	customization_t*	pCust;
+	cachewad_t*			pWad;
+	FILE*				pfHandle = NULL; 
 
-	pHost->customdata.pNext = 0;
-	for (i = pHost->resourcesonhand.pNext; i != &pHost->resourcesonhand; i = i->pNext)
+	pHost->customdata.pNext = NULL;
+	for (pResource = pHost->resourcesonhand.pNext; pResource != &pHost->resourcesonhand; pResource = pResource->pNext)
 	{
-		v2 = 0;
-		pNext = pHost->customdata.pNext;
-		if (pNext)
+		bDuplicate = FALSE;
+		pCust = pHost->customdata.pNext;
+		while (pCust)
 		{
-			while (memcmp(pNext->resource.rgucMD5_hash, i->rgucMD5_hash, 0x10u))
+			if (!memcmp(pCust->resource.rgucMD5_hash, pResource->rgucMD5_hash, sizeof(pResource->rgucMD5_hash)))
 			{
-				pNext = pNext->pNext;
-				if (!pNext)
-					goto LABEL_7;
+				Con_DPrintf("SV_CreateCustomization list, ignoring dup. resource for player %s\n", pHost->name);
+				bDuplicate = TRUE;
+				break;
 			}
-			v2 = 1;
+
+			pCust = pCust->pNext;
 		}
-	LABEL_7:
-		if (v2)
+		if (bDuplicate)
+			continue;
+
+		pCust = (customization_t *)malloc(sizeof(customization_t));
+		memset(pCust, 0, sizeof(customization_t));
+		memcpy(&pCust->resource, pResource, sizeof(*pResource));
+
+		if (pResource->nDownloadSize)
 		{
-			Con_DPrintf("SV_CreateCustomization list, ignoring dup. resource for player %s\n", pHost->name);
-		}
-		else
-		{
-			v4 = (customization_t *)malloc(0x84u);
-			memset(v4, 0, sizeof(customization_t));
-			memcpy(&v4->resource, i, sizeof(v4->resource));
-			if (i->nDownloadSize)
+			pCust->bInUse = TRUE;
+			if (HPAK_GetDataPointer("custom.hpk", pResource, &pfHandle))
 			{
-				v4->bInUse = 1;
-				if (HPAK_GetDataPointer("custom.hpk", i, &Stream))
-				{
-					if (i->nDownloadSize <= 0)
-						Sys_Error("SV_CreateCustomizationList with resource download size <= 0");
-					v5 = malloc(i->nDownloadSize);
-					nDownloadSize = i->nDownloadSize;
-					v4->pBuffer = v5;
-					fread(v4->pBuffer, nDownloadSize, 1u, Stream);
-					fclose(Stream);
-					v4->resource.playernum = cl.playernum;
-					v7 = malloc(0x24u);
-					v4->pInfo = v7;
-					memset(v7, 0, 0x24u);
-					pInfo = (cachewad_t *)v4->pInfo;
-					CustomDecal_Init(pInfo, v4->pBuffer, i->nDownloadSize);
-					cache = pInfo->cache;
-					v4->nUserData2 = pInfo->lumpCount;
-					v4->bTranslated = 0;
-					v4->nUserData1 = 0;
-					free(cache);
-					free(pInfo->lumps);
-					free(v4->pInfo);
-					v4->pInfo = 0;
-				}
+				if (pResource->nDownloadSize <= 0)
+					Sys_Error("SV_CreateCustomizationList with resource download size <= 0");
+
+				pCust->pBuffer = malloc(pResource->nDownloadSize);
+				fread(pCust->pBuffer, pResource->nDownloadSize, sizeof(byte), pfHandle);
+				fclose(pfHandle);
+
+				pCust->resource.playernum = cl.playernum;
+
+				pWad = (cachewad_t*)malloc(sizeof(cachewad_t));
+				pCust->pInfo = pWad;
+
+				memset(pWad, 0, sizeof(cachewad_t));
+				CustomDecal_Init(pWad, pCust->pBuffer, pResource->nDownloadSize);
+
+				pCust->bTranslated = FALSE;
+				pCust->nUserData1 = 0;
+				pCust->nUserData2 = pWad->lumpCount;
+
+				free(pWad->cache);
+				free(pWad->lumps);
+				free(pWad);
+
+				pCust->pInfo = NULL;
 			}
-			v4->pNext = pHost->customdata.pNext;
-			pHost->customdata.pNext = v4;
-			gEntityInterface.pfnPlayerCustomization(pHost->edict, v4);
 		}
+
+		pCust->pNext = pHost->customdata.pNext;
+		pHost->customdata.pNext = pCust;
+		gEntityInterface.pfnPlayerCustomization(pHost->edict, pCust);
 	}
 }
 

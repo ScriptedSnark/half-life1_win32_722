@@ -545,6 +545,61 @@ void CL_ParseDownload( void )
 	// TODO: Implement
 }
 
+/*
+================
+CL_PrintResource
+
+Prints which data the resource passed contains.
+================
+*/
+void CL_PrintResource( int index, resource_t* pResource )
+{
+	static char fatal[8];
+	static char type[12];
+
+	// If the resource was missing, let the player know about that
+	if (pResource->ucFlags & RES_WASMISSING)
+		sprintf(fatal, "Y");
+	else
+		sprintf(fatal, "N");
+
+	// Now let the player know which type this resource has
+	switch (pResource->type)
+	{
+		case t_sound:
+			sprintf(type, "sound");
+			break;
+		case t_skin:
+			sprintf(type, "skin");
+			break;
+		case t_model:
+			sprintf(type, "model");
+			break;
+		case t_decal:
+			sprintf(type, "decal");
+			break;
+		default:
+			sprintf(type, "unknown");
+			break;
+	}
+
+	// Here we spit out the whole resource data
+	Con_Printf(
+	  "%3i %i %s:%15s %i %s\n",
+	  index,
+	  pResource->nDownloadSize,
+	  type,
+	  pResource->szFileName,
+	  pResource->nIndex,
+	  fatal);
+
+	// If the resource is a custom resource uploaded by somebody, print its MD5 hash
+	if (pResource->ucFlags & RES_CUSTOM)
+	{
+		Con_Printf("MD5:  %s\n", MD5_Print(pResource->rgucMD5_hash));
+	}
+}
+
 // TODO: Implement
 
 /*
@@ -1086,8 +1141,9 @@ void CL_ParseCustomization( void )
 
 	Con_DPrintf("New resource from player %i\n", nPlayerIndex);
 
-	//if (developer.value)
-	//	sub_CBA2090(nPlayerIndex, (int)res); // TODO: Implement
+	// If developer cvar is enabled, print some debug info about the resource we're downloading
+	if (developer.value)
+		CL_PrintResource(nPlayerIndex, res);
 
 	res->playernum = nPlayerIndex;
 	if (cls.demoplayback)
