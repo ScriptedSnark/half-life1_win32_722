@@ -513,42 +513,43 @@ void SV_CreateCustomizationList( client_t* pHost )
 
 			pCust = pCust->pNext;
 		}
-		if (bDuplicate)
-			continue;
 
-		pCust = (customization_t *)malloc(sizeof(customization_t));
-		memset(pCust, 0, sizeof(customization_t));
-		memcpy(&pCust->resource, pResource, sizeof(*pResource));
-
-		if (pResource->nDownloadSize)
+		if (!bDuplicate)
 		{
-			pCust->bInUse = TRUE;
-			if (HPAK_GetDataPointer("custom.hpk", pResource, &pfHandle))
+			pCust = (customization_t *)malloc(sizeof(customization_t));
+			memset(pCust, 0, sizeof(customization_t));
+			memcpy(&pCust->resource, pResource, sizeof(*pResource));
+
+			if (pResource->nDownloadSize)
 			{
-				if (pResource->nDownloadSize <= 0)
-					Sys_Error("SV_CreateCustomizationList with resource download size <= 0");
+				pCust->bInUse = TRUE;
+				if (HPAK_GetDataPointer("custom.hpk", pResource, &pfHandle))
+				{
+					if (pResource->nDownloadSize <= 0)
+						Sys_Error("SV_CreateCustomizationList with resource download size <= 0");
 
-				pCust->pBuffer = malloc(pResource->nDownloadSize);
-				fread(pCust->pBuffer, pResource->nDownloadSize, sizeof(byte), pfHandle);
-				fclose(pfHandle);
+					pCust->pBuffer = malloc(pResource->nDownloadSize);
+					fread(pCust->pBuffer, pResource->nDownloadSize, sizeof(byte), pfHandle);
+					fclose(pfHandle);
 
-				pCust->resource.playernum = cl.playernum;
+					pCust->resource.playernum = cl.playernum;
 
-				pWad = (cachewad_t*)malloc(sizeof(cachewad_t));
-				pCust->pInfo = pWad;
+					pWad = (cachewad_t*)malloc(sizeof(cachewad_t));
+					pCust->pInfo = pWad;
 
-				memset(pWad, 0, sizeof(cachewad_t));
-				CustomDecal_Init(pWad, pCust->pBuffer, pResource->nDownloadSize);
+					memset(pWad, 0, sizeof(cachewad_t));
+					CustomDecal_Init(pWad, pCust->pBuffer, pResource->nDownloadSize);
 
-				pCust->bTranslated = FALSE;
-				pCust->nUserData1 = 0;
-				pCust->nUserData2 = pWad->lumpCount;
+					pCust->bTranslated = FALSE;
+					pCust->nUserData1 = 0;
+					pCust->nUserData2 = pWad->lumpCount;
 
-				free(pWad->cache);
-				free(pWad->lumps);
-				free(pWad);
+					free(pWad->cache);
+					free(pWad->lumps);
+					free(pWad);
 
-				pCust->pInfo = NULL;
+					pCust->pInfo = NULL;
+				}
 			}
 		}
 

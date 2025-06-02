@@ -1119,10 +1119,10 @@ void CL_ParseCustomization( void )
 {
 	int					nPlayerIndex;
 	resource_t*			res;
-	int					afFlags;
 	customization_t*	pCust;
 	qboolean			bDuplicate = FALSE;
 	FILE*				pfHandle = NULL;
+	cachewad_t*			pWad;
 
 	nPlayerIndex = MSG_ReadByte();
 	if (nPlayerIndex > MAX_CLIENTS - 1)
@@ -1134,7 +1134,7 @@ void CL_ParseCustomization( void )
 	strcpy(res->szFileName, MSG_ReadString());
 	res->nIndex = MSG_ReadShort();
 	res->nDownloadSize = MSG_ReadLong();
-	res->ucFlags = afFlags = MSG_ReadByte() & ~RES_WASMISSING;
+	res->ucFlags = MSG_ReadByte() & ~RES_WASMISSING;
 	res->pNext = res->pPrev = NULL;
 	if (res->ucFlags & RES_CUSTOM)
 		MSG_ReadBuf(sizeof(res->rgucMD5_hash), res->rgucMD5_hash);
@@ -1172,15 +1172,13 @@ void CL_ParseCustomization( void )
 			pCust = cl.players[res->playernum].customdata.pNext;
 			while (pCust)
 			{
-				if (memcmp(pCust->resource.rgucMD5_hash, res->rgucMD5_hash, sizeof(res->rgucMD5_hash)))
-				{
-					pCust = pCust->pNext;
-				}
-				else
+				if (!memcmp(pCust->resource.rgucMD5_hash, res->rgucMD5_hash, sizeof(res->rgucMD5_hash)))
 				{
 					bDuplicate = TRUE;
 					break;
 				}
+
+				pCust = pCust->pNext;
 			}
 
 			if (bDuplicate)
@@ -1206,12 +1204,15 @@ void CL_ParseCustomization( void )
 
 				if (pCust->resource.ucFlags & RES_CUSTOM && pCust->resource.type == t_decal)
 				{
-					pCust->pInfo = (cachewad_t*) malloc(sizeof(cachewad_t));
-					memset(pCust->pInfo, 0, sizeof(cachewad_t));
-					CustomDecal_Init(pCust->pInfo, pCust->pBuffer, pCust->resource.nDownloadSize);
+					pWad = (cachewad_t*) malloc(sizeof(cachewad_t));
+					pCust->pInfo = pWad;
+
+					memset(pWad, 0, sizeof(cachewad_t));
+
+					CustomDecal_Init(pWad, pCust->pBuffer, pCust->resource.nDownloadSize);
 					pCust->bTranslated = TRUE;
 					pCust->nUserData1 = 0;
-					pCust->nUserData2 = ((cachewad_t*)pCust->pInfo)->lumpCount;
+					pCust->nUserData2 = pWad->lumpCount;
 				}
 			}
 			free(res);
