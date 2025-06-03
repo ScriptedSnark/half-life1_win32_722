@@ -10,6 +10,8 @@
 #define STUDIO_TRACE_HITBOX			0x0200	// always use hitbox trace instead of bbox
 #define STUDIO_FORCE_SKYLIGHT		0x400	// always grab lightvalues from the sky settings (even if sky is invisible)
 
+extern int r_dointerp;
+
 void	AnimationAutomove( const edict_t* pEdict, float flTime );
 void	GetBonePosition( const edict_t* pEdict, int iBone, float* rgflOrigin, float* rgflAngles );
 void	GetAttachment( const edict_t* pEdict, int iAttachment, float* rgflOrigin, float* rgflAngles );
