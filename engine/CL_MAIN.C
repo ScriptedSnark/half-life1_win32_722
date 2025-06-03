@@ -57,6 +57,10 @@ cvar_t	cl_resend = { "cl_resend", "3.0" };
 
 
 
+cvar_t cl_allowdownload = { "cl_allowdownload", "1" };
+cvar_t cl_download_ingame = { "cl_download_ingame", "1" };
+cvar_t cl_download_max = { "cl_download_max", "0" };
+
 cvar_t	rcon_address = { "rcon_address", "" };
 cvar_t	rcon_port = { "rcon_port", "0" };
 
