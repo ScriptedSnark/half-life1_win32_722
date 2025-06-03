@@ -232,6 +232,10 @@ extern	unsigned short* host_basepal;
 extern	unsigned char*	host_colormap;
 extern	int			host_framecount;	// incremented every frame, never reset
 extern	double		realtime;			// not bounded in any way, changed at
+										// start of every frame, never reset
+extern	netadr_t	gMasterAddr;
+extern	qboolean	gfNoMasterServer;
+extern	double		gfMasterHearbeat;
 
 extern	cvar_t		host_speeds;
 // start of every frame, never reset

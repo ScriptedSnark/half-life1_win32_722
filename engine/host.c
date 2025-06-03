@@ -32,7 +32,6 @@ typedef struct adrlist_s
 } adrlist_t;
 
 adrlist_t* valvemaster_adr;
-qboolean gfNoMasterServer;
 
 float		last_master_heartbeat;
 
@@ -53,6 +52,10 @@ jmp_buf		host_enddemo;
 
 unsigned short* host_basepal;
 unsigned char* host_colormap;
+
+netadr_t	gMasterAddr;
+qboolean	gfNoMasterServer = FALSE;
+double		gfMasterHearbeat;
 
 void SV_ClearClientStates( void );
 void Master_Shutdown( void );

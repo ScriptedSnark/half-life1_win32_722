@@ -3333,6 +3333,139 @@ DEMO LOOP CONTROL
 Host_Startdemos_f
 ==================
 */
+void Host_Startdemos_f( void )
+{
+	int		i, c;
+
+	if (cls.state == ca_dedicated)
+	{
+		if (!sv.active)
+			Con_Printf("Cannot play demos on a dedicated server.\n");
+		return;
+	}
+
+	c = Cmd_Argc() - 1;
+	if (c > MAX_DEMOS)
+	{
+		c = MAX_DEMOS;
+		Con_Printf("Max %i demos in demoloop\n", MAX_DEMOS);
+	}
+	Con_Printf("%i demo(s) in loop\n", c);
+
+	for (i = 1; i < c + 1; i++)
+		strncpy(cls.demos[i - 1], Cmd_Argv(i), sizeof(cls.demos[0]) - 1);
+
+	if (!sv.active && cls.demonum != -1 && !cls.demoplayback)
+	{
+		cls.demonum = 0;
+		CL_NextDemo();
+	}
+	else
+		cls.demonum = -1;
+}
+
+
+/*
+==================
+Host_Demos_f
+
+Return to looping demos
+==================
+*/
+void Host_Demos_f( void )
+{
+	if (cls.state == ca_dedicated)
+		return;
+	if (cls.demonum == -1)
+		cls.demonum = 0;
+	CL_Disconnect_f();
+	CL_NextDemo();
+}
+
+/*
+==================
+Host_Stopdemo_f
+
+Return to looping demos
+==================
+*/
+void Host_Stopdemo_f( void )
+{
+	if (cls.state == ca_dedicated)
+		return;
+	if (!cls.demoplayback)
+		return;
+	CL_StopPlayback();
+	CL_Disconnect();
+}
+
+//=============================================================================
+
+// Set master server
+void Master_SetMaster_f( void )
+{
+	int		argc, port;
+	char* pszPort;
+	char	szAdr[128];
+
+	port = 27010;
+
+	argc = Cmd_Argc();
+	if (argc != 2 && argc != 3)
+	{
+		Con_Printf("Setmaster:  Sets master server address\n");
+		Con_Printf("Setmaster none to disable\n");
+		Con_Printf("Setmaster valve to reenable\n");
+		Con_Printf("e.g., setmaster #.#.#.# port#\n");
+		return;
+	}
+
+	if (!_stricmp(Cmd_Argv(1), "none"))
+	{
+		gfNoMasterServer = TRUE;
+		return;
+	}
+
+	if (!_stricmp(Cmd_Argv(1), "valve"))
+	{
+		gfNoMasterServer = FALSE;
+		return;
+	}
+
+	if (argc == 3)
+	{
+		pszPort = Cmd_Argv(2);
+		if (pszPort && pszPort[0])
+		{
+			port = atoi(pszPort);
+			if (!port)
+				port = 27010;
+		}
+	}
+	sprintf(szAdr, "%s:%i", Cmd_Argv(1), port);
+
+	if (!NET_StringToAdr(szAdr, &gMasterAddr))
+	{
+		memset(&gMasterAddr, 0, sizeof(netadr_t));
+		Con_Printf("Invalid address %s\n", szAdr);
+		return;
+	}
+
+	gfNoMasterServer = FALSE;
+
+	Con_Printf("Attempting to set master server to %s\n", NET_AdrToString(gMasterAddr));
+	gfMasterHearbeat = -99999;
+}
+
+void Master_Heartbeat_f( void )
+{
+	gfMasterHearbeat = -9999;
+}
+
+
+
+
+
 
 
 
@@ -3419,6 +3552,9 @@ void Host_InitCommands( void )
 	Cmd_AddCommand("shortname", Host_ShortName_f);
 	Cmd_AddCommand("writeprofile", Host_WriteProfile_f);
 	Cmd_AddCommand("revertprofile", Host_RevertProfile_f);
+	Cmd_AddCommand("startdemos", Host_Startdemos_f);
+	Cmd_AddCommand("demos", Host_Demos_f);
+	Cmd_AddCommand("stopdemo", Host_Stopdemo_f);
 
 	// TODO: Implement
 	
@@ -3433,6 +3569,8 @@ void Host_InitCommands( void )
 	Cmd_AddCommand("viewprev", Host_Viewprev_f);
 	Cmd_AddCommand("mcache", Mod_Print);
 	Cmd_AddCommand("interp", Host_Interp_f);
+	Cmd_AddCommand("setmaster", Master_SetMaster_f);
+	Cmd_AddCommand("heartbeat", Master_Heartbeat_f);
 
 	// TODO: Implement
 

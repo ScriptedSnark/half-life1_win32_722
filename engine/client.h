@@ -598,6 +598,7 @@ void CL_CheckForResend( void );     // If we are in ca_connecting state and it h
 void CL_Connect_f( void );
 void CL_Spectate_f( void );
 void CL_Disconnect_f( void );
+void CL_NextDemo( void );
 
 //
 // cl_ents.c
