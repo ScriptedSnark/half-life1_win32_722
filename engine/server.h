@@ -207,11 +207,11 @@ typedef struct client_s
 	// FF: If changing ANYTHING below, also insert the changes into sv_upld.c and other files!
 	// FF: Some fields may have wrong names e.g. isuploading. These names were just straight guessing
 
-	FILE* download;			// file being downloaded
+	byte* download;			// the download data
 	int downloadsize;		// total bytes
 	int downloadcount;		// bytes sent
 	qboolean downloading;	// true = client is downloading a file
-	CRC32_t downloadingCRC; // CRC32 of the file we are downloading
+	CRC32_t downloadCRC;	// CRC32 of the file we are downloading
 
 	resource_t resourcesonhand; // Head of resources accounted for list
 	resource_t resourcesneeded; // Head of resources to download list
@@ -296,6 +296,9 @@ extern	cvar_t	sv_accelerate;
 
 extern	cvar_t	sv_aim;
 
+extern	cvar_t	sv_allowdownload;
+extern	cvar_t	sv_allowupload;
+extern	cvar_t	sv_upload_maxsize;
 extern	cvar_t	sv_showcmd;
 
 extern cvar_t	sv_uploadinterval;
@@ -348,8 +351,6 @@ void SV_DropClient( client_t* drop, qboolean crash );
 
 int SV_CalcPing( client_t* cl );
 
-void SV_DeallocateDynamicData( void );
-
 
 void SV_StartParticle( const vec_t* org, const vec_t* dir, int color, int count );
 void SV_StartSound( edict_t* entity, int channel, const char* sample, int volume, float attenuation, int fFlags, int pitch );
@@ -362,8 +363,6 @@ void SV_Multicast( vec_t* origin, int to, qboolean reliable );
 
 void SV_ClientPrintf( char* fmt, ... );
 void SV_BroadcastPrintf( char* fmt, ... );
-
-void SV_ClearChannel( qboolean forceclear );
 
 void SV_QueryMovevarsChanged( void );
 void SV_New_f( void );

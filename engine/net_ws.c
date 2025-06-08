@@ -1225,9 +1225,20 @@ void NET_Init( void )
 	// Get our local address, if possible
 	NET_GetLocalAddress();
 
+	gfMasterHearbeat = -99999;
 
-	// TODO: Implement
+	sv_channels = (sv_channel_t*)malloc(sizeof(sv_channel_t));
+	if (!sv_channels)
+		Sys_Error("Failed to allocate default channel memory");
 
+	memset(sv_channels, 0, sizeof(sv_channel_t));
+	sprintf(sv_channels->szName, gszDefaultRoom);
+	sv_channels->pNext = NULL;
+	sv_channels->bDefault = TRUE;
+
+	i = COM_CheckParm("-svchannel");
+	if (i && i < com_argc - 1)
+		strcpy(sv_channels->szName, com_argv[i + 1]);
 
 	Con_Printf("Networking initialized.\n");
 }

@@ -56,8 +56,13 @@ cvar_t sv_newunit = { "sv_newunit", "0" };
 
 cvar_t sv_cheats = { "sv_cheats", "0", FALSE, TRUE };
 
-cvar_t sv_netsize = { "sv_netsize", "0" };
 
+
+
+cvar_t sv_netsize = { "sv_netsize", "0" };
+cvar_t sv_allowdownload = { "sv_allowdownload", "1", FALSE, TRUE };
+cvar_t sv_allowupload = { "sv_allowupload", "1", FALSE, TRUE };
+cvar_t sv_upload_maxsize = { "sv_upload_maxsize", "0", FALSE, TRUE };
 cvar_t sv_showcmd = { "sv_showcmd", "0" };
 
 /*
@@ -815,7 +820,11 @@ void SV_Init( void )
 	Cvar_RegisterVariable(&sv_netsize);
 	Cvar_RegisterVariable(&sv_showcmd);
 
-	// TODO: Implement
+	Cvar_RegisterVariable(&pm_pushfix);
+
+	Cvar_RegisterVariable(&sv_upload_maxsize);
+	Cvar_RegisterVariable(&sv_allowdownload);
+	Cvar_RegisterVariable(&sv_allowupload);
 
 	Pmove_Init();
 
@@ -823,6 +832,8 @@ void SV_Init( void )
 	{
 		sprintf(localmodels[i], "*%i", i);
 	}
+
+	// TODO: Implement
 }
 
 /*
@@ -1080,35 +1091,6 @@ void SV_Multicast( vec_t* origin, int to, qboolean reliable )
 		++i;
 	}
 	SZ_Clear(&sv.multicast);
-}
-
-// TODO: Implement
-
-void SV_ClearChannel( qboolean forceclear )
-{
-	// TODO: Implement; not sure if this function belongs here.
-}
-
-/*
-================
-SV_DeallocateDynamicData
-
-================
-*/
-void SV_DeallocateDynamicData( void )
-{
-	// TODO: Implement
-}
-
-/*
-================
-SV_DeallocateDynamicData
-
-================
-*/
-void SV_ReallocateDynamicData( void )
-{
-	// TODO: Implement
 }
 
 // TODO: Implement

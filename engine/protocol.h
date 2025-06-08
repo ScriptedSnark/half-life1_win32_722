@@ -57,6 +57,8 @@
 #define M2A_CHALLENGE			's'
 								//'s' + challenge value
 
+//
+#define	PORT_MASTER		27010       // Default master port
 #define PORT_CLIENT		"27005"     // Must use atoi to convert to integer
 #define PORT_SERVER		"27015"     //  "
 

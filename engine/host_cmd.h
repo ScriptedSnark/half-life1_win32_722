@@ -15,14 +15,10 @@ void		LandmarkOrigin( SAVERESTOREDATA* pSaveData, vec_t* output, const char* pLa
 void		Host_ClearGameState( void );
 int			Host_Load( const char* pName );
 
-
-
 SAVERESTOREDATA* SaveInit( int size );
 SAVERESTOREDATA* SaveGamestate( void );
 void		SaveExit( SAVERESTOREDATA* save );
 int			LoadGamestate( char* level, int createPlayers );
-
-
 
 void		Host_EndSection( const char* pszSection );
 
@@ -37,5 +33,7 @@ void		DirectoryCopy( const char* pPath, FILE* pFile );
 void		DirectoryExtract( FILE* pFile, int fileCount );
 int			DirectoryCount( const char* pPath );
 void		DirectoryClear( const char* pPath );
+
+void COM_HexConvert( const char* pszInput, int nInputLength, unsigned char* pOutput );
 
 #endif // HOST_CMD_H

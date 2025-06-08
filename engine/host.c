@@ -56,6 +56,8 @@ unsigned char* host_colormap;
 netadr_t	gMasterAddr;
 qboolean	gfNoMasterServer = FALSE;
 double		gfMasterHearbeat;
+char		gszMasterServerAddress[128];
+char		gszDefaultRoom[64];
 
 void SV_ClearClientStates( void );
 void Master_Shutdown( void );
@@ -1553,11 +1555,11 @@ void Master_AddServer( void )
 	// TODO: Implement
 }
 
-void Sys_SetRegKeyValue(char *pszSubKey,
-		char *pszElement,
-		char *pszReturnString,
+void Sys_SetRegKeyValue( char* pszSubKey,
+		char* pszElement,
+		char* pszReturnString,
 		int nReturnLength,
-		char *pszDefaultValue)
+		char* pszDefaultValue )
 {
 	LONG lResult;           // Registry function result code
 	HKEY hKey;              // Handle of opened/created key
@@ -1615,35 +1617,19 @@ void Sys_SetRegKeyValue(char *pszSubKey,
 
 void Master_Init( void )
 {
-	// TODO: Implement
+	char szRegistryPath[128];
+
+	sprintf(gszMasterServerAddress, "207.153.132.168:27010");
+	sprintf(gszDefaultRoom, "#Main");
+	sprintf(szRegistryPath, "Software\\Valve\\Half-Life");
+
+	Sys_SetRegKeyValue(szRegistryPath, "MasterServerAddress", gszMasterServerAddress, sizeof(gszMasterServerAddress) - 1, gszMasterServerAddress);
+	Sys_SetRegKeyValue(szRegistryPath, "DefaultRoom", gszDefaultRoom, sizeof(gszDefaultRoom) - 1, gszDefaultRoom);
 }
 
 void Host_PostFrameRate(float frameTime)
 {
 	g_fFrameTime = frameTime;
-}
-
-/*
-==================
-Master_Heartbeat_f
-
-Force last_heartbeat to invalid value so that we get updated immediately
-==================
-*/
-void Master_Heartbeat_f( void )
-{
-	// TODO: This function is not supposed to be in host.c
-
-	// ISteamMasterServerUpdater_ForceHeartbeat();
-
-	adrlist_t* p;
-	p = valvemaster_adr;
-	while (p)
-	{
-		p->last_heartbeat = -9999.0f;
-
-		p = p->next;
-	}
 }
 
 /*
@@ -2076,7 +2062,7 @@ void Host_Shutdown( void )
 		Host_WriteConfiguration();
 	}
 
-	SV_DeallocateDynamicData();
+	Host_DeallocateDynamicData();
 
 	Master_Shutdown();
 
@@ -2086,7 +2072,7 @@ void Host_Shutdown( void )
 
 	Host_WriteConfiguration();
 
-	SV_ClearChannel(FALSE);
+	SV_ClearChannels(FALSE);
 
 	NET_Shutdown();
 	S_Shutdown();

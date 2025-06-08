@@ -236,6 +236,22 @@ extern	double		realtime;			// not bounded in any way, changed at
 extern	netadr_t	gMasterAddr;
 extern	qboolean	gfNoMasterServer;
 extern	double		gfMasterHearbeat;
+extern	char		gszMasterServerAddress[128];
+extern	char		gszDefaultRoom[64];
+
+#define MAX_SERVER_ROOMS	10
+
+typedef struct sv_channel_s
+{
+	char		szName[16];
+	qboolean	bDefault;
+	struct sv_channel_s* pNext;
+} sv_channel_t;
+
+extern sv_channel_t* sv_channels;
+
+qboolean SV_CheckChannel( char* pszChannel );
+void SV_ClearChannels( qboolean bKeepDefault );
 
 extern	cvar_t		host_speeds;
 // start of every frame, never reset

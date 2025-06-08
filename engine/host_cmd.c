@@ -3408,7 +3408,7 @@ void Master_SetMaster_f( void )
 	char* pszPort;
 	char	szAdr[128];
 
-	port = 27010;
+	port = PORT_MASTER;
 
 	argc = Cmd_Argc();
 	if (argc != 2 && argc != 3)
@@ -3439,7 +3439,7 @@ void Master_SetMaster_f( void )
 		{
 			port = atoi(pszPort);
 			if (!port)
-				port = 27010;
+				port = PORT_MASTER;
 		}
 	}
 	sprintf(szAdr, "%s:%i", Cmd_Argv(1), port);
@@ -3457,15 +3457,405 @@ void Master_SetMaster_f( void )
 	gfMasterHearbeat = -99999;
 }
 
+/*
+==================
+Master_Heartbeat_f
+
+Force the last heartbeat to an invalid value so that we update immediately
+==================
+*/
 void Master_Heartbeat_f( void )
 {
 	gfMasterHearbeat = -9999;
 }
 
+//=============================================================================
 
+sv_channel_t* sv_channels;
 
+/*
+==================
+SV_CheckChannel
 
+Check if the server room exists
+==================
+*/
+qboolean SV_CheckChannel( char* pszChannel )
+{
+	sv_channel_t* pChannel;
 
+	if (!pszChannel || !pszChannel[0])
+		return FALSE;
+
+	pChannel = sv_channels;
+	while (pChannel)
+	{
+		if (!_stricmp(pChannel->szName, pszChannel))
+			return TRUE;
+
+		pChannel = pChannel->pNext;
+	}
+
+	return FALSE;
+}
+
+/*
+==================
+SV_AddChannel_f
+
+Add server room
+==================
+*/
+void SV_AddChannel_f( void )
+{
+	int i;
+	qboolean bFound;
+	sv_channel_t* pChannel;
+
+	if (Cmd_Argc() == 2)
+	{
+		bFound = FALSE;
+
+		// See if this channel already exists
+		i = 0;
+		pChannel = sv_channels;
+		while (pChannel)
+		{
+			i++;
+			if (!_stricmp(pChannel->szName, Cmd_Argv(1)))
+			{
+				bFound = TRUE;
+				strncpy(pChannel->szName, Cmd_Argv(1), sizeof(pChannel->szName));
+				pChannel->szName[sizeof(pChannel->szName) - 1] = 0;
+				break;
+			}
+
+			pChannel = pChannel->pNext;
+		}
+
+		if (!bFound)
+		{
+			if (i >= MAX_SERVER_ROOMS)
+				return;
+
+			pChannel = (sv_channel_t*)malloc(sizeof(sv_channel_t));
+			if (!pChannel)
+				Sys_Error("Failed to allocate channel!");
+			memset(pChannel, 0, 64);
+			strncpy(pChannel->szName, Cmd_Argv(1), sizeof(pChannel->szName));
+			pChannel->szName[sizeof(pChannel->szName) - 1] = 0;
+			pChannel->bDefault = FALSE;
+			pChannel->pNext = sv_channels;
+			sv_channels = pChannel;
+		}
+
+		gfMasterHearbeat = -99999;
+	}
+	else
+	{
+		Con_Printf("svaddchannel:  Adds server room (16 chars max)\ncurrent:  \n");
+
+		if (!sv_channels)
+		{
+			Con_Printf("none\n");
+			return;
+		}
+
+		i = 0;
+		pChannel = sv_channels;
+		while (pChannel)
+		{
+			i++;
+			if (pChannel->bDefault)
+				Con_Printf("  %i : %s (default)\n", i, pChannel);
+			else
+				Con_Printf("  %i : %s\n", i, pChannel);
+
+			pChannel = pChannel->pNext;
+		}
+	}
+}
+
+/*
+==================
+SV_RemoveChannel_f
+
+Remove server room
+==================
+*/
+void SV_RemoveChannel_f( void )
+{
+	qboolean bFound;
+	sv_channel_t* pChannel, * pPrev;
+
+	if (Cmd_Argc() != 2)
+	{
+		Con_Printf("svremovechannel:  Removes server room (16 chars max)\n");
+		return;
+	}
+
+	bFound = FALSE;
+
+	pChannel = sv_channels;
+	while (pChannel)
+	{
+		if (!_stricmp(pChannel->szName, Cmd_Argv(1)))
+		{
+			bFound = TRUE;
+			break;
+		}
+
+		pChannel = pChannel->pNext;
+	}
+
+	if (!bFound || !pChannel)
+	{
+		Con_Printf("Unknown server:  %s\n", Cmd_Argv(1));
+		return;
+	}
+
+	if (pChannel->bDefault)
+	{
+		Con_Printf("Can't delete default server:  %s\n", Cmd_Argv(1));
+		return;
+	}
+
+	// Remove from linked list
+	if (pChannel == sv_channels)
+	{
+		sv_channels = sv_channels->pNext;
+	}
+	else
+	{
+		pPrev = sv_channels;
+		while (pPrev->pNext != pChannel)
+		{
+			pPrev = pPrev->pNext;
+		}
+		pPrev->pNext = pChannel->pNext;
+	}
+	free(pChannel);
+
+	gfMasterHearbeat = -99999;
+}
+
+/*
+==================
+SV_ClearChannels
+
+==================
+*/
+void SV_ClearChannels( qboolean bKeepDefault )
+{
+	sv_channel_t* pChannel;
+	sv_channel_t* pNext;
+	sv_channel_t* pNewList = NULL;
+
+	pChannel = sv_channels;
+	while (pChannel)
+	{
+		pNext = pChannel->pNext;
+
+		if (pChannel->bDefault && bKeepDefault)
+		{
+			pChannel->pNext = pNewList;
+			pNewList = pChannel;
+		}
+		else
+		{
+			free(pChannel);
+		}
+
+		pChannel = pNext;
+	}
+
+	if (pNewList)
+		sv_channels = pNewList;
+	else
+		sv_channels = NULL;
+}
+
+/*
+==================
+SV_ClearChannels_f
+
+==================
+*/
+void SV_ClearChannels_f( void )
+{
+	if (Cmd_Argc() != 1)
+	{
+		Con_Printf("svclearchannels:  Clears all server room associations (except default)\n");
+		return;
+	}
+	
+	SV_ClearChannels(TRUE);
+	gfMasterHearbeat = -99999;
+}
+
+/*
+==================
+SV_NextDownload_f
+
+Sends next file chunk to client. Called automatically during downloads.
+Packets contain: file data (1024b chunks), progress %, and CRC checksum.
+==================
+*/
+void SV_NextDownload_f( void )
+{
+	byte* pDownloadData;
+	int nCurrentOffset;
+	int nChunkSize;
+	int downloadsize;
+
+	if (cmd_source == src_command)
+	{
+		Cmd_ForwardToServer();
+		return;
+	}
+
+	pDownloadData = host_client->download;
+	if (!pDownloadData)
+		return;
+
+	nCurrentOffset = host_client->downloadcount;
+
+	// Determine chunk size (max 1024 bytes)
+	nChunkSize = host_client->downloadsize - nCurrentOffset;
+	if (nChunkSize > 1024)
+		nChunkSize = 1024;
+
+	CRC32_ProcessBuffer(&host_client->downloadCRC, &pDownloadData[nCurrentOffset], nChunkSize);
+
+	// Send download info packet
+	MSG_WriteByte(&host_client->netchan.message, svc_download);
+	MSG_WriteShort(&host_client->netchan.message, nChunkSize);
+	MSG_WriteShort(&host_client->netchan.message, nCurrentOffset / 1024);
+	MSG_WriteLong(&host_client->netchan.message, host_client->downloadCRC);
+
+	downloadsize = host_client->downloadsize;
+	host_client->downloadcount += nChunkSize;
+
+	if (downloadsize == 0)
+		downloadsize = 1;
+
+	// Send progress percentage
+	MSG_WriteByte(&host_client->netchan.message, host_client->downloadcount / downloadsize * 100);
+
+	// Send the actual data chunk
+	SZ_Write(&host_client->netchan.message, &host_client->download[host_client->downloadcount - nChunkSize], nChunkSize);
+
+	if (host_client->downloadcount == host_client->downloadsize)
+	{
+		COM_FreeFile(host_client->download);
+		host_client->download = NULL;
+	}
+}
+
+/*
+==================
+SV_SetupResume
+
+==================
+*/
+void SV_SetupResume( int nSize, CRC32_t crc )
+{
+	CRC32_t crcFile;
+
+	if (nSize < 0)
+		return;
+
+	nSize *= 1024;
+	if (host_client->downloadsize < nSize)
+		return;
+
+	CRC32_Init(&crcFile);
+	CRC32_ProcessBuffer(&crcFile, host_client->download, nSize);
+	crcFile = CRC32_Final(crcFile);
+	if (crcFile == crc)
+	{
+		host_client->downloadcount = nSize;
+		host_client->downloadCRC = crc;
+		host_client->downloading = TRUE;
+	}
+}
+
+/*
+==================
+SV_AllowDownload_f
+
+==================
+*/
+void SV_AllowDownload_f( void )
+{
+	sv_allowdownload.value = !sv_allowdownload.value;
+
+	if (!sv_allowdownload.value)
+		Con_Printf("Server downloading disabled.\n");
+	else
+		Con_Printf("Server downloading enabled.\n");
+}
+
+/*
+==================
+SV_AllowUpload_f
+
+==================
+*/
+void SV_AllowUpload_f( void )
+{
+	sv_allowupload.value = !sv_allowupload.value;
+
+	if (!sv_allowupload.value)
+		Con_Printf("Server uploading disabled.\n");
+	else
+		Con_Printf("Server uploading enabled.\nMax. upload size is %i", sv_upload_maxsize.name);
+}
+
+/*
+==================
+COM_Nibble
+
+Returns the 4 bit nibble for a hex character
+==================
+*/
+unsigned char COM_Nibble( char c )
+{
+	if ((c >= '0') && (c <= '9'))
+		return (unsigned char)(c - '0');
+
+	if ((c >= 'A') && (c <= 'F'))
+		return (unsigned char)(c - 'A' + 0x0a);
+
+	if ((c >= 'a') && (c <= 'f'))
+		return (unsigned char)(c - 'a' + 0x0a);
+
+	return c;
+}
+
+/*
+==================
+COM_HexConvert
+
+Converts pszInput Hex string to nInputLength/2 binary
+==================
+*/
+void COM_HexConvert( const char* pszInput, int nInputLength, unsigned char* pOutput )
+{
+	unsigned char* p;
+	int i;
+	const char* pIn;
+
+	p = pOutput;
+	for (i = 0; i < nInputLength; i += 2)
+	{
+		pIn = &pszInput[i];
+
+		*p = COM_Nibble(pIn[0]) << 4 | COM_Nibble(pIn[1]);
+
+		p++;
+	}
+}
 
 
 
@@ -3473,20 +3863,6 @@ void Master_Heartbeat_f( void )
 
 
 //============================================================================= FINISH LINE
-
-// TODO: Implement
-
-/*
-==================
-COM_HexConvert
-
-Convert a string containing hexadecimal characters into the hexadecimal number itself.
-==================
-*/
-void COM_HexConvert( const char* pszInput, int nInputLength, unsigned char* pOutput )
-{
-	// TODO: Implement
-}
 
 // TODO: Implement
 
@@ -3571,10 +3947,18 @@ void Host_InitCommands( void )
 	Cmd_AddCommand("interp", Host_Interp_f);
 	Cmd_AddCommand("setmaster", Master_SetMaster_f);
 	Cmd_AddCommand("heartbeat", Master_Heartbeat_f);
+	Cmd_AddCommand("svaddchannel", SV_AddChannel_f);
+	//Cmd_AddCommand("motd", Host_RequestMOTD_f); TODO: Implement
+	Cmd_AddCommand("svremovechannel", SV_RemoveChannel_f);
+	Cmd_AddCommand("svclearchannels", SV_ClearChannels_f);
 
 	// TODO: Implement
-
+	
+	Cmd_AddCommand("nextdl", SV_NextDownload_f);
+	Cmd_AddCommand("sv_allow_download", SV_AllowDownload_f);
+	Cmd_AddCommand("sv_allow_upload", SV_AllowUpload_f);
 	Cmd_AddCommand("resourcelist", SV_SendResourceListBlock_f);
+
 	Cvar_RegisterVariable(&rcon_password);
 
 	// TODO: Implement
