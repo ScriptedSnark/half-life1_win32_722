@@ -1550,6 +1550,11 @@ void Master_Shutdown( void )
 	// TODO: Implement
 }
 
+void Host_RequestMOTD_f( void )
+{
+	// TODO: Implement
+}
+
 void Master_AddServer( void )
 {
 	// TODO: Implement

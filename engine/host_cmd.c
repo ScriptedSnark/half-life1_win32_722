@@ -10,8 +10,6 @@
 int	current_skill;
 int	gHostSpawnCount = 0;
 
-cvar_t rcon_password = { "rcon_password", "" };
-
 // Game Desription
 TYPEDESCRIPTION gGameHeaderDescription[] =
 {
@@ -3954,14 +3952,10 @@ void SV_BeginDownload_f( void )
 	Con_DPrintf("Downloading %s to %s\n", name, host_client->name);
 }
 
-
-
-
-
-
-//============================================================================= FINISH LINE
-
-// TODO: Implement
+void Host_Reactivate_f( void )
+{
+	AppActivate(TRUE, FALSE);
+}
 
 /*
 ==============================
@@ -3976,10 +3970,109 @@ Possible values:
 */
 void Host_EndSection( const char* pszSection )
 {
-	// TODO: Implement
+	giActive = DLL_PAUSED;
+	giSubState = ENG_NORMAL;
+	giStateInfo = STATE_TRAINING;
+
+	if (!pszSection || !pszSection[0])
+		Con_Printf(" endsection with no arguments\n");
+	else
+	{
+		if (!_stricmp(pszSection, "_oem_end_training"))
+			giStateInfo = STATE_TRAINING;
+		else if (!_stricmp(pszSection, "_oem_end_logo"))
+			giStateInfo = STATE_ENDLOGO;
+		else if (!_stricmp(pszSection, "_oem_end_demo"))
+			giStateInfo = STATE_ENDDEMO;
+		else
+			Con_DPrintf(" endsection with unknown Section keyvalue\n");
+	}
+
+	Cbuf_AddText("\ndisconnect\n");
 }
 
-// TODO: Implement
+/*
+==================
+Host_WC_f
+
+Switch the main window to worldcraft
+==================
+*/
+void Host_WC_f( void )
+{
+	Con_DPrintf("Switching to worldcraft\n");
+
+	if (!FindWindow("VALVEWORLDCRAFT", NULL))
+		return;
+
+	giActive = DLL_PAUSED;
+	giStateInfo = STATE_WORLDCRAFT;
+}
+
+/*
+==================
+Host_Soundfade_f
+
+==================
+*/
+void Host_Soundfade_f( void )
+{
+	int percent;
+	int inTime, holdTime, outTime;
+
+	if (Cmd_Argc() != 3 && Cmd_Argc() != 5)
+	{
+		Con_Printf("soundfade <percent> <hold> [<out> <int>]\n");
+		return;
+	}
+
+	percent = atoi(Cmd_Argv(1));
+	percent = min(percent, 100);
+	percent = max(percent, 0);
+
+	holdTime = atoi(Cmd_Argv(2));
+	if (holdTime > 255)
+		holdTime = 255;
+
+	inTime = 0;
+	outTime = 0;
+	if (Cmd_Argc() == 5)
+	{
+		outTime = atoi(Cmd_Argv(3));
+		if (outTime > 255)
+			outTime = 255;
+
+		inTime = atoi(Cmd_Argv(4));
+		if (inTime > 255)
+			inTime = 255;
+	}
+
+	cls.soundfade.nStartPercent = percent;
+	cls.soundfade.soundFadeStartTime = realtime;
+	cls.soundfade.soundFadeOutTime = outTime;
+	cls.soundfade.soundFadeHoldTime = holdTime;
+	cls.soundfade.soundFadeInTime = inTime;
+}
+
+/*
+==================
+Host_KillServer_f
+
+==================
+*/
+void Host_KillServer_f( void )
+{
+	if (cls.state != ca_dedicated)
+	{
+		CL_Disconnect_f();
+		return;
+	}
+
+	if (sv.active)
+	{
+		Host_ShutdownServer(FALSE);
+	}
+}
 
 //=============================================================================
 
@@ -3990,12 +4083,10 @@ Host_InitCommands
 */
 void Host_InitCommands( void )
 {
-	// TODO: Implement
-	
+	Cmd_AddCommand("killserver", Host_KillServer_f);
+	Cmd_AddCommand("soundfade", Host_Soundfade_f);
+	Cmd_AddCommand("wc", Host_WC_f);
 	Cmd_AddCommand("status", Host_Status_f);
-
-	// TODO: Implement
-
 	Cmd_AddCommand("quit", Host_Quit_f);
 	Cmd_AddCommand("exit", Host_Quit_f);
 	Cmd_AddCommand("map", Host_Map_f);
@@ -4017,40 +4108,48 @@ void Host_InitCommands( void )
 	Cmd_AddCommand("spawn", Host_Spawn_f);
 	Cmd_AddCommand("begin", Host_Begin_f);
 	Cmd_AddCommand("prespawn", Host_PreSpawn_f);
-	Cmd_AddCommand("kick", Host_Kick_f);	
+	Cmd_AddCommand("kick", Host_Kick_f);
 	Cmd_AddCommand("ping", Host_Ping_f);
-	Cmd_AddCommand("load", Host_Loadgame_f);	
+	Cmd_AddCommand("load", Host_Loadgame_f);
 	Cmd_AddCommand("save", Host_Savegame_f);
-	Cmd_AddCommand("autosave", Host_AutoSave_f);	
+	Cmd_AddCommand("autosave", Host_AutoSave_f);
 	Cmd_AddCommand("shortname", Host_ShortName_f);
 	Cmd_AddCommand("writeprofile", Host_WriteProfile_f);
 	Cmd_AddCommand("revertprofile", Host_RevertProfile_f);
+
 	Cmd_AddCommand("startdemos", Host_Startdemos_f);
 	Cmd_AddCommand("demos", Host_Demos_f);
 	Cmd_AddCommand("stopdemo", Host_Stopdemo_f);
 
-	// TODO: Implement
-	
+	Cmd_AddCommand("reactivate", Host_Reactivate_f);
+	Cmd_AddCommand("ptrack", SV_PTrack_f);
+	Cmd_AddCommand("customrsrclist", SV_RequestResourceList_f);
 	Cmd_AddCommand("god", Host_God_f);
 	Cmd_AddCommand("notarget", Host_Notarget_f);
 	Cmd_AddCommand("fly", Host_Fly_f);
 	Cmd_AddCommand("noclip", Host_Noclip_f);
 	Cmd_AddCommand("spectate", Host_Spectate_f);
+
 	Cmd_AddCommand("viewmodel", Host_Viewmodel_f);
 	Cmd_AddCommand("viewframe", Host_Viewframe_f);
 	Cmd_AddCommand("viewnext", Host_Viewnext_f);
 	Cmd_AddCommand("viewprev", Host_Viewprev_f);
+
 	Cmd_AddCommand("mcache", Mod_Print);
+
 	Cmd_AddCommand("interp", Host_Interp_f);
 	Cmd_AddCommand("setmaster", Master_SetMaster_f);
 	Cmd_AddCommand("heartbeat", Master_Heartbeat_f);
 	Cmd_AddCommand("svaddchannel", SV_AddChannel_f);
-	//Cmd_AddCommand("motd", Host_RequestMOTD_f); TODO: Implement
+	Cmd_AddCommand("motd", Host_RequestMOTD_f);
 	Cmd_AddCommand("svremovechannel", SV_RemoveChannel_f);
 	Cmd_AddCommand("svclearchannels", SV_ClearChannels_f);
-
-	// TODO: Implement
-	
+	Cmd_AddCommand("sv_print_custom", SV_PrintCusomizations_f);
+	Cmd_AddCommand("addip", SV_AddIP_f);
+	Cmd_AddCommand("removeip", SV_RemoveIP_f);
+	Cmd_AddCommand("listip", SV_ListIP_f);
+	Cmd_AddCommand("writeip", SV_WriteIP_f);
+	Cmd_AddCommand("mem_prediction", SV_MemPrediction_f);
 	Cmd_AddCommand("download", SV_BeginDownload_f);
 	Cmd_AddCommand("nextdl", SV_NextDownload_f);
 	Cmd_AddCommand("sv_allow_download", SV_AllowDownload_f);
@@ -4058,14 +4157,17 @@ void Host_InitCommands( void )
 	Cmd_AddCommand("resourcelist", SV_SendResourceListBlock_f);
 
 	Cvar_RegisterVariable(&rcon_password);
-
-	// TODO: Implement
+	Cvar_RegisterVariable(&filterban);
 
 	Cmd_AddCommand("new", SV_New_f);
+	Cmd_AddCommand("dropclient", SV_Drop_f);
 
-	// TODO: Implement
-	
 	Cvar_RegisterVariable(&gHostMap);
 
-	// TODO: Implement
+	Cmd_AddCommand("keys", SV_Keys_f);
+
+	Host_ClearSaveDirectory();
+
+	Cmd_AddCommand("hpklist", HPAK_List_f);
+	Cmd_AddCommand("hpkremove", HPAK_Remove_f);
 }

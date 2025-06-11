@@ -69,6 +69,8 @@ cvar_t		cl_movespeedkey	 = { "cl_movespeedkey", "0.3" };
 cvar_t		cl_pitchup		 = { "cl_pitchup", "89" };
 cvar_t		cl_pitchdown	 = { "cl_pitchdown", "89" };
 
+cvar_t		rcon_password = { "rcon_password", "" };
+
 
 // In third person
 int cam_thirdperson;

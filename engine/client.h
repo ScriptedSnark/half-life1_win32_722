@@ -127,6 +127,25 @@ typedef enum
 	ca_active			// everything is in, so frames can be rendered
 } cactive_t;
 
+// Structure used for fading in and out client sound volume.
+typedef struct soundfade_s
+{
+	int		nStartPercent;
+
+	// How far to adjust client's volume down by.
+	int		nClientSoundFadePercent;
+
+	// realtime when we started adjusting volume
+	double	soundFadeStartTime;
+
+	// # of seconds to get to faded out state
+	int		soundFadeOutTime;
+	// # of seconds to hold
+	int		soundFadeHoldTime;
+	// # of seconds to restore
+	int		soundFadeInTime;
+} soundfade_t;
+
 //
 // the client_static_t structure is persistant through an arbitrary number
 // of server connections
@@ -202,7 +221,7 @@ typedef struct
 
 	float		latency;		// rolling average
 
-	// TODO: Implement
+	soundfade_t soundfade;			// Client sound fading object
 
 } client_static_t;
 

@@ -21,3 +21,10 @@
 
 // DLL Substate info ( not relevant )
 #define ENG_NORMAL         (1<<0)
+
+// DLL State info
+#define STATE_TRAINING		1	// training
+#define STATE_ENDLOGO		2	// end of the "Half-Life" logo
+#define STATE_ENDDEMO		3	// end of the demo
+
+#define STATE_WORLDCRAFT	5	// end of the demo

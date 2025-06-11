@@ -5,8 +5,8 @@
 #pragma once
 #endif
 
-extern int  gHostSpawnCount;
 extern int	current_skill;
+extern int  gHostSpawnCount;
 
 int			EntryInTable( SAVERESTOREDATA* pSaveData, const char* pMapName, int index );
 int			EntityInSolid( edict_t* pent );

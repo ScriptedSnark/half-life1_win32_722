@@ -29,6 +29,16 @@ qboolean HPAK_ResourceForHash( char* pakname, byte* hash, resource_t* pResourceE
 	return FALSE;
 }
 
+void HPAK_List_f( void )
+{
+	// TODO: Implement
+}
+
+void HPAK_Remove_f( void )
+{
+	// TODO: Implement
+}
+
 qboolean HPAK_GetDataPointer( char* pakname, resource_t* pResource, FILE** pfOutput )
 {
 	// TODO: Implement

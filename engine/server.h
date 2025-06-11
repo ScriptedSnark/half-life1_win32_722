@@ -301,6 +301,8 @@ extern	cvar_t	sv_allow_upload;
 extern	cvar_t	sv_upload_maxsize;
 extern	cvar_t	sv_showcmd;
 
+extern	cvar_t	filterban;
+
 extern cvar_t	sv_uploadinterval;
 
 extern float		g_LastScreenUpdateTime;
@@ -366,14 +368,24 @@ void SV_BroadcastPrintf( char* fmt, ... );
 
 void SV_QueryMovevarsChanged( void );
 void SV_New_f( void );
+void SV_PTrack_f( void );
 void SV_ActivateServer( qboolean runPhysics );
 int SV_SpawnServer( qboolean bIsDemo, char* server, char* startspot );
 void SV_LoadEntities( void );
 void SV_InactivateClients( void );
+void SV_MemPrediction_f( void );
+void SV_AddIP_f( void );
+void SV_RemoveIP_f( void );
+void SV_ListIP_f( void );
+void SV_WriteIP_f( void );
+void SV_Keys_f( void );
 
 int RegUserMsg( const char* pszName, int iSize );
 
+
+
 void Master_Heartbeat( void );
+void Host_RequestMOTD_f( void );
 
 typedef enum
 {
@@ -407,6 +419,7 @@ void SV_ExecuteClientMessage( client_t* cl );
 void SV_PreRunCmd( void );
 void SV_RunCmd( usercmd_t* ucmd );
 void SV_PostRunCmd(	void );
+void SV_Drop_f( void );
 
 //
 // sv_phys.c
@@ -435,6 +448,8 @@ void SV_MoveToOrigin_I( edict_t* ent, const float* pflGoal, float dist, int iStr
 int SV_ModelIndex( char* name );
 void SV_FlushSignon( void );
 void SV_SendResourceListBlock_f( void );
+void SV_RequestResourceList_f( void );
+void SV_PrintCusomizations_f( void );
 void SV_AddResource( resourcetype_t type, const char* name, int size, byte flags, int index );
 void SV_CreateResourceList( void );
 void SV_ClearResourceLists( client_t* cl );

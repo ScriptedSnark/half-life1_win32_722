@@ -63,7 +63,10 @@ cvar_t sv_netsize = { "sv_netsize", "0" };
 cvar_t sv_allow_download = { "sv_allowdownload", "1", FALSE, TRUE };
 cvar_t sv_allow_upload = { "sv_allowupload", "1", FALSE, TRUE };
 cvar_t sv_upload_maxsize = { "sv_upload_maxsize", "0", FALSE, TRUE };
+
 cvar_t sv_showcmd = { "sv_showcmd", "0" };
+
+cvar_t filterban = { "filterban", "1" };
 
 /*
 ================
@@ -868,6 +871,11 @@ void SV_CountPlayers( int* clients, int* spectators )
 
 // TODO: Implement
 
+void SV_MemPrediction_f( void )
+{
+	// TODO: Implement
+}
+
 int SV_PointLeafnum( vec_t* p )
 {
 	mleaf_t* pLeaf;
@@ -1422,6 +1430,11 @@ void SV_New_f( void )
 	++net_activeconnections;
 }
 
+void SV_PTrack_f( void )
+{
+	// TODO: Implement
+}
+
 /*
 ================
 SV_ActivateServer
@@ -1776,4 +1789,29 @@ Load up the entities from the bsp
 void SV_LoadEntities( void )
 {
 	ED_LoadFromFile(sv.worldmodel->entities);
+}
+
+void SV_AddIP_f( void )
+{
+	// TODO: Implement
+}
+
+void SV_RemoveIP_f( void )
+{
+	// TODO: Implement
+}
+
+void SV_ListIP_f( void )
+{
+	// TODO: Implement
+}
+
+void SV_WriteIP_f( void )
+{
+	// TODO: Implement
+}
+
+void SV_Keys_f( void )
+{
+	// TODO: Implement
 }
