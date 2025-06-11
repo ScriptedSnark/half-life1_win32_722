@@ -60,8 +60,8 @@ cvar_t sv_cheats = { "sv_cheats", "0", FALSE, TRUE };
 
 
 cvar_t sv_netsize = { "sv_netsize", "0" };
-cvar_t sv_allowdownload = { "sv_allowdownload", "1", FALSE, TRUE };
-cvar_t sv_allowupload = { "sv_allowupload", "1", FALSE, TRUE };
+cvar_t sv_allow_download = { "sv_allowdownload", "1", FALSE, TRUE };
+cvar_t sv_allow_upload = { "sv_allowupload", "1", FALSE, TRUE };
 cvar_t sv_upload_maxsize = { "sv_upload_maxsize", "0", FALSE, TRUE };
 cvar_t sv_showcmd = { "sv_showcmd", "0" };
 
@@ -823,8 +823,8 @@ void SV_Init( void )
 	Cvar_RegisterVariable(&pm_pushfix);
 
 	Cvar_RegisterVariable(&sv_upload_maxsize);
-	Cvar_RegisterVariable(&sv_allowdownload);
-	Cvar_RegisterVariable(&sv_allowupload);
+	Cvar_RegisterVariable(&sv_allow_download);
+	Cvar_RegisterVariable(&sv_allow_upload);
 
 	Pmove_Init();
 

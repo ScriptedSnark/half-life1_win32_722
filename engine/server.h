@@ -296,8 +296,8 @@ extern	cvar_t	sv_accelerate;
 
 extern	cvar_t	sv_aim;
 
-extern	cvar_t	sv_allowdownload;
-extern	cvar_t	sv_allowupload;
+extern	cvar_t	sv_allow_download;
+extern	cvar_t	sv_allow_upload;
 extern	cvar_t	sv_upload_maxsize;
 extern	cvar_t	sv_showcmd;
 

@@ -62,7 +62,7 @@ typedef struct
 	// TODO: Implement
 
 	qboolean	custom;					// TRUE is downloading a custom resource
-	FILE*		upload;					// Handle of file being uploaded
+	FILE*		upload;					// Handle of the file being uploaded
 
 	// TODO: Implement
 
@@ -647,6 +647,8 @@ void CL_ParseServerMessage( void );
 
 void CL_DeallocateDynamicData( void );
 
+
+qboolean CL_CheckFile( char* filename );
 
 
 

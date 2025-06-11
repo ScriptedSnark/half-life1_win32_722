@@ -3,6 +3,7 @@
 #include "pr_cmds.h"
 #include "cl_demo.h"
 #include "decal.h"
+#include "hashpak.h"
 #include "r_studio.h"
 #include "pr_edict.h"
 
@@ -3788,9 +3789,9 @@ SV_AllowDownload_f
 */
 void SV_AllowDownload_f( void )
 {
-	sv_allowdownload.value = !sv_allowdownload.value;
+	sv_allow_download.value = !sv_allow_download.value;
 
-	if (!sv_allowdownload.value)
+	if (!sv_allow_download.value)
 		Con_Printf("Server downloading disabled.\n");
 	else
 		Con_Printf("Server downloading enabled.\n");
@@ -3804,9 +3805,9 @@ SV_AllowUpload_f
 */
 void SV_AllowUpload_f( void )
 {
-	sv_allowupload.value = !sv_allowupload.value;
+	sv_allow_upload.value = !sv_allow_upload.value;
 
-	if (!sv_allowupload.value)
+	if (!sv_allow_upload.value)
 		Con_Printf("Server uploading disabled.\n");
 	else
 		Con_Printf("Server uploading enabled.\nMax. upload size is %i", sv_upload_maxsize.name);
@@ -3855,6 +3856,102 @@ void COM_HexConvert( const char* pszInput, int nInputLength, unsigned char* pOut
 
 		p++;
 	}
+}
+
+/*
+==================
+SV_BeginDownload_f
+
+Starts file download to client, handles both normal files and MD5-hashed resources
+==================
+*/
+void SV_BeginDownload_f( void )
+{
+	char* name;
+	FILE* file;
+
+	name = Cmd_Argv(1);
+
+	if (cmd_source == src_command)
+	{
+		CL_CheckFile(name);
+		return;
+	}
+
+	if (strstr(name, "..") || !sv_allow_download.value)
+	{
+		// Some evil file or we're not allowed to download	the files via netchan
+		MSG_WriteByte(&host_client->netchan.message, svc_download);
+		MSG_WriteShort(&host_client->netchan.message, -1);
+		MSG_WriteShort(&host_client->netchan.message, -1);
+		MSG_WriteLong(&host_client->netchan.message, -1);
+		MSG_WriteByte(&host_client->netchan.message, 0);
+		return;
+	}
+
+	if (host_client->download)
+	{
+		COM_FreeFile(host_client->download);
+		host_client->download = NULL;
+	}
+
+	file = NULL;
+
+	// Handle customizations
+	if (strlen(name) == 36 && !_strnicmp(name, "!MD5", 4))
+	{
+		resource_t resource;
+		unsigned char rgucMD5_hash[16];
+
+		memset(&resource, 0, sizeof(resource));
+
+		COM_HexConvert(name + 4, 32, rgucMD5_hash);
+
+		if (HPAK_ResourceForHash("custom.hpk", rgucMD5_hash, &resource) && HPAK_GetDataPointer("custom.hpk", &resource, &file))
+		{
+			host_client->downloadsize = resource.nDownloadSize;
+			host_client->download = malloc(resource.nDownloadSize + 1);
+			fread(host_client->download, resource.nDownloadSize, 1, file);
+			host_client->download[resource.nDownloadSize] = 0;
+			fclose(file);
+			file = NULL;
+		}
+	}
+	else
+	{
+		host_client->downloadsize = COM_FindFile(name, NULL, &file);
+		if (host_client->downloadsize != -1 && file)
+		{
+			host_client->download = COM_LoadFile(name, 5, NULL);
+			fclose(file);
+			file = NULL;
+		}
+	}
+
+	host_client->downloadcount = 0;
+
+	if (host_client->downloadsize == -1 || !host_client->download)
+	{
+		// No more files to download
+		MSG_WriteByte(&host_client->netchan.message, svc_download);
+		MSG_WriteShort(&host_client->netchan.message, -1);
+		MSG_WriteShort(&host_client->netchan.message, -1);
+		MSG_WriteLong(&host_client->netchan.message, -2);
+		MSG_WriteByte(&host_client->netchan.message, 0);
+		return;
+	}
+
+	host_client->downloading = FALSE;
+
+	CRC32_Init(&host_client->downloadCRC);
+
+	if (Cmd_Argc() == 4)
+	{
+		SV_SetupResume(atoi(Cmd_Argv(2)), atol(Cmd_Argv(3)));
+	}
+
+	SV_NextDownload_f();
+	Con_DPrintf("Downloading %s to %s\n", name, host_client->name);
 }
 
 
@@ -3954,6 +4051,7 @@ void Host_InitCommands( void )
 
 	// TODO: Implement
 	
+	Cmd_AddCommand("download", SV_BeginDownload_f);
 	Cmd_AddCommand("nextdl", SV_NextDownload_f);
 	Cmd_AddCommand("sv_allow_download", SV_AllowDownload_f);
 	Cmd_AddCommand("sv_allow_upload", SV_AllowUpload_f);
