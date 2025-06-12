@@ -374,15 +374,304 @@ void R_DrawSpriteModel( cl_entity_t* e )
 =============================================================
 */
 
+
 #define NUMVERTEXNORMALS	162
 float	r_avertexnormals[NUMVERTEXNORMALS][3] = {
-	#include "anorms.h"
+#include "anorms.h"
 };
 
 vec3_t	shadevector;
 float	shadelight, ambientlight;
 
-// TODO: Implement
+// precalculated dot products for quantized angles
+#define SHADEDOT_QUANT 16
+float	r_avertexnormal_dots[SHADEDOT_QUANT][256] = {
+#include "anorm_dots.h"
+};
+
+float* shadedots = r_avertexnormal_dots[0];
+
+int	lastposenum;
+
+/*
+=============
+GL_DrawAliasFrame
+=============
+*/
+void GL_DrawAliasFrame( aliashdr_t* paliashdr, int posenum )
+{
+	float	l;
+	trivertx_t* verts;
+	int* order;
+	int		count;
+
+	lastposenum = posenum;
+
+	verts = (trivertx_t*)((byte*)paliashdr + paliashdr->posedata);
+	verts += posenum * paliashdr->poseverts;
+	order = (int*)((byte*)paliashdr + paliashdr->commands);
+
+	while (1)
+	{
+		// get the vertex count and primitive type
+		count = *order++;
+		if (!count)
+			break;		// done
+		if (count < 0)
+		{
+			count = -count;
+			qglBegin(GL_TRIANGLE_FAN);
+		}
+		else
+			qglBegin(GL_TRIANGLE_STRIP);
+
+		do
+		{
+			// texture coordinates come from the draw list
+			qglTexCoord2f(((float*)order)[0], ((float*)order)[1]);
+			order += 2;
+
+			// normals and vertexes come from the frame list
+			l = shadedots[verts->lightnormalindex] * shadelight;
+			qglColor3f(l, l, l);
+			qglVertex3f(verts->v[0], verts->v[1], verts->v[2]);
+			verts++;
+		} while (--count);
+
+		qglEnd();
+	}
+}
+
+
+/*
+=============
+GL_DrawAliasShadow
+=============
+*/
+extern	vec3_t			lightspot;
+
+void GL_DrawAliasShadow( aliashdr_t* paliashdr, int posenum )
+{
+	trivertx_t* verts;
+	int* order;
+	vec3_t	point;
+	float	height, lheight;
+	int		count;
+
+	lheight = currententity->origin[2] - lightspot[2];
+
+	height = 0;
+	verts = (trivertx_t*)((byte*)paliashdr + paliashdr->posedata);
+	verts += posenum * paliashdr->poseverts;
+	order = (int*)((byte*)paliashdr + paliashdr->commands);
+
+	height = -lheight + 1.0;
+
+	while (1)
+	{
+		// get the vertex count and primitive type
+		count = *order++;
+		if (!count)
+			break;		// done
+		if (count < 0)
+		{
+			count = -count;
+			qglBegin(GL_TRIANGLE_FAN);
+		}
+		else
+			qglBegin(GL_TRIANGLE_STRIP);
+
+		do
+		{
+			// texture coordinates come from the draw list
+			// (skipped for shadows) qglTexCoord2fv ((float*)order);
+			order += 2;
+
+			// normals and vertexes come from the frame list
+			point[0] = verts->v[0] * paliashdr->scale[0] + paliashdr->scale_origin[0];
+			point[1] = verts->v[1] * paliashdr->scale[1] + paliashdr->scale_origin[1];
+			point[2] = verts->v[2] * paliashdr->scale[2] + paliashdr->scale_origin[2];
+
+			point[0] -= shadevector[0] * (point[2] + lheight);
+			point[1] -= shadevector[1] * (point[2] + lheight);
+			point[2] = height;
+//			height -= 0.001;
+			qglVertex3fv(point);
+
+			verts++;
+		} while (--count);
+
+		qglEnd();
+	}
+}
+
+
+
+/*
+=================
+R_SetupAliasFrame
+
+=================
+*/
+void R_SetupAliasFrame( int frame, aliashdr_t* paliashdr )
+{
+	int				pose, numposes;
+	float			interval;
+
+	if ((frame >= paliashdr->numframes) || (frame < 0))
+	{
+		Con_DPrintf("R_AliasSetupFrame: no such frame %d\n", frame);
+		frame = 0;
+	}
+
+	pose = paliashdr->frames[frame].firstpose;
+	numposes = paliashdr->frames[frame].numposes;
+
+	if (numposes > 1)
+	{
+		interval = paliashdr->frames[frame].interval;
+		pose += (int)(cl.time / interval) % numposes;
+	}
+
+	GL_DrawAliasFrame(paliashdr, pose);
+}
+
+
+
+/*
+=================
+R_DrawAliasModel
+
+=================
+*/
+void R_DrawAliasModel( cl_entity_t* e )
+{
+	int			i;
+	int			lnum;
+	vec3_t		dist;
+	float		add;
+	model_t* clmodel;
+	vec3_t		mins, maxs;
+	aliashdr_t* paliashdr;
+	float		an;
+
+	clmodel = currententity->model;
+
+	VectorAdd(currententity->origin, clmodel->mins, mins);
+	VectorAdd(currententity->origin, clmodel->maxs, maxs);
+
+	if (R_CullBox(mins, maxs))
+		return;
+
+
+	VectorCopy(currententity->origin, r_entorigin);
+	VectorSubtract(r_origin, r_entorigin, modelorg);
+
+	//
+	// get lighting information
+	//
+
+	// allways give the gun some light
+	if (e == &cl.viewent && ambientlight < 24)
+		ambientlight = shadelight = 24;
+
+	for (lnum = 0; lnum < MAX_DLIGHTS; lnum++)
+	{
+		if (cl_dlights[lnum].die >= cl.time)
+		{
+			VectorSubtract(currententity->origin,
+				cl_dlights[lnum].origin,
+				dist);
+			add = cl_dlights[lnum].radius - Length(dist);
+
+			if (add > 0) {
+				ambientlight += add;
+				//ZOID models should be affected by dlights as well
+				//shadelight += add;
+			}
+		}
+	}
+
+	// clamp lighting so it doesn't overbright as much
+	if (ambientlight > 128)
+		ambientlight = 128;
+	if (ambientlight + shadelight > 192)
+		shadelight = 192 - ambientlight;
+
+	// HACK HACK HACK -- no fullbright colors, so make torches full light
+	if (!strcmp(clmodel->name, "progs/flame2.mdl")
+		|| !strcmp(clmodel->name, "progs/flame.mdl"))
+		ambientlight = shadelight = 256;
+
+	shadedots = r_avertexnormal_dots[((int)(e->angles[1] * (SHADEDOT_QUANT / 360.0))) & (SHADEDOT_QUANT - 1)];
+	shadelight = shadelight / 200.0;
+
+	an = e->angles[1] / 180 * M_PI;
+	shadevector[0] = cos(-an);
+	shadevector[1] = sin(-an);
+	shadevector[2] = 1;
+	VectorNormalize(shadevector);
+
+	//
+	// locate the proper data
+	//
+	paliashdr = (aliashdr_t*)Mod_Extradata(currententity->model);
+
+	c_alias_polys += paliashdr->numtris;
+
+	//
+	// draw all the triangles
+	//
+
+	qglPushMatrix();
+	R_RotateForEntity(e);
+
+	qglTranslatef(paliashdr->scale_origin[0], paliashdr->scale_origin[1], paliashdr->scale_origin[2]);
+	qglScalef(paliashdr->scale[0], paliashdr->scale[1], paliashdr->scale[2]);
+
+	GL_Bind(paliashdr->gl_texturenum[currententity->skin]);
+
+	// we can't dynamically colormap textures, so they are cached
+	// seperately for the players.  Heads are just uncolored.
+	if (currententity->colormap != vid.colormap && !gl_nocolors.value)
+	{
+		i = currententity - cl_entities;
+		if (i >= 1 && i <= cl.maxclients && !strcmp(currententity->model->name, "progs/player.mdl"))
+			GL_Bind(playertextures - 1 + i);
+	}
+
+	if (gl_smoothmodels.value)
+		qglShadeModel(GL_SMOOTH);
+	qglTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+
+	if (gl_affinemodels.value)
+		qglHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_FASTEST);
+
+	R_SetupAliasFrame(currententity->frame, paliashdr);
+
+	qglTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+
+	qglShadeModel(GL_FLAT);
+	if (gl_affinemodels.value)
+		qglHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
+
+	qglPopMatrix();
+
+	if (r_shadows.value)
+	{
+		qglPushMatrix();
+		R_RotateForEntity(e);
+		qglDisable(GL_TEXTURE_2D);
+		qglEnable(GL_BLEND);
+		qglColor4f(0, 0, 0, 0.5);
+		GL_DrawAliasShadow(paliashdr, lastposenum);
+		qglEnable(GL_TEXTURE_2D);
+		qglDisable(GL_BLEND);
+		qglColor4f(1, 1, 1, 1);
+		qglPopMatrix();
+	}
+
+}
 
 //==================================================================================
 
@@ -416,7 +705,7 @@ void R_DrawEntitiesOnList( void )
 				break;
 
 			case mod_alias:
-				// TODO: Implement
+				R_DrawAliasModel(currententity);
 				break;
 
 			case mod_studio:
@@ -473,7 +762,11 @@ void R_DrawViewModel( void )
 {
 	float		lightvec[3];
 	colorVec	c;
-	float		/*add,*/ oldShadows;
+	int			j;
+	int			lnum;
+	vec3_t		dist;
+	float		add, oldShadows;
+	dlight_t* dl;
 
 	lightvec[0] = -1;
 	lightvec[1] = 0;
@@ -512,7 +805,38 @@ void R_DrawViewModel( void )
 		break;
 
 	case mod_alias:
-		// TODO: Implement
+		c = R_LightPoint(currententity->origin);
+
+		j = (c.r + c.g + c.b) / 3;
+
+		if (j < 24)
+			j = 24;		// allways give some light on gun
+		r_viewlighting.ambientlight = j;
+		r_viewlighting.shadelight = j;
+
+	// add dynamic lights
+		for (lnum = 0; lnum < MAX_DLIGHTS; lnum++)
+		{
+			dl = &cl_dlights[lnum];
+			if (!dl->radius)
+				continue;
+			if (dl->die < cl.time)
+				continue;
+
+			VectorSubtract(currententity->origin, dl->origin, dist);
+			add = dl->radius - Length(dist);
+			if (add > 0)
+				r_viewlighting.ambientlight += add;
+		}
+
+		// clamp lighting so it doesn't overbright as much
+		if (r_viewlighting.ambientlight > 128)
+			r_viewlighting.ambientlight = 128;
+		if (r_viewlighting.ambientlight + r_viewlighting.shadelight > 192)
+			r_viewlighting.shadelight = 192 - r_viewlighting.ambientlight;
+
+		r_viewlighting.plightvec = lightvec;
+		R_DrawAliasModel(currententity);
 		break;
 
 	case mod_studio:

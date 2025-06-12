@@ -32,7 +32,7 @@ cvar_t	gl_affinemodels = { "gl_affinemodels", "0" };
 cvar_t	gl_flashblend = { "gl_flashblend", "0" };
 
 
-
+cvar_t	gl_nocolors = { "gl_nocolors", "0" };
 cvar_t	gl_keeptjunctions = { "gl_keeptjunctions", "1" };
 
 
@@ -178,6 +178,7 @@ void R_Init( void )
 
 	// TODO: Implement
 
+	Cvar_RegisterVariable(&gl_nocolors);
 	Cvar_RegisterVariable(&gl_dither);
 	Cvar_RegisterVariable(&gl_spriteblend);
 	Cvar_RegisterVariable(&gl_polyoffset);
@@ -189,8 +190,6 @@ void R_Init( void )
 	Cvar_RegisterVariable(&gl_zmax);
 	Cvar_RegisterVariable(&gl_alphamin);
 	Cvar_RegisterVariable(&gl_flipmatrix);
-
-	// TODO: Implement
 
 	if (gl_mtexable)
 		Cvar_SetValue("gl_texsort", 0.0);
