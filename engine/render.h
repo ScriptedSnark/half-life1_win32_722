@@ -49,7 +49,7 @@ typedef struct cl_entity_s
 	int				renderfx;
 
 	struct model_s* model;			// cl.model_precache[ baseline.modelindex ];  all visible entities have a model
-	struct efrag_s* efrags;			// linked list of efrags
+	struct efrag_s* efrag;			// linked list of efrags
 
 	float			frame;
 
@@ -187,15 +187,16 @@ void R_Init( void );
 void R_InitTextures( void );
 void R_RenderView( void );		// must set r_refdef first
 void R_ViewChanged( vrect_t* pvrect, int lineadj, float aspect );
+								// called whenever r_refdef or vid change
+void R_InitSky( void );	// called at level load
+void R_LoadSkys( void );
+void R_ClearSkyBox( void );
 
-void R_InitSky( void );
-
-
+void R_AddEfrags( cl_entity_t* ent );
+void R_RemoveEfrags( cl_entity_t* ent );
 
 void R_NewMap( void );
 
-
-void R_PushDlights( void );
 
 // R_PART.C
 
@@ -257,16 +258,12 @@ struct beam_s* R_BeamRing( int startEnt, int endEnt, int modelIndex, float life,
 void R_KillDeadBeams( int deadEntity );
 void R_BeamKill( int deadEntity );
 
+void R_PushDlights( void );
+
 int ScreenTransform( vec_t* point, vec_t* screen );
 
 extern qboolean r_intentities;
 
-//
-// Skybox
-//
-
-void R_LoadSkys( void );
-void R_ClearSkyBox( void );
 
 
 
