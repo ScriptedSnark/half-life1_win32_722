@@ -111,7 +111,7 @@ extern mleaf_t* r_viewleaf, * r_oldviewleaf;
 extern texture_t* r_notexture_mip;
 extern	int		d_lightstylevalue[256];	// 8.8 fraction of base light value
 
-
+extern	qboolean envmap;
 extern	int	currenttexture;
 extern	int	cnttextures[2];
 
@@ -120,6 +120,7 @@ extern	int	playertextures;
 
 extern	int	skytexturenum;		// index in cl.loadmodel, not gl texture object
 
+extern	cvar_t	r_cachestudio;
 extern	cvar_t	r_norefresh;
 extern	cvar_t	r_drawentities;
 extern	cvar_t	r_drawviewmodel;
@@ -128,15 +129,11 @@ extern	cvar_t	r_fullbright;
 extern	cvar_t	r_decals;
 extern	cvar_t	r_lightmap;
 extern	cvar_t	r_shadows;
-
-
-
-
 extern	cvar_t	r_mirroralpha;
 extern	cvar_t	r_wateralpha;
 extern	cvar_t	r_dynamic;
 extern	cvar_t	r_novis;
-
+extern	cvar_t	r_mmx;
 extern	cvar_t	r_traceglow;
 extern	cvar_t	r_wadtextures;
 
@@ -146,13 +143,10 @@ extern	cvar_t	gl_texsort;
 extern	cvar_t	gl_smoothmodels;
 extern	cvar_t	gl_affinemodels;
 extern	cvar_t	gl_flashblend;
-
-
+extern	cvar_t	gl_playermip;
 extern	cvar_t	gl_nocolors;
 extern	cvar_t	gl_keeptjunctions;
-
-
-
+extern	cvar_t	gl_reporttjunctions;
 extern	cvar_t	gl_wateramp;
 extern	cvar_t	gl_dither;
 extern	cvar_t	gl_spriteblend;

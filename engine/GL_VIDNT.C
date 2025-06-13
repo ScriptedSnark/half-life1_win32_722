@@ -472,6 +472,12 @@ void VID_TakeSnapshot(const char* pFilename)
 		Sys_Error("Couldn't close file for snapshot.\n");
 }
 
+
+void VID_TakeSnapshotRect( const char* pFilename, int x, int y, int w, int h )
+{
+	// TODO: Implement
+}
+
 void VID_WriteBuffer( const char* pFilename )
 {
 	static char		szFileName[256];

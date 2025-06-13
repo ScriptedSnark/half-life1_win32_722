@@ -2,6 +2,7 @@
 
 #include "quakedef.h"
 
+cvar_t	r_cachestudio = { "r_cachestudio", "1" };
 cvar_t	r_norefresh = { "r_norefresh", "0" };
 cvar_t	r_drawentities = { "r_drawentities", "1" };
 cvar_t	r_drawviewmodel = { "r_drawviewmodel", "1" };
@@ -10,17 +11,11 @@ cvar_t	r_fullbright = { "r_fullbright", "0" };
 cvar_t	r_decals = { "r_decals", "1" };
 cvar_t	r_lightmap = { "r_lightmap", "0" };
 cvar_t	r_shadows = { "r_shadows", "0" };
-
-
-
-
-
-
 cvar_t	r_mirroralpha = { "r_mirroralpha", "1" };
 cvar_t	r_wateralpha = { "r_wateralpha", "1" };
 cvar_t	r_dynamic = { "r_dynamic", "1" };
 cvar_t	r_novis = { "r_novis", "0" };
-
+cvar_t	r_mmx = { "r_mmx", "0" };
 cvar_t	r_traceglow = { "r_traceglow", "0" };
 cvar_t	r_wadtextures = { "r_wadtextures", "0" };
 
@@ -30,15 +25,10 @@ cvar_t	gl_texsort = { "gl_texsort", "1" };
 cvar_t	gl_smoothmodels = { "gl_smoothmodels", "1" };
 cvar_t	gl_affinemodels = { "gl_affinemodels", "0" };
 cvar_t	gl_flashblend = { "gl_flashblend", "0" };
-
-
+cvar_t	gl_playermip = { "gl_playermip", "0" };
 cvar_t	gl_nocolors = { "gl_nocolors", "0" };
 cvar_t	gl_keeptjunctions = { "gl_keeptjunctions", "1" };
-
-
-
-
-
+cvar_t	gl_reporttjunctions = { "gl_reporttjunctions", "0" };
 cvar_t	gl_wateramp = { "gl_wateramp", "0.3" };
 cvar_t	gl_dither = { "gl_dither", "1", TRUE };
 cvar_t	gl_spriteblend = { "gl_spriteblend", "1" };
@@ -52,8 +42,7 @@ cvar_t	gl_overbright = { "gl_overbright", "1", TRUE };
 cvar_t	gl_envmapsize = { "gl_envmapsize", "256" };
 cvar_t	gl_flipmatrix = { "gl_flipmatrix", "0", TRUE };
 
-
-
+void VID_TakeSnapshotRect( const char* pFilename, int x, int y, int w, int h );
 
 /*
 ====================
@@ -139,7 +128,81 @@ void R_InitParticleTexture( void )
 	qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 }
 
-// TODO: Implement
+/*
+===============
+R_Envmap_f
+
+Grab six views for environment mapping tests
+===============
+*/
+void R_Envmap_f( void )
+{
+	char	name[1024];
+	vrect_t saveVrect;
+	char	base[64];
+
+	// Extract the base name
+	if (cl.num_entities && cl_entities->model)
+		COM_FileBase(cl_entities->model->name, base);
+	else
+		strcpy(base, "Env");
+
+	qglDrawBuffer(GL_FRONT);
+	qglReadBuffer(GL_FRONT);
+	envmap = TRUE;
+
+	memcpy(&saveVrect, &r_refdef.vrect, sizeof(vrect_t));
+	r_refdef.vrect.x = 0;
+	r_refdef.vrect.y = 0;
+	r_refdef.vrect.width = gl_envmapsize.value;
+	r_refdef.vrect.height = gl_envmapsize.value;
+
+	r_refdef.viewangles[0] = 0;
+	r_refdef.viewangles[1] = 0;
+	r_refdef.viewangles[2] = 0;
+	GL_BeginRendering(&glx, &gly, &glwidth, &glheight);
+	R_RenderView();
+	sprintf(name, "%srt.bmp", base);
+	VID_TakeSnapshotRect(name, 0, 0, gl_envmapsize.value, gl_envmapsize.value);
+
+	r_refdef.viewangles[1] = 90;
+	GL_BeginRendering(&glx, &gly, &glwidth, &glheight);
+	R_RenderView();
+	sprintf(name, "%sbk.bmp", base);
+	VID_TakeSnapshotRect(name, 0, 0, gl_envmapsize.value, gl_envmapsize.value);
+
+	r_refdef.viewangles[1] = 180;
+	GL_BeginRendering(&glx, &gly, &glwidth, &glheight);
+	R_RenderView();
+	sprintf(name, "%slf.bmp", base);
+	VID_TakeSnapshotRect(name, 0, 0, gl_envmapsize.value, gl_envmapsize.value);
+
+	r_refdef.viewangles[1] = 270;
+	GL_BeginRendering(&glx, &gly, &glwidth, &glheight);
+	R_RenderView();
+	sprintf(name, "%sft.bmp", base);
+	VID_TakeSnapshotRect(name, 0, 0, gl_envmapsize.value, gl_envmapsize.value);
+
+	r_refdef.viewangles[1] = 0;
+	r_refdef.viewangles[0] = -90;
+	GL_BeginRendering(&glx, &gly, &glwidth, &glheight);
+	R_RenderView();
+	sprintf(name, "%sup.bmp", base);
+	VID_TakeSnapshotRect(name, 0, 0, gl_envmapsize.value, gl_envmapsize.value);
+
+	r_refdef.viewangles[1] = 0;
+	r_refdef.viewangles[0] = 90;
+	GL_BeginRendering(&glx, &gly, &glwidth, &glheight);
+	R_RenderView();
+	sprintf(name, "%sdn.bmp", base);
+	VID_TakeSnapshotRect(name, 0, 0, gl_envmapsize.value, gl_envmapsize.value);
+
+	memcpy(&r_refdef.vrect, &saveVrect, sizeof(vrect_t));
+	envmap = FALSE;
+	qglDrawBuffer(GL_BACK);
+	qglReadBuffer(GL_BACK);
+	GL_EndRendering();
+}
 
 /*
 ====================
@@ -150,8 +213,8 @@ Initialize the renderer
 */
 void R_Init( void )
 {
-	// TODO: Implement
-
+	Cmd_AddCommand("timerefresh", R_TimeRefresh_f);
+	Cmd_AddCommand("envmap", R_Envmap_f);
 	Cmd_AddCommand("pointfile", R_ReadPointFile_f);
 
 	Cvar_RegisterVariable(&r_norefresh);
@@ -167,7 +230,7 @@ void R_Init( void )
 	Cvar_RegisterVariable(&r_speeds);
 	Cvar_RegisterVariable(&r_wadtextures);
 	Cvar_RegisterVariable(&r_shadows);
-	// TODO: Implement
+	Cvar_RegisterVariable(&r_mmx);
 	Cvar_RegisterVariable(&r_traceglow);
 
 	Cvar_RegisterVariable(&gl_clear);
@@ -175,16 +238,14 @@ void R_Init( void )
 	Cvar_RegisterVariable(&gl_cull);
 	Cvar_RegisterVariable(&gl_smoothmodels);
 	Cvar_RegisterVariable(&gl_affinemodels);
-
-	// TODO: Implement
-
+	Cvar_RegisterVariable(&gl_playermip);
 	Cvar_RegisterVariable(&gl_nocolors);
 	Cvar_RegisterVariable(&gl_dither);
 	Cvar_RegisterVariable(&gl_spriteblend);
 	Cvar_RegisterVariable(&gl_polyoffset);
 	Cvar_RegisterVariable(&gl_lightholes);
 	Cvar_RegisterVariable(&gl_keeptjunctions);
-	// TODO: Implement
+	Cvar_RegisterVariable(&gl_reporttjunctions);
 	Cvar_RegisterVariable(&gl_wateramp);
 	Cvar_RegisterVariable(&gl_overbright);
 	Cvar_RegisterVariable(&gl_zmax);
@@ -194,7 +255,7 @@ void R_Init( void )
 	if (gl_mtexable)
 		Cvar_SetValue("gl_texsort", 0.0);
 
-	R_InitParticles();	
+	R_InitParticles();
 	R_InitParticleTexture();
 	R_UploadEmptyTex();
 
@@ -249,7 +310,36 @@ void R_NewMap( void )
 	GL_UnloadTextures();
 }
 
-// TODO: Implement
+/*
+====================
+R_TimeRefresh_f
+
+For program optimization
+====================
+*/
+void R_TimeRefresh_f( void )
+{
+	int			i;
+	float		start, stop, time;
+
+	qglDrawBuffer(GL_FRONT);
+	qglFinish();
+
+	start = Sys_FloatTime();
+	for (i = 0; i < 128; i++)
+	{
+		r_refdef.viewangles[1] = i / 128.0 * 360.0;
+		R_RenderView();
+	}
+
+	qglFinish();
+	stop = Sys_FloatTime();
+	time = stop - start;
+	Con_Printf("%f seconds (%f fps)\n", time, 128 / time);
+
+	qglDrawBuffer(GL_BACK);
+	GL_EndRendering();
+}
 
 void D_FlushCaches( void )
 {

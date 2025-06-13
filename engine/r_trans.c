@@ -226,7 +226,9 @@ void R_DrawTEntitiesOnList( void )
 			}
 			break;
 
-		// TODO: Implement
+		case mod_alias:
+			R_DrawAliasModel(currententity);
+			break;
 
 		case mod_studio:
 			R_StudioDrawModel(STUDIO_RENDER | STUDIO_EVENTS);
