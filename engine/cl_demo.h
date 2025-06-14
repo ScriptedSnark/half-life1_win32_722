@@ -25,6 +25,7 @@ typedef struct demoheader_s
 
 extern client_textmessage_t tm_demomessage;
 
+void COM_CopyFileChunk( FILE* dst, FILE* src, int nSize );
 
 void CL_StopPlayback( void );
 void CL_WriteDemoUpdate( void );

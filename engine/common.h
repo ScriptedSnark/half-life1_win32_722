@@ -38,6 +38,8 @@ void InsertLinkAfter( link_t* l, link_t* after );
 
 //============================================================================
 
+#define COM_COPY_CHUNK_SIZE 1024   // For copying operations
+
 #ifndef NULL
 #define NULL ((void*)0)
 #endif

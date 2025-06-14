@@ -43,9 +43,9 @@ void CL_PredictUsercmd( player_state_t* from, player_state_t* to, usercmd_t* u, 
 	// Player pitch is inverted
 	pmove.angles[PITCH] /= -3.0;
 	// Adjust client view angles to match values used on server.
-	if (pmove.angles[YAW] > 180.0f)
+	if (pmove.angles[YAW] > 180.0)
 	{
-		pmove.angles[YAW] -= 360.0f;
+		pmove.angles[YAW] -= 360.0;
 	}
 	
 	pmove.usehull = 0;
