@@ -235,17 +235,47 @@ void AngleMatrix( const vec_t* angles, float(*matrix)[4] )
 	matrix[0][0] = cr * cp;
 	matrix[0][1] = (sy * sr) * cp - cy * sp;
 	matrix[0][2] = (cy * sr) * cp + sy * sp;
-	matrix[0][3] = 0.0f;
+	matrix[0][3] = 0.0;
 
 	matrix[1][0] = cr * sp;
 	matrix[1][1] = (sy * sr) * sp + cy * cp;
 	matrix[1][2] = (cy * sr) * sp - sy * cp;
-	matrix[1][3] = 0.0f;
+	matrix[1][3] = 0.0;
 
 	matrix[2][0] = -sr;
 	matrix[2][1] = sy * cr;
 	matrix[2][2] = cy * cr;
-	matrix[2][3] = 0.0f;
+	matrix[2][3] = 0.0;
+}
+
+void AngleIMatrix( const vec_t* angles, float(*matrix)[4] )
+{
+	float		angle;
+	float		sr, sp, sy, cr, cp, cy;
+
+	angle = angles[YAW] * (M_PI * 2 / 360.0);
+	sy = sin(angle);
+	cy = cos(angle);
+	angle = angles[PITCH] * (M_PI * 2 / 360.0);
+	sp = sin(angle);
+	cp = cos(angle);
+	angle = angles[ROLL] * (M_PI * 2 / 360.0);
+	sr = sin(angle);
+	cr = cos(angle);
+
+	// matrix = (YAW * PITCH) * ROLL
+	matrix[0][0] = cp * cy;
+	matrix[0][1] = cp * sy;
+	matrix[0][2] = -sp;
+	matrix[0][3] = 0.0;
+	matrix[1][0] = sr * sp * cy + cr * -sy;
+	matrix[1][1] = sr * sp * sy + cr * cy;
+	matrix[1][2] = sr * cp;
+	matrix[1][3] = 0.0;
+	matrix[2][0] = (cr * sp * cy + -sr * -sy);
+	matrix[2][1] = (cr * sp * sy + -sr * cy);
+	matrix[2][2] = cr * cp;
+	matrix[2][3] = 0.0;
 }
 
 void VectorTransform( const vec_t* in1, float(*in2)[4], vec_t* out )
@@ -274,7 +304,32 @@ void VectorMA( const vec_t* veca, float scale, const vec_t* vecb, vec_t* vecc )
 	vecc[2] = veca[2] + scale * vecb[2];
 }
 
-// TODO: Implement
+
+vec_t _DotProduct( vec_t* v1, vec_t* v2 )
+{
+	return v1[0] * v2[0] + v1[1] * v2[1] + v1[2] * v2[2];
+}
+
+void _VectorSubtract( vec_t* veca, vec_t* vecb, vec_t* out )
+{
+	out[0] = veca[0] - vecb[0];
+	out[1] = veca[1] - vecb[1];
+	out[2] = veca[2] - vecb[2];
+}
+
+void _VectorAdd( vec_t* veca, vec_t* vecb, vec_t* out )
+{
+	out[0] = veca[0] + vecb[0];
+	out[1] = veca[1] + vecb[1];
+	out[2] = veca[2] + vecb[2];
+}
+
+void _VectorCopy( vec_t* in, vec_t* out )
+{
+	out[0] = in[0];
+	out[1] = in[1];
+	out[2] = in[2];
+}
 
 void CrossProduct( const vec_t* v1, const vec_t* v2, vec_t* cross )
 {
@@ -283,7 +338,7 @@ void CrossProduct( const vec_t* v1, const vec_t* v2, vec_t* cross )
 	cross[2] = v1[0] * v2[1] - v1[1] * v2[0];
 }
 
-double sqrt(double x);
+double sqrt( double x );
 
 float Length( const vec_t* v )
 {
@@ -317,8 +372,12 @@ float VectorNormalize( vec_t* v )
 
 }
 
-
-// TODO: Implement
+void VectorInverse( vec_t* v )
+{
+	v[0] = -v[0];
+	v[1] = -v[1];
+	v[2] = -v[2];
+}
 
 void VectorScale( const vec_t* in, vec_t scale, vec_t* out )
 {
@@ -327,7 +386,14 @@ void VectorScale( const vec_t* in, vec_t scale, vec_t* out )
 	out[2] = in[2] * scale;
 }
 
-// TODO: Implement
+
+int Q_log2( int val )
+{
+	int answer = 0;
+	while (val >>= 1)
+		answer++;
+	return answer;
+}
 
 void VectorMatrix( vec_t* forward, vec_t* right, vec_t* up )
 {
@@ -352,7 +418,7 @@ void VectorMatrix( vec_t* forward, vec_t* right, vec_t* up )
 }
 
 
-void VectorAngles( const vec_t* forward, vec_t* angles )
+void VectorAngles(const vec_t* forward, vec_t* angles)
 {
 	float	tmp, yaw, pitch;
 
@@ -366,12 +432,12 @@ void VectorAngles( const vec_t* forward, vec_t* angles )
 	}
 	else
 	{
-		yaw = (atan2(forward[1], forward[0]) * 180 / M_PI);
+		yaw = (atan2(forward[1], forward[0]) * 180.0 / M_PI);
 		if (yaw < 0)
 			yaw += 360;
 
 		tmp = sqrt(forward[0] * forward[0] + forward[1] * forward[1]);
-		pitch = (atan2(forward[2], tmp) * 180 / M_PI);
+		pitch = (atan2(forward[2], tmp) * 180.0 / M_PI);
 		if (pitch < 0)
 			pitch += 360;
 	}
@@ -443,4 +509,106 @@ void R_ConcatTransforms( float in1[3][4], float in2[3][4], float out[3][4] )
 		in1[2][2] * in2[2][3] + in1[2][3];
 }
 
-// TODO: Implement
+
+/*
+===================
+FloorDivMod
+
+Returns mathematically correct (floor-based) quotient and remainder for
+numer and denom, both of which should contain no fractional part. The
+quotient must fit in 32 bits.
+====================
+*/
+
+void FloorDivMod( double numer, double denom, int* quotient,
+		int* rem )
+{
+	int		q, r;
+	double	x;
+
+#ifndef PARANOID
+	if (denom <= 0.0)
+		Sys_Error("FloorDivMod: bad denominator %d\n", denom);
+
+//	if ((floor(numer) != numer) || (floor(denom) != denom))
+//		Sys_Error("FloorDivMod: non-integer numer or denom %f %f\n",
+//				numer, denom);
+#endif
+
+	if (numer >= 0.0)
+	{
+
+		x = floor(numer / denom);
+		q = (int)x;
+		r = (int)floor(numer - (x * denom));
+	}
+	else
+	{
+	//
+	// perform operations with positive values, and fix mod to make floor-based
+	//
+		x = floor(-numer / denom);
+		q = -(int)x;
+		r = (int)floor(-numer - (x * denom));
+		if (r != 0)
+		{
+			q--;
+			r = (int)denom - r;
+		}
+	}
+
+	*quotient = q;
+	*rem = r;
+}
+
+
+/*
+===================
+GreatestCommonDivisor
+====================
+*/
+int GreatestCommonDivisor( int i1, int i2 )
+{
+	if (i1 > i2)
+	{
+		if (i2 == 0)
+			return (i1);
+		return GreatestCommonDivisor(i2, i1 % i2);
+	}
+	else
+	{
+		if (i1 == 0)
+			return (i2);
+		return GreatestCommonDivisor(i1, i2 % i1);
+	}
+}
+
+
+#if	!id386
+
+// TODO: move to nonintel.c
+
+/*
+===================
+Invert24To16
+
+Inverts an 8.24 value to a 16.16 value
+====================
+*/
+
+fixed16_t Invert24To16( fixed16_t val )
+{
+	if (val < 256)
+		return (0xFFFFFFFF);
+
+	return (fixed16_t)
+		(((double)0x10000 * (double)0x1000000 / (double)val) + 0.5);
+}
+
+#endif
+
+
+// To change the frequency of the coprocessor
+short new_cw = 0xC7F, old_cw;
+
+DLONG dlong;

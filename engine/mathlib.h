@@ -40,11 +40,18 @@ extern	int nanmask;
 
 void VectorMA( const vec_t* veca, float scale, const vec_t* vecb, vec_t* vecc );
 
-// TODO: Implement
+vec_t _DotProduct( vec_t* v1, vec_t* v2 );
+void _VectorSubtract( vec_t* veca, vec_t* vecb, vec_t* out );
+void _VectorAdd( vec_t* veca, vec_t* vecb, vec_t* out );
+void _VectorCopy( vec_t* in, vec_t* out );
 
 int VectorCompare( const vec_t* v1, const vec_t* v2 );
-
-// TODO: Implement
+float Length( const vec_t* v );
+void CrossProduct( const vec_t* v1, const vec_t* v2, vec_t* cross );
+float VectorNormalize( vec_t* v );		// returns vector length
+void VectorInverse( vec_t* v );
+void VectorScale( const vec_t* in, vec_t scale, vec_t* out );
+int Q_log2( int val );
 
 void R_ConcatRotations( float in1[3][3], float in2[3][3], float out[3][3] );
 void R_ConcatTransforms( float in1[3][4], float in2[3][4], float out[3][4] );
@@ -94,29 +101,24 @@ void __inline restore_fpu_cw( void )
 #define restore_fpu_cw() /* */
 #endif
 
-// TODO: Implement
-
-float Length( const vec_t* v );
-void CrossProduct( const vec_t* v1, const vec_t* v2, vec_t* cross );
-float VectorNormalize( vec_t* v );		// returns vector length
-
-void VectorScale( const vec_t* in, vec_t scale, vec_t* out );
-
-// TODO: Implement
+void FloorDivMod( double numer, double denom, int* quotient,
+		int* rem );
+fixed16_t Invert24To16( fixed16_t val );
+int GreatestCommonDivisor( int i1, int i2 );
 
 void AngleVectors( const vec_t* angles, vec_t* forward, vec_t* right, vec_t* up );
 void AngleVectorsTranspose( const vec_t* angles, vec_t* forward, vec_t* right, vec_t* up );
-
-void BOPS_Error( void );
-int BoxOnPlaneSide( vec_t * emins, vec_t * emaxs, struct mplane_s* p );
-
+#define AngleIVectors	AngleVectorsTranspose
 
 void AngleMatrix( const vec_t* angles, float(*matrix)[4] );
+void AngleIMatrix( const vec_t* angles, float(*matrix)[4] );
 void VectorTransform( const vec_t* in1, float(*in2)[4], vec_t* out );
 
 void VectorMatrix( vec_t* forward, vec_t* right, vec_t* up );
 void VectorAngles( const vec_t* forward, vec_t* angles );
 
+void BOPS_Error( void );
+int BoxOnPlaneSide( vec_t * emins, vec_t * emaxs, struct mplane_s* p );
 float	anglemod( float a );
 
 
