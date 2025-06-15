@@ -1910,13 +1910,6 @@ Host_Init
 */
 int Host_Init( quakeparms_t* parms )
 {
-#ifdef __TRICKY_TRICKY_ASAN__
-	if (!IsDebuggerPresent()) {
-		printf("Waiting for debugger...\n");
-		MessageBoxA(NULL, "Please attach the MSVS debugger to continue", "Half-Life", MB_ICONEXCLAMATION);
-	}
-#endif //__TRICKY_TRICKY_ASAN__
-
 	if (standard_quake)
 		minimum_memory = MINIMUM_MEMORY;
 	else
@@ -2024,7 +2017,7 @@ int Host_Init( quakeparms_t* parms )
 	Hunk_AllocName(0, "-HOST_HUNKLEVEL-");
 	host_hunklevel = Hunk_LowMark();
 
-	LoadProfileFile();
+	Host_LoadProfileFile();
 
 	// Mark DLL as active
 	giActive = DLL_ACTIVE;

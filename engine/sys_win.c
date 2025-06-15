@@ -83,6 +83,599 @@ void Sys_PushFPCW_SetHigh( void );
 void Sys_PopFPCW( void );
 void Sys_TruncateFPU( void );
 
+/*
+===============================================================================
+
+PROFILE SYSTEM
+
+===============================================================================
+*/
+
+/*
+================
+Sys_GetProfileRegKeyValue
+
+Gets profile settings from the registry
+================
+*/
+void Sys_GetProfileRegKeyValue( char* pszName, char* pszPath, char* pszSetting, char* pszElement, char* pszReturnString, int nReturnLength, char* pszDefaultValue )
+{
+	LONG lResult;           // Registry function result code
+	HKEY hKey;              // Handle of opened/created key
+	char szBuff[128];		// Temp. buffer
+	DWORD dwDisposition;    // Type of key opening event
+	DWORD dwType;           // Type of key
+	DWORD dwSize;           // Size of element data
+	char szSubKey[256];
+
+	sprintf(pszReturnString, pszDefaultValue);
+
+	if (pszSetting && pszSetting[0])
+		sprintf(szSubKey, "%s\\%s\\%s", pszPath, pszName, pszSetting);
+	else
+		sprintf(szSubKey, "%s\\%s", pszPath, pszName);
+
+	lResult = RegCreateKeyEx(
+		HKEY_CURRENT_USER,	// handle of open key 
+		szSubKey,			// address of name of subkey to open 
+		0,					// DWORD ulOptions,	  // reserved 
+		"String",			// Type of value
+		REG_OPTION_NON_VOLATILE, // Store permanently in reg.
+		KEY_ALL_ACCESS,		// REGSAM samDesired, // security access mask 
+		NULL,
+		&hKey,				// Key we are creating
+		&dwDisposition);    // Type of creation
+
+	if (lResult != ERROR_SUCCESS)  // Failure
+		return;
+
+	// First time
+	if (dwDisposition == REG_CREATED_NEW_KEY)
+	{
+		// Just Set the Values according to the defaults
+		lResult = RegSetValueEx(hKey, pszElement, 0, REG_SZ, (const BYTE*)pszDefaultValue, strlen(pszDefaultValue) + 1);
+	}
+	else
+	{
+		// We opened the existing key. Now go ahead and find out how big the key is.
+		dwSize = nReturnLength;
+		lResult = RegQueryValueEx(hKey, pszElement, 0, &dwType, (unsigned char*)szBuff, &dwSize);
+
+		// Success?
+		if (lResult == ERROR_SUCCESS)
+		{
+			// Only copy strings, and only copy as much data as requested.
+			if (dwType == REG_SZ)
+			{
+				strncpy(pszReturnString, szBuff, nReturnLength);
+				pszReturnString[nReturnLength - 1] = 0;
+			}
+		}
+		// Didn't find it, so write out new value
+		else
+		{
+			// Just Set the Values according to the defaults
+			lResult = RegSetValueEx(hKey, pszElement, 0, REG_SZ, (const BYTE*)pszDefaultValue, strlen(pszDefaultValue) + 1);
+		}
+	}
+
+	RegCloseKey(hKey);
+}
+
+/*
+================
+Sys_SetProfileRegKeyValue
+
+Sets a profile value in the registry
+================
+*/
+void Sys_SetProfileRegKeyValue( char* pszName, char* pszPath, char* pszSetting, char* pszElement, char* pszDefaultValue )
+{
+    HKEY hKey;
+    DWORD dwDisposition;
+    LONG lResult;
+	char szSubKey[256];
+
+    if (pszSetting && pszSetting[0])
+        sprintf(szSubKey, "%s\\%s\\%s", pszPath, pszName, pszSetting);
+    else
+        sprintf(szSubKey, "%s\\%s", pszPath, pszName);
+
+    lResult = RegCreateKeyEx(
+        HKEY_CURRENT_USER,	// handle of open key 
+		szSubKey,			// address of name of subkey to open 
+        0,					// DWORD ulOptions,	  // reserved 
+        "String",			// Type of value
+        REG_OPTION_NON_VOLATILE, // Store permanently in reg.
+        KEY_ALL_ACCESS,		// REGSAM samDesired, // security access mask
+        NULL,
+        &hKey,				// Key we are creating
+        &dwDisposition);    // Type of creation
+
+	if (lResult != ERROR_SUCCESS)  // Failure
+		return;
+
+	// Set the value
+	lResult = RegSetValueEx(hKey, pszElement, 0, REG_SZ, (const BYTE*)pszDefaultValue, strlen(pszDefaultValue) + 1);
+
+	RegCloseKey(hKey);
+}
+
+static char keynames[256][32];
+
+/*
+================
+Profile_ClearKeyBindings
+
+Release all profile key bindings
+================
+*/
+void Profile_ClearKeyBindings( player_profile_t* pProfile )
+{
+	int i;
+	player_keybinding_t* kb;
+
+	for (i = 0; i < 256; i++)
+	{
+		kb = &pProfile->keybindings[i];
+		if (kb->binding)
+		{
+			free(kb->binding);
+			kb->binding = NULL;
+		}
+		memset(kb, 0, sizeof(player_keybinding_t));
+	}
+}
+
+/*
+================
+Profile_GetKeyIndexByName
+
+Release all profile key bindings
+================
+*/
+int Profile_GetKeyIndexByName( char* pszKeyName, char* pszKeyArray )
+{
+	int i;
+
+	if (!pszKeyName || !pszKeyName[0])
+		return -1;
+
+	for (i = 0; i < 256; i++)
+	{
+		if (pszKeyArray && pszKeyArray[0])
+		{
+			if (!_stricmp(pszKeyArray, pszKeyName))
+				return i;
+		}
+
+		pszKeyArray += 32;
+	}
+	return -1;
+}
+
+/*
+================
+Profile_LoadKeyNames
+
+Load key names from kb_keys.lst
+================
+*/
+void Profile_LoadKeyNames( void )
+{
+	int	i;
+	char szPath[MAX_PATH];
+	char* pParsePos;
+	byte* pFileData;
+
+	memset(keynames, 0, sizeof(keynames));
+
+	strcpy(szPath, "gfx/shell/kb_keys.lst");
+	pFileData = COM_LoadFile(szPath, 5, NULL);
+	if (!pFileData)
+	{
+		Con_DPrintf("Could not load kb_keys.lst\n");
+		return;
+	}
+
+	pParsePos = pFileData;
+	for (i = 0; i < 256; i++)
+	{
+		pParsePos = COM_Parse(pParsePos);
+		if (!com_token[0])
+			break;
+		if (!_strnicmp(com_token, "<UNK", 4))
+			continue;
+
+		strcpy(keynames[i], com_token);
+	}
+	
+	free(pFileData);
+}
+
+/*
+================
+Profile_LoadDefaultKeyBindings
+
+Load default key bindings from kb_def.lst
+================
+*/
+void Profile_LoadDefaultKeyBindings( player_profile_t* pProfile )
+{
+	char szPath[MAX_OSPATH];
+	char szKey[32];
+	char szBinding[256];
+	int index, size;
+	char* pParsePos;
+	byte* pFileData;
+	player_keybinding_t* kb;
+
+	Profile_LoadKeyNames();
+
+	strcpy(szPath, "gfx/shell/kb_def.lst");
+	pFileData = COM_LoadFile(szPath, 5, NULL);
+	if (!pFileData)
+		return;
+
+	pParsePos = pFileData;
+	while (1)
+	{
+		// Parse key name
+		pParsePos = COM_Parse(pParsePos);
+		if (!com_token[0])
+			break;
+		strcpy(szKey, com_token);
+
+		// Parse binding
+		pParsePos = COM_Parse(pParsePos);
+		if (!strlen(com_token))
+			break;
+		strcpy(szBinding, com_token);
+
+		index = Profile_GetKeyIndexByName(szKey, keynames[0]);
+		if (index == -1)
+			continue;
+
+		kb = &pProfile->keybindings[index];
+		size = strlen(szBinding) + 1;
+		kb->binding = malloc(size);
+		if (!kb->binding)
+			break;
+
+		memset(kb->binding, 0, size);
+		strcpy(kb->binding, szBinding);
+		strcpy(pProfile->name, szKey);
+		pProfile->size = size - 1;
+	}
+
+	free(pFileData);
+}
+
+/*
+================
+Profile_InitDefaultSettings
+
+Initialize profile with default settings
+================
+*/
+qboolean Profile_InitDefaultSettings( player_profile_t* pProfile )
+{
+	Profile_LoadKeyNames();
+
+	pProfile->keybindings[255].lookstrafe = 0.0;
+	pProfile->keybindings[255].lookspring = 0.0;
+	pProfile->keybindings[255].windowed_mouse = 1.0;
+	pProfile->keybindings[255].crosshair = 0.0;
+	pProfile->keybindings[255].mfilter = 0.0;
+	pProfile->keybindings[255].mlook = 1.0;
+	pProfile->keybindings[255].joystick = 0.0;
+	pProfile->keybindings[255].m_pitch = 0.022;
+	pProfile->keybindings[255].sensitivity = 3.0;
+
+	pProfile->brightness = 1.0;
+	pProfile->bgmvolume = 1.0;
+	pProfile->viewsize = 120.0;
+	pProfile->hisound = 1.0;
+	pProfile->a3d = 1.0;
+	pProfile->gamma = 2.5;
+	pProfile->suitvolume = 0.25;
+	pProfile->volume = 0.8;
+
+	return TRUE;
+}
+
+/*
+================
+Profile_Load
+
+Load player profile
+================
+*/
+qboolean Profile_Load( char* pszName, player_profile_t* pProfile )
+{
+	if (!pszName || !pProfile)
+		return FALSE;
+
+	Profile_ClearKeyBindings(pProfile);
+
+	memset(pProfile, 0, sizeof(player_profile_t));
+
+	if (!Profile_InitDefaultSettings(pProfile))
+		return FALSE;
+
+	Profile_LoadKeyBindings(pszName, pProfile);
+	Profile_LoadSettings(pszName, pProfile);
+	return TRUE;
+}
+
+/*
+================
+Profile_Save
+
+Save player profile
+================
+*/
+int Profile_Save( char* pszName, player_profile_t* pProfile )
+{
+	if (!pszName || !pProfile)
+		return FALSE;
+
+	Profile_SaveKeyBindings(pszName, pProfile);
+	Profile_SaveSettings(pszName, pProfile);
+	return TRUE;
+}
+
+/*
+================
+Profile_LoadKeyBindings
+
+Load profile key bindings
+================
+*/
+void Profile_LoadKeyBindings( char* pszName, player_profile_t* pProfile )
+{
+	int	i;
+	int	size;
+	char szPath[256];
+	char szElement[256];
+	char szValue[256];
+	player_keybinding_t* kb;
+
+	if (!pProfile || !pszName)
+		return;
+
+	sprintf(szPath, "Software\\Valve\\Half-Life\\Player Profiles");
+
+	for (i = 0; i < 256; i++)
+	{
+		kb = &pProfile->keybindings[i];
+
+		sprintf(szElement, "%03i", i);
+
+		if (kb->binding && kb->binding[0])
+			strcpy(szValue, kb->binding);
+		else
+			sprintf(szValue, "");
+
+		Sys_GetProfileRegKeyValue(pszName, szPath, "KB", szElement, szValue, sizeof(szValue), szValue);
+
+		if (szValue[0])
+		{
+			if (kb->binding)
+				free(kb->binding);
+
+			size = strlen(szValue) + 1;
+			kb->binding = (char*)malloc(size);
+			if (!kb->binding)
+				Sys_Error("Could not allocate space for key binding");
+
+			memset(kb->binding, 0, size);
+			strcpy(kb->binding, szValue);
+
+			pProfile->size = size;
+		}
+		else
+		{
+			if (kb->binding)
+				free(kb->binding);
+			kb->binding = NULL;
+
+			pProfile->size = 0;
+		}
+	}
+}
+
+/*
+================
+Profile_SaveKeyBindings
+
+Save profile key bindings
+================
+*/
+void Profile_SaveKeyBindings( char* pszName, player_profile_t* pProfile )
+{
+	int	i;
+	char szPath[256];
+	char szElement[256];
+	char szValue[256];
+	player_keybinding_t* kb;
+
+	if (!pProfile || !pszName)
+		return;
+
+	sprintf(szPath, "Software\\Valve\\Half-Life\\Player Profiles");
+
+	for (i = 0; i < 256; i++)
+	{
+		kb = &pProfile->keybindings[i];
+
+		sprintf(szElement, "%03i", i);
+
+		if (kb->binding && kb->binding[0])
+			strcpy(szValue, kb->binding);
+		else
+			sprintf(szValue, "");
+
+		Sys_SetProfileRegKeyValue(pszName, szPath, "KB", szElement, szValue);
+	}
+}
+
+/*
+================
+Profile_LoadSettings
+
+Load profile settings
+================
+*/
+void Profile_LoadSettings( char* pszName, player_profile_t* pProfile )
+{
+	char szPath[256];
+	char szValue[256];
+
+	if (!pProfile || !pszName)
+		return;
+
+	sprintf(szPath, "Software\\Valve\\Half-Life\\Player Profiles");
+
+	sprintf(szValue, "%f", pProfile->keybindings[255].lookstrafe);
+	Sys_GetProfileRegKeyValue(pszName, szPath, "CVAR", "lookstrafe", szValue, sizeof(szPath), szValue);
+	pProfile->keybindings[255].lookstrafe = atof(szValue);
+
+	sprintf(szValue, "%f", pProfile->keybindings[255].lookspring);
+	Sys_GetProfileRegKeyValue(pszName, szPath, "CVAR", "lookspring", szValue, sizeof(szPath), szValue);
+	pProfile->keybindings[255].lookspring = atof(szValue);
+
+	sprintf(szValue, "%f", pProfile->keybindings[255].crosshair);
+	Sys_GetProfileRegKeyValue(pszName, szPath, "CVAR", "crosshair", szValue, sizeof(szPath), szValue);
+	pProfile->keybindings[255].crosshair = atof(szValue);
+
+	sprintf(szValue, "%f", pProfile->keybindings[255].windowed_mouse);
+	Sys_GetProfileRegKeyValue(pszName, szPath, "CVAR", "windowed_mouse", szValue, sizeof(szPath), szValue);
+	pProfile->keybindings[255].windowed_mouse = atof(szValue);
+
+	sprintf(szValue, "%f", pProfile->keybindings[255].m_pitch);
+	Sys_GetProfileRegKeyValue(pszName, szPath, "CVAR", "m_pitch", szValue, sizeof(szPath), szValue);
+	pProfile->keybindings[255].m_pitch = atof(szValue);
+
+	sprintf(szValue, "%f", pProfile->keybindings[255].mfilter);
+	Sys_GetProfileRegKeyValue(pszName, szPath, "CVAR", "mfilter", szValue, sizeof(szPath), szValue);
+	pProfile->keybindings[255].mfilter = atof(szValue);
+
+	sprintf(szValue, "%f", pProfile->keybindings[255].mlook);
+	Sys_GetProfileRegKeyValue(pszName, szPath, "CVAR", "mlook", szValue, sizeof(szPath), szValue);
+	pProfile->keybindings[255].mlook = atof(szValue);
+
+	sprintf(szValue, "%f", pProfile->keybindings[255].joystick);
+	Sys_GetProfileRegKeyValue(pszName, szPath, "CVAR", "joystick", szValue, sizeof(szPath), szValue);
+	pProfile->keybindings[255].joystick = atof(szValue);
+
+	sprintf(szValue, "%f", pProfile->keybindings[255].sensitivity);
+	Sys_GetProfileRegKeyValue(pszName, szPath, "CVAR", "sensitivity", szValue, sizeof(szPath), szValue);
+	pProfile->keybindings[255].sensitivity = atof(szValue);
+
+	sprintf(szValue, "%f", pProfile->viewsize);
+	Sys_GetProfileRegKeyValue(pszName, szPath, "CVAR", "viewsize", szValue, sizeof(szPath), szValue);
+	pProfile->viewsize = atof(szValue);
+
+	sprintf(szValue, "%f", pProfile->brightness);
+	Sys_GetProfileRegKeyValue(pszName, szPath, "CVAR", "brightness", szValue, sizeof(szPath), szValue);
+	pProfile->brightness = atof(szValue);
+
+	sprintf(szValue, "%f", pProfile->gamma);
+	Sys_GetProfileRegKeyValue(pszName, szPath, "CVAR", "gamma", szValue, sizeof(szPath), szValue);
+	pProfile->gamma = atof(szValue);
+
+	sprintf(szValue, "%f", pProfile->bgmvolume);
+	Sys_GetProfileRegKeyValue(pszName, szPath, "CVAR", "bgmvolume", szValue, sizeof(szPath), szValue);
+	pProfile->bgmvolume = atof(szValue);
+
+	sprintf(szValue, "%f", pProfile->suitvolume);
+	Sys_GetProfileRegKeyValue(pszName, szPath, "CVAR", "suitvolume", szValue, sizeof(szPath), szValue);
+	pProfile->suitvolume = atof(szValue);
+
+	sprintf(szValue, "%f", pProfile->hisound);
+	Sys_GetProfileRegKeyValue(pszName, szPath, "CVAR", "hisound", szValue, sizeof(szPath), szValue);
+	pProfile->hisound = atof(szValue);
+
+	sprintf(szValue, "%f", pProfile->volume);
+	Sys_GetProfileRegKeyValue(pszName, szPath, "CVAR", "volume", szValue, sizeof(szPath), szValue);
+	pProfile->volume = atof(szValue);
+
+	sprintf(szValue, "%f", pProfile->a3d);
+	Sys_GetProfileRegKeyValue(pszName, szPath, "CVAR", "a3d", szValue, sizeof(szPath), szValue);
+	pProfile->a3d = atof(szValue);
+	Cvar_Set("a3d", szValue);
+}
+
+/*
+================
+Profile_SaveSettings
+
+Save profile settings
+================
+*/
+void Profile_SaveSettings( char* pszName, player_profile_t* pProfile )
+{
+	char szPath[256];
+	char szValue[256];
+
+	if (!pProfile || !pszName)
+		return;
+
+	sprintf(szPath, "Software\\Valve\\Half-Life\\Player Profiles");
+
+	sprintf(szValue, "%f", pProfile->keybindings[255].lookstrafe);
+	Sys_SetProfileRegKeyValue(pszName, szPath, "CVAR", "lookstrafe", szValue);
+
+	sprintf(szValue, "%f", pProfile->keybindings[255].lookspring);
+	Sys_SetProfileRegKeyValue(pszName, szPath, "CVAR", "lookspring", szValue);
+
+	sprintf(szValue, "%f", pProfile->keybindings[255].crosshair);
+	Sys_SetProfileRegKeyValue(pszName, szPath, "CVAR", "crosshair", szValue);
+
+	sprintf(szValue, "%f", pProfile->keybindings[255].windowed_mouse);
+	Sys_SetProfileRegKeyValue(pszName, szPath, "CVAR", "windowed_mouse", szValue);
+
+	sprintf(szValue, "%f", pProfile->keybindings[255].m_pitch);
+	Sys_SetProfileRegKeyValue(pszName, szPath, "CVAR", "m_pitch", szValue);
+
+	sprintf(szValue, "%f", pProfile->keybindings[255].mfilter);
+	Sys_SetProfileRegKeyValue(pszName, szPath, "CVAR", "mfilter", szValue);
+
+	sprintf(szValue, "%f", pProfile->keybindings[255].mlook);
+	Sys_SetProfileRegKeyValue(pszName, szPath, "CVAR", "mlook", szValue);
+
+	sprintf(szValue, "%f", pProfile->keybindings[255].joystick);
+	Sys_SetProfileRegKeyValue(pszName, szPath, "CVAR", "joystick", szValue);
+
+	sprintf(szValue, "%f", pProfile->keybindings[255].sensitivity);
+	Sys_SetProfileRegKeyValue(pszName, szPath, "CVAR", "sensitivity", szValue);
+
+	sprintf(szValue, "%f", pProfile->viewsize);
+	Sys_SetProfileRegKeyValue(pszName, szPath, "CVAR", "viewsize", szValue);
+
+	sprintf(szValue, "%f", pProfile->brightness);
+	Sys_SetProfileRegKeyValue(pszName, szPath, "CVAR", "brightness", szValue);
+
+	sprintf(szValue, "%f", pProfile->gamma);
+	Sys_SetProfileRegKeyValue(pszName, szPath, "CVAR", "gamma", szValue);
+
+	sprintf(szValue, "%f", pProfile->bgmvolume);
+	Sys_SetProfileRegKeyValue(pszName, szPath, "CVAR", "bgmvolume", szValue);
+
+	sprintf(szValue, "%f", pProfile->suitvolume);
+	Sys_SetProfileRegKeyValue(pszName, szPath, "CVAR", "suitvolume", szValue);
+
+	sprintf(szValue, "%f", pProfile->hisound);
+	Sys_SetProfileRegKeyValue(pszName, szPath, "CVAR", "hisound", szValue);
+
+	sprintf(szValue, "%f", pProfile->volume);
+	Sys_SetProfileRegKeyValue(pszName, szPath, "CVAR", "volume", szValue);
+
+	sprintf(szValue, "%f", pProfile->a3d);
+	Sys_SetProfileRegKeyValue(pszName, szPath, "CVAR", "a3d", szValue);
+}
+
 volatile int					sys_checksum;
 
 
@@ -837,12 +1430,8 @@ DLL_EXPORT int GetGameInfo( struct GameInfo_s* pGI, char* pszChannel )
 		gi.port = net_local_adr.port;
 	}
 
-#if 0 // TODO: Implement
 	if (pszChannel && pszChannel[0] && SV_CheckChannel(pszChannel))
-	{
-		gi.inchannel = TRUE;
-	}
-#endif
+		gi.inroom = TRUE;
 
 	gi.state = cls.state;
 	gi.signon = cls.signon;
@@ -890,10 +1479,10 @@ void ExecuteProfileSettings( char* pszName )
 	int i;
 	char* keyname, * binding;
 
-	profile_t profile;
+	player_profile_t profile;
 	memset(&profile, 0, sizeof(profile));
 
-	LoadProfile(pszName, &profile);
+	Profile_Load(pszName, &profile);
 
 	// Change the name
 	if (Q_strcmp(cl_name.string, pszName))
@@ -953,7 +1542,7 @@ void ExecuteProfileSettings( char* pszName )
 	Cvar_SetValue("volume", profile.volume);
 	Cvar_SetValue("a3d", profile.a3d);
 
-	ClearProfileKeyBindings(&profile);
+	Profile_ClearKeyBindings(&profile);
 
 	Cbuf_AddText("exec autoexec.cfg\n");
 	Cbuf_Execute();

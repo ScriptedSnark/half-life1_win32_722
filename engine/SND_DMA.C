@@ -276,7 +276,7 @@ void S_Init( void )
 		char szPath[256];
 		char szValue[256];
 		sprintf(szPath, "Software\\Valve\\Half-Life\\Player Profiles");
-		GetProfileRegKeyValue(g_szProfileName, szPath, "CVAR", "a3d", szValue, sizeof(szValue), "0.0");
+		Sys_GetProfileRegKeyValue(g_szProfileName, szPath, "CVAR", "a3d", szValue, sizeof(szValue), "0.0");
 		Cvar_Set("a3d", szValue);
 	}
 	else

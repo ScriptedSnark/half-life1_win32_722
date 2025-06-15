@@ -20,7 +20,7 @@ typedef struct GameInfo_s
 	unsigned char	ip[4];
 	unsigned short	port;
 
-	qboolean	inchannel;
+	qboolean	inroom; // is the player in the server room?
 
 	// client
 	char		szStatus[64];

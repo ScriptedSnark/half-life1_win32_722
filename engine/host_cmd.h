@@ -8,6 +8,8 @@
 extern int	current_skill;
 extern int  gHostSpawnCount;
 
+void		Host_LoadProfileFile( void );
+
 int			EntryInTable( SAVERESTOREDATA* pSaveData, const char* pMapName, int index );
 int			EntityInSolid( edict_t* pent );
 void		LandmarkOrigin( SAVERESTOREDATA* pSaveData, vec_t* output, const char* pLandmarkName );

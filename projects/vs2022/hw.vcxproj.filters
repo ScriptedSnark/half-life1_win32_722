@@ -195,9 +195,6 @@
     <ClCompile Include="..\..\engine\gl_refrag.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\engine\profile.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\engine\ha3d.c">
       <Filter>Source Files</Filter>
     </ClCompile>

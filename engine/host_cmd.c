@@ -2535,12 +2535,12 @@ void Cvar_SetProfile( char* name )
 
 /*
 ===============
-LoadProfileFile
+Host_LoadProfileFile
 
 Loads and processes profile.lst configuration file
 ===============
 */
-void LoadProfileFile( void )
+void Host_LoadProfileFile( void )
 {
 	byte* file;
 	char* data;
