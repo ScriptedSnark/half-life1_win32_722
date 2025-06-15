@@ -19,7 +19,7 @@ extern void SND_PaintChannelFrom8toDry( channel_t* ch, sfxcache_t* sc, int count
 portable_samplepair_t paintbuffer[(PAINTBUFFER_SIZE + 1) * 2];
 
 #if defined (__USEA3D)
-#include "a3d.h"
+#include "snd_a3d.h"
 //#include "../a3dwrapper/a3dwrapperDP.h"
 #endif
 

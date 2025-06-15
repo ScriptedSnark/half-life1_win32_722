@@ -7,8 +7,15 @@
 */
 
 #include "quakedef.h"
-#include "winquake.h"
-#include "a3d.h"
+#include "snd_a3d.h"
+
+/* -------------------------------------------------------------------------- */
+
+float hA3D_CalcNormalizedSum( int a, int b )
+{
+	float sum = a + b;
+	return (float)(sum / 510.0);
+}
 
 int hA3D_Init( HWND hWnd, int nChannels, int nSamplesPerSec, int wBitsPerSample )
 {

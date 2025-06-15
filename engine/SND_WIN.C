@@ -2,7 +2,7 @@
 #include "winquake.h"
 
 #if defined (__USEA3D)
-#include "a3d.h"
+#include "snd_a3d.h"
 //#include "../a3dwrapper/a3dwrapperDP.h"
 #endif
 

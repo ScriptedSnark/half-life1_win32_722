@@ -108,7 +108,7 @@
     <ClCompile Include="..\..\engine\in_win.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\engine\opengl2d3d.c">
+    <ClCompile Include="..\..\engine\opengl2d3d.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\engine\conproc.c">
@@ -195,7 +195,7 @@
     <ClCompile Include="..\..\engine\gl_refrag.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\engine\ha3d.c">
+    <ClCompile Include="..\..\engine\ha3d.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\engine\SND_MIX.C">
@@ -235,6 +235,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\engine\sv_move.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\engine\ha3dg.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -449,9 +452,6 @@
     <ClInclude Include="..\..\engine\gl_warp_sin.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\engine\a3d.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\engine\customentity.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -492,6 +492,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\engine\save.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\engine\snd_a3d.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

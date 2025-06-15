@@ -48,7 +48,8 @@
     <ClCompile Include="..\..\engine\gl_screen.c" />
     <ClCompile Include="..\..\engine\GL_VIDNT.C" />
     <ClCompile Include="..\..\engine\GL_WARP.C" />
-    <ClCompile Include="..\..\engine\ha3d.c" />
+    <ClCompile Include="..\..\engine\ha3d.cpp" />
+    <ClCompile Include="..\..\engine\ha3dg.cpp" />
     <ClCompile Include="..\..\engine\hashpak.c" />
     <ClCompile Include="..\..\engine\host.c" />
     <ClCompile Include="..\..\engine\host_cmd.c" />
@@ -60,7 +61,7 @@
     <ClCompile Include="..\..\engine\mathlib.c" />
     <ClCompile Include="..\..\engine\net_chan.c" />
     <ClCompile Include="..\..\engine\net_ws.c" />
-    <ClCompile Include="..\..\engine\opengl2d3d.c" />
+    <ClCompile Include="..\..\engine\opengl2d3d.cpp" />
     <ClCompile Include="..\..\engine\pe_export.c" />
     <ClCompile Include="..\..\engine\pmove.c" />
     <ClCompile Include="..\..\engine\pmovetst.c" />
@@ -97,7 +98,7 @@
     <ClInclude Include="..\..\common\r_efx.h" />
     <ClInclude Include="..\..\common\winsani_in.h" />
     <ClInclude Include="..\..\common\winsani_out.h" />
-    <ClInclude Include="..\..\engine\a3d.h" />
+    <ClInclude Include="..\..\engine\snd_a3d.h" />
     <ClInclude Include="..\..\engine\anorms.h" />
     <ClInclude Include="..\..\engine\anorm_dots.h" />
     <ClInclude Include="..\..\engine\beamdef.h" />

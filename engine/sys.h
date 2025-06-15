@@ -90,15 +90,15 @@ extern int giActive;
 extern int giStateInfo;
 extern int giSubState;
 
-void	(*VID_Update)( struct vrect_s* rects );
-void	(*VID_Shutdown)(void);
+extern void	(*VID_Update)( struct vrect_s* rects );
+extern void	(*VID_Shutdown)( void );
 
-void	(*AppActivate)( int fActive, int minimize );
+extern void	(*AppActivate)( int fActive, int minimize );
 
-void	(*CDAudio_Play)( int track, int looping );
-void	(*CDAudio_Pause)( void );
-void	(*CDAudio_Resume)( void );
-void	(*CDAudio_Update)( void );
+extern void	(*CDAudio_Play)( int track, int looping );
+extern void	(*CDAudio_Pause)( void );
+extern void	(*CDAudio_Resume)( void );
+extern void	(*CDAudio_Update)( void );
 
-void	(*Launcher_InitCmds)( void );
-void	(*Launcher_GetCDKey)( char* pszCDKey, int* nLength, int* bDedicated );
+extern void	(*Launcher_InitCmds)( void );
+extern void	(*Launcher_GetCDKey)( char* pszCDKey, int* nLength, int* bDedicated );
