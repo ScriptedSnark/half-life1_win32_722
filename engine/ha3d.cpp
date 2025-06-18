@@ -19,6 +19,24 @@ float hA3D_CalcNormalizedSum( int a, int b )
 	return (float)(sum / 510.0);
 }
 
+void* hA3D_GetDynamicSource3D( int channel )
+{
+	// TODO: Implement
+	return NULL;
+}
+
+int hA3D_GetSourceStatus( int sourceID )
+{
+	// TODO: Implement
+	return 0;
+}
+
+int hA3D_SetSourceStatus( int sourceID, int status )
+{
+	// TODO: Implement
+	return 0;
+}
+
 void hA3D_SetMixBufferSize( int dwSize )
 {
 	// TODO: Implement

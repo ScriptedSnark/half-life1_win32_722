@@ -22,8 +22,15 @@ void debugSetName( const char* debugString );
 void debugOutputString( void );
 
 // A3D Wrapper
+int A3D_SetListenerPosition( float* origin );
+int A3D_SetListenerOrientation( float* forward, float* up );
+
 int A3D_Flush( void );
 int A3D_Clear( void );
+
+int A3D_SetMainVolume( float volume );
+
+int A3D_EnableSourceReflection( void* pA3D, int enabled );
 
 int A3D_StartLoopingPlayback( void );
 

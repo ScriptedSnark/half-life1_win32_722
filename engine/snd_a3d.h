@@ -9,6 +9,16 @@
 
 #define S_VERBWET_EPS	0.001
 
+// Source status
+#define A3D_STATUS_OFF					0
+#define A3D_STATUS_NORMAL				1
+#define A3D_STATUS_LOOPED				2
+#define A3D_STATUS_START				3
+#define A3D_STATUS_STOP					4
+#define A3D_STATUS_PROCESSING_NORMAL	5
+#define A3D_STATUS_PROCESSING_LOOPED	6
+#define A3D_STATUS_PROCESSING_START		7
+
 // Blip Orientation
 #define A3D_BLIP_ORIENTATION_OFF		0
 #define A3D_BLIP_ORIENTATION_FRONT		1
@@ -25,6 +35,11 @@ extern "C" {
 extern int bA3dReloadSettings;
 
 float hA3D_CalcNormalizedSum( int a, int b );
+
+void* hA3D_GetDynamicSource3D( int channel );
+
+int hA3D_GetSourceStatus( int sourceID );
+int hA3D_SetSourceStatus( int sourceID, int status );
 
 void hA3D_SetMixBufferSize( int dwSize );
 
@@ -47,8 +62,8 @@ void hA3D_PrecacheSources( void );
 
 // A3D Geometry
 
+void hA3Dg_SetListenerOrigin( float* origin );
 void hA3Dg_RenderGeometry( void );
-
 void hA3Dg_AdjustLeavesRendered( int leafnum );
 void hA3Dg_AdjustNumPolys( int numpolys );
 void hA3Dg_AdjustPolySize( float polysize );

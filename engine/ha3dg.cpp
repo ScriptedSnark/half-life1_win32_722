@@ -9,6 +9,11 @@
 #include "quakedef.h"
 #include "snd_a3d.h"
 
+void hA3Dg_SetListenerOrigin( float* origin )
+{
+	// TODO: Implement
+}
+
 void hA3Dg_RenderGeometry( void )
 {
 	// TODO: Implement

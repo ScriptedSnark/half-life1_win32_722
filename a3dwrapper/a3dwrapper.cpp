@@ -42,6 +42,18 @@ void debugOutputString( void )
 
 // A3D Wrapper
 
+int A3D_SetListenerPosition( float* origin )
+{
+	// TODO: Implement
+	return 0;
+}
+
+int A3D_SetListenerOrientation( float* forward, float* up )
+{
+	// TODO: Implement
+	return 0;
+}
+
 int A3D_Flush( void )
 {
 	// TODO: Implement
@@ -49,6 +61,18 @@ int A3D_Flush( void )
 }
 
 int A3D_Clear( void )
+{
+	// TODO: Implement
+	return 0;
+}
+
+int A3D_SetMainVolume( float volume )
+{
+	// TODO: Implement
+	return 0;
+}
+
+int A3D_EnableSourceReflection( void* pA3D, int enabled )
 {
 	// TODO: Implement
 	return 0;

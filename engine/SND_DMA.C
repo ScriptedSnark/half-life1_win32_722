@@ -5,10 +5,9 @@
 #include "pr_cmds.h"
 #include "profile.h"
 
-
 #if defined (__USEA3D)
 #include "snd_a3d.h"
-//#include "../a3dwrapper/a3dwrapperDP.h"
+#include "../a3dwrapper/a3dwrapper.h"
 #endif
 
 void S_Play( void );
@@ -641,8 +640,29 @@ channel_t* SND_PickDynamicChannel( int entnum, int entchannel,
 #if defined (__USEA3D)
 	if (snd_isa3d && ch_first_3d >= 0)
 	{
+		void* pA3DSource;
+
 		first_to_die = ch_first_3d;
-		// TODO: Implement
+		
+		pA3DSource = hA3D_GetDynamicSource3D(ch_first_3d);
+		if (pA3DSource)
+		{
+			A3D_EnableSourceReflection(pA3DSource, cl_entities[entnum].movetype == MOVETYPE_NONE);
+
+			switch (hA3D_GetSourceStatus(ch_first_3d))
+			{
+			case A3D_STATUS_LOOPED:
+			case A3D_STATUS_PROCESSING_LOOPED:
+				hA3D_SetSourceStatus(ch_first_3d, A3D_STATUS_PROCESSING_LOOPED);
+				break;
+			case A3D_STATUS_START:
+				hA3D_SetSourceStatus(ch_first_3d, A3D_STATUS_PROCESSING_START);
+				break;
+			default:
+				hA3D_SetSourceStatus(ch_first_3d, A3D_STATUS_PROCESSING_NORMAL);
+				break;
+			}
+		}
 	}
 #endif
 
@@ -712,7 +732,27 @@ channel_t* SND_PickStaticChannel( int entnum, int entchannel,
 #if defined (__USEA3D)
 	if (snd_isa3d)
 	{
-		// TODO: Implement
+		void* pA3DSource;
+
+		pA3DSource = hA3D_GetDynamicSource3D(i);
+		if (pA3DSource)
+		{
+			A3D_EnableSourceReflection(pA3DSource, cl_entities[entnum].movetype == MOVETYPE_NONE);
+
+			switch (hA3D_GetSourceStatus(i))
+			{
+			case A3D_STATUS_LOOPED:
+			case A3D_STATUS_PROCESSING_LOOPED:
+				hA3D_SetSourceStatus(i, A3D_STATUS_PROCESSING_LOOPED);
+				break;
+			case A3D_STATUS_START:
+				hA3D_SetSourceStatus(i, A3D_STATUS_PROCESSING_START);
+				break;
+			default:
+				hA3D_SetSourceStatus(i, A3D_STATUS_PROCESSING_NORMAL);
+				break;
+			}
+		}
 	}
 #endif
 
@@ -1198,7 +1238,8 @@ void S_StopAllSounds( qboolean clear )
 		S_ClearBuffer();
 
 #if defined (__USEA3D)
-	// TODO: Implement
+	if (snd_isa3d)
+		hA3D_StopAllSounds();
 #endif
 }
 
@@ -1219,7 +1260,10 @@ void S_ClearBuffer( void )
 	{
 		// Can't lock if we have no buffer.  This occurs while the
 		// main window is deactivated.
-		// TODO: Implement
+		if (!A3D_IsMixBuffer())
+		{
+			return;
+		}
 	}
 	else
 #endif
@@ -1239,7 +1283,20 @@ void S_ClearBuffer( void )
 #if defined (__USEA3D)
 	if (snd_isa3d)
 	{
-		// TODO: Implement
+		if (A3D_IsMixBuffer())
+		{
+			DWORD* pbuf;
+			DWORD locksize;
+			HRESULT	hresult;
+
+			hresult = A3D_LockMixBuffer((void**)&pbuf, &locksize);
+			if (SUCCEEDED(hresult))
+			{
+				Q_memset(pbuf, clear, shm->samples * shm->samplebits / 8);
+				A3D_UnlockMixBuffer(pbuf, locksize);
+			}
+			return;
+		}
 	}
 #endif
 
@@ -1364,7 +1421,11 @@ void S_Update( vec_t* origin, vec_t* forward, vec_t* right, vec_t* up )
 #if defined (__USEA3D)
 	if (snd_isa3d)
 	{
-		// TODO: Implement
+		hA3Dg_SetListenerOrigin(origin);
+
+		A3D_SetMainVolume(volume.value);
+		A3D_SetListenerPosition(origin);
+		A3D_SetListenerOrientation(forward, up);
 	}
 	
 	if (!snd_isa3d)
