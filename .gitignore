@@ -412,3 +412,5 @@ FodyWeavers.xsd
 *.RES
 *.mdp
 /projects/vs2022/hl/Debug - Address Sanitizer
+/engine/a3d/a3dwrapper.idb
+/engine/a3d/a3dwrapper.lib

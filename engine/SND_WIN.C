@@ -3,7 +3,7 @@
 
 #if defined (__USEA3D)
 #include "snd_a3d.h"
-//#include "../a3dwrapper/a3dwrapperDP.h"
+#include "../a3dwrapper/a3dwrapper.h"
 #endif
 
 #define iDirectSoundCreate(a,b,c)	pDirectSoundCreate(a,b,c)
@@ -111,7 +111,8 @@ void S_BlockSound( void )
 #if defined (__USEA3D)
 	if (snd_isa3d)
 	{
-		// TODO: Implement
+		hA3D_StopAllSounds();
+		hA3D_StopMixBuffer();
 		snd_blocked = 1;
 		return;
 	}
@@ -164,7 +165,7 @@ void FreeSound( void )
 #if defined (__USEA3D)
 	if (snd_isa3d)
 	{
-		// TODO: Implement
+		hA3D_Shutdown();
 	}
 #endif
 
@@ -763,7 +764,11 @@ int SNDDMA_GetDMAPos( void )
 #if defined (__USEA3D)
 	if (snd_isa3d)
 	{
-		// TODO: Implement
+		if (A3D_IsMixBuffer())
+		{
+			A3D_GetMixBufferPos(&mmtime.u.sample, &dwWrite);
+			s = mmtime.u.sample - mmstarttime.u.sample;
+		}
 	}
 	else
 	{
@@ -799,7 +804,185 @@ Makes sure dma.buffer is valid
 */
 void SNDDMA_BeginPainting( void )
 {
-	// TODO: Implement
+	static float s_oldbuffersize;
+	static float s_oldrolloff;
+	static int s_olddoppler;
+	static float s_olddistance;
+	static float s_oldautomin_distance;
+	static float s_oldautomax_distance;
+	static float s_oldmin_distance;
+	static float s_oldmax_distance;
+	static float s_old2dvolume = 1.0;
+	static int s_oldleafnum;
+	static float s_oldrefgain;
+	static float s_oldrefdelay;
+	static float s_oldpolykeep;
+	static float s_oldpolysize;
+	static int s_oldnumpolys;
+	static int s_oldshowtossed;
+	static int s_oldusepvs;
+	static float s_oldbloat;
+	static int s_oldreflect = -1;
+	static int s_oldocclude = -1;
+	static float s_oldoccfactor = -1.0;
+	static float s_oldocc_epsilon = -1.0;
+
+	static char szBlipDir[16] = "";
+
+	if (!snd_isa3d)
+		return;
+
+	A3D_Clear();
+
+	if (bA3dReloadSettings || (s_buffersize.value != s_oldbuffersize))
+	{
+		s_oldbuffersize = s_buffersize.value;
+		hA3D_SetSecondaryBufferSize(s_buffersize.value);
+	}
+
+	if (bA3dReloadSettings || (s_rolloff.value != s_oldrolloff || s_distance.value != s_olddistance || s_doppler.value != s_olddoppler))
+	{	
+		s_oldrolloff = s_rolloff.value;
+		s_olddistance = s_distance.value;
+		s_olddoppler = s_doppler.value;
+		hA3D_SetGlobals(s_rolloff.value, s_distance.value, s_doppler.value);
+	}
+
+	if (bA3dReloadSettings || (s_automin_distance.value != s_oldautomin_distance || s_automax_distance.value != s_oldautomax_distance))
+	{		
+		s_oldautomin_distance = s_automin_distance.value;
+		s_oldautomax_distance = s_automax_distance.value;
+		hA3D_SetAutoMinMax(s_automin_distance.value, s_automax_distance.value);
+	}
+
+	if (bA3dReloadSettings || (s_min_distance.value != s_oldmin_distance || s_max_distance.value != s_oldmax_distance))
+	{
+		s_oldmin_distance = s_min_distance.value;
+		s_oldmax_distance = s_max_distance.value;
+		hA3D_SetMinMax(s_min_distance.value, s_max_distance.value);
+	}
+
+	if (bA3dReloadSettings || (s_2dvolume.value != s_old2dvolume))
+	{
+		s_old2dvolume = s_2dvolume.value;
+		A3D_SetMixBufferVolume(s_2dvolume.value);
+	}
+
+#ifdef __A3D_GEOM
+	if (bA3dReloadSettings || (s_leafnum.value != s_oldleafnum))
+	{
+		s_oldleafnum = s_leafnum.value;
+		hA3Dg_AdjustLeavesRendered(s_leafnum.value);
+	}
+
+	if (bA3dReloadSettings || (s_refgain.value != s_oldrefgain))
+	{
+		s_oldrefgain = s_refgain.value;
+		hA3Dg_AdjustRefGain(s_refgain.value);
+	}
+
+	if (bA3dReloadSettings || (s_refdelay.value != s_oldrefdelay))
+	{
+		s_oldrefdelay = s_refdelay.value;
+		hA3Dg_AdjustRefDelay(s_refdelay.value);
+	}
+
+	if (bA3dReloadSettings || (s_polykeep.value != s_oldpolykeep))
+	{
+		s_oldpolykeep = s_polykeep.value;
+		hA3Dg_AdjustPolyKeep(s_polykeep.value);
+	}
+
+	if (bA3dReloadSettings || (s_polysize.value != s_oldpolysize))
+	{
+		s_oldpolysize = s_polysize.value;
+		hA3Dg_AdjustPolySize(s_polysize.value);
+	}
+
+	if (bA3dReloadSettings || (s_numpolys.value != s_oldnumpolys))
+	{
+		s_oldnumpolys = s_numpolys.value;
+		hA3Dg_AdjustNumPolys(s_numpolys.value);
+	}
+
+	if (bA3dReloadSettings || (s_showtossed.value != s_oldshowtossed))
+	{
+		s_oldshowtossed = s_showtossed.value;
+		hA3Dg_AdjustShowTossed(s_showtossed.value);
+	}
+
+	if (bA3dReloadSettings || (s_usepvs.value != s_oldusepvs))
+	{
+		s_oldusepvs = s_usepvs.value;
+		hA3Dg_AdjustUsePVS(s_usepvs.value);
+	}
+
+	if (bA3dReloadSettings || (s_bloat.value != s_oldbloat))
+	{
+		s_oldbloat = s_bloat.value;
+		hA3Dg_AdjustBloatFactor(s_bloat.value);
+	}
+
+	if (bA3dReloadSettings || _strnicmp(szBlipDir, s_blipdir.string, sizeof(szBlipDir)) != 0)
+	{
+		strncpy(szBlipDir, s_blipdir.string, sizeof(szBlipDir));
+
+		if (!_strnicmp(szBlipDir, "up", sizeof(szBlipDir)))
+		{
+			hA3D_ChangeBlipOrientation(A3D_BLIP_ORIENTATION_UP);
+		}
+		else if (!_strnicmp(szBlipDir, "down", sizeof(szBlipDir)))
+		{
+			hA3D_ChangeBlipOrientation(A3D_BLIP_ORIENTATION_DOWN);
+		}
+		else if (!_strnicmp(szBlipDir, "left", sizeof(szBlipDir)))
+		{
+			hA3D_ChangeBlipOrientation(A3D_BLIP_ORIENTATION_LEFT);
+		}
+		else if (!_strnicmp(szBlipDir, "right", sizeof(szBlipDir)))
+		{
+			hA3D_ChangeBlipOrientation(A3D_BLIP_ORIENTATION_RIGHT);
+		}
+		else if (!_strnicmp(szBlipDir, "front", sizeof(szBlipDir)))
+		{
+			hA3D_ChangeBlipOrientation(A3D_BLIP_ORIENTATION_FRONT);
+		}
+		else if (!_strnicmp(szBlipDir, "back", sizeof(szBlipDir)))
+		{
+			hA3D_ChangeBlipOrientation(A3D_BLIP_ORIENTATION_BACK);
+		}
+		else
+		{
+			hA3D_ChangeBlipOrientation(A3D_BLIP_ORIENTATION_OFF);
+		}
+	}
+
+	if (bA3dReloadSettings || (s_reflect.value != s_oldreflect))
+	{
+		s_oldreflect = s_reflect.value;
+		hA3Dg_AdjustSetReflection(s_reflect.value);
+	}
+
+	if (bA3dReloadSettings || (s_occlude.value != s_oldocclude))
+	{
+		s_oldocclude = s_occlude.value;
+		hA3Dg_AdjustSetOcclusion(s_occlude.value);
+	}
+
+	if (bA3dReloadSettings || (s_occfactor.value != s_oldoccfactor))
+	{
+		s_oldoccfactor = s_occfactor.value;
+		hA3Dg_AdjustTransmittance(s_occfactor.value);
+	}
+
+	if (bA3dReloadSettings || (s_occ_epsilon.value != s_oldocc_epsilon))
+	{
+		s_oldocc_epsilon = s_occ_epsilon.value;
+		hA3Dg_AdjustOcclusionEpsilon(s_occ_epsilon.value);
+	}
+#endif // __A3D_GEOM
+
+	bA3dReloadSettings = FALSE;
 }
 #endif
 
@@ -818,7 +1001,18 @@ void SNDDMA_Submit( void )
 #if defined (__USEA3D)
 	if (snd_isa3d)
 	{
-		// TODO: Implement
+		if (!snd_blocked)
+			A3D_StartLoopingPlayback();
+
+		// Send Geometry
+#ifdef __A3D_GEOM
+		if (s_geometry.value)
+			hA3Dg_RenderGeometry();
+#endif
+
+		hA3D_UpdateListenerOrigins();
+
+		A3D_Flush();
 		return;
 	}
 #endif
@@ -898,13 +1092,13 @@ sndinitstat SNDDMA_InitA3D( void )
 	Con_Printf("Initializing Aureal A3D...\n");
 
 	gSndBufSize = SECONDARY_BUFFER_SIZE;
-
-	// TODO: Implement
+	hA3D_SetMixBufferSize(gSndBufSize);
+	hA3D_SetSecondaryBufferSize(gSndBufSize);
 
 	hresult = hA3D_Init(*pmainwindow, 32, shm->dmaspeed, shm->samplebits);
 	if (SUCCEEDED(hresult))
 	{
-//		DWORD dwWrite;
+		DWORD dwWrite;
 
 		Con_Printf("ok\n");
 
@@ -929,8 +1123,8 @@ sndinitstat SNDDMA_InitA3D( void )
 		sample16 = (shm->samplebits / 8) - 1;
 
 		// AGW - set mm start time
-//		hA3D_StartMixBuffer(); TODO: Implement
-//		A3D_GetMixBufferPos(&mmstarttime.u.sample, &dwWrite); TODO: Implement
+		hA3D_StartMixBuffer();
+		A3D_GetMixBufferPos(&mmstarttime.u.sample, &dwWrite);
 
 		return SIS_SUCCESS;
 	}
