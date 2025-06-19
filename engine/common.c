@@ -1659,7 +1659,7 @@ int COM_FindFile( char* filename, int* phFile, FILE** file )
 			if (findtime == -1)
 				continue;
 
-			hfile = CreateFile(netpath, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, 128, NULL);
+			hfile = CreateFile(netpath, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 			if (hfile != INVALID_HANDLE_VALUE)
 			{
 				GetFileTime(hfile, NULL, NULL, &gFileTime);

@@ -20,7 +20,7 @@ portable_samplepair_t paintbuffer[(PAINTBUFFER_SIZE + 1) * 2];
 
 #if defined (__USEA3D)
 #include "snd_a3d.h"
-//#include "../a3dwrapper/a3dwrapperDP.h"
+#include "../a3dwrapper/a3dwrapper.h"
 #endif
 
 #if defined (__USEA3D) || defined (_ADD_EAX_)
@@ -88,9 +88,20 @@ void S_TransferStereo16( int end )
 
 #if defined (__USEA3D)
 	dwSize = 0;
-	if (FALSE) // TODO: Implement
+	if (snd_isa3d && A3D_IsMixBuffer())
 	{
-		// TODO: Implement
+		HRESULT	hresult;
+
+		hresult = A3D_LockMixBuffer(&pbuf, &dwSize);
+		if (FAILED(hresult))
+		{
+			Con_DPrintf("S_TransferStereo16: A3D::Lock MixBuffer Failed\n");
+			Con_DPrintf("Restarting A3D engine...\n");
+			Con_Printf("S_TransferStereo16: A3D::Lock MixBuffer Failed\n");
+			S_Shutdown();
+			S_Startup();
+			return;
+		}
 	}
 	else
 #endif
@@ -151,7 +162,7 @@ void S_TransferStereo16( int end )
 #if defined (__USEA3D)
 	if (snd_isa3d)
 	{
-		// TODO: Implement
+		A3D_UnlockMixBuffer(pbuf, dwSize);
 		return;
 	}
 #endif
@@ -197,9 +208,18 @@ void S_TransferPaintBuffer( int endtime )
 
 #if defined (__USEA3D)
 	dwSize = 0;
-	if (FALSE) // TODO: Implement
+	if (snd_isa3d && A3D_IsMixBuffer())
 	{
-		// TODO: Implement
+		HRESULT	hresult;
+
+		hresult = A3D_LockMixBuffer(&pbuf, &dwSize);
+		if (FAILED(hresult))
+		{
+			Con_Printf("S_TransferStereo16: A3D::Lock MixBuffer Failed\n");
+			S_Shutdown();
+			S_Startup();
+			return;
+		}
 	}
 	else
 #endif
@@ -269,7 +289,7 @@ void S_TransferPaintBuffer( int endtime )
 #if defined (__USEA3D)
 	if (snd_isa3d)
 	{
-		// TODO: Implement
+		A3D_UnlockMixBuffer(pbuf, dwSize);
 		return;
 	}
 #endif
@@ -670,8 +690,8 @@ void S_PaintChannels( int endtime )
 #if defined (__USEA3D)
 	if (snd_isa3d)
 	{
-//		if (paintedtime >= endtime) TODO: Implement
-//			hA3D_StopAllSounds(paintedtime); TODO: Implement
+		if (paintedtime >= endtime)
+			hA3D_StopAllSounds();
 	}
 #endif
 
