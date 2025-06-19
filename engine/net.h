@@ -47,7 +47,7 @@ extern	cvar_t	host_name;
 extern int		net_activeconnections;
 
 void		NET_InitColors( void );
-void		SCR_NetGraph( void );
+void		R_NetGraph( void );
 
 // Start up networking
 void		NET_Init( void );

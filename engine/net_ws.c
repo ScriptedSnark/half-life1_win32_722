@@ -1269,21 +1269,15 @@ void NET_InitColors( void )
 
 // TODO: Implement
 
-#define PACKET_INVALID	9998
-#define PACKET_DROPPED	9999
-#define PACKET_CHOKED	10000
-
 #define MAX_GRAPH_WIDTH	256
 int packet_latency[MAX_GRAPH_WIDTH];
 
 /*
-==================
-SCR_NetGraph
-
-Visualizes data flow
-==================
+==============
+R_NetGraph
+==============
 */
-void SCR_NetGraph( void )
+void R_NetGraph( void )
 {
 	int		i;
 	int		x, y;
@@ -1305,15 +1299,15 @@ void SCR_NetGraph( void )
 
 		if (frame->receivedtime == -1.0)
 		{
-			packet_latency[i % MAX_GRAPH_WIDTH] = PACKET_DROPPED;	// dropped
+			packet_latency[i % MAX_GRAPH_WIDTH] = 9999;		// dropped
 		}
 		else if (frame->receivedtime == -2.0)
 		{
-			packet_latency[i % MAX_GRAPH_WIDTH] = PACKET_CHOKED;	// chocked
+			packet_latency[i % MAX_GRAPH_WIDTH] = 10000;	// chocked
 		}
 		else if (frame->invalid)
 		{
-			packet_latency[i % MAX_GRAPH_WIDTH] = PACKET_INVALID;	// invalid delta
+			packet_latency[i % MAX_GRAPH_WIDTH] = 9998;		// invalid delta
 		}
 		else
 		{
@@ -1329,17 +1323,17 @@ void SCR_NetGraph( void )
 		height = packet_latency[(cls.netchan.outgoing_sequence - i) % MAX_GRAPH_WIDTH];
 		switch (height)
 		{
-		case PACKET_CHOKED:
+		case 10000:
 			color[0] = 255;
 			color[1] = 255;
 			color[2] = 0;
 			break;
-		case PACKET_DROPPED:
+		case 9999:
 			color[0] = 255;
 			color[1] = 0;
 			color[2] = 0;
 			break;
-		case PACKET_INVALID:
+		case 9998:
 			color[0] = 0;
 			color[1] = 0;
 			color[2] = 255;

@@ -755,7 +755,7 @@ void SCR_UpdateScreen( void )
 	// TODO: Implement
 	
 	if (r_netgraph.value)
-		SCR_NetGraph();
+		R_NetGraph();
 
 	// TODO: Implement
 
