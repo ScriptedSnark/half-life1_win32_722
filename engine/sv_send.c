@@ -1118,10 +1118,10 @@ void SV_UpdateToReliableMessages( void )
 		if (!host_client->edict)
 			continue;
 
-		if (host_client->fakeclient) //this is a client controlled entirely by the game .dll, let it handle the stuff
+		if (host_client->fakeclient) // this is a client controlled entirely by the game .dll, let it handle the stuff
 			continue;
 
-		if (!sv_gpNewUserMsgs) //no new UserMsgs were registered
+		if (!sv_gpNewUserMsgs) // no new UserMsgs were registered
 			continue;
 
 		if (host_client->active || host_client->connected)
@@ -1146,12 +1146,13 @@ void SV_UpdateToReliableMessages( void )
 		{
 			sv_gpUserMsgs = sv_gpNewUserMsgs;
 		}
-		sv_gpNewUserMsgs = NULL; //nullify it so we don't send "svc_newusermsg" each frame
+		sv_gpNewUserMsgs = NULL; // nullify it so we don't send "svc_newusermsg" each frame
 	}
 
 	// Clear the server datagram if it overflowed.
 	if (sv.datagram.overflowed)
 	{
+		//bUnreliableOverflow = TRUE;
 		Con_DPrintf("sv.datagram overflowed!\n");
 		SZ_Clear(&sv.datagram);
 	}
@@ -1176,6 +1177,7 @@ void SV_UpdateToReliableMessages( void )
 SV_SendClientMessages
 =======================
 */
+extern void SCR_UpdateUsage( int numbytes, int numlisteners, qboolean bIsDatagram );
 void SV_SendClientMessages(void)
 {
 	int			i;
@@ -1194,7 +1196,7 @@ void SV_SendClientMessages(void)
 	if (g_LastScreenUpdateTime <= sv.time)
 	{
 		bShouldUpdatePing = TRUE;
-		g_LastScreenUpdateTime = sv.time + 1;
+		g_LastScreenUpdateTime = sv.time + 1.0f;
 	}
 
 	for (i = 0, host_client = svs.clients; i < svs.maxclients; i++, host_client++)
@@ -1244,9 +1246,8 @@ void SV_SendClientMessages(void)
 		}
 	}
 
-	// TODO: Implement (this is related to SCR_NetGraph)
-	/*sub_DFC0FA0(nReliableBytesSent, nReliables, FALSE);
-	sub_DFC0FA0(nDatagramBytesSent, !bUnreliableOverflow ? nDatagrams : (MAX_MSGLEN + 1), TRUE);*/
+	SCR_UpdateUsage(nReliableBytesSent, nReliables, FALSE);
+	SCR_UpdateUsage(nDatagramBytesSent, !bUnreliableOverflow ? nDatagrams : (MAX_MSGLEN + 1), TRUE);
 	bShouldUpdatePing = FALSE;
 
 	// Allow game .dll to run code, including unsetting EF_MUZZLEFLASH and EF_NOINTERP on effects fields

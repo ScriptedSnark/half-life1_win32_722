@@ -753,6 +753,9 @@ void SCR_UpdateScreen( void )
 	}
 
 	// TODO: Implement
+
+	if (scr_netusage.value && vid.height > scr_con_current)
+		SCR_NetUsage();
 	
 	if (r_netgraph.value)
 		R_NetGraph();
@@ -774,8 +777,7 @@ void D_FillRect( vrect_t* r, byte* color )
 	qglDisable(GL_TEXTURE_2D);
 	qglEnable(GL_BLEND);
 	qglTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-	qglBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	qglEnable(GL_ALPHA_TEST);
+	qglBlendFunc(GL_SRC_ALPHA, GL_ONE);
 
 	qglColor4f(color[0] / 255.0, color[1] / 255.0, color[2] / 255.0, 1.0);
 
@@ -788,7 +790,6 @@ void D_FillRect( vrect_t* r, byte* color )
 	qglVertex2f(r->x, r->y + r->height);
 	qglEnd();
 
-	qglDisable(GL_ALPHA_TEST);
 	qglEnable(GL_DEPTH_TEST);
 
 	qglColor3f(1, 1, 1);
