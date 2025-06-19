@@ -7,7 +7,6 @@
 
 #include "vmodes.h"
 
-// TODO: This struct is 76 bytes sized instead of 80
 typedef struct viddef_s
 {
 	pixel_t* buffer;			// invisible buffer
@@ -29,7 +28,6 @@ typedef struct viddef_s
 	unsigned 		maxwarpwidth;
 	unsigned 		maxwarpheight;
 	pixel_t* direct;			// direct drawing to framebuffer, if not
-	//  NULL
 	VidTypes		vidtype;
 } viddef_t;
 

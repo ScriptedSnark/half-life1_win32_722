@@ -1267,10 +1267,100 @@ void NET_InitColors( void )
 	// TODO: Implement
 }
 
+// TODO: Implement
 
-// TODO: Implement (Net graph code)
+#define PACKET_INVALID	9998
+#define PACKET_DROPPED	9999
+#define PACKET_CHOKED	10000
 
+#define MAX_GRAPH_WIDTH	256
+int packet_latency[MAX_GRAPH_WIDTH];
 
+/*
+==================
+SCR_NetGraph
+
+Visualizes data flow
+==================
+*/
+void SCR_NetGraph( void )
+{
+	int		i;
+	int		x, y;
+	int		width, height;
+	unsigned char color[3];
+	frame_t* frame;
+	vrect_t rcFill;
+
+	width = scr_vrect.width;
+	if (width > MAX_GRAPH_WIDTH)
+		width = MAX_GRAPH_WIDTH;
+	
+	// Fill in frame data
+	for (i = cls.netchan.outgoing_sequence - UPDATE_MASK;
+		i <= cls.netchan.outgoing_sequence;
+		i++)
+	{
+		frame = &cl.frames[i & UPDATE_MASK];
+
+		if (frame->receivedtime == -1.0)
+		{
+			packet_latency[i % MAX_GRAPH_WIDTH] = PACKET_DROPPED;	// dropped
+		}
+		else if (frame->receivedtime == -2.0)
+		{
+			packet_latency[i % MAX_GRAPH_WIDTH] = PACKET_CHOKED;	// chocked
+		}
+		else if (frame->invalid)
+		{
+			packet_latency[i % MAX_GRAPH_WIDTH] = PACKET_INVALID;	// invalid delta
+		}
+		else
+		{
+			packet_latency[i % MAX_GRAPH_WIDTH] = ((frame->receivedtime - frame->senttime) * 20.0);
+		}
+	}
+
+	x = scr_vrect.x + (scr_vrect.width - width) / 2 + 1;
+	y = scr_vrect.y + scr_vrect.height - 1;
+
+	for (i = 0; i < width; i++)
+	{
+		height = packet_latency[(cls.netchan.outgoing_sequence - i) % MAX_GRAPH_WIDTH];
+		switch (height)
+		{
+		case PACKET_CHOKED:
+			color[0] = 255;
+			color[1] = 255;
+			color[2] = 0;
+			break;
+		case PACKET_DROPPED:
+			color[0] = 255;
+			color[1] = 0;
+			color[2] = 0;
+			break;
+		case PACKET_INVALID:
+			color[0] = 0;
+			color[1] = 0;
+			color[2] = 255;
+			break;
+		default:
+			color[0] = 63;
+			color[1] = 255;
+			color[2] = 63;
+			break;
+		}
+
+		if (height > scr_graphheight.value)
+			height = scr_graphheight.value;
+
+		rcFill.height = height;
+		rcFill.width = 1;
+		rcFill.x = x + width - i - 1;
+		rcFill.y = y - height;
+		D_FillRect(&rcFill, color);
+	}
+}
 
 #if defined( _WIN32 )
 /*

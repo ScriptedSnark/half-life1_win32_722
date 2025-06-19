@@ -753,8 +753,46 @@ void SCR_UpdateScreen( void )
 	}
 
 	// TODO: Implement
+	
+	if (r_netgraph.value)
+		SCR_NetGraph();
+
+	// TODO: Implement
 
 	GLFinishHud();
 
 	GL_EndRendering();
+}
+
+/*
+================
+D_FillRect
+================
+*/
+void D_FillRect( vrect_t* r, byte* color )
+{
+	qglDisable(GL_TEXTURE_2D);
+	qglEnable(GL_BLEND);
+	qglTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+	qglBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	qglEnable(GL_ALPHA_TEST);
+
+	qglColor4f(color[0] / 255.0, color[1] / 255.0, color[2] / 255.0, 1.0);
+
+	qglDisable(GL_DEPTH_TEST);
+
+	qglBegin(GL_QUADS);
+	qglVertex2f(r->x, r->y);
+	qglVertex2f(r->x + r->width, r->y);
+	qglVertex2f(r->x + r->width, r->y + r->height);
+	qglVertex2f(r->x, r->y + r->height);
+	qglEnd();
+
+	qglDisable(GL_ALPHA_TEST);
+	qglEnable(GL_DEPTH_TEST);
+
+	qglColor3f(1, 1, 1);
+
+	qglEnable(GL_TEXTURE_2D);
+	qglDisable(GL_BLEND);
 }

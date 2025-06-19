@@ -57,7 +57,7 @@ int		net_drop;
 float	net_rate;
 cvar_t	showpackets = { "showpackets", "0" };
 cvar_t	showdrop = { "showdrop", "0" };
-cvar_t	scr_netgraph = { "r_netgraph", "0" };
+cvar_t	r_netgraph = { "r_netgraph", "0" };
 cvar_t	net_chokeloopback = { "netchokeloop", "0" };
 
 /*
@@ -114,7 +114,7 @@ void Netchan_Init( void )
 {
 	Cvar_RegisterVariable(&showpackets);
 	Cvar_RegisterVariable(&showdrop);
-	Cvar_RegisterVariable(&scr_netgraph);
+	Cvar_RegisterVariable(&r_netgraph);
 	Cvar_RegisterVariable(&net_chokeloopback);
 
 	Cmd_AddCommand("rate", Net_Rate_f);

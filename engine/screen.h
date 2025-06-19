@@ -20,10 +20,13 @@ int SCR_ModalMessage( char* text );
 
 void Draw_CenterPic( qpic_t* pPic );
 
+void D_FillRect( vrect_t* r, byte* color );
+
+extern vrect_t		scr_vrect;
 
 extern	float		scr_con_current;
 extern	float		scr_conlines;		// lines of console to display
-extern qboolean		scr_drawloading;
+extern	qboolean	scr_drawloading;
 
 
 
@@ -44,7 +47,7 @@ extern	int			clearnotify;
 
 extern	cvar_t		scr_viewsize;
 extern	float		scr_fov_value;
-
-extern cvar_t		scr_graphmean;
+extern	cvar_t		scr_graphheight;
+extern	cvar_t		scr_graphmean;
 
 #endif // SCREEN_H

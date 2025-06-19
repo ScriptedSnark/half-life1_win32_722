@@ -46,8 +46,8 @@ extern	cvar_t	host_name;
 
 extern int		net_activeconnections;
 
-// Net graph
 void		NET_InitColors( void );
+void		SCR_NetGraph( void );
 
 // Start up networking
 void		NET_Init( void );
@@ -129,12 +129,13 @@ typedef struct netchan_s
 } netchan_t;
 
 extern	int	net_drop;		// packets dropped before this one
+extern	cvar_t	r_netgraph;
 
-extern cvar_t noip;    // Disable IP Support
+extern	cvar_t	noip;    // Disable IP Support
 
 #ifdef _WIN32
-extern cvar_t noipx;    // Disable IPX Support
-extern netadr_t net_local_ipx_adr;
+extern	cvar_t	noipx;    // Disable IPX Support
+extern	netadr_t net_local_ipx_adr;
 #endif //_WIN32
 
 // Initialize subsystem
