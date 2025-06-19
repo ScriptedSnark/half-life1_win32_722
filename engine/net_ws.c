@@ -1178,12 +1178,12 @@ void NET_Init( void )
 
 	if (COM_CheckParm("-noipx"))
 	{
-		Cvar_SetValue("noipx", 1.0f);
+		Cvar_SetValue("noipx", 1.0);
 	}
 
 	if (COM_CheckParm("-noip"))
 	{
-		Cvar_SetValue("noip", 1.0f);
+		Cvar_SetValue("noip", 1.0);
 	}
 
 	Cvar_RegisterVariable(&ipname);
@@ -1259,10 +1259,12 @@ void NET_Shutdown( void )
 	WSACleanup();
 }
 
-float net_bytes_colors[256][4];
-float net_datagram_colors[256][4];
-int net_bytes_current_color_index;
-int net_datagram_current_color_index;
+#define MAX_GRAPH_WIDTH	256
+
+float	net_bytes_colors[MAX_GRAPH_WIDTH][4];
+int		net_bytes_current_color_index = 0;
+float	net_datagram_colors[MAX_GRAPH_WIDTH][4];
+int		net_datagram_current_color_index = 0;
 
 /*
 ==============
@@ -1273,16 +1275,16 @@ void NET_InitColors( void )
 {
 	int i;
 
-	for (i = 0; i < 256; i++)
+	for (i = 0; i < MAX_GRAPH_WIDTH; i++)
 	{
-		net_bytes_colors[i][0]		= 0.0f;
-		net_datagram_colors[i][0]	= 0.0f;
-		net_bytes_colors[i][1]		= 0.0f;
-		net_datagram_colors[i][1]	= 0.0f;
-		net_bytes_colors[i][2]		= 0.0f;
-		net_datagram_colors[i][2]	= 0.0f;
-		net_bytes_colors[i][3]		= 0.0f;
-		net_datagram_colors[i][3]	= 0.0f;
+		net_bytes_colors[i][0] = 0;
+		net_datagram_colors[i][0] = 0;
+		net_bytes_colors[i][1] = 0;
+		net_datagram_colors[i][1] = 0;
+		net_bytes_colors[i][2] = 0;
+		net_datagram_colors[i][2] = 0;
+		net_bytes_colors[i][3] = 0;
+		net_datagram_colors[i][3] = 0;
 	}
 }
 
@@ -1293,7 +1295,7 @@ SCR_ClampHigh
 */
 float SCR_ClampHigh( float value )
 {
-	return max(0.0f, min(sqrt(value) / sqrt(scr_graphhigh.value), 1.0f));
+	return max(0.0, min(sqrt(value) / sqrt(scr_graphhigh.value), 1.0));
 }
 
 /*
@@ -1301,67 +1303,67 @@ float SCR_ClampHigh( float value )
 SCR_UpdateUsage
 ==============
 */
-void SCR_UpdateUsage( int numbytes, int numlisteners, qboolean bIsDatagram )
+void SCR_UpdateNetUsage( int nBytes, int nListeners, qboolean bIsDatagram )
 {
-	float	per; // bytes per a listener/a player
-	float	hi;
+	int		index;
 	int		nClients;
+	float	per; // bytes per a listener/a player
+	float	high;
 
-	// don't waste CPU cycles in SV_SendClientMesages unless netusage is on
 	if (!scr_netusage.value)
 		return;
 
-	per = (float)numbytes;
+	per = nBytes;
 
-	if (scr_graphmean.value != 0.0f)
+	if (scr_graphmean.value)
 	{
-		if (numlisteners > 0)
-			per /= (float)numlisteners;
+		if (nListeners > 0)
+			per /= nListeners;
 		else
-			per = 0.0f;
+			per = 0;
 	}
 
 	// spread the value between all the players
 	SV_CountPlayers(&nClients, NULL);
 	if (nClients > 0)
-		per /= (float)nClients;
+		per /= nClients;
 
-	hi = SCR_ClampHigh(per);
+	high = SCR_ClampHigh(per);
 
 	if (bIsDatagram)
 	{
-		int idx, i;
-		float rolling = 0.0f;
+		int i;
+		float rolling = 0.0;
 
-		if (numbytes == 0)
+		if (nBytes == 0)
 			return;
 
-		idx = (byte)net_datagram_current_color_index; // clamp between 0..255
+		index = net_datagram_current_color_index & (MAX_GRAPH_WIDTH - 1);
+		net_datagram_colors[index][1] = high;
 
-		net_datagram_colors[idx][1] = hi;
-
-		if (numbytes < 0)
-			net_datagram_colors[idx][3] = -per;
+		if (nBytes < 0)
+			net_datagram_colors[index][3] = -per;
 		else
-			net_datagram_colors[idx][0] = per;
+			net_datagram_colors[index][0] = per;
 
 		for (i = 0; i < 32; i++)
 		{
-			rolling += net_datagram_colors[(byte)(idx - i - 1)][0];
+			rolling += net_datagram_colors[(net_datagram_current_color_index - i - 1) & (MAX_GRAPH_WIDTH - 1)][0];
 		}
 
-		net_datagram_colors[idx][2] = SCR_ClampHigh(rolling / 32.0f);
+		net_datagram_colors[index][2] = SCR_ClampHigh(rolling / 32.0);
 
 		net_datagram_current_color_index++;
 	}
-	else if (numbytes)
+	else if (nBytes)
 	{
-		net_bytes_colors[(byte)net_bytes_current_color_index /* clamp between 0..255 */][1] = hi;
+		index = net_bytes_current_color_index & (MAX_GRAPH_WIDTH - 1);
+		net_bytes_colors[index][1] = high;
 
-		if (numbytes < 0)
-			net_bytes_colors[(byte)net_bytes_current_color_index][3] = -per;
+		if (nBytes < 0)
+			net_bytes_colors[index][3] = -per;
 		else
-			net_bytes_colors[(byte)net_bytes_current_color_index][0] = per;
+			net_bytes_colors[index][0] = per;
 
 		net_bytes_current_color_index++;
 	}
@@ -1374,7 +1376,7 @@ SCR_ClampHeight
 */
 int SCR_ClampHeight( float value )
 {
-	return max(0.0f, min(scr_graphheight.value * value, scr_graphheight.value));
+	return max(0.0, min(scr_graphheight.value * value, scr_graphheight.value));
 }
 
 /*
@@ -1384,7 +1386,7 @@ SCR_SetTintFromFactor
 */
 void SCR_SetTintFromFactor( float factor, qboolean tint_cyan, byte* color )
 {
-	int v = (int)(factor * 255.0f);
+	int v = (int)(factor * 255.0);
 
 	if (tint_cyan)
 	{
@@ -1402,33 +1404,27 @@ void SCR_SetTintFromFactor( float factor, qboolean tint_cyan, byte* color )
 
 /*
 ==============
-D_DrawOutlineRect
+SCR_DrawOutlineRect
 ==============
 */
 void SCR_DrawOutlineRect( vrect_t* r, byte* color )
 {
-	vrect_t edge;
+	vrect_t rcFill;
 
-	// top edge
-	edge = *r;
-	edge.height = 1;
-	D_FillRect(&edge, color);
+	rcFill = *r;
+	rcFill.height = 1;
+	D_FillRect(&rcFill, color); // top
 
-	// bottom edge
-	edge.y = r->y + r->height;
-	D_FillRect(&edge, color);
+	rcFill.y = r->y + r->height;
+	D_FillRect(&rcFill, color); // bottom
 
-	// left edge
-	edge = *r;
-	edge.width = 1;
-	D_FillRect(&edge, color);
+	rcFill = *r;
+	rcFill.width = 1;
+	D_FillRect(&rcFill, color); // left
 
-	// right edge
-	edge.x = r->x + r->width;
-	D_FillRect(&edge, color);
+	rcFill.x = r->x + r->width;
+	D_FillRect(&rcFill, color); // right
 }
-
-#define MAX_GRAPH_WIDTH	256
 
 /*
 ==============
@@ -1440,13 +1436,15 @@ void SCR_NetUsage( void )
 	float   shade;
 	int     i, j, k;
 	int     x, y;
+	int     h1, h2;
+	int		index;
 	int     width;
 	byte    color[3];
 	vrect_t rcFill;
 
-	// we're out if netusage off or no data to draw
 	if (!scr_netusage.value)
 		return;
+
 	if (!net_bytes_current_color_index && !net_datagram_current_color_index)
 		return;
 
@@ -1462,19 +1460,25 @@ void SCR_NetUsage( void )
 	// median
 	rcFill.y = y - SCR_ClampHeight(SCR_ClampHigh(scr_graphmedian.value));
 	rcFill.width = rcFill.height = 1;
-	color[0] = color[1] = color[2] = 63;
+	color[0] = 63;
+	color[1] = 63;
+	color[2] = 63;
 
-	for (rcFill.x = x - (net_datagram_current_color_index & 3 /* cap at 4 */) + 4; rcFill.x < x + width; rcFill.x += 4)
+	rcFill.x = x - (net_datagram_current_color_index & 3) + 4;
+	while (rcFill.x < x + width)
 	{
 		D_FillRect(&rcFill, color);
+		rcFill.x += 4;
 	}
 
 	// the outline
-	color[0] = color[1] = color[2] = 63;
+	color[0] = 63;
+	color[1] = 63;
+	color[2] = 63;
 	rcFill.x = x - 1;
-	rcFill.y = (int)(y - scr_graphheight.value - 1.0f);
+	rcFill.y = y - scr_graphheight.value - 1.0;
 	rcFill.width = width + 1;
-	rcFill.height = (int)(scr_graphheight.value + 2.0f);
+	rcFill.height = scr_graphheight.value + 2.0;
 	SCR_DrawOutlineRect(&rcFill, color);
 
 	// byte usage
@@ -1483,22 +1487,27 @@ void SCR_NetUsage( void )
 		i = MAX_GRAPH_WIDTH;
 	j = net_bytes_current_color_index - i;
 
-	SCR_ClampHeight(net_bytes_colors[(byte)(net_bytes_current_color_index - i - 1)][1]);
+	index = (net_bytes_current_color_index - i - 1) & (MAX_GRAPH_WIDTH - 1);
+	SCR_ClampHeight(net_bytes_colors[index][1]);
 
 	for (i = 0; i < width; i++)
 	{
-		shade = net_bytes_colors[(byte)(j - i - 1)][1];
-		if (shade == -1.0f)
+		index = (j - i - 1) & (MAX_GRAPH_WIDTH - 1);
+		shade = net_bytes_colors[index][1];
+		if (shade == -1.0)
 			continue;
 
-		if (shade < 0.8f)
+		if (shade < 0.8)
 		{
-			color[0] = color[1] = (int)(shade * 127.0f) + 0x80;
+			color[0] = 128 + (int)(shade * 127.0);
+			color[1] = 128 + (int)(shade * 127.0);
 			color[2] = 0;
 		}
 		else
 		{
-			color[0] = color[1] = color[2] = 0xFF;
+			color[0] = 255;
+			color[1] = 255;
+			color[2] = 255;
 		}
 
 		rcFill.width = rcFill.height = 1;
@@ -1515,19 +1524,19 @@ void SCR_NetUsage( void )
 
 	for (i = 0; i < width; i++)
 	{
-		byte idx = (byte)(k - i - 1);
-		int h1 = SCR_ClampHeight(net_datagram_colors[idx][1]);
-		int h2 = SCR_ClampHeight(net_datagram_colors[idx][2]);
+		index = (k - i - 1) & (MAX_GRAPH_WIDTH - 1);
+		h1 = SCR_ClampHeight(net_datagram_colors[index][1]);
+		h2 = SCR_ClampHeight(net_datagram_colors[index][2]);
 
 		// lower - red tone
-		SCR_SetTintFromFactor(net_datagram_colors[idx][1], FALSE, color);
+		SCR_SetTintFromFactor(net_datagram_colors[index][1], FALSE, color);
 		rcFill.width = rcFill.height = 1;
 		rcFill.x = x + width - i - 1;
-		rcFill.y = y - SCR_ClampHeight(net_datagram_colors[idx][1]);
+		rcFill.y = y - SCR_ClampHeight(net_datagram_colors[index][1]);
 		D_FillRect(&rcFill, color);
 
 		// upper - cyan (blue/green) tones
-		SCR_SetTintFromFactor(net_datagram_colors[idx][2], TRUE, color);
+		SCR_SetTintFromFactor(net_datagram_colors[index][2], TRUE, color);
 
 		rcFill.x = x + width - i - 1;
 		rcFill.y = y - (h2 < h1 ? h2 : h1);
@@ -1550,8 +1559,8 @@ void R_NetGraph( void )
 	int				x, y;
 	int				width, height;
 	byte			color[3];
-	frame_t*		frame;
 	vrect_t			rcFill;
+	frame_t* frame;
 
 	width = scr_vrect.width;
 	if (width > MAX_GRAPH_WIDTH)
@@ -1566,19 +1575,19 @@ void R_NetGraph( void )
 
 		if (frame->receivedtime == -1.0)
 		{
-			packet_latency[i % MAX_GRAPH_WIDTH] = 9999;		// dropped
+			packet_latency[i & (MAX_GRAPH_WIDTH - 1)] = 9999;		// dropped
 		}
 		else if (frame->receivedtime == -2.0)
 		{
-			packet_latency[i % MAX_GRAPH_WIDTH] = 10000;	// choked
+			packet_latency[i & (MAX_GRAPH_WIDTH - 1)] = 10000;	// choked
 		}
 		else if (frame->invalid)
 		{
-			packet_latency[i % MAX_GRAPH_WIDTH] = 9998;		// invalid delta
+			packet_latency[i & (MAX_GRAPH_WIDTH - 1)] = 9998;		// invalid delta
 		}
 		else
 		{
-			packet_latency[i % MAX_GRAPH_WIDTH] = ((frame->receivedtime - frame->senttime) * 20.0);
+			packet_latency[i & (MAX_GRAPH_WIDTH - 1)] = ((frame->receivedtime - frame->senttime) * 20.0);
 		}
 	}
 
@@ -1587,7 +1596,7 @@ void R_NetGraph( void )
 
 	for (i = 0; i < width; i++)
 	{
-		height = packet_latency[(cls.netchan.outgoing_sequence - i) % MAX_GRAPH_WIDTH];
+		height = packet_latency[(cls.netchan.outgoing_sequence - i) & (MAX_GRAPH_WIDTH - 1)];
 		switch (height)
 		{
 		case 10000:

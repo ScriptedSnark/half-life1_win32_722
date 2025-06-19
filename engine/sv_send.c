@@ -1177,7 +1177,7 @@ void SV_UpdateToReliableMessages( void )
 SV_SendClientMessages
 =======================
 */
-extern void SCR_UpdateUsage( int numbytes, int numlisteners, qboolean bIsDatagram );
+extern void SCR_UpdateNetUsage( int numbytes, int numlisteners, qboolean bIsDatagram );
 void SV_SendClientMessages(void)
 {
 	int			i;
@@ -1246,8 +1246,8 @@ void SV_SendClientMessages(void)
 		}
 	}
 
-	SCR_UpdateUsage(nReliableBytesSent, nReliables, FALSE);
-	SCR_UpdateUsage(nDatagramBytesSent, !bUnreliableOverflow ? nDatagrams : (MAX_MSGLEN + 1), TRUE);
+	SCR_UpdateNetUsage(nReliableBytesSent, nReliables, FALSE);
+	SCR_UpdateNetUsage(nDatagramBytesSent, !bUnreliableOverflow ? nDatagrams : (MAX_MSGLEN + 1), TRUE);
 	bShouldUpdatePing = FALSE;
 
 	// Allow game .dll to run code, including unsetting EF_MUZZLEFLASH and EF_NOINTERP on effects fields
