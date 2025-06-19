@@ -1305,36 +1305,35 @@ SCR_UpdateUsage
 */
 void SCR_UpdateNetUsage( int nBytes, int nListeners, qboolean bIsDatagram )
 {
+	int		i;
 	int		index;
 	int		nClients;
-	float	per; // bytes per a listener/a player
+	float	rolling;
+	float	normalizedBytes; // bytes per a listener/a player
 	float	high;
 
 	if (!scr_netusage.value)
 		return;
 
-	per = nBytes;
+	normalizedBytes = nBytes;
 
 	if (scr_graphmean.value)
 	{
 		if (nListeners > 0)
-			per /= nListeners;
+			normalizedBytes /= nListeners;
 		else
-			per = 0;
+			normalizedBytes = 0;
 	}
 
 	// spread the value between all the players
 	SV_CountPlayers(&nClients, NULL);
 	if (nClients > 0)
-		per /= nClients;
+		normalizedBytes /= nClients;
 
-	high = SCR_ClampHigh(per);
+	high = SCR_ClampHigh(normalizedBytes);
 
 	if (bIsDatagram)
 	{
-		int i;
-		float rolling = 0.0;
-
 		if (nBytes == 0)
 			return;
 
@@ -1342,28 +1341,32 @@ void SCR_UpdateNetUsage( int nBytes, int nListeners, qboolean bIsDatagram )
 		net_datagram_colors[index][1] = high;
 
 		if (nBytes < 0)
-			net_datagram_colors[index][3] = -per;
+			net_datagram_colors[index][3] = -normalizedBytes;
 		else
-			net_datagram_colors[index][0] = per;
+			net_datagram_colors[index][0] = normalizedBytes;
 
+		rolling = 0.0;
 		for (i = 0; i < 32; i++)
 		{
 			rolling += net_datagram_colors[(net_datagram_current_color_index - i - 1) & (MAX_GRAPH_WIDTH - 1)][0];
 		}
-
 		net_datagram_colors[index][2] = SCR_ClampHigh(rolling / 32.0);
 
 		net_datagram_current_color_index++;
 	}
-	else if (nBytes)
+	else
 	{
+		if (nBytes == 0)
+			return;
+
+		// Store regular transfer stats
 		index = net_bytes_current_color_index & (MAX_GRAPH_WIDTH - 1);
 		net_bytes_colors[index][1] = high;
 
 		if (nBytes < 0)
-			net_bytes_colors[index][3] = -per;
+			net_bytes_colors[index][3] = -normalizedBytes;
 		else
-			net_bytes_colors[index][0] = per;
+			net_bytes_colors[index][0] = normalizedBytes;
 
 		net_bytes_current_color_index++;
 	}
@@ -1384,11 +1387,11 @@ int SCR_ClampHeight( float value )
 SCR_SetTintFromFactor
 ==============
 */
-void SCR_SetTintFromFactor( float factor, qboolean tint_cyan, byte* color )
+void SCR_SetTintFromFactor( float factor, qboolean bTintCyan, byte* color )
 {
 	int v = (int)(factor * 255.0);
 
-	if (tint_cyan)
+	if (bTintCyan)
 	{
 		color[0] = 0;
 		color[1] = v;
@@ -1411,15 +1414,19 @@ void SCR_DrawOutlineRect( vrect_t* r, byte* color )
 {
 	vrect_t rcFill;
 
-	rcFill = *r;
+	rcFill.width = r->width;
 	rcFill.height = 1;
+	rcFill.x = r->x;
+	rcFill.y = r->y;
 	D_FillRect(&rcFill, color); // top
 
 	rcFill.y = r->y + r->height;
 	D_FillRect(&rcFill, color); // bottom
 
-	rcFill = *r;
 	rcFill.width = 1;
+	rcFill.height = r->height;
+	rcFill.x = r->x;
+	rcFill.y = r->y;
 	D_FillRect(&rcFill, color); // left
 
 	rcFill.x = r->x + r->width;
@@ -1434,9 +1441,9 @@ SCR_NetUsage
 void SCR_NetUsage( void )
 {
 	float   shade;
-	int     i, j, k;
+	int     i, j;
 	int     x, y;
-	int     h1, h2;
+	int     height, lastHeight;
 	int		index;
 	int     width;
 	byte    color[3];
@@ -1457,9 +1464,10 @@ void SCR_NetUsage( void )
 	x = scr_vrect.x + (scr_vrect.width - width) / 2 + 1;
 	y = scr_vrect.y + scr_vrect.height - 2;
 
-	// median
 	rcFill.y = y - SCR_ClampHeight(SCR_ClampHigh(scr_graphmedian.value));
-	rcFill.width = rcFill.height = 1;
+	rcFill.width = 1;
+	rcFill.height = 1;
+
 	color[0] = 63;
 	color[1] = 63;
 	color[2] = 63;
@@ -1471,10 +1479,10 @@ void SCR_NetUsage( void )
 		rcFill.x += 4;
 	}
 
-	// the outline
 	color[0] = 63;
 	color[1] = 63;
 	color[2] = 63;
+
 	rcFill.x = x - 1;
 	rcFill.y = y - scr_graphheight.value - 1.0;
 	rcFill.width = width + 1;
@@ -1483,8 +1491,8 @@ void SCR_NetUsage( void )
 
 	// byte usage
 	i = net_bytes_current_color_index;
-	if (i > MAX_GRAPH_WIDTH)
-		i = MAX_GRAPH_WIDTH;
+	if (i >= MAX_GRAPH_WIDTH)
+		i = 0;
 	j = net_bytes_current_color_index - i;
 
 	index = (net_bytes_current_color_index - i - 1) & (MAX_GRAPH_WIDTH - 1);
@@ -1510,39 +1518,42 @@ void SCR_NetUsage( void )
 			color[2] = 255;
 		}
 
-		rcFill.width = rcFill.height = 1;
+		rcFill.width = 1;
+		rcFill.height = 1;
 		rcFill.x = x + width - i - 1;
 		rcFill.y = y - SCR_ClampHeight(shade);
 		D_FillRect(&rcFill, color);
 	}
 
 	// datagram usage
-	j = net_datagram_current_color_index;
-	if (j > MAX_GRAPH_WIDTH)
-		j = MAX_GRAPH_WIDTH;
-	k = net_datagram_current_color_index - j;
+	i = net_datagram_current_color_index;
+	if (i >= MAX_GRAPH_WIDTH)
+		i = MAX_GRAPH_WIDTH;
+	j = net_datagram_current_color_index - i;
+
+	lastHeight = SCR_ClampHeight(net_datagram_colors[(j - 1) & (MAX_GRAPH_WIDTH - 1)][1]);
 
 	for (i = 0; i < width; i++)
 	{
-		index = (k - i - 1) & (MAX_GRAPH_WIDTH - 1);
-		h1 = SCR_ClampHeight(net_datagram_colors[index][1]);
-		h2 = SCR_ClampHeight(net_datagram_colors[index][2]);
+		index = (j - i - 1) & (MAX_GRAPH_WIDTH - 1);
 
-		// lower - red tone
+		height = SCR_ClampHeight(net_datagram_colors[index][1]);
 		SCR_SetTintFromFactor(net_datagram_colors[index][1], FALSE, color);
-		rcFill.width = rcFill.height = 1;
-		rcFill.x = x + width - i - 1;
-		rcFill.y = y - SCR_ClampHeight(net_datagram_colors[index][1]);
-		D_FillRect(&rcFill, color);
-
-		// upper - cyan (blue/green) tones
-		SCR_SetTintFromFactor(net_datagram_colors[index][2], TRUE, color);
-
-		rcFill.x = x + width - i - 1;
-		rcFill.y = y - (h2 < h1 ? h2 : h1);
 		rcFill.width = 1;
-		rcFill.height = abs(h2 - h1) + 1;
+		rcFill.height = 1;
+		rcFill.x = x + width - i - 1;
+		rcFill.y = y - height;
 		D_FillRect(&rcFill, color);
+
+		height = SCR_ClampHeight(net_datagram_colors[index][2]);
+		SCR_SetTintFromFactor(net_datagram_colors[index][2], TRUE, color);
+		rcFill.width = 1;
+		rcFill.height = abs(height - lastHeight) + 1;
+		rcFill.x = x + width - i - 1;
+		rcFill.y = y - (height > lastHeight ? height : lastHeight);
+		D_FillRect(&rcFill, color);
+
+		lastHeight = height;
 	}
 }
 
@@ -1575,7 +1586,7 @@ void R_NetGraph( void )
 
 		if (frame->receivedtime == -1.0)
 		{
-			packet_latency[i & (MAX_GRAPH_WIDTH - 1)] = 9999;		// dropped
+			packet_latency[i & (MAX_GRAPH_WIDTH - 1)] = 9999;	// dropped
 		}
 		else if (frame->receivedtime == -2.0)
 		{
@@ -1583,7 +1594,7 @@ void R_NetGraph( void )
 		}
 		else if (frame->invalid)
 		{
-			packet_latency[i & (MAX_GRAPH_WIDTH - 1)] = 9998;		// invalid delta
+			packet_latency[i & (MAX_GRAPH_WIDTH - 1)] = 9998;	// invalid delta
 		}
 		else
 		{
