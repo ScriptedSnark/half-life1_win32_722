@@ -54,6 +54,8 @@ cvar_t sv_maxspectators = { "sv_maxspectators", "8", FALSE, TRUE };
 
 cvar_t sv_newunit = { "sv_newunit", "0" };
 
+cvar_t sv_clienttrace = { "sv_clienttrace", "1", FALSE, TRUE };
+
 cvar_t sv_cheats = { "sv_cheats", "0", FALSE, TRUE };
 
 
@@ -809,6 +811,7 @@ void SV_Init( void )
 	Cvar_RegisterVariable(&sv_waterfriction);
 
 	// TODO: Implement
+	Cvar_RegisterVariable(&sv_clienttrace);
 	Cvar_RegisterVariable(&sv_zmax);
 	Cvar_RegisterVariable(&sv_wateramp);
 	Cvar_RegisterVariable(&sv_skyname);

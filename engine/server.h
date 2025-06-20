@@ -267,6 +267,8 @@ extern	cvar_t	pausable;
 
 extern	cvar_t	sv_newunit;
 
+extern	cvar_t	sv_clienttrace;
+
 extern	cvar_t	sv_cheats;
 
 

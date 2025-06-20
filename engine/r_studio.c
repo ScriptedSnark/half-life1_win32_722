@@ -11,6 +11,7 @@
 
 // Hulls & planes
 #define STUDIO_NUM_HULLS	128
+#define STUDIO_NUM_PLANES	(STUDIO_NUM_HULLS * 6)
 
 // Pointer to header block for studio model data
 studiohdr_t* pstudiohdr;
@@ -34,7 +35,41 @@ float			lighttransform[MAXSTUDIOBONES][3][4];
 auxvert_t		auxverts[MAXSTUDIOVERTS];
 vec3_t			lightvalues[MAXSTUDIOVERTS];
 
-// TODO: Implement
+// Global studio cache data, hulls and planes
+int				cache_hull_hitgroup[STUDIO_NUM_HULLS];
+hull_t			cache_hull[STUDIO_NUM_HULLS];
+mplane_t		cache_planes[STUDIO_NUM_PLANES];
+int				nCurrentHull;
+int				nCurrentPlane;
+
+// Caching
+// Studio cache data
+typedef struct
+{
+	float frame;
+	int sequence;
+
+	vec3_t angles;
+	vec3_t origin;
+	vec3_t size;
+
+	unsigned char controller[4]; // bone controller
+	unsigned char blending[2];
+
+	model_t* pModel;	// model instance
+
+	int nStartHull;
+	int nStartPlane;
+
+	int numhulls;
+} r_studiocache_t;
+
+
+#define STUDIO_CACHE_SIZE	16
+#define STUDIO_CACHEMASK	(STUDIO_CACHE_SIZE - 1)
+
+r_studiocache_t rgStudioCache[STUDIO_CACHE_SIZE];
+int				r_cachecurrent;
 
 // Do interpolation?
 int r_dointerp = 1;
@@ -43,6 +78,9 @@ int r_dointerp = 1;
 // Global studio hull/clipnode/plane data to
 // copy the cached ones
 int				studio_hull_hitgroup[STUDIO_NUM_HULLS];
+hull_t			studio_hull[STUDIO_NUM_HULLS];
+dclipnode_t		studio_clipnodes[6];
+mplane_t		studio_planes[STUDIO_NUM_PLANES];
 
 // TODO: Implement
 
@@ -1195,9 +1233,8 @@ void GetAttachment( const edict_t* pEdict, int iAttachment, float* rgflOrigin, f
 
 	pstudiohdr = (studiohdr_t*)Mod_Extradata(sv.models[pEdict->v.modelindex]);
 
-	angles[0] = -pEdict->v.angles[0];
-	angles[1] = pEdict->v.angles[1];
-	angles[2] = pEdict->v.angles[2];
+	VectorCopy(pEdict->v.angles, angles);
+	angles[PITCH] = -pEdict->v.angles[PITCH]; // stupid quake bug
 
 	pattachment = (mstudioattachment_t*)((byte*)pstudiohdr + pstudiohdr->attachmentindex) + iAttachment;
 
@@ -1219,10 +1256,53 @@ Initialize studio clipnodes and hulls
 */
 void SV_InitStudioHull( void )
 {
-	// TODO: Implement
+	int		i;
+	int		side;
+
+	if (studio_hull[0].planes) // already initailized
+		return;
+
+	for (i = 0; i < 6; i++)
+	{
+		side = i & 1;
+		studio_clipnodes[i].planenum = i;
+		studio_clipnodes[i].children[side] = CONTENTS_EMPTY;
+
+		if (i == 5)
+			studio_clipnodes[i].children[side ^ 1] = CONTENTS_SOLID;
+		else
+			studio_clipnodes[i].children[side ^ 1] = i + 1;
+	}
+
+	for (i = 0; i < STUDIO_NUM_HULLS; i++)
+	{
+		studio_hull[i].planes = &studio_planes[i * 6];
+		studio_hull[i].clipnodes = &studio_clipnodes[0];
+		studio_hull[i].firstclipnode = 0;
+		studio_hull[i].lastclipnode = 5;
+	}
 }
 
-// TODO: Implement
+/*
+====================
+SV_SetStudioHullPlane
+
+Initialize studio hull plane
+====================
+*/
+void SV_SetStudioHullPlane( mplane_t* pplane, int iBone, int k, float dist )
+{
+	pplane->type = PLANE_ANYZ;
+
+	pplane->normal[0] = bonetransform[iBone][0][k];
+	pplane->normal[1] = bonetransform[iBone][1][k];
+	pplane->normal[2] = bonetransform[iBone][2][k];
+
+	pplane->dist = pplane->normal[0] * bonetransform[iBone][0][3] +
+		pplane->normal[1] * bonetransform[iBone][1][3] +
+		pplane->normal[2] * bonetransform[iBone][2][3] +
+		dist;
+}
 
 /*
 ====================
@@ -1232,16 +1312,233 @@ SV_HullForStudioModel
 */
 hull_t* SV_HullForStudioModel( const edict_t* pEdict, const vec_t* mins, const vec_t* maxs, vec_t* offset, int* pNumHulls )
 {
-	// TODO: Implement
+	qboolean	useComplexHull;
+	vec3_t		size;
+	float		factor;
+
+	useComplexHull = FALSE;
+	factor = 0.5;
+
+	VectorSubtract(maxs, mins, size);
+	if (VectorCompare(vec3_origin, size))
+	{
+		if (!(gGlobalVariables.trace_flags & FTRACE_SIMPLEBOX))
+		{
+			useComplexHull = TRUE;
+
+			if (pEdict->v.flags & FL_CLIENT)
+			{
+				if (!sv_clienttrace.value)
+				{
+					useComplexHull = FALSE;
+				}
+				else
+				{
+					factor = sv_clienttrace.value * 0.5;
+					size[0] = 1.0;
+					size[1] = 1.0;
+					size[2] = 1.0;
+				}
+			}
+		}
+	}
+
+	if ((sv.models[pEdict->v.modelindex]->flags & FL_ONGROUND) || useComplexHull)
+	{
+		VectorScale(size, factor, size);
+		VectorCopy(vec3_origin, offset);
+		return R_StudioHull(sv.models[pEdict->v.modelindex], pEdict->v.frame, pEdict->v.sequence, pEdict->v.angles, pEdict->v.origin,
+			size, pEdict->v.controller, pEdict->v.blending, pNumHulls);
+	}
+	else
+	{
+		*pNumHulls = 1;
+		return SV_HullForEntity((edict_t*)pEdict, mins, maxs, offset);
+	}
+}
+
+/*
+====================
+R_InitStudioCache
+
+====================
+*/
+void R_InitStudioCache( void )
+{
+	memset(rgStudioCache, 0, sizeof(rgStudioCache));
+
+	r_cachecurrent = 0;
+	nCurrentHull = 0;
+	nCurrentPlane = 0;
+}
+
+/*
+====================
+R_CheckStudioCache
+
+Check if a specified studio cache does exist
+====================
+*/
+r_studiocache_t* R_CheckStudioCache( model_t* pModel, float frame, int sequence,
+	const vec_t* angles, const vec_t* origin, const vec_t* size, const unsigned char* controller, const unsigned char* blending )
+{
+	int		i;
+	r_studiocache_t* pCached;
+
+	// Check if the cache exists
+	for (i = 0; i < STUDIO_CACHE_SIZE; i++)
+	{
+		pCached = &rgStudioCache[(r_cachecurrent - i) & STUDIO_CACHEMASK];
+
+		// All parameters in cache data must match,
+		// so check everything to figure out that there is a cache we are looking for
+		if (pCached->pModel != pModel)
+			continue;
+
+		if (pCached->frame != frame)
+			continue;
+
+		if (pCached->sequence != sequence)
+			continue;
+
+		if (!VectorCompare(pCached->angles, angles))
+			continue;
+
+		if (!VectorCompare(pCached->origin, origin))
+			continue;
+
+		if (!VectorCompare(pCached->size, size))
+			continue;
+
+		if (!memcmp(pCached->controller, (void*)controller, sizeof(pCached->controller)) &&
+			!memcmp(pCached->blending, (void*)blending, sizeof(pCached->blending)))
+		{
+			// Found it
+			return pCached;
+		}
+	}
+
 	return NULL;
 }
 
-// TODO: Implement
+/*
+====================
+R_AddToStudioCache
 
-hull_t* R_StudioHull( model_t* pModel, float frame, int sequence, const vec_t* angles, const vec_t* origin, const vec_t* size, const byte* pcontroller, const byte* pblending, int* pNumHulls )
+Add studio model data to studio cache
+====================
+*/
+void R_AddToStudioCache( float frame, int sequence, const vec_t* angles, const vec_t* origin, const vec_t* size,
+	const unsigned char* controller, const unsigned char* pblending, model_t* pModel, hull_t* pHulls, int numhulls )
 {
-	// TODO: Implement
-	return NULL;
+	r_studiocache_t* p;
+
+	if (numhulls + nCurrentHull >= MAXSTUDIOBONES)
+	{
+		R_FlushStudioCache();
+	}
+
+	r_cachecurrent++;
+	p = &rgStudioCache[r_cachecurrent & STUDIO_CACHEMASK];
+	p->frame = frame;
+	p->sequence = sequence;
+
+	VectorCopy(angles, p->angles);
+	VectorCopy(origin, p->origin);
+	VectorCopy(size, p->size);
+
+	memcpy(p->controller, controller, sizeof(p->controller));
+	memcpy(p->blending, pblending, sizeof(p->blending));
+
+	p->pModel = pModel;
+	p->nStartHull = nCurrentHull;
+	p->nStartPlane = nCurrentPlane;
+
+	memcpy(&cache_hull[nCurrentHull], pHulls, sizeof(hull_t) * numhulls);
+	memcpy(&cache_planes[nCurrentPlane], studio_planes, sizeof(mplane_t) * 6 * numhulls);
+	memcpy(&cache_hull_hitgroup[nCurrentHull], studio_hull_hitgroup, sizeof(int) * numhulls);
+
+	nCurrentHull += numhulls;
+	nCurrentPlane += numhulls * 6;
+
+	p->numhulls = numhulls;
+}
+
+/*
+====================
+R_FlushStudioCache
+
+====================
+*/
+void R_FlushStudioCache( void )
+{
+	R_InitStudioCache();
+}
+
+/*
+====================
+R_StudioHull
+
+====================
+*/
+hull_t* R_StudioHull( model_t* pModel, float frame, int sequence, const vec_t* angles, const vec_t* origin, const vec_t* size,
+	const byte* pcontroller, const byte* pblending, int* pNumHulls )
+{
+	int		i, j;
+	mstudiobbox_t* pbbox;
+	vec3_t	angles2;
+	r_studiocache_t* pCached;
+	int		numHitBoxes;
+
+	SV_InitStudioHull();
+
+	if (r_cachestudio.value)
+	{
+		pCached = R_CheckStudioCache(pModel, frame, sequence, angles, origin, size, pcontroller, pblending);
+		if (pCached)
+		{
+			memcpy(studio_planes, &cache_planes[pCached->nStartPlane], sizeof(mplane_t) * 6 * pCached->numhulls);
+			memcpy(studio_hull, &cache_hull[pCached->nStartHull], sizeof(hull_t) * pCached->numhulls);
+			memcpy(studio_hull_hitgroup, &cache_hull_hitgroup[pCached->nStartHull], sizeof(int) * pCached->numhulls);
+			*pNumHulls = pCached->numhulls;
+			return studio_hull;
+		}
+	}
+
+	pstudiohdr = (studiohdr_t*)Mod_Extradata(pModel);
+
+	VectorCopy(angles, angles2);
+	angles2[PITCH] = -angles[PITCH]; // stupid quake bug
+	SV_StudioSetupBones(pModel, frame, sequence, angles2, origin, pcontroller, pblending, -1);
+
+	pbbox = (mstudiobbox_t*)((byte*)pstudiohdr + pstudiohdr->hitboxindex);
+
+	numHitBoxes = pstudiohdr->numhitboxes;
+	for (i = 0; i < numHitBoxes; i++)
+	{
+		studio_hull_hitgroup[i] = pbbox[i].group;
+
+		for (j = 0; j < 3; j++)
+		{
+			mplane_t* p0, * p1;
+
+			p0 = &studio_planes[i * 6 + j * 2 + 0];
+			p1 = &studio_planes[i * 6 + j * 2 + 1];
+
+			SV_SetStudioHullPlane(p0, pbbox[i].bone, j, pbbox[i].bbmax[j]);
+			SV_SetStudioHullPlane(p1, pbbox[i].bone, j, pbbox[i].bbmin[j]);
+
+			p0->dist += fabs(p0->normal[0] * size[0]) + fabs(p0->normal[1] * size[1]) + fabs(p0->normal[2] * size[2]);
+			p1->dist -= fabs(p1->normal[0] * size[0]) + fabs(p1->normal[1] * size[1]) + fabs(p1->normal[2] * size[2]);
+		}
+	}
+
+	*pNumHulls = pstudiohdr->numhitboxes;
+
+	if (r_cachestudio.value)
+		R_AddToStudioCache(frame, sequence, angles, origin, size, pcontroller, pblending, pModel, studio_hull, *pNumHulls);
+
+	return &studio_hull[0];
 }
 
 int SV_HitgroupForStudioHull( int index )
