@@ -1052,7 +1052,115 @@ void R_StudioMergeBones( studiohdr_t* psubstudiohdr, model_t* psubmodel )
 	}
 }
 
-// TODO: Implement
+/*
+====================
+SV_StudioSetupBones
+
+Server-side setup of studio bones
+====================
+*/
+void SV_StudioSetupBones( model_t* pModel, float frame, int sequence, const vec_t* angles, const vec_t* origin,
+	const unsigned char* pcontroller, const unsigned char* pblending, int iBone )
+{
+	int					i, j;
+	float				f;
+	float				s;
+	float				adj[MAXSTUDIOCONTROLLERS];
+	mstudiobone_t* pbones;
+	mstudioseqdesc_t* pseqdesc;
+	mstudioanim_t* panim;
+
+	static float		pos[MAXSTUDIOBONES][3];
+	float				bonematrix[3][4];
+	static vec4_t		q[MAXSTUDIOBONES];
+
+	int					chain[MAXSTUDIOBONES];
+	int					chainlength = 0;
+
+	// Bound sequence number
+	if (sequence < 0 || sequence >= pstudiohdr->numseq)
+	{
+		Con_DPrintf("sequence %d out of range for model %s\n", sequence, pstudiohdr->name);
+		sequence = 0;
+	}
+
+	pbones = (mstudiobone_t*)((byte*)pstudiohdr + pstudiohdr->boneindex);
+	pseqdesc = (mstudioseqdesc_t*)((byte*)pstudiohdr + pstudiohdr->seqindex) + sequence;
+	panim = R_GetAnim(pModel, pseqdesc);
+
+	if (iBone < -1 || iBone >= pstudiohdr->numbones)
+		iBone = 0;
+
+	if (iBone == -1)
+	{
+		chainlength = pstudiohdr->numbones;
+		for (i = 0; i < chainlength; i++)
+			chain[(chainlength - i) - 1] = i;
+	}
+	else
+	{
+		// only the parent bones
+		for (i = iBone; i != -1; i = pbones[i].parent)
+			chain[chainlength++] = i;
+	}
+
+	if (pseqdesc->numframes > 1)
+	{
+		f = (float)(pseqdesc->numframes - 1) * frame / 256.0;
+	}
+	else
+	{
+		f = 0.0;
+	}
+
+	s = f - (int)f;
+	R_StudioCalcBoneAdj(0.0, adj, pcontroller, pcontroller, 0);
+
+	for (i = chainlength - 1; i >= 0; i--)
+	{
+		j = chain[i];
+		R_StudioCalcBoneQuaterion(f, s, &pbones[j], &panim[j], adj, q[j]);
+		R_StudioCalcBonePosition(f, s, &pbones[j], &panim[j], adj, pos[j]);
+	}
+
+	if (pseqdesc->numblends > 1)
+	{
+		static vec3_t pos2[MAXSTUDIOBONES];
+		static vec4_t q2[MAXSTUDIOBONES];
+		float b;
+
+		panim = R_GetAnim(pModel, pseqdesc) + pstudiohdr->numbones;
+
+		for (i = chainlength - 1; i >= 0; i--)
+		{
+			j = chain[i];
+			R_StudioCalcBoneQuaterion(f, s, &pbones[j], &panim[j], adj, q2[j]);
+			R_StudioCalcBonePosition(f, s, &pbones[j], &panim[j], adj, pos2[j]);
+		}
+
+		b = *pblending / 255.0;
+		R_StudioSlerpBones(q, pos, q2, pos2, b);
+	}
+
+	AngleMatrix(angles, rotationmatrix);
+	rotationmatrix[0][3] = origin[0];
+	rotationmatrix[1][3] = origin[1];
+	rotationmatrix[2][3] = origin[2];
+
+	for (i = chainlength - 1; i >= 0; i--)
+	{
+		j = chain[i];
+		QuaternionMatrix(q[j], bonematrix);
+		bonematrix[0][3] = pos[j][0];
+		bonematrix[1][3] = pos[j][1];
+		bonematrix[2][3] = pos[j][2];
+
+		if (pbones[j].parent == -1)
+			R_ConcatTransforms(rotationmatrix, bonematrix, bonetransform[j]);
+		else
+			R_ConcatTransforms(bonetransform[pbones[j].parent], bonematrix, bonetransform[j]);
+	}
+}
 
 void AnimationAutomove( const edict_t* pEdict, float flTime )
 {
@@ -1060,10 +1168,18 @@ void AnimationAutomove( const edict_t* pEdict, float flTime )
 
 void GetBonePosition( const edict_t* pEdict, int iBone, float* rgflOrigin, float* rgflAngles )
 {
-	// TODO: Implement
-}
+	pstudiohdr = (studiohdr_t*)Mod_Extradata(sv.models[pEdict->v.modelindex]);
 
-// TODO: Implement
+	SV_StudioSetupBones(sv.models[pEdict->v.modelindex], pEdict->v.frame, pEdict->v.sequence, pEdict->v.angles, pEdict->v.origin,
+		pEdict->v.controller, pEdict->v.blending, iBone);
+
+	if (rgflOrigin)
+	{
+		rgflOrigin[0] = bonetransform[iBone][0][3];
+		rgflOrigin[1] = bonetransform[iBone][1][3];
+		rgflOrigin[2] = bonetransform[iBone][2][3];
+	}
+}
 
 /*
 ====================
@@ -1073,6 +1189,35 @@ Get the attachment origin and angles
 ====================
 */
 void GetAttachment( const edict_t* pEdict, int iAttachment, float* rgflOrigin, float* rgflAngles )
+{
+	mstudioattachment_t *pattachment;
+	vec3_t angles;
+
+	pstudiohdr = (studiohdr_t*)Mod_Extradata(sv.models[pEdict->v.modelindex]);
+
+	angles[0] = -pEdict->v.angles[0];
+	angles[1] = pEdict->v.angles[1];
+	angles[2] = pEdict->v.angles[2];
+
+	pattachment = (mstudioattachment_t*)((byte*)pstudiohdr + pstudiohdr->attachmentindex) + iAttachment;
+
+	SV_StudioSetupBones(sv.models[pEdict->v.modelindex], pEdict->v.frame, pEdict->v.sequence, angles, pEdict->v.origin,
+		pEdict->v.controller, pEdict->v.blending, pattachment->bone);
+
+	if (rgflOrigin)
+	{
+		VectorTransform(pattachment->org, bonetransform[pattachment->bone], rgflOrigin);
+	}
+}
+
+/*
+====================
+SV_InitStudioHull
+
+Initialize studio clipnodes and hulls
+====================
+*/
+void SV_InitStudioHull( void )
 {
 	// TODO: Implement
 }

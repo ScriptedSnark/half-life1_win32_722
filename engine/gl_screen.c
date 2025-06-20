@@ -752,10 +752,11 @@ void SCR_UpdateScreen( void )
 		Con_DrawNotify();
 	}
 
-	// TODO: Implement
-
-	if (scr_netusage.value && vid.height > scr_con_current)
-		SCR_NetUsage();
+	if (scr_netusage.value)
+	{
+		if (vid.height > scr_con_current)
+			SCR_NetUsage();
+	}
 	
 	if (r_netgraph.value)
 		R_NetGraph();

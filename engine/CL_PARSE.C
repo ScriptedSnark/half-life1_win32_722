@@ -14,8 +14,6 @@ int		msg_buckets[64];
 
 UserMsg* gClientUserMsgs = NULL;
 
-// TODO: Implement
-
 char* svc_strings[] =
 {
 	"svc_bad",
@@ -144,7 +142,7 @@ void AddNewUserMsg( void )
 	// Scan all user messages
 	for (pList = gClientUserMsgs; pList; pList = pList->next)
 	{
-		if (!_strcmpi(pList->szName, umsg.szName))
+		if (!_stricmp(pList->szName, umsg.szName))
 		{
 			fFound = 1;
 			pList->iMsg = umsg.iMsg;
