@@ -466,14 +466,6 @@ cvar_t	sk_player_leg3 = { "sk_player_leg3", "1" };
 
 // END Cvars for Skill Level settings
 
-
-
-
-
-
-//=========================================== FINISH LINE =========================================
-
-
 /*
 ================
 COM_EntsForPlayerSlots
@@ -554,7 +546,7 @@ void Host_EndGame( char* message, ... )
 
 	oldn = cls.demonum;
 
-	scr_disabled_for_loading = FALSE;
+	scr_disabled_for_loading = TRUE;
 
 	if (sv.active)
 		Host_ShutdownServer(FALSE);
@@ -567,9 +559,7 @@ void Host_EndGame( char* message, ... )
 	if (cls.demonum != -1)
 	{
 		CL_Disconnect_f();
-
 		cls.demonum = oldn;
-
 		CL_NextDemo();
 		longjmp(host_enddemo, 1);
 	}
@@ -582,7 +572,6 @@ void Host_EndGame( char* message, ... )
 	Cbuf_Execute();
 	longjmp(host_abortserver, 1);
 }
-
 
 /*
 ================
@@ -625,8 +614,6 @@ void Host_Error( char* error, ... )
 /*
 ================
 Host_FindMaxClients
-
-Determine the value of svs.maxclients
 ================
 */
 void Host_FindMaxClients( void )
@@ -683,15 +670,16 @@ void Host_FindMaxClients( void )
 	}
 
 	if (svs.maxclients > 1)
-		Cvar_SetValue("deathmatch", 1);
+		Cvar_SetValue("deathmatch", 1.0);
 	else
-		Cvar_SetValue("deathmatch", 0);
+		Cvar_SetValue("deathmatch", 0.0);
 }
 
+
 /*
-================
+=======================
 Host_InitLocal
-================
+======================
 */
 void Host_InitLocal( void )
 {
@@ -700,12 +688,11 @@ void Host_InitLocal( void )
 	Cvar_RegisterVariable(&maxfps);
 	Cvar_RegisterVariable(&host_framerate);
 	Cvar_RegisterVariable(&host_speeds);
+
 	Cvar_RegisterVariable(&host_killtime);
 	Cvar_RegisterVariable(&sys_ticrate);
-
 	Cvar_RegisterVariable(&serverprofile);
 
-	// multiplayer
 	Cvar_RegisterVariable(&fraglimit);
 	Cvar_RegisterVariable(&timelimit);
 	Cvar_RegisterVariable(&teamplay);
@@ -713,10 +700,7 @@ void Host_InitLocal( void )
 	Cvar_RegisterVariable(&falldamage);
 	Cvar_RegisterVariable(&weaponstay);
 	Cvar_RegisterVariable(&forcerespawn);
-	Cvar_RegisterVariable(&forcerespawn);
-
 	Cvar_RegisterVariable(&developer);
-
 	Cvar_RegisterVariable(&displaysoundlist);
 	Cvar_RegisterVariable(&deathmatch);
 	Cvar_RegisterVariable(&mapcyclefile);
@@ -724,7 +708,7 @@ void Host_InitLocal( void )
 	Cvar_RegisterVariable(&pausable);
 	Cvar_RegisterVariable(&skill);
 
-	// REGISTER CVARS FOR SKILL LEVEL STUFF
+// REGISTER CVARS FOR SKILL LEVEL STUFF
 	// Agrunt
 	Cvar_RegisterVariable(&sk_agrunt_health1);// {"sk_agrunt_health1","0"};
 	Cvar_RegisterVariable(&sk_agrunt_health2);// {"sk_agrunt_health2","0"};
@@ -1112,6 +1096,13 @@ void Host_InitLocal( void )
 
 	host_time = 1.0;		// so a think at time 0 won't get called
 }
+
+
+
+
+
+
+//=========================================== FINISH LINE =========================================
 
 /*
 ===============
