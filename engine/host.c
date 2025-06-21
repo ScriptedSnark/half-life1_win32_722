@@ -308,8 +308,163 @@ cvar_t	sk_plr_9mm_bullet1 = { "sk_plr_9mm_bullet1", "0" };
 cvar_t	sk_plr_9mm_bullet2 = { "sk_plr_9mm_bullet2", "0" };
 cvar_t	sk_plr_9mm_bullet3 = { "sk_plr_9mm_bullet3", "0" };
 
+// 357 Round
+cvar_t	sk_plr_357_bullet1 = { "sk_plr_357_bullet1", "0" };
+cvar_t	sk_plr_357_bullet2 = { "sk_plr_357_bullet2", "0" };
+cvar_t	sk_plr_357_bullet3 = { "sk_plr_357_bullet3", "0" };
+
+// MP5 Round
+cvar_t	sk_plr_9mmAR_bullet1 = { "sk_plr_9mmAR_bullet1", "0" };
+cvar_t	sk_plr_9mmAR_bullet2 = { "sk_plr_9mmAR_bullet2", "0" };
+cvar_t	sk_plr_9mmAR_bullet3 = { "sk_plr_9mmAR_bullet3", "0" };
 
 
+// M203 grenade
+cvar_t	sk_plr_9mmAR_grenade1 = { "sk_plr_9mmAR_grenade1", "0" };
+cvar_t	sk_plr_9mmAR_grenade2 = { "sk_plr_9mmAR_grenade2", "0" };
+cvar_t	sk_plr_9mmAR_grenade3 = { "sk_plr_9mmAR_grenade3", "0" };
+
+
+// Shotgun buckshot
+cvar_t	sk_plr_buckshot1 = { "sk_plr_buckshot1", "0" };
+cvar_t	sk_plr_buckshot2 = { "sk_plr_buckshot2", "0" };
+cvar_t	sk_plr_buckshot3 = { "sk_plr_buckshot3", "0" };
+
+
+// Crossbow
+cvar_t	sk_plr_xbow_bolt_client1 = { "sk_plr_xbow_bolt_client1", "0" };
+cvar_t	sk_plr_xbow_bolt_client2 = { "sk_plr_xbow_bolt_client2", "0" };
+cvar_t	sk_plr_xbow_bolt_client3 = { "sk_plr_xbow_bolt_client3", "0" };
+
+cvar_t	sk_plr_xbow_bolt_monster1 = { "sk_plr_xbow_bolt_monster1", "0" };
+cvar_t	sk_plr_xbow_bolt_monster2 = { "sk_plr_xbow_bolt_monster2", "0" };
+cvar_t	sk_plr_xbow_bolt_monster3 = { "sk_plr_xbow_bolt_monster3", "0" };
+
+
+// RPG
+cvar_t	sk_plr_rpg1 = { "sk_plr_rpg1", "0" };
+cvar_t	sk_plr_rpg2 = { "sk_plr_rpg2", "0" };
+cvar_t	sk_plr_rpg3 = { "sk_plr_rpg3", "0" };
+
+
+// Zero Point Generator
+cvar_t	sk_plr_gauss1 = { "sk_plr_gauss1", "0" };
+cvar_t	sk_plr_gauss2 = { "sk_plr_gauss2", "0" };
+cvar_t	sk_plr_gauss3 = { "sk_plr_gauss3", "0" };
+
+
+// Tau Cannon
+cvar_t	sk_plr_egon_narrow1 = { "sk_plr_egon_narrow1", "0" };
+cvar_t	sk_plr_egon_narrow2 = { "sk_plr_egon_narrow2", "0" };
+cvar_t	sk_plr_egon_narrow3 = { "sk_plr_egon_narrow3", "0" };
+
+cvar_t	sk_plr_egon_wide1 = { "sk_plr_egon_wide1", "0" };
+cvar_t	sk_plr_egon_wide2 = { "sk_plr_egon_wide2", "0" };
+cvar_t	sk_plr_egon_wide3 = { "sk_plr_egon_wide3", "0" };
+
+
+// Hand Grendade
+cvar_t	sk_plr_hand_grenade1 = { "sk_plr_hand_grenade1", "0" };
+cvar_t	sk_plr_hand_grenade2 = { "sk_plr_hand_grenade2", "0" };
+cvar_t	sk_plr_hand_grenade3 = { "sk_plr_hand_grenade3", "0" };
+
+
+// Satchel Charge
+cvar_t	sk_plr_satchel1 = { "sk_plr_satchel1", "0" };
+cvar_t	sk_plr_satchel2 = { "sk_plr_satchel2", "0" };
+cvar_t	sk_plr_satchel3 = { "sk_plr_satchel3", "0" };
+
+
+// Tripmine
+cvar_t	sk_plr_tripmine1 = { "sk_plr_tripmine1", "0" };
+cvar_t	sk_plr_tripmine2 = { "sk_plr_tripmine2", "0" };
+cvar_t	sk_plr_tripmine3 = { "sk_plr_tripmine3", "0" };
+
+
+// WORLD WEAPONS
+cvar_t	sk_12mm_bullet1 = { "sk_12mm_bullet1", "0" };
+cvar_t	sk_12mm_bullet2 = { "sk_12mm_bullet2", "0" };
+cvar_t	sk_12mm_bullet3 = { "sk_12mm_bullet3", "0" };
+
+cvar_t	sk_9mmAR_bullet1 = { "sk_9mmAR_bullet1", "0" };
+cvar_t	sk_9mmAR_bullet2 = { "sk_9mmAR_bullet2", "0" };
+cvar_t	sk_9mmAR_bullet3 = { "sk_9mmAR_bullet3", "0" };
+
+cvar_t	sk_9mm_bullet1 = { "sk_9mm_bullet1", "0" };
+cvar_t	sk_9mm_bullet2 = { "sk_9mm_bullet2", "0" };
+cvar_t	sk_9mm_bullet3 = { "sk_9mm_bullet3", "0" };
+
+
+// HORNET
+cvar_t	sk_hornet_dmg1 = { "sk_hornet_dmg1", "0" };
+cvar_t	sk_hornet_dmg2 = { "sk_hornet_dmg2", "0" };
+cvar_t	sk_hornet_dmg3 = { "sk_hornet_dmg3", "0" };
+
+// HEALTH/CHARGE
+cvar_t	sk_suitcharger1 = { "sk_suitcharger1", "0" };
+cvar_t	sk_suitcharger2 = { "sk_suitcharger2", "0" };
+cvar_t	sk_suitcharger3 = { "sk_suitcharger3", "0" };
+
+cvar_t	sk_battery1 = { "sk_battery1", "0" };
+cvar_t	sk_battery2 = { "sk_battery2", "0" };
+cvar_t	sk_battery3 = { "sk_battery3", "0" };
+
+cvar_t	sk_healthcharger1 = { "sk_healthcharger1", "0" };
+cvar_t	sk_healthcharger2 = { "sk_healthcharger2", "0" };
+cvar_t	sk_healthcharger3 = { "sk_healthcharger3", "0" };
+
+cvar_t	sk_healthkit1 = { "sk_healthkit1", "0" };
+cvar_t	sk_healthkit2 = { "sk_healthkit2", "0" };
+cvar_t	sk_healthkit3 = { "sk_healthkit3", "0" };
+
+cvar_t	sk_scientist_heal1 = { "sk_scientist_heal1", "0" };
+cvar_t	sk_scientist_heal2 = { "sk_scientist_heal2", "0" };
+cvar_t	sk_scientist_heal3 = { "sk_scientist_heal3", "0" };
+
+
+// monster damage adjusters
+cvar_t	sk_monster_head1 = { "sk_monster_head1", "2" };
+cvar_t	sk_monster_head2 = { "sk_monster_head2", "2" };
+cvar_t	sk_monster_head3 = { "sk_monster_head3", "2" };
+
+cvar_t	sk_monster_chest1 = { "sk_monster_chest1", "1" };
+cvar_t	sk_monster_chest2 = { "sk_monster_chest2", "1" };
+cvar_t	sk_monster_chest3 = { "sk_monster_chest3", "1" };
+
+cvar_t	sk_monster_stomach1 = { "sk_monster_stomach1", "1" };
+cvar_t	sk_monster_stomach2 = { "sk_monster_stomach2", "1" };
+cvar_t	sk_monster_stomach3 = { "sk_monster_stomach3", "1" };
+
+cvar_t	sk_monster_arm1 = { "sk_monster_arm1", "1" };
+cvar_t	sk_monster_arm2 = { "sk_monster_arm2", "1" };
+cvar_t	sk_monster_arm3 = { "sk_monster_arm3", "1" };
+
+cvar_t	sk_monster_leg1 = { "sk_monster_leg1", "1" };
+cvar_t	sk_monster_leg2 = { "sk_monster_leg2", "1" };
+cvar_t	sk_monster_leg3 = { "sk_monster_leg3", "1" };
+
+// player damage adjusters
+cvar_t	sk_player_head1 = { "sk_player_head1", "2" };
+cvar_t	sk_player_head2 = { "sk_player_head2", "2" };
+cvar_t	sk_player_head3 = { "sk_player_head3", "2" };
+
+cvar_t	sk_player_chest1 = { "sk_player_chest1", "1" };
+cvar_t	sk_player_chest2 = { "sk_player_chest2", "1" };
+cvar_t	sk_player_chest3 = { "sk_player_chest3", "1" };
+
+cvar_t	sk_player_stomach1 = { "sk_player_stomach1", "1" };
+cvar_t	sk_player_stomach2 = { "sk_player_stomach2", "1" };
+cvar_t	sk_player_stomach3 = { "sk_player_stomach3", "1" };
+
+cvar_t	sk_player_arm1 = { "sk_player_arm1", "1" };
+cvar_t	sk_player_arm2 = { "sk_player_arm2", "1" };
+cvar_t	sk_player_arm3 = { "sk_player_arm3", "1" };
+
+cvar_t	sk_player_leg1 = { "sk_player_leg1", "1" };
+cvar_t	sk_player_leg2 = { "sk_player_leg2", "1" };
+cvar_t	sk_player_leg3 = { "sk_player_leg3", "1" };
+
+// END Cvars for Skill Level settings
 
 
 
@@ -317,172 +472,6 @@ cvar_t	sk_plr_9mm_bullet3 = { "sk_plr_9mm_bullet3", "0" };
 
 
 //=========================================== FINISH LINE =========================================
-
-
-
-
-
-
-
-
-
-
-
-// 357 Round
-cvar_t	sk_plr_357_bullet1 = { "sk_plr_357_bullet1","0" };
-cvar_t	sk_plr_357_bullet2 = { "sk_plr_357_bullet2","0" };
-cvar_t	sk_plr_357_bullet3 = { "sk_plr_357_bullet3","0" };
-
-// MP5 Round
-cvar_t	sk_plr_9mmAR_bullet1 = { "sk_plr_9mmAR_bullet1","0" };
-cvar_t	sk_plr_9mmAR_bullet2 = { "sk_plr_9mmAR_bullet2","0" };
-cvar_t	sk_plr_9mmAR_bullet3 = { "sk_plr_9mmAR_bullet3","0" };
-
-
-// M203 grenade
-cvar_t	sk_plr_9mmAR_grenade1 = { "sk_plr_9mmAR_grenade1","0" };
-cvar_t	sk_plr_9mmAR_grenade2 = { "sk_plr_9mmAR_grenade2","0" };
-cvar_t	sk_plr_9mmAR_grenade3 = { "sk_plr_9mmAR_grenade3","0" };
-
-
-// Shotgun buckshot
-cvar_t	sk_plr_buckshot1 = { "sk_plr_buckshot1","0" };
-cvar_t	sk_plr_buckshot2 = { "sk_plr_buckshot2","0" };
-cvar_t	sk_plr_buckshot3 = { "sk_plr_buckshot3","0" };
-
-
-// Crossbow
-cvar_t	sk_plr_xbow_bolt_client1 = { "sk_plr_xbow_bolt_client1","0" };
-cvar_t	sk_plr_xbow_bolt_client2 = { "sk_plr_xbow_bolt_client2","0" };
-cvar_t	sk_plr_xbow_bolt_client3 = { "sk_plr_xbow_bolt_client3","0" };
-
-cvar_t	sk_plr_xbow_bolt_monster1 = { "sk_plr_xbow_bolt_monster1","0" };
-cvar_t	sk_plr_xbow_bolt_monster2 = { "sk_plr_xbow_bolt_monster2","0" };
-cvar_t	sk_plr_xbow_bolt_monster3 = { "sk_plr_xbow_bolt_monster3","0" };
-
-
-// RPG
-cvar_t	sk_plr_rpg1 = { "sk_plr_rpg1","0" };
-cvar_t	sk_plr_rpg2 = { "sk_plr_rpg2","0" };
-cvar_t	sk_plr_rpg3 = { "sk_plr_rpg3","0" };
-
-
-// Zero Point Generator
-cvar_t	sk_plr_gauss1 = { "sk_plr_gauss1","0" };
-cvar_t	sk_plr_gauss2 = { "sk_plr_gauss2","0" };
-cvar_t	sk_plr_gauss3 = { "sk_plr_gauss3","0" };
-
-
-// Tau Cannon
-cvar_t	sk_plr_egon_narrow1 = { "sk_plr_egon_narrow1","0" };
-cvar_t	sk_plr_egon_narrow2 = { "sk_plr_egon_narrow2","0" };
-cvar_t	sk_plr_egon_narrow3 = { "sk_plr_egon_narrow3","0" };
-
-cvar_t	sk_plr_egon_wide1 = { "sk_plr_egon_wide1","0" };
-cvar_t	sk_plr_egon_wide2 = { "sk_plr_egon_wide2","0" };
-cvar_t	sk_plr_egon_wide3 = { "sk_plr_egon_wide3","0" };
-
-
-// Hand Grendade
-cvar_t	sk_plr_hand_grenade1 = { "sk_plr_hand_grenade1","0" };
-cvar_t	sk_plr_hand_grenade2 = { "sk_plr_hand_grenade2","0" };
-cvar_t	sk_plr_hand_grenade3 = { "sk_plr_hand_grenade3","0" };
-
-
-// Satchel Charge
-cvar_t	sk_plr_satchel1 = { "sk_plr_satchel1","0" };
-cvar_t	sk_plr_satchel2 = { "sk_plr_satchel2","0" };
-cvar_t	sk_plr_satchel3 = { "sk_plr_satchel3","0" };
-
-
-// Tripmine
-cvar_t	sk_plr_tripmine1 = { "sk_plr_tripmine1","0" };
-cvar_t	sk_plr_tripmine2 = { "sk_plr_tripmine2","0" };
-cvar_t	sk_plr_tripmine3 = { "sk_plr_tripmine3","0" };
-
-
-// WORLD WEAPONS
-cvar_t	sk_12mm_bullet1 = { "sk_12mm_bullet1","0" };
-cvar_t	sk_12mm_bullet2 = { "sk_12mm_bullet2","0" };
-cvar_t	sk_12mm_bullet3 = { "sk_12mm_bullet3","0" };
-
-cvar_t	sk_9mmAR_bullet1 = { "sk_9mmAR_bullet1","0" };
-cvar_t	sk_9mmAR_bullet2 = { "sk_9mmAR_bullet2","0" };
-cvar_t	sk_9mmAR_bullet3 = { "sk_9mmAR_bullet3","0" };
-
-cvar_t	sk_9mm_bullet1 = { "sk_9mm_bullet1","0" };
-cvar_t	sk_9mm_bullet2 = { "sk_9mm_bullet2","0" };
-cvar_t	sk_9mm_bullet3 = { "sk_9mm_bullet3","0" };
-
-
-// HORNET
-cvar_t	sk_hornet_dmg1 = { "sk_hornet_dmg1","0" };
-cvar_t	sk_hornet_dmg2 = { "sk_hornet_dmg2","0" };
-cvar_t	sk_hornet_dmg3 = { "sk_hornet_dmg3","0" };
-
-// HEALTH/CHARGE
-cvar_t	sk_suitcharger1 = { "sk_suitcharger1","0" };
-cvar_t	sk_suitcharger2 = { "sk_suitcharger2","0" };
-cvar_t	sk_suitcharger3 = { "sk_suitcharger3","0" };
-
-cvar_t	sk_battery1 = { "sk_battery1","0" };
-cvar_t	sk_battery2 = { "sk_battery2","0" };
-cvar_t	sk_battery3 = { "sk_battery3","0" };
-
-cvar_t	sk_healthcharger1 = { "sk_healthcharger1","0" };
-cvar_t	sk_healthcharger2 = { "sk_healthcharger2","0" };
-cvar_t	sk_healthcharger3 = { "sk_healthcharger3","0" };
-
-cvar_t	sk_healthkit1 = { "sk_healthkit1","0" };
-cvar_t	sk_healthkit2 = { "sk_healthkit2","0" };
-cvar_t	sk_healthkit3 = { "sk_healthkit3","0" };
-
-cvar_t	sk_scientist_heal1 = { "sk_scientist_heal1","0" };
-cvar_t	sk_scientist_heal2 = { "sk_scientist_heal2","0" };
-cvar_t	sk_scientist_heal3 = { "sk_scientist_heal3","0" };
-
-
-// monster damage adjusters
-cvar_t	sk_monster_head1 = { "sk_monster_head1","2" };
-cvar_t	sk_monster_head2 = { "sk_monster_head2","2" };
-cvar_t	sk_monster_head3 = { "sk_monster_head3","2" };
-
-cvar_t	sk_monster_chest1 = { "sk_monster_chest1","1" };
-cvar_t	sk_monster_chest2 = { "sk_monster_chest2","1" };
-cvar_t	sk_monster_chest3 = { "sk_monster_chest3","1" };
-
-cvar_t	sk_monster_stomach1 = { "sk_monster_stomach1","1" };
-cvar_t	sk_monster_stomach2 = { "sk_monster_stomach2","1" };
-cvar_t	sk_monster_stomach3 = { "sk_monster_stomach3","1" };
-
-cvar_t	sk_monster_arm1 = { "sk_monster_arm1","1" };
-cvar_t	sk_monster_arm2 = { "sk_monster_arm2","1" };
-cvar_t	sk_monster_arm3 = { "sk_monster_arm3","1" };
-
-cvar_t	sk_monster_leg1 = { "sk_monster_leg1","1" };
-cvar_t	sk_monster_leg2 = { "sk_monster_leg2","1" };
-cvar_t	sk_monster_leg3 = { "sk_monster_leg3","1" };
-
-// player damage adjusters
-cvar_t	sk_player_head1 = { "sk_player_head1","2" };
-cvar_t	sk_player_head2 = { "sk_player_head2","2" };
-cvar_t	sk_player_head3 = { "sk_player_head3","2" };
-
-cvar_t	sk_player_chest1 = { "sk_player_chest1","1" };
-cvar_t	sk_player_chest2 = { "sk_player_chest2","1" };
-cvar_t	sk_player_chest3 = { "sk_player_chest3","1" };
-
-cvar_t	sk_player_stomach1 = { "sk_player_stomach1","1" };
-cvar_t	sk_player_stomach2 = { "sk_player_stomach2","1" };
-cvar_t	sk_player_stomach3 = { "sk_player_stomach3","1" };
-
-cvar_t	sk_player_arm1 = { "sk_player_arm1","1" };
-cvar_t	sk_player_arm2 = { "sk_player_arm2","1" };
-cvar_t	sk_player_arm3 = { "sk_player_arm3","1" };
-
-cvar_t	sk_player_leg1 = { "sk_player_leg1","1" };
-cvar_t	sk_player_leg2 = { "sk_player_leg2","1" };
-cvar_t	sk_player_leg3 = { "sk_player_leg3","1" };
 
 
 /*
