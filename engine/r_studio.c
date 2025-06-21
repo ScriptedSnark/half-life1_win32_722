@@ -257,12 +257,6 @@ int R_StudioBodyVariations( model_t* model )
 	return count;
 }
 
-// TODO: Implement
-
-
-
-// TODO: Implement
-
 /*
 ================
 R_StudioTransformVector
@@ -283,8 +277,6 @@ void R_StudioTransformVector( vec_t* in, vec_t* out )
 	out[2] = DotProduct(in, rotationmatrix[2]) + rotationmatrix[2][3];
 }
 #endif
-
-// TODO: Implement
 
 float h_scale = 1.5;
 
@@ -1557,7 +1549,6 @@ void R_StudioDrawBones( void )
 {
 	// TODO: Implement
 }
-
 
 /*
 ====================
