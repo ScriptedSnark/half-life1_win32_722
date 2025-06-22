@@ -6,10 +6,16 @@
 #pragma once
 #endif
 
-
 #define	PROTOCOL_VERSION	31
 
+// This is used, unless overridden in the registry
+#define DEFAULT_MASTER_ADDRESS "207.153.132.168:27010"
 
+#define	PORT_MASTER		27010       // Default master port
+#define PORT_CLIENT		"27005"     // Must use atoi to convert to integer
+#define PORT_SERVER		"27015"     //  "
+
+#define HB_TIMEOUT 15
 
 //=========================================
 
@@ -19,6 +25,11 @@
 // the second character will allways be \n if the message isn't a single
 // byte long (?? not true anymore?)
 
+// Server is sending heartbeat to Server Master
+#define	S2M_HEARTBEAT			'a'	// + challeange + sequence + active + #channels + channels
+// Server is ending current game
+#define	S2M_SHUTDOWN			'b' // no params
+
 // Client connection is initiated by requesting a challenge value
 //  the server sends this value back
 #define S2C_CHALLENGE			'A'	// + challenge value
@@ -26,15 +37,19 @@
 // Send a userid, client remote address, is this server secure and engine build number
 #define S2C_CONNECTION			'B'
 
-// Special protocol for rejected connections.
-#define S2C_CONNREJECT			'l' 
-
 // Response to server info requests
 #define S2A_INFO				'C' // + Address, hostname, map, gamedir, gamedescription, active players, maxplayers, protocol
 
 
 
 
+
+
+// Request for MOTD from Server Master  (Message of the Day)
+#define	A2M_GET_MOTD			'g'	// no params
+
+// MOTD response HLMaster
+#define	M2A_MOTD				'h'
 
 // Generic Ping Request
 #define A2A_PING				'i'	// respond with an A2A_ACK
@@ -45,23 +60,11 @@
 // Print to client console.
 #define	A2C_PRINT				'l'	// print a message on client
 
-
-
-
-
-// MOTD response HLMaster
-#define	M2A_MOTD				'h'
-
-
+// Another user is requesting a challenge value from this machine
+#define A2A_GETCHALLENGE		'q'	// Request challenge # from another machine
 // Challenge response from master
 #define M2A_CHALLENGE			's'
 								//'s' + challenge value
-
-//
-#define	PORT_MASTER		27010       // Default master port
-#define PORT_CLIENT		"27005"     // Must use atoi to convert to integer
-#define PORT_SERVER		"27015"     //  "
-
 
 //==================
 // note that there are some defs.qc that mirror to these numbers

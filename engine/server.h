@@ -7,6 +7,20 @@
 
 #define	MAX_SIGNON_BUFFERS	16
 
+#define MAX_SVCHANNELS 10
+
+typedef struct svchannel_s
+{
+	char		        szServerChannel[16];
+	qboolean            bIsDefault;  // Can't be deleted if true (unless bLeaveDefault is false to clear channel func.)
+	struct svchannel_s* pNext;
+} svchannel_t;
+
+extern svchannel_t* svchannels;
+
+qboolean SV_CheckChannel( char* pszChannel );
+void SV_ClearChannels( qboolean bLeaveDefault );
+
 typedef struct
 {
 	double	active;
@@ -19,6 +33,7 @@ typedef struct
 	int		latched_packets;
 } svstats_t;
 
+// server_static_t
 typedef struct server_static_s
 {
 	// TODO: Implement
@@ -35,7 +50,7 @@ typedef struct server_static_s
 
 	// TODO: Implement
 
-	svstats_t stats;
+	svstats_t	stats;
 } server_static_t;
 
 //=============================================================================
@@ -374,6 +389,7 @@ void SV_PTrack_f( void );
 void SV_ActivateServer( qboolean runPhysics );
 int SV_SpawnServer( qboolean bIsDemo, char* server, char* startspot );
 void SV_LoadEntities( void );
+void SV_ClearEntities( void );
 void SV_InactivateClients( void );
 void SV_MemPrediction_f( void );
 void SV_AddIP_f( void );
@@ -386,8 +402,7 @@ int RegUserMsg( const char* pszName, int iSize );
 
 
 
-void Master_Heartbeat( void );
-void Host_RequestMOTD_f( void );
+void SV_ClearClientStates( void );
 
 typedef enum
 {

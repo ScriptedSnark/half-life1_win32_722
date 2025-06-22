@@ -8,7 +8,8 @@
 extern int	current_skill;
 extern int  gHostSpawnCount;
 
-void		Host_LoadProfileFile( void );
+void		Host_LoadProfile( void );
+void		Host_UnloadProfile( char* name );
 
 int			EntryInTable( SAVERESTOREDATA* pSaveData, const char* pMapName, int index );
 int			EntityInSolid( edict_t* pent );

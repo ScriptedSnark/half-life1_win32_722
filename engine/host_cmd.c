@@ -2535,12 +2535,12 @@ void Cvar_SetProfile( char* name )
 
 /*
 ===============
-Host_LoadProfileFile
+Host_LoadProfile
 
 Loads and processes profile.lst configuration file
 ===============
 */
-void Host_LoadProfileFile( void )
+void Host_LoadProfile( void )
 {
 	byte* file;
 	char* data;
@@ -2565,10 +2565,32 @@ void Host_LoadProfileFile( void )
 	free(file);
 }
 
+/*
+===============
+Host_UnloadProfile
+
+===============
+*/
+void Host_UnloadProfile( char* name )
+{
+}
+
+/*
+===============
+Host_WriteProfile_f
+
+===============
+*/
 void Host_WriteProfile_f( void )
 {
 }
 
+/*
+===============
+Host_RevertProfile_f
+
+===============
+*/
 void Host_RevertProfile_f( void )
 {
 }
@@ -2606,6 +2628,9 @@ void Host_Name_f( void )
 	{
 		if (!Q_strcmp(cl_name.string, newName))
 			return;
+
+		Host_UnloadProfile(cl_name.string);
+
 		Cvar_Set("_cl_name", newName);
 
 		Host_ClearSaveDirectory();
@@ -3400,7 +3425,6 @@ void Host_Stopdemo_f( void )
 
 //=============================================================================
 
-// Set master server
 void Master_SetMaster_f( void )
 {
 	int		argc, port;
@@ -3443,34 +3467,28 @@ void Master_SetMaster_f( void )
 	}
 	sprintf(szAdr, "%s:%i", Cmd_Argv(1), port);
 
-	if (!NET_StringToAdr(szAdr, &gMasterAddr))
+	if (!NET_StringToAdr(szAdr, &gMasterAddress))
 	{
-		memset(&gMasterAddr, 0, sizeof(netadr_t));
+		memset(&gMasterAddress, 0, sizeof(netadr_t));
 		Con_Printf("Invalid address %s\n", szAdr);
 		return;
 	}
 
 	gfNoMasterServer = FALSE;
 
-	Con_Printf("Attempting to set master server to %s\n", NET_AdrToString(gMasterAddr));
-	gfMasterHearbeat = -99999;
+	Con_Printf("Attempting to set master server to %s\n", NET_AdrToString(gMasterAddress));
+	gfLastHearbeat = -99999;
 }
 
-/*
-==================
-Master_Heartbeat_f
-
-Force the last heartbeat to an invalid value so that we update immediately
-==================
-*/
+// Send a new heartbeat to the master
 void Master_Heartbeat_f( void )
 {
-	gfMasterHearbeat = -9999;
+	gfLastHearbeat = -9999;
 }
 
 //=============================================================================
 
-sv_channel_t* sv_channels;
+svchannel_t* svchannels;
 
 /*
 ==================
@@ -3481,15 +3499,15 @@ Check if the server room exists
 */
 qboolean SV_CheckChannel( char* pszChannel )
 {
-	sv_channel_t* pChannel;
+	svchannel_t* pChannel;
 
 	if (!pszChannel || !pszChannel[0])
 		return FALSE;
 
-	pChannel = sv_channels;
+	pChannel = svchannels;
 	while (pChannel)
 	{
-		if (!_stricmp(pChannel->szName, pszChannel))
+		if (!_stricmp(pChannel->szServerChannel, pszChannel))
 			return TRUE;
 
 		pChannel = pChannel->pNext;
@@ -3509,7 +3527,7 @@ void SV_AddChannel_f( void )
 {
 	int i;
 	qboolean bFound;
-	sv_channel_t* pChannel;
+	svchannel_t* pChannel;
 
 	if (Cmd_Argc() == 2)
 	{
@@ -3517,15 +3535,15 @@ void SV_AddChannel_f( void )
 
 		// See if this channel already exists
 		i = 0;
-		pChannel = sv_channels;
+		pChannel = svchannels;
 		while (pChannel)
 		{
 			i++;
-			if (!_stricmp(pChannel->szName, Cmd_Argv(1)))
+			if (!_stricmp(pChannel->szServerChannel, Cmd_Argv(1)))
 			{
 				bFound = TRUE;
-				strncpy(pChannel->szName, Cmd_Argv(1), sizeof(pChannel->szName));
-				pChannel->szName[sizeof(pChannel->szName) - 1] = 0;
+				strncpy(pChannel->szServerChannel, Cmd_Argv(1), sizeof(pChannel->szServerChannel));
+				pChannel->szServerChannel[sizeof(pChannel->szServerChannel) - 1] = 0;
 				break;
 			}
 
@@ -3534,38 +3552,38 @@ void SV_AddChannel_f( void )
 
 		if (!bFound)
 		{
-			if (i >= MAX_SERVER_ROOMS)
+			if (i >= MAX_SVCHANNELS)
 				return;
 
-			pChannel = (sv_channel_t*)malloc(sizeof(sv_channel_t));
+			pChannel = (svchannel_t*)malloc(sizeof(svchannel_t));
 			if (!pChannel)
 				Sys_Error("Failed to allocate channel!");
 			memset(pChannel, 0, 64);
-			strncpy(pChannel->szName, Cmd_Argv(1), sizeof(pChannel->szName));
-			pChannel->szName[sizeof(pChannel->szName) - 1] = 0;
-			pChannel->bDefault = FALSE;
-			pChannel->pNext = sv_channels;
-			sv_channels = pChannel;
+			strncpy(pChannel->szServerChannel, Cmd_Argv(1), sizeof(pChannel->szServerChannel));
+			pChannel->szServerChannel[sizeof(pChannel->szServerChannel) - 1] = 0;
+			pChannel->bIsDefault = FALSE;
+			pChannel->pNext = svchannels;
+			svchannels = pChannel;
 		}
 
-		gfMasterHearbeat = -99999;
+		gfLastHearbeat = -99999;
 	}
 	else
 	{
 		Con_Printf("svaddchannel:  Adds server room (16 chars max)\ncurrent:  \n");
 
-		if (!sv_channels)
+		if (!svchannels)
 		{
 			Con_Printf("none\n");
 			return;
 		}
 
 		i = 0;
-		pChannel = sv_channels;
+		pChannel = svchannels;
 		while (pChannel)
 		{
 			i++;
-			if (pChannel->bDefault)
+			if (pChannel->bIsDefault)
 				Con_Printf("  %i : %s (default)\n", i, pChannel);
 			else
 				Con_Printf("  %i : %s\n", i, pChannel);
@@ -3585,7 +3603,7 @@ Remove server room
 void SV_RemoveChannel_f( void )
 {
 	qboolean bFound;
-	sv_channel_t* pChannel, * pPrev;
+	svchannel_t* pChannel, * pPrev;
 
 	if (Cmd_Argc() != 2)
 	{
@@ -3595,10 +3613,10 @@ void SV_RemoveChannel_f( void )
 
 	bFound = FALSE;
 
-	pChannel = sv_channels;
+	pChannel = svchannels;
 	while (pChannel)
 	{
-		if (!_stricmp(pChannel->szName, Cmd_Argv(1)))
+		if (!_stricmp(pChannel->szServerChannel, Cmd_Argv(1)))
 		{
 			bFound = TRUE;
 			break;
@@ -3613,20 +3631,20 @@ void SV_RemoveChannel_f( void )
 		return;
 	}
 
-	if (pChannel->bDefault)
+	if (pChannel->bIsDefault)
 	{
 		Con_Printf("Can't delete default server:  %s\n", Cmd_Argv(1));
 		return;
 	}
 
 	// Remove from linked list
-	if (pChannel == sv_channels)
+	if (pChannel == svchannels)
 	{
-		sv_channels = sv_channels->pNext;
+		svchannels = svchannels->pNext;
 	}
 	else
 	{
-		pPrev = sv_channels;
+		pPrev = svchannels;
 		while (pPrev->pNext != pChannel)
 		{
 			pPrev = pPrev->pNext;
@@ -3635,7 +3653,7 @@ void SV_RemoveChannel_f( void )
 	}
 	free(pChannel);
 
-	gfMasterHearbeat = -99999;
+	gfLastHearbeat = -99999;
 }
 
 /*
@@ -3644,18 +3662,18 @@ SV_ClearChannels
 
 ==================
 */
-void SV_ClearChannels( qboolean bKeepDefault )
+void SV_ClearChannels( qboolean bLeaveDefault )
 {
-	sv_channel_t* pChannel;
-	sv_channel_t* pNext;
-	sv_channel_t* pNewList = NULL;
+	svchannel_t* pChannel;
+	svchannel_t* pNext;
+	svchannel_t* pNewList = NULL;
 
-	pChannel = sv_channels;
+	pChannel = svchannels;
 	while (pChannel)
 	{
 		pNext = pChannel->pNext;
 
-		if (pChannel->bDefault && bKeepDefault)
+		if (pChannel->bIsDefault && bLeaveDefault)
 		{
 			pChannel->pNext = pNewList;
 			pNewList = pChannel;
@@ -3669,9 +3687,9 @@ void SV_ClearChannels( qboolean bKeepDefault )
 	}
 
 	if (pNewList)
-		sv_channels = pNewList;
+		svchannels = pNewList;
 	else
-		sv_channels = NULL;
+		svchannels = NULL;
 }
 
 /*
@@ -3689,7 +3707,7 @@ void SV_ClearChannels_f( void )
 	}
 	
 	SV_ClearChannels(TRUE);
-	gfMasterHearbeat = -99999;
+	gfLastHearbeat = -99999;
 }
 
 /*
@@ -4141,7 +4159,7 @@ void Host_InitCommands( void )
 	Cmd_AddCommand("setmaster", Master_SetMaster_f);
 	Cmd_AddCommand("heartbeat", Master_Heartbeat_f);
 	Cmd_AddCommand("svaddchannel", SV_AddChannel_f);
-	Cmd_AddCommand("motd", Host_RequestMOTD_f);
+	Cmd_AddCommand("motd", Master_RequestMOTD_f);
 	Cmd_AddCommand("svremovechannel", SV_RemoveChannel_f);
 	Cmd_AddCommand("svclearchannels", SV_ClearChannels_f);
 	Cmd_AddCommand("sv_print_custom", SV_PrintCusomizations_f);

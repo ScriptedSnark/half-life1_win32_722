@@ -233,25 +233,22 @@ extern	unsigned char*	host_colormap;
 extern	int			host_framecount;	// incremented every frame, never reset
 extern	double		realtime;			// not bounded in any way, changed at
 										// start of every frame, never reset
-extern	netadr_t	gMasterAddr;
+
+// Master server
 extern	qboolean	gfNoMasterServer;
-extern	double		gfMasterHearbeat;
-extern	char		gszMasterServerAddress[128];
+extern	double		gfLastHearbeat;
+extern	qboolean	gfHeartbeatWaiting;
+extern	float		gfHeartbeatWaitingTime;
+extern	int			gHeartbeatSequence;
+extern	int			gHeartbeatChallenge;
+extern	char		gszMasterAddress[128];
+extern	netadr_t	gMasterAddress;
+
+void Master_Heartbeat( void );
+void Master_Shutdown( void );
+void Master_RequestMOTD_f( void );
+
 extern	char		gszDefaultRoom[64];
-
-#define MAX_SERVER_ROOMS	10
-
-typedef struct sv_channel_s
-{
-	char		szName[16];
-	qboolean	bDefault;
-	struct sv_channel_s* pNext;
-} sv_channel_t;
-
-extern sv_channel_t* sv_channels;
-
-qboolean SV_CheckChannel( char* pszChannel );
-void SV_ClearChannels( qboolean bKeepDefault );
 
 extern	cvar_t		host_speeds;
 // start of every frame, never reset

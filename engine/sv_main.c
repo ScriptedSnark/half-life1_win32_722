@@ -81,7 +81,7 @@ void SV_RejectConnection( netadr_t* adr, char* reason )
 {
 	SZ_Clear(&net_message);
 	MSG_WriteLong(&net_message, 0xFFFFFFFF);
-	MSG_WriteByte(&net_message, S2C_CONNREJECT);
+	MSG_WriteByte(&net_message, A2C_PRINT);
 	MSG_WriteString(&net_message, reason);
 	NET_SendPacket(NS_SERVER, net_message.cursize, net_message.data, *adr);
 	SZ_Clear(&net_message);
@@ -1716,7 +1716,11 @@ int SV_SpawnServer( qboolean bIsDemo, char* server, char* startspot )
 	return 1;
 }
 
-// TODO: Implement
+// Clears all entities
+void SV_ClearEntities( void )
+{
+	// TODO: Implement
+}
 
 /*
 =================

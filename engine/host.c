@@ -38,17 +38,17 @@ jmp_buf		host_enddemo;
 unsigned short* host_basepal;
 unsigned char* host_colormap;
 
-netadr_t	gMasterAddr;
+// Master server
 qboolean	gfNoMasterServer = FALSE;
-double		gfMasterHearbeat;
-char		gszMasterServerAddress[128];
+double		gfLastHearbeat;				// Time we sent last heartbeat
+qboolean	gfHeartbeatWaiting;			// Challenge request sent to master
+float		gfHeartbeatWaitingTime;		// Challenge request send time
+int			gHeartbeatSequence;			// # of heartbeat sequence
+int			gHeartbeatChallenge;		// Last one is Main master
+char		gszMasterAddress[128];
+netadr_t	gMasterAddress;				// Master server address
+
 char		gszDefaultRoom[64];
-float		last_master_heartbeat;
-
-void SV_ClearClientStates( void );
-void Master_Shutdown( void );
-
-void CL_NextDemo( void );
 
 cvar_t	maxfps = { "maxfps", "72.0" };
 
@@ -1097,13 +1097,6 @@ void Host_InitLocal( void )
 	host_time = 1.0;		// so a think at time 0 won't get called
 }
 
-
-
-
-
-
-//=========================================== FINISH LINE =========================================
-
 /*
 ===============
 Host_WriteConfiguration
@@ -1113,37 +1106,33 @@ Writes key bindings and archived cvars to config.cfg
 */
 void Host_WriteConfiguration( void )
 {
-#ifndef SWDS
 	FILE* f;
 
-	if (!host_initialized)
+// dedicated servers initialize the host but don't parse and set the
+// config.cfg cvars
+	if (host_initialized && cls.state != ca_dedicated)
 	{
-		return;
-	}
-
-	// dedicated servers initialize the host but don't parse and set the
-	// config.cfg cvars
-	if (cls.state != ca_dedicated)
-	{
-		f = fopen( va( "%s/config.cfg", com_gamedir ), "w" );
+		f = fopen(va("%s/config.cfg", com_gamedir), "w");
 		if (!f)
 		{
-			Con_Printf( "Couldn't write config.cfg.\n" );
+			Con_Printf("Couldn't write config.cfg.\n");
 			return;
 		}
 
-		Key_WriteBindings( f );
-		Cvar_WriteVariables( f );
-		fclose( f );
+		Key_WriteBindings(f);
+		Cvar_WriteVariables(f);
+
+		fclose(f);
 	}
-#endif
 }
+
 
 /*
 =================
 SV_ClientPrintf
 
 Sends text across to be displayed
+FIXME: make this just a stuffed echo?
 =================
 */
 void SV_ClientPrintf( char* fmt, ... )
@@ -1151,12 +1140,12 @@ void SV_ClientPrintf( char* fmt, ... )
 	va_list		argptr;
 	char		string[1024];
 
-	va_start( argptr, fmt );
-	vsprintf( string, fmt, argptr );
-	va_end( argptr );
+	va_start(argptr, fmt);
+	vsprintf(string, fmt, argptr);
+	va_end(argptr);
 
-	MSG_WriteByte( &host_client->netchan.message, svc_print );
-	MSG_WriteString( &host_client->netchan.message, string );
+	MSG_WriteByte(&host_client->netchan.message, svc_print);
+	MSG_WriteString(&host_client->netchan.message, string);
 }
 
 /*
@@ -1172,16 +1161,16 @@ void SV_BroadcastPrintf( char* fmt, ... )
 	char		string[1024];
 	int			i;
 
-	va_start( argptr, fmt );
-	vsprintf( string, fmt, argptr );
-	va_end( argptr );
+	va_start(argptr, fmt);
+	vsprintf(string, fmt, argptr);
+	va_end(argptr);
 
 	for (i = 0; i < svs.maxclients; i++)
 	{
 		if (svs.clients[i].active || svs.clients[i].spawned)
 		{
-			MSG_WriteByte( &svs.clients[i].netchan.message, svc_print );
-			MSG_WriteString( &svs.clients[i].netchan.message, string );
+			MSG_WriteByte(&svs.clients[i].netchan.message, svc_print);
+			MSG_WriteString(&svs.clients[i].netchan.message, string);
 		}
 	}
 }
@@ -1198,14 +1187,12 @@ void Host_ClientCommands( char* fmt, ... )
 	va_list		argptr;
 	char		string[1024];
 
-	va_start( argptr, fmt );
-	vsprintf( string, fmt, argptr );
-	va_end( argptr );
+	va_start(argptr, fmt);
+	vsprintf(string, fmt, argptr);
+	va_end(argptr);
 
-	string[sizeof( string ) - 1] = 0;
-
-	MSG_WriteByte( &host_client->netchan.message, svc_stufftext );
-	MSG_WriteString( &host_client->netchan.message, string );
+	MSG_WriteByte(&host_client->netchan.message, svc_stufftext);
+	MSG_WriteString(&host_client->netchan.message, string);
 }
 
 /*
@@ -1235,12 +1222,13 @@ void SV_DropClient( client_t *cl, qboolean crash )
 		if (cl->download)
 		{
 			COM_FreeFile(cl->download);
-			cl->download = 0;
+			cl->download = NULL;
 		}
+
 		if (cl->upload)
 		{
 			fclose(cl->upload);
-			cl->upload = 0;
+			cl->upload = NULL;
 		}
 
 		if (cl->spectator)
@@ -1263,7 +1251,6 @@ void SV_DropClient( client_t *cl, qboolean crash )
 	SV_FullClientUpdate(cl, &sv.reliable_datagram);
 }
 
-
 /*
 ==================
 Host_ClearClients
@@ -1272,18 +1259,45 @@ Host_ClearClients
 */
 void Host_ClearClients( qboolean bFramesOnly )
 {
-	int		i;
+	int		i, j;
+	client_frame_t* frame;
+	packet_entities_t* pack;
 
 	host_client = svs.clients;
 
 	for (i = 0; i < svs.maxclients; i++, host_client++)
 	{
-		// TODO: Implement
+		for (j = 0; j < MAX_CLIENTS; j++)
+		{
+			frame = &host_client->frames[j];
+
+			// Must clear out all dynamic data for each frame
+			pack = &frame->entities;
+			if (pack->entities)
+			{
+				free(pack->entities);
+			}
+			pack->entities = NULL;
+			pack->num_entities = 0;
+
+			frame->ping_time = -1;
+			frame->senttime = 0;
+		}
+
+		if (host_client->netchan.remote_address.type != NA_UNUSED)
+		{
+			netadr_t save;
+			memcpy(&save, &host_client->netchan.remote_address, sizeof(netadr_t));
+			memset(&host_client->netchan, 0, sizeof(netchan_t));
+			Netchan_Setup(NS_SERVER, &host_client->netchan, save);
+		}
+
+		COM_ClearCustomizationList(&host_client->customdata, FALSE);
 	}
 
 	if (!bFramesOnly)
 	{
-		memset( svs.clients, 0, sizeof( client_t ) * svs.maxclientslimit );
+		memset(svs.clients, 0, sizeof(client_t) * svs.maxclientslimit);
 	}
 }
 
@@ -1296,29 +1310,33 @@ This only happens at the end of a game, not between levels
 */
 void Host_ShutdownServer( qboolean crash )
 {
-//	int		i;
+	int		i;
 
 	if (!sv.active)
 		return;
 
 	sv.active = FALSE;
 
-	if (cls.state == ca_active
-	  || cls.state == ca_connected
-	  || cls.state == ca_uninitialized
-	  || cls.state == ca_connecting)
+	if (cls.state == ca_connecting
+		|| cls.state == ca_connected
+		|| cls.state == ca_uninitialized
+		|| cls.state == ca_active)
 	{
 		CL_Disconnect();
 	}
 
 	if (sv.active)
 	{
-		host_client = svs.clients;
-
-		// TODO: implement
+		for (i = 0, host_client = svs.clients; i < svs.maxclients; i++, host_client++)
+		{
+			if ((host_client->active || host_client->connected) && !host_client->fakeclient)
+			{
+				SV_DropClient(host_client, crash);
+			}
+		}
 
 		// Clear all entities
-		//SV_ClearEntities();
+		SV_ClearEntities();
 	}
 
 	memset(&sv, 0, sizeof(server_t));
@@ -1359,8 +1377,7 @@ not reinitialize anything.
 void Host_ClearMemory( qboolean bQuiet )
 {
 	CM_FreePAS();
-
-	// TODO: Implement
+	SV_ClearEntities();
 
 	if (!bQuiet)
 		Con_DPrintf("Clearing memory\n");
@@ -1373,9 +1390,9 @@ void Host_ClearMemory( qboolean bQuiet )
 
 	cls.signon = 0;
 	memset(&sv, 0, sizeof(server_t));
-	CL_ClearClientState();
 
-	// TODO: Implement
+	CL_ClearClientState();
+	SV_ClearClientStates();
 }
 
 
@@ -1395,14 +1412,13 @@ qboolean Host_FilterTime( float time )
 
 	if (!isDedicated)
 	{
-		if (maxfps.value >= 0.1)
-		{
-			if (maxfps.value > 72.0)
-				Cvar_SetValue("maxfps", 72.0);
-		}
-		else
+		if (maxfps.value < 0.1)
 		{
 			Cvar_SetValue("maxfps", 0.1);
+		}
+		else if (maxfps.value > 72.0)
+		{
+			Cvar_SetValue("maxfps", 72.0);
 		}
 
 		if (!cls.timedemo && realtime - oldrealtime < 1.0 / maxfps.value)
@@ -1425,14 +1441,44 @@ qboolean Host_FilterTime( float time )
 	return TRUE;
 }
 
-void SV_FilterTime(float time)
+/*
+===============
+SV_FilterTime
+
+===============
+*/
+qboolean SV_FilterTime( float time )
 {
-	// TODO: Implement
+	static float sv_extratime = 0.0;
+	static float sv_oldrealtime;
+
+	sv_extratime += host_frametime;
+
+	if (time - sv_oldrealtime < 1.0 / 10.0)
+		return FALSE;
+
+	host_frametime = sv_extratime;
+	sv_extratime = 0.0;
+
+	sv_oldrealtime = time;
+	return TRUE;
 }
 
-void CL_FilterTime(float time)
+/*
+===============
+CL_FilterTime
+
+===============
+*/
+qboolean CL_FilterTime( float time )
 {
-	// TODO: Implement
+	static float sv_oldrealtime = 0.0;
+
+	if (time - sv_oldrealtime < 1.0 / 30.0)
+		return FALSE;
+
+	sv_oldrealtime = time;
+	return TRUE;
 }
 
 /*
@@ -1443,30 +1489,38 @@ Host_ServerFrame
 */
 void Host_ServerFrame( void )
 {
-	if (host_speeds.value)
-		Sys_FloatTime();
+	double	time1 = 0;
+	double	time2 = 0;
+	double	time3 = 0;
+	double	time4 = 0;
+	double	time5 = 0;
 
+	if (host_speeds.value)
+		time1 = Sys_FloatTime();
+
+// run the world state	
 	gGlobalVariables.frametime = host_frametime;
 
-// get packets
+// read client messages
 	SV_ReadPackets();
 
 	if (host_speeds.value)
-		Sys_FloatTime();
+		time2 = Sys_FloatTime();
 
-	// Move other things around and think if enough time has passed
+// move things around and think
+// always pause in single player if in console or menus
 	if (!sv.paused && (svs.maxclients > 1 || key_dest == key_game && (cls.state == ca_active || cls.state == ca_dedicated)))
 		SV_Physics();
 
 	if (host_speeds.value)
-		Sys_FloatTime();
+		time3 = Sys_FloatTime();
 
 	// Send the results of movement and physics to the clients
 	SV_QueryMovevarsChanged();
 	SV_SendClientMessages();
 
 	if (host_speeds.value)
-		Sys_FloatTime();
+		time4 = Sys_FloatTime();
 
 	SV_RequestMissingResourcesFromClients();
 
@@ -1478,52 +1532,171 @@ void Host_ServerFrame( void )
 		Host_Quit_f();
 
 	if (host_speeds.value)
-		Sys_FloatTime();
+		time5 = Sys_FloatTime();
 }
 
+/*
+==================
+Master_RequestHeartbeat
+
+Sends a heartbeat to the master server
+==================
+*/
 void Master_RequestHeartbeat( void )
 {
-	// TODO: Implement
-	// https://github.com/shefben/world-opponent-network/blob/940fa4448afafbb7ed381e9bed580606ff7b6695/%20world-opponent-network/OSHLDS/master.c#L79
-}
+	static char	string[2048];    // Buffer for sending heartbeat
+	static char	szChannels[256];
+	int			active;          // Number of active client connections
+	int			numChannels;
+	svchannel_t* pChannel;
 
-void Master_Heartbeat( void )
-{
-	if (gfNoMasterServer)
-	{
+	if (!NET_StringToAdr(gszMasterAddress, &gMasterAddress))
 		return;
+
+	// Still waiting on challenge response?
+	if (gfHeartbeatWaiting)
+		return;
+
+	// Waited too long
+	if ((realtime - gfHeartbeatWaitingTime) >= HB_TIMEOUT)
+		return;
+
+	//
+	// count active users
+	//
+	SV_CountPlayers(&active, NULL);
+
+	numChannels = 0;
+
+	gHeartbeatSequence++;
+
+	pChannel = svchannels;
+	while (pChannel)
+	{
+		numChannels++;
+		pChannel = pChannel->pNext;
 	}
 
-	// TODO: Implement
+	memset(string, 0, sizeof(string));
+	memset(szChannels, 0, sizeof(szChannels));
+
+	pChannel = svchannels;
+	while (pChannel)
+	{
+		strcat(szChannels, pChannel->szServerChannel);
+		strcat(szChannels, "\n");
+		pChannel = pChannel->pNext;
+	}
+
+	// Send to master
+	sprintf(string, "%c\n%i\n%i\n%i\n%i\n%s", S2M_HEARTBEAT, gHeartbeatChallenge,
+		gHeartbeatSequence, active, numChannels, szChannels);
+
+	NET_SendPacket(NS_SERVER, strlen(string), string, gMasterAddress);
 }
 
+/*
+==================
+Master_Heartbeat
+
+Requests a challenge so we can then send a heartbeat
+==================
+*/
+#define	HEARTBEAT_SECONDS	300
+void Master_Heartbeat( void )
+{
+	unsigned char c;    // Buffer for sending heartbeat
+
+	if (gfNoMasterServer ||      // We are ignoring heartbeats
+		(realtime - gfLastHearbeat) < HEARTBEAT_SECONDS ||  // not time to send yet
+		(svs.maxclients <= 1))  // not a multiplayer server.
+		return;
+
+	if (!NET_StringToAdr(gszMasterAddress, &gMasterAddress))
+		return;
+
+	// Should we resend challenge request?
+	if (gfHeartbeatWaiting &&
+		((realtime - gfHeartbeatWaitingTime) < HB_TIMEOUT))
+		return;
+
+	gfHeartbeatWaiting = TRUE;
+	gfHeartbeatWaitingTime = realtime;
+
+	gfLastHearbeat = realtime;  // Flag at start so we don't just keep trying for hb's when
+
+	c = A2A_GETCHALLENGE;
+
+	// Send to master asking for a challenge #
+	NET_SendPacket(NS_SERVER, 1, &c, gMasterAddress);
+}
+
+/*
+==================
+Master_Shutdown
+
+Server is shutting down, unload master servers list, tell masters that we are closing the server
+==================
+*/
 void Master_Shutdown( void )
 {
-	// TODO: Implement
+	char		string[2048];
+
+	if (gfNoMasterServer ||      // We are ignoring heartbeats
+		(svs.maxclients <= 1))   // not a multiplayer server.
+		return;
+
+	sprintf(string, "%c\n", S2M_SHUTDOWN);
+
+	if (!NET_StringToAdr(gszMasterAddress, &gMasterAddress))
+		return;
+
+	Con_DPrintf("Sending shutdown to %s\n", NET_AdrToString(gMasterAddress));
+
+	NET_SendPacket(NS_SERVER, strlen(string), string, gMasterAddress);
 }
 
-void Host_RequestMOTD_f( void )
+/*
+==================
+Master_RequestMOTD_f
+
+Request for MOTD from Server Master
+==================
+*/
+void Master_RequestMOTD_f( void )
 {
-	// TODO: Implement
+	char		string[2048];
+
+	if (gfNoMasterServer)      // We are ignoring heartbeats
+		return;
+
+	sprintf(string, "%c\n", A2M_GET_MOTD);
+
+	if (!NET_StringToAdr(gszMasterAddress, &gMasterAddress))
+		return;
+
+	Con_DPrintf("Requesting MOTD from %s\n", NET_AdrToString(gMasterAddress));
+
+	NET_SendPacket(NS_CLIENT, strlen(string), string, gMasterAddress);
 }
 
-void Master_AddServer( void )
-{
-	// TODO: Implement
-}
+/*
+==================
+Master_SetRegKeyValue
 
-void Sys_SetRegKeyValue( char* pszSubKey,
-		char* pszElement,
-		char* pszReturnString,
-		int nReturnLength,
-		char* pszDefaultValue )
+Sets the master server settings in the registry
+==================
+*/
+void Master_SetRegKeyValue( char* pszSubKey, char* pszElement, char* pszReturnString, int nReturnLength, char* pszDefaultValue )
 {
 	LONG lResult;           // Registry function result code
 	HKEY hKey;              // Handle of opened/created key
+	char szBuff[128];		// Temp. buffer
 	DWORD dwDisposition;    // Type of key opening event
-	char szBuff[1024];      // Temp. buffer
-	DWORD dwSize;           // Size of element data
 	DWORD dwType;           // Type of key
+	DWORD dwSize;           // Size of element data
+
+	sprintf(pszReturnString, pszDefaultValue);
 
 	lResult = RegCreateKeyEx(
 		HKEY_CURRENT_USER,	// handle of open key 
@@ -1572,19 +1745,31 @@ void Sys_SetRegKeyValue( char* pszSubKey,
 	RegCloseKey(hKey);
 }
 
+/*
+==================
+Master_Init
+
+Initializes the default master server address
+==================
+*/
 void Master_Init( void )
 {
 	char szRegistryPath[128];
 
-	sprintf(gszMasterServerAddress, "207.153.132.168:27010");
+	sprintf(gszMasterAddress, DEFAULT_MASTER_ADDRESS);
 	sprintf(gszDefaultRoom, "#Main");
 	sprintf(szRegistryPath, "Software\\Valve\\Half-Life");
 
-	Sys_SetRegKeyValue(szRegistryPath, "MasterServerAddress", gszMasterServerAddress, sizeof(gszMasterServerAddress) - 1, gszMasterServerAddress);
-	Sys_SetRegKeyValue(szRegistryPath, "DefaultRoom", gszDefaultRoom, sizeof(gszDefaultRoom) - 1, gszDefaultRoom);
+	Master_SetRegKeyValue(szRegistryPath, "MasterServerAddress", gszMasterAddress, sizeof(gszMasterAddress) - 1, gszMasterAddress);
+	Master_SetRegKeyValue(szRegistryPath, "DefaultRoom", gszDefaultRoom, sizeof(gszDefaultRoom) - 1, gszDefaultRoom);
 }
 
-void Host_PostFrameRate(float frameTime)
+/*
+==================
+Host_PostFrameRate
+==================
+*/
+void Host_PostFrameRate( float frameTime )
 {
 	g_fFrameTime = frameTime;
 }
@@ -1594,13 +1779,33 @@ void Host_PostFrameRate(float frameTime)
 Host_GetHostInfo
 ==================
 */
-DLL_EXPORT void Host_GetHostInfo(float* fps, int* nActive, int* nBots, int* nMaxPlayers, char* pszMap)
+DLL_EXPORT void Host_GetHostInfo( float* fps, int* nActive, int* nSpectators, int* nMaxPlayers, char* pszMap )
 {
+	int		clients;
+	int		spectators;
+
 	*fps = g_fFrameTime;
 
-	// TODO: Implement
-}
+	spectators = 0;
+	clients = 0;
 
+	// Count clients, report 
+	SV_CountPlayers(&clients, &spectators);
+	clients -= spectators;
+
+	*nActive = clients;
+	*nSpectators = spectators;
+
+	if (pszMap)
+	{
+		if (sv.name && sv.name[0])
+			strcpy(pszMap, sv.name);
+		else
+			*pszMap = '\0';
+	}
+
+	*nMaxPlayers = svs.maxclients;
+}
 
 /*
 ==================
@@ -1609,14 +1814,14 @@ Host_Frame
 Runs all active servers
 ==================
 */
-void _Host_Frame(float time)
+void _Host_Frame( float time )
 {
 	static double		time1 = 0;
 	static double		time2 = 0;
 	static double		time3 = 0;
-	float pass1, pass2, pass3;
-	float frameTime;
-	float fps;
+	float		pass1, pass2, pass3;
+	float		frameTime;
+	float		fps;
 
 	if (setjmp(host_enddemo))
 		return;			// demo finished.
@@ -1773,14 +1978,13 @@ void _Host_Frame(float time)
 	host_framecount++;
 }
 
-
 /*
 ==============================
 Host_Frame
 
 ==============================
 */
-DLL_EXPORT int Host_Frame(float time, int iState, int* stateInfo)
+DLL_EXPORT int Host_Frame( float time, int iState, int* stateInfo )
 {
 	double	time1, time2;
 	static double	timetotal = 0;
@@ -1912,7 +2116,7 @@ int Host_Init( quakeparms_t* parms )
 	SV_Init();
 
 	Con_DPrintf("Exe: "__TIME__" "__DATE__"\n");
-	Con_DPrintf("%4.1f megabyte heap\n", parms->memsize / (1024 * 1024.0));
+	Con_DPrintf("%4.1f megabyte heap\n", parms->memsize / (float)0x100000);
 
 	R_InitTextures();		// needed even for dedicated servers
 
@@ -1921,7 +2125,7 @@ int Host_Init( quakeparms_t* parms )
 		int i;
 		char* disk_basepal;
 
-		disk_basepal = COM_LoadHunkFile("gfx/palette.lmp");
+		disk_basepal = (char*)COM_LoadHunkFile("gfx/palette.lmp");
 		if (!disk_basepal)
 			Sys_Error("Couldn't load gfx/palette.lmp");
 
@@ -1969,7 +2173,7 @@ int Host_Init( quakeparms_t* parms )
 	Hunk_AllocName(0, "-HOST_HUNKLEVEL-");
 	host_hunklevel = Hunk_LowMark();
 
-	Host_LoadProfileFile();
+	Host_LoadProfile();
 
 	// Mark DLL as active
 	giActive = DLL_ACTIVE;
@@ -2001,32 +2205,28 @@ void Host_Shutdown( void )
 
 	if (isdown)
 	{
-		printf( "recursive shutdown\n" );
+		printf("recursive shutdown\n");
 		return;
 	}
 	isdown = TRUE;
-
-	if (host_initialized)
-	{
-		// Store active configuration settings
-		Host_WriteConfiguration();
-	}
 
 	Host_DeallocateDynamicData();
 
 	Master_Shutdown();
 
+// keep Con_Printf from trying to update the screen
 	scr_disabled_for_loading = TRUE;
 
-	// sub_10078D40(cl_name.string) TODO: Implement
-
 	Host_WriteConfiguration();
+
+	Host_UnloadProfile(cl_name.string);
 
 	SV_ClearChannels(FALSE);
 
 	NET_Shutdown();
 	S_Shutdown();
 	IN_Shutdown();
+
 	Con_Shutdown();
 
 	if (cls.state != ca_dedicated)
@@ -2036,4 +2236,3 @@ void Host_Shutdown( void )
 
 	ReleaseEntityDlls();
 }
-
