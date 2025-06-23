@@ -13,7 +13,7 @@ server_static_t	svs;
 // TODO: Implement
 
 
-char* pr_strings = NULL, *gNullString = "";
+char* pr_strings = NULL, * gNullString = "";
 globalvars_t gGlobalVariables;
 
 int sv_playermodel;
@@ -48,13 +48,34 @@ float scr_centertime_off;
 
 qboolean bShouldUpdatePing = FALSE;
 
+//======================================================= FINISH LINE (START)
+
+cvar_t	sv_language = { "sv_language", "0" };
+cvar_t	violence_hblood = { "violence_hblood", "1" };
+cvar_t	violence_ablood = { "violence_ablood", "1" };
+cvar_t	violence_hgibs = { "violence_hgibs", "1" };
+cvar_t	violence_agibs = { "violence_agibs", "1" };
+
+cvar_t	sv_newunit = { "sv_newunit", "0" };
+
+cvar_t	showtriggers = { "showtriggers", "0" };
+cvar_t	laddermode = { "laddermode", "0" };
+cvar_t	sv_clienttrace = { "sv_clienttrace", "1", FALSE, TRUE };
+
+//======================================================= FINISH LINE (END)
+
+
+
+
+
+
+
+
 cvar_t sv_password = { "sv_password", "" };
 cvar_t sv_spectator_password = { "sv_spectator_password", "" };
 cvar_t sv_maxspectators = { "sv_maxspectators", "8", FALSE, TRUE };
 
-cvar_t sv_newunit = { "sv_newunit", "0" };
 
-cvar_t sv_clienttrace = { "sv_clienttrace", "1", FALSE, TRUE };
 
 cvar_t sv_cheats = { "sv_cheats", "0", FALSE, TRUE };
 
@@ -792,9 +813,11 @@ void SV_Init( void )
 	
 	Cvar_RegisterVariable(&sv_idealpitchscale);
 	Cvar_RegisterVariable(&sv_aim);
-
-	// TODO: Implement
-	
+	Cvar_RegisterVariable(&sv_language);
+	Cvar_RegisterVariable(&violence_hblood);
+	Cvar_RegisterVariable(&violence_ablood);
+	Cvar_RegisterVariable(&violence_hgibs);
+	Cvar_RegisterVariable(&violence_agibs);	
 	Cvar_RegisterVariable(&sv_newunit);
 	Cvar_RegisterVariable(&sv_gravity);
 	Cvar_RegisterVariable(&sv_friction);
@@ -821,6 +844,7 @@ void SV_Init( void )
 
 	// TODO: Implement
 
+	Cvar_RegisterVariable(&showtriggers);
 	Cvar_RegisterVariable(&sv_cheats);
 	Cvar_RegisterVariable(&sv_spectatormaxspeed);
 	Cvar_RegisterVariable(&sv_netsize);

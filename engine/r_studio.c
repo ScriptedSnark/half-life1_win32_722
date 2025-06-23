@@ -1538,16 +1538,228 @@ int SV_HitgroupForStudioHull( int index )
 	return studio_hull_hitgroup[index];
 }
 
+int boxpnt[6][4] =
+{
+	{ 0, 4, 6, 2 }, // +X
+	{ 0, 1, 5, 4 }, // +Y
+	{ 0, 2, 3, 1 }, // +Z
+	{ 7, 5, 1, 3 }, // -X
+	{ 7, 3, 2, 6 }, // -Y
+	{ 7, 6, 4, 5 }, // -Z
+};
+
+vec_t hullcolor[8][3] =
+{
+	{ 1.0, 1.0, 1.0 },
+	{ 1.0, 0.5, 0.5 },
+	{ 0.5, 1.0, 0.5 },
+	{ 1.0, 1.0, 0.5 },
+	{ 0.5, 0.5, 1.0 },
+	{ 1.0, 0.5, 1.0 },
+	{ 0.5, 1.0, 1.0 },
+	{ 1.0, 1.0, 1.0 }
+};
+
 void R_StudioDrawHulls( void )
 {
-	// TODO: Implement
+	int			i, j;
+	float		lv;
+	vec3_t		tmp;
+	vec3_t		p[8];
+	mstudiobbox_t* pbbox;
+
+	pbbox = (mstudiobbox_t*)((byte*)pstudiohdr + pstudiohdr->hitboxindex);
+
+	R_TriangleSpriteTexture(cl_sprite_white, 0);
+
+	for (i = 0; i < pstudiohdr->numhitboxes; i++)
+	{
+		for (j = 0; j < 8; j++)
+		{
+			tmp[0] = (j & 1) ? pbbox[i].bbmin[0] : pbbox[i].bbmax[0];
+			tmp[1] = (j & 2) ? pbbox[i].bbmin[1] : pbbox[i].bbmax[1];
+			tmp[2] = (j & 4) ? pbbox[i].bbmin[2] : pbbox[i].bbmax[2];
+
+			VectorTransform(tmp, lighttransform[pbbox[i].bone], p[j]);
+		}
+
+		j = (pbbox[i].group % (MAXSTUDIOGROUPS / 2));
+
+		qglBegin(GL_QUADS);
+		tri_GL_Color4f(hullcolor[j][0], hullcolor[j][1], hullcolor[j][2], 1.0);
+		qglTexCoord2f(0, 0);
+
+		for (j = 0; j < 6; j++)
+		{
+			tmp[0] = tmp[1] = tmp[2] = 0;
+			tmp[j % 3] = (j < 3) ? 1.0 : -1.0;
+			R_StudioLighting(&lv, pbbox[i].bone, 0, tmp);
+
+			tri_GL_Brightness(lv);
+			qglVertex3fv(p[boxpnt[j][0]]);
+			qglVertex3fv(p[boxpnt[j][1]]);
+			qglVertex3fv(p[boxpnt[j][2]]);
+			qglVertex3fv(p[boxpnt[j][3]]);
+		}
+
+		qglEnd();
+	}
 }
 
-// TODO: Implement
+void R_StudioAbsBB( void )
+{
+	int			j;
+	float		lv;
+	vec3_t		tmp;
+	vec3_t		p[8];
+	mstudioseqdesc_t* pseqdesc;
+
+	pseqdesc = (mstudioseqdesc_t*)((byte*)pstudiohdr + pstudiohdr->seqindex) + currententity->sequence;
+
+	tri_GL_RenderMode(kRenderTransAdd);
+
+	R_TriangleSpriteTexture(cl_sprite_white, 0);
+
+	for (j = 0; j < 8; j++)
+	{
+		p[j][0] = (j & 1) ? pseqdesc->bbmin[0] : pseqdesc->bbmax[0];
+		p[j][1] = (j & 2) ? pseqdesc->bbmin[1] : pseqdesc->bbmax[1];
+		p[j][2] = (j & 4) ? pseqdesc->bbmin[2] : pseqdesc->bbmax[2];
+
+		VectorAdd(p[j], currententity->origin, p[j]);
+	}
+
+	qglBegin(GL_QUADS);
+	tri_GL_Color4f(0.5, 0.5, 1, 1);
+
+	for (j = 0; j < 6; j++)
+	{
+		tmp[0] = tmp[1] = tmp[2] = 0;
+		tmp[j % 3] = (j < 3) ? 1.0 : -1.0;
+		R_StudioLighting(&lv, -1, 0, tmp);
+
+		tri_GL_Brightness(lv);
+		qglVertex3fv(p[boxpnt[j][0]]);
+		qglVertex3fv(p[boxpnt[j][1]]);
+		qglVertex3fv(p[boxpnt[j][2]]);
+		qglVertex3fv(p[boxpnt[j][3]]);
+	}
+
+	qglEnd();
+	tri_GL_RenderMode(kRenderNormal);
+}
 
 void R_StudioDrawBones( void )
 {
-	// TODO: Implement
+	int			i, j, k;
+	float		lv;
+	vec3_t		tmp;
+	vec3_t		p[8];
+	vec3_t		up, right, forward;
+	vec3_t		a1;
+	mstudiobone_t* pbones;
+
+	pbones = (mstudiobone_t*)((byte*)pstudiohdr + pstudiohdr->boneindex);
+
+	R_TriangleSpriteTexture(cl_sprite_white, 0);
+
+	for (i = 0; i < pstudiohdr->numbones; i++)
+	{
+		if (pbones[i].parent == -1)
+			continue;
+
+		k = pbones[i].parent;
+
+		a1[0] = a1[1] = a1[2] = 1.0;
+		up[0] = lighttransform[i][0][3] - lighttransform[k][0][3];
+		up[1] = lighttransform[i][1][3] - lighttransform[k][1][3];
+		up[2] = lighttransform[i][2][3] - lighttransform[k][2][3];
+		if (up[0] > up[1])
+		{
+			if (up[0] > up[2])
+				a1[0] = 0.0;
+			else
+				a1[2] = 0.0;
+		}
+		else
+		{
+			if (up[1] > up[2])
+				a1[1] = 0.0;
+			else
+				a1[2] = 0.0;
+		}
+
+		CrossProduct(up, a1, right);
+		VectorNormalize(right);
+		CrossProduct(up, right, forward);
+		VectorNormalize(forward);
+		VectorScale(right, 2.0, right);
+		VectorScale(forward, 2.0, forward);
+
+		for (j = 0; j < 8; j++)
+		{
+			p[j][0] = lighttransform[k][0][3];
+			p[j][1] = lighttransform[k][1][3];
+			p[j][2] = lighttransform[k][2][3];
+
+			if (j & 1)
+			{
+				VectorSubtract(p[j], right, p[j]);
+			}
+			else
+			{
+				VectorAdd(p[j], right, p[j]);
+			}
+
+			if (j & 2)
+			{
+				VectorSubtract(p[j], forward, p[j]);
+			}
+			else
+			{
+				VectorAdd(p[j], forward, p[j]);
+			}
+
+			if (j & 4)
+			{
+			}
+			else
+			{
+				VectorAdd(p[j], up, p[j]);
+			}
+		}
+
+		VectorNormalize(up);
+		VectorNormalize(right);
+		VectorNormalize(forward);
+
+		qglBegin(GL_QUADS);
+		tri_GL_Color4f(1, 1, 1, 1);
+		qglTexCoord2f(0, 0);
+
+		for (j = 0; j < 6; j++)
+		{
+			switch (j)
+			{
+			case 0:	VectorCopy(right, tmp); break;
+			case 1:	VectorCopy(forward, tmp); break;
+			case 2:	VectorCopy(up, tmp); break;
+			case 3:	VectorScale(right, -1, tmp); break;
+			case 4:	VectorScale(forward, -1, tmp); break;
+			case 5:	VectorScale(up, -1, tmp); break;
+			}
+
+			R_StudioLighting(&lv, -1, 0, tmp);
+
+			tri_GL_Brightness(lv);
+			qglVertex3fv(p[boxpnt[j][0]]);
+			qglVertex3fv(p[boxpnt[j][1]]);
+			qglVertex3fv(p[boxpnt[j][2]]);
+			qglVertex3fv(p[boxpnt[j][3]]);
+		}
+
+		qglEnd();
+	}
 }
 
 /*
