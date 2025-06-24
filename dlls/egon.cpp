@@ -257,7 +257,15 @@ void CEgon::PrimaryAttack( void )
 
 			m_flAmmoUseTime = gpGlobals->time;// start using ammo ASAP.
 
-			SendWeaponAnim( g_fireAnims1[ RANDOM_LONG(0,ARRAYSIZE(g_fireAnims1)-1) ] );
+			if ( m_fireMode == FIRE_WIDE )
+			{
+				SendWeaponAnim(g_fireAnims2[RANDOM_LONG(0, ARRAYSIZE(g_fireAnims2) - 1)]);
+			}
+			else
+			{
+				SendWeaponAnim(g_fireAnims1[RANDOM_LONG(0, ARRAYSIZE(g_fireAnims1) - 1)]);
+			}
+
 			m_shakeTime = 0;
 
 			m_pPlayer->m_iWeaponVolume = EGON_PRIMARY_VOLUME;
