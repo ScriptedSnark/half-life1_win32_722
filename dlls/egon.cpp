@@ -259,11 +259,11 @@ void CEgon::PrimaryAttack( void )
 
 			if ( m_fireMode == FIRE_WIDE )
 			{
-				SendWeaponAnim(g_fireAnims2[RANDOM_LONG(0, ARRAYSIZE(g_fireAnims2) - 1)]);
+				SendWeaponAnim( g_fireAnims2[ RANDOM_LONG(0,ARRAYSIZE(g_fireAnims2)-1) ] );
 			}
 			else
 			{
-				SendWeaponAnim(g_fireAnims1[RANDOM_LONG(0, ARRAYSIZE(g_fireAnims1) - 1)]);
+				SendWeaponAnim( g_fireAnims1[ RANDOM_LONG(0,ARRAYSIZE(g_fireAnims1)-1) ] );
 			}
 
 			m_shakeTime = 0;
