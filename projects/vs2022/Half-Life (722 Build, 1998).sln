@@ -10,8 +10,14 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "hl_res", "hl_res.vcxproj", "{CF1EE61E-5CBA-4C33-9D15-9818757C0C76}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "hw", "hw.vcxproj", "{A22EFAAB-7EBB-40FB-8664-C7282D1DEEE2}"
+	ProjectSection(ProjectDependencies) = postProject
+		{8BDE2D51-1B16-40C6-8E63-9D920A79F287} = {8BDE2D51-1B16-40C6-8E63-9D920A79F287}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sw", "sw.vcxproj", "{E5F14980-BB8A-4A73-B8F3-3814C0E3209A}"
+	ProjectSection(ProjectDependencies) = postProject
+		{8BDE2D51-1B16-40C6-8E63-9D920A79F287} = {8BDE2D51-1B16-40C6-8E63-9D920A79F287}
+	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{E5077019-3759-4E68-B5EB-3EB6F96CEFF9}"
 	ProjectSection(SolutionItems) = preProject
