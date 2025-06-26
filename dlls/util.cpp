@@ -584,7 +584,7 @@ void UTIL_ScreenFadeWrite( const ScreenFade &fade, CBaseEntity *pEntity )
 }
 
 
-void UTIL_ScreenFadeAll( const Vector &color, float fadeTime, float fadeHold, int alpha, int flags )
+void UTIL_ScreenFade( const Vector &color, float fadeTime, float fadeHold, int alpha, int flags )
 {
 	int			i;
 	ScreenFade	fade;
@@ -598,15 +598,6 @@ void UTIL_ScreenFadeAll( const Vector &color, float fadeTime, float fadeHold, in
 	
 		UTIL_ScreenFadeWrite( fade, pPlayer );
 	}
-}
-
-
-void UTIL_ScreenFade( CBaseEntity *pEntity, const Vector &color, float fadeTime, float fadeHold, int alpha, int flags )
-{
-	ScreenFade	fade;
-
-	UTIL_ScreenFadeBuild( fade, color, fadeTime, fadeHold, alpha, flags );
-	UTIL_ScreenFadeWrite( fade, pEntity );
 }
 
 

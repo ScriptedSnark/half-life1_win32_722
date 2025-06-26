@@ -1068,7 +1068,7 @@ void CBasePlayerAmmo :: DefaultTouch( CBaseEntity *pOther )
 //=========================================================
 int CBasePlayerWeapon::ExtractAmmo( CBasePlayerWeapon *pWeapon )
 {
-	int			iReturn;
+	int			iReturn = 0; // ScriptedSnark: remove 0 for authentic uninitialized experience
 
 	if ( pszAmmo1() != NULL )
 	{

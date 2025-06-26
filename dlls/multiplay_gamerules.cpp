@@ -292,13 +292,10 @@ void CHalfLifeMultiplay :: ClientConnected( edict_t *pEntity )
 }
 
 extern int gmsgSayText;
-extern int gmsgGameMode;
 
 void CHalfLifeMultiplay :: UpdateGameMode( CBasePlayer *pPlayer )
 {
-	MESSAGE_BEGIN( MSG_ONE, gmsgGameMode, NULL, pPlayer->edict() );
-		WRITE_BYTE( 0 );  // game mode none
-	MESSAGE_END();
+
 }
 
 void CHalfLifeMultiplay :: InitHUD( CBasePlayer *pl )
@@ -503,9 +500,6 @@ void CHalfLifeMultiplay :: PlayerKilled( CBasePlayer *pVictim, entvars_t *pKille
 			WRITE_SHORT( PK->pev->frags );
 			WRITE_SHORT( PK->m_iDeaths );
 		MESSAGE_END();
-
-		// let the killer paint another decal as soon as he'd like.
-		PK->m_flNextDecalTime = gpGlobals->time;
 	}
 #ifndef HLDEMO_BUILD
 	if ( pVictim->HasNamedPlayerItem("weapon_satchel") )
@@ -864,13 +858,7 @@ int CHalfLifeMultiplay::PlayerRelationship( CBaseEntity *pPlayer, CBaseEntity *p
 
 BOOL CHalfLifeMultiplay :: PlayFootstepSounds( CBasePlayer *pl, float fvol )
 {
-	if ( CVAR_GET_FLOAT( "mp_footsteps" ) == 0 )
-		return FALSE;
-
-	if ( pl->IsOnLadder() || pl->pev->velocity.Length2D() > 220 )
-		return TRUE;  // only make step sounds in multiplayer if the player is moving fast enough
-
-	return FALSE;
+	return TRUE;
 }
 
 BOOL CHalfLifeMultiplay :: FAllowFlashlight( void ) 

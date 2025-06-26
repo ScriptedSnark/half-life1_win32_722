@@ -306,7 +306,7 @@ void CGauss::SecondaryAttack()
 			m_pPlayer->m_flNextAttack = gpGlobals->time + 1.0;
 			m_pPlayer->TakeDamage( VARS(eoNullEntity), VARS(eoNullEntity), 50, DMG_SHOCK );
 	
-			UTIL_ScreenFade( m_pPlayer, Vector(255,128,0), 2, 0.5, 128, FFADE_IN );
+			UTIL_ScreenFade(Vector(255,128,0), 2, 0.5, 128, FFADE_IN );
 			SendWeaponAnim( GAUSS_IDLE );
 			
 			// Player may have been killed and this weapon dropped, don't execute any more code after this!
