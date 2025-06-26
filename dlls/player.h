@@ -231,7 +231,7 @@ public:
 	void GiveNamedItem( const char *szName );
 	void EnableControl(BOOL fControl);
 
-	int  GiveAmmo( int iAmount, char *szName, int iMax );
+	int  GiveAmmo( int iAmount, char *szName, int iMax, int *pIndex );
 	void SendAmmoUpdate(void);
 
 	void WaterMove( void );

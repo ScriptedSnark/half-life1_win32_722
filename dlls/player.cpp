@@ -3983,7 +3983,7 @@ int CBasePlayer::RemovePlayerItem( CBasePlayerItem *pItem )
 //
 // Returns the unique ID for the ammo, or -1 if error
 //
-int CBasePlayer :: GiveAmmo( int iCount, char *szName, int iMax )
+int CBasePlayer :: GiveAmmo( int iCount, char *szName, int iMax, int *pIndex )
 {
 	if ( !szName )
 	{
@@ -4019,6 +4019,9 @@ int CBasePlayer :: GiveAmmo( int iCount, char *szName, int iMax )
 			WRITE_BYTE( iAdd );		// amount
 		MESSAGE_END();
 	}
+
+	if ( pIndex )
+		*pIndex = i;
 
 	return i;
 }
