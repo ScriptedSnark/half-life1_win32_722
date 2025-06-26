@@ -142,6 +142,8 @@ int				r_smodels_total;				// cookie
 #endif
 
 void R_StudioTransformVector( vec_t* in, vec_t* out );
+void R_StudioLighting( float* lv, int bone, int flags, vec_t* normal );
+
 int SignbitsForPlane( mplane_t* out );
 
 #if defined( GLQUAKE )

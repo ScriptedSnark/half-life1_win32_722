@@ -511,7 +511,7 @@ qboolean CL_CheckFile( char* filename )
 		MSG_WriteString(&cls.netchan.message, va("download \"!MD5%s\"", MD5_Print(cls.dl.resource->rgucMD5_hash)));
 	}
 
-	cls.dl.isdownloading = TRUE;
+	cls.dl.downloading = TRUE;
 	cls.dl.nNumFileChunksRead++;
 
 	if (pfHandle)
@@ -603,6 +603,7 @@ void CL_PrintResource( int index, resource_t* pResource )
 /*
 ===============
 CL_ClearResourceLists
+
 ===============
 */
 void CL_ClearResourceLists( void )
@@ -724,7 +725,9 @@ COM_SizeofResourceList
 int COM_SizeofResourceList( resource_t* pList, int* nWorldSize, int* nModelsSize, int* nDecalsSize, int* nSoundsSize, int* nSkinsSize )
 {
 	resource_t* p;
-	int nSize = 0;
+	int nSize;
+
+	nSize = 0;
 
 	*nModelsSize = 0;
 	*nWorldSize = 0;
@@ -889,14 +892,16 @@ int CL_EstimateNeededResources( void )
 ================
 CL_RequestMissingResources
 
+This is used to perform repeated checks on the local player to see
+if it has loaded all the required resources
 ================
 */
 qboolean CL_RequestMissingResources( void )
 {
+	char	szCust[MAX_OSPATH];
 	resource_t* p;
-	char		filename[MAX_OSPATH];
 
-	if (cls.dl.download || cls.dl.isdownloading)
+	if (cls.dl.download || cls.dl.downloading)
 		return FALSE;
 
 	if (!cls.dl.custom && cls.state != ca_uninitialized)
@@ -947,8 +952,9 @@ qboolean CL_RequestMissingResources( void )
 	case t_decal:
 		if (p->ucFlags & RES_CUSTOM)
 		{
-			sprintf(filename, "!MD5%s", MD5_Print(p->rgucMD5_hash));
-			if (CL_CheckFile(filename))
+			sprintf(szCust, "!MD5%s", MD5_Print(p->rgucMD5_hash));
+
+			if (CL_CheckFile(szCust))
 			{
 				CL_MoveToOnHandList(p);
 				return TRUE;
@@ -975,26 +981,26 @@ Begin resource downloading, set incoming transfer data
 */
 void CL_StartResourceDownloading( char* pszMessage, qboolean bCustom )
 {
-	int nWorldSize, nModelsSize, nDecalsSize, nSoundsSize, nSkinsSize;
+	int		worldSize, modelsSize, decalsSize, soundsSize, skinsSize;
 
 	if (pszMessage)
 		Con_DPrintf(pszMessage);
 
-	cls.dl.nTotalSize = COM_SizeofResourceList(&cl.resourcesneeded, &nWorldSize, &nModelsSize, &nDecalsSize, &nSoundsSize, &nSkinsSize);
+	cls.dl.nTotalSize = COM_SizeofResourceList(&cl.resourcesneeded, &worldSize, &modelsSize, &decalsSize, &soundsSize, &skinsSize);
 	cls.dl.nTotalToTransfer = CL_EstimateNeededResources();
 
 	Con_DPrintf("Resources total %iK\n", cls.dl.nTotalSize / 1024);
 
-	if (nWorldSize > 0)
-		Con_DPrintf("  World :  %iK\n", nWorldSize / 1024);
-	if (nModelsSize > 0)
-		Con_DPrintf("  Models:  %iK\n", nModelsSize / 1024);
-	if (nSoundsSize > 0)
-		Con_DPrintf("  Sounds:  %iK\n", nSoundsSize / 1024);
-	if (nDecalsSize > 0)
-		Con_DPrintf("  Decals:  %iK\n", nDecalsSize / 1024);
-	if (nSkinsSize > 0)
-		Con_DPrintf("  Skins :  %iK\n", nSkinsSize / 1024);
+	if (worldSize > 0)
+		Con_DPrintf("  World :  %iK\n", worldSize / 1024);
+	if (modelsSize > 0)
+		Con_DPrintf("  Models:  %iK\n", modelsSize / 1024);
+	if (soundsSize > 0)
+		Con_DPrintf("  Sounds:  %iK\n", soundsSize / 1024);
+	if (decalsSize > 0)
+		Con_DPrintf("  Decals:  %iK\n", decalsSize / 1024);
+	if (skinsSize > 0)
+		Con_DPrintf("  Skins :  %iK\n", skinsSize / 1024);
 
 	Con_DPrintf("----------------------\n");
 	Con_DPrintf("Resources to request: %iK\n", cls.dl.nTotalToTransfer / 1024);
@@ -1010,7 +1016,7 @@ void CL_StartResourceDownloading( char* pszMessage, qboolean bCustom )
 	}
 
 	cls.dl.doneregistering = FALSE;
-	cls.dl.isdownloading = FALSE;
+	cls.dl.downloading = FALSE;
 
 	cls.dl.fLastStatusUpdate = realtime;
 	cls.dl.fLastDownloadTime = realtime;
@@ -1030,15 +1036,12 @@ Parse the list of resources received from the server
 */
 void CL_ParseResourceList( void )
 {
-	int		total, total_blocks;
-	int		i;
+	int		i, total;
+	int		totalsize;
 	resource_t* resource;
 
-	// Get the number of resource blocks
-	total_blocks = MSG_ReadShort();
-	// Get the start index
+	totalsize = MSG_ReadShort();
 	i = MSG_ReadShort();
-	// Get the total number of resources
 	total = MSG_ReadShort();
 
 	for (; i < total; i++)
@@ -1062,8 +1065,7 @@ void CL_ParseResourceList( void )
 		CL_AddToResourceList(resource, &cl.resourcesneeded);
 	}
 
-	// Check if there are still unparsed blocks
-	if (total < total_blocks)
+	if (total < totalsize)
 	{
 		cls.state = ca_connected;
 	}

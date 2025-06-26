@@ -3,216 +3,204 @@
 #include "decal.h"
 #include "hashpak.h"
 
-// Lookup the comments after SV_ParseResourceList.
-//FF: The commented out Printf's in COM_CheckOrUploadFile are from the Linux build of HLDS. Don't cut them out
-// TODO: Implement
-
-cvar_t	sv_uploadinterval = { "sv_uploadinterval", "1.0" };
+cvar_t sv_uploadinterval = { "sv_uploadinterval", "1.0" };
 
 /*
-================
+==================
 SV_CheckOrUploadFile
 
-================
+Checks if a file exists locally or initiates client-side upload
+==================
 */
-extern void COM_HexConvert( const char* pszInput, int nInputLength, unsigned char* pOutput );
 qboolean SV_CheckOrUploadFile( char* filename )
 {
-	// TODO: Reimplement (If needed)
+	byte	buffer[1024];
+	int		i, size;
+	CRC32_t	crc;
+	resource_t	p;
+	qboolean isMD5;
+	qboolean hasRemainingFileSegments;
+	FILE* pFile, * pHashFile;
+	char* s;
+	char	name[MAX_QPATH];
 
-	qboolean	bDoWeHaveOnlyAPartOfTheFile = FALSE;
-	qboolean	bIsCustom = FALSE;
-	int			nNumChunksRead;
-	char*		pszStuffText;
-	char		extension[8];
-	int			filesize;
-	FILE*		f = NULL;
-	CRC32_t		crc;
-	char		fbuf[MAX_QPATH];
-	resource_t	nullres;
-	char		buffer[1024];
+	isMD5 = FALSE;
 
-	memset(&nullres, 0, sizeof(nullres));
+	pFile = NULL;
+
+	memset(&p, 0, sizeof(p));
 
 	if (strstr(filename, ".."))
 	{
 		Con_Printf("Refusing to upload a path with '..'\n");
-		return 1;
+		return TRUE;
 	}
 
-	sprintf(fbuf, filename);
+	sprintf(name, filename);
 
-	// If this is an MD5 hash, handle it differently.
-	if (strlen(filename) == 36 && !_strnicmp(filename, "!MD5", 4))
+	// Handle hashed resources
+	if (strlen(filename) == 36 &&
+		!_strnicmp(filename, "!MD5", 4))
 	{
-		bIsCustom = TRUE;
-		COM_HexConvert(&filename[4] /* skip !MD5 */, 32, nullres.rgucMD5_hash);
-		if (HPAK_GetDataPointer("custom.hpk", &nullres, &f))
+		isMD5 = TRUE;
+
+		// MD5 signature is correct, lets try to find this resource locally
+		COM_HexConvert(filename + 4, 32, p.rgucMD5_hash);
+
+		// See if it's already in HPAK
+		if (HPAK_GetDataPointer(HASHPAK_FILENAME, &p, &pHashFile))
 		{
-			//Con_DPrintf("SV_CheckOrUploadFile:  file was on hand\n");
-			fclose(f);
+			fclose(pHashFile);
 			return TRUE;
 		}
 
-		//Con_DPrintf("SV_CheckOrUploadFile:  file was missing\n");
-		sprintf(host_client->extension, "cust%02i.dat ", host_client->pViewEntity);
-		//Con_DPrintf("SV_CheckOrUploadFile:  upload will be put in %s\n", host_client->extension);
+		sprintf(host_client->uploadfn, "cust%02i.dat ", (int)host_client->pViewEntity);
 	}
 	else
 	{
-		//Con_DPrintf("Non custom upload!!!!\n");
-		// 
-		// Check if the file exists on our side
-		if (COM_FindFile(fbuf, NULL, &f) != -1)
+		// Non custom upload
+		size = COM_FindFile(name, NULL, &pFile);
+		if (size != -1)
 		{
-			if (f)
-				fclose(f);
+			if (pFile)
+				fclose(pFile);
 
-			// The file exists, return TRUE
 			return TRUE;
 		}
 
-		// If it doesn't, save the name
-		strcpy(host_client->extension, fbuf);
+		strcpy(host_client->uploadfn, name);
 	}
 
-	COM_StripExtension(host_client->extension, host_client->uploadfn);
+	COM_StripExtension(host_client->uploadfn, host_client->uploadfntmp);
 
-	if (bIsCustom)
+	if (isMD5)
 	{
-		sprintf(extension, ".t%02i", host_client->pViewEntity);
-		memcpy(&host_client->uploadfn[strlen(host_client->uploadfn)], extension, strlen(extension) + 1);
+		char szExt[8];
+		sprintf(szExt, ".t%02i", (int)host_client->pViewEntity);
+		strcat(host_client->uploadfntmp, szExt);
 	}
 	else
 	{
-		strcat(host_client->uploadfn, ".tmp");
+		strcat(host_client->uploadfntmp, ".tmp");
 	}
 
-	// Reset the crc
-	host_client->uploadCRC = 0;
+	host_client->uploadfinalCRC = 0;
 
-	if (bIsCustom)
+	if (isMD5)
 	{
-		filesize = -1;
+		size = -1;
 	}
 	else
 	{
-		filesize = COM_FindFile(host_client->uploadfn, NULL, &f);
+		size = COM_FindFile(host_client->uploadfntmp, NULL, &pFile);
 	}
 
-	if (filesize != -1) {
-		bDoWeHaveOnlyAPartOfTheFile = TRUE;
-		nNumChunksRead = 0;
+	if (size != -1)
+	{
+		hasRemainingFileSegments = TRUE;
+
 		CRC32_Init(&crc);
-		if ((filesize / 1024) > 0)
+		for (i = 0; i < size / 1024; i++)
 		{
-			while (TRUE)
+			if (fread(buffer, sizeof(buffer), 1, pFile) != 1)
 			{
-				// Let's see if we can successfully read the first 1024 bytes chunk
-				if (fread(buffer, sizeof(buffer), sizeof(byte), f) == 1)
-				{
-					// We'll try reading another 1024 bytes chunk, but the file may run out of bytes, so we need to keep an eye on that
-					nNumChunksRead++;
-					CRC32_ProcessBuffer(&crc, buffer, sizeof(buffer));
-					if (nNumChunksRead >= (filesize / 1024))
-						break;
-				}
-				else
-				{
-					bDoWeHaveOnlyAPartOfTheFile = TRUE;
-					break;
-				}
+				hasRemainingFileSegments = FALSE;
+				break;
 			}
-		}
 
-		host_client->uploadCRC = crc = CRC32_Final(crc);
-		if (f)
-		{
-			fclose(f);
+			CRC32_ProcessBuffer(&crc, buffer, sizeof(buffer));
 		}
+		crc = CRC32_Final(crc);
+		host_client->uploadfinalCRC = crc;
+
+		if (pFile)
+			fclose(pFile);
 	}
 
 	MSG_WriteByte(&host_client->netchan.message, svc_stufftext);
-	if (bIsCustom)
+
+	if (isMD5)
 	{
-		pszStuffText = va("upload \"!MD5%s\"\n", MD5_Print(nullres.rgucMD5_hash));
+		s = va("upload \"!MD5%s\"\n", MD5_Print(p.rgucMD5_hash));
 	}
-	else if (!bDoWeHaveOnlyAPartOfTheFile || filesize % 1024)
+	else if (hasRemainingFileSegments && (size % 1024) == 0)
 	{
-		pszStuffText = va("upload %s\n", buffer);
+		s = va("upload %s %i %i\n", name, size / 1024, crc); // partial upload with CRC check
 	}
 	else
 	{
-		pszStuffText = va("upload %s %i %i\n", buffer, filesize / 1024, crc);
+		s = va("upload %s\n", name); // full upload required
 	}
-	MSG_WriteString(&host_client->netchan.message, pszStuffText);
 
-	host_client->isuploading = TRUE;
+	MSG_WriteString(&host_client->netchan.message, s);
+	host_client->uploadinprogress = TRUE;
 
-	// The file doesn't exist, initiate an upload
 	return FALSE;
 }
 
 /*
-================
+==================
 SV_UpdateUploadCount
 
-Rate-limits the client if they're spamming with upload, as well as increments the uploads count.
-================
+==================
 */
 void SV_UpdateUploadCount( void )
 {
-	downloadtime_t*		pStat;
+	downloadtime_t* pStats;
 
-	if (sv_uploadinterval.value)
-	{
-		if (sv_uploadinterval.value < 0)
-			Cvar_SetValue("sv_uploadinterval", 1);
+	if (!sv_uploadinterval.value)
+		return;
 
-		if (realtime - host_client->lastuploadtime >= sv_uploadinterval.value)
-		{
-			host_client->lastuploadtime = realtime;
-			host_client->numuploads++;
+	if (sv_uploadinterval.value < 0.0)
+		Cvar_SetValue("sv_uploadinterval", 1.0);
 
-			pStat = &host_client->uploads[host_client->numuploads & (MAX_DL_STATS - 1)]; // Mask the numuploads so we don't go over MAX_DL_STATS (like "cap")
-			pStat->bUsed = TRUE;
-			pStat->fTime = realtime;
-			pStat->nBytesRemaining = host_client->uploadsize;
-		}
-	}
+	if ((realtime - host_client->fLastUploadTime) < sv_uploadinterval.value)
+		return;
+
+	host_client->fLastUploadTime = realtime;
+
+	pStats = &host_client->rgUploads[host_client->nCurUpload & (MAX_DL_STATS - 1)];
+	host_client->nCurUpload++;
+
+	pStats->bUsed = TRUE;
+	pStats->fTime = realtime;
+	pStats->nBytesRemaining = host_client->nRemainingToTransfer;
 }
 
 /*
-================
-SV_NextUpload
-================
+==================
+SV_ParseUpload
+
+Handles incoming file upload data from client
+==================
 */
-extern cvar_t		scr_downloading;
 void SV_ParseUpload( void )
 {
-	int					size, append, reason, percent;
-	customization_t*	pLocal;
-	customization_t*	pCust;
-	qboolean			bDuplicate;
-	char				file[MAX_OSPATH];
-	char				buffer[MAX_OSPATH];
-	char				filename[MAX_OSPATH];
+	int		percent;
+	int		status;
+	int		active;
+	int		size;
+	char	name[MAX_OSPATH];
+	char	fullPath[MAX_OSPATH];
+	char	finalPath[MAX_OSPATH];
 
 	size = MSG_ReadShort();
-	append = MSG_ReadShort();
-	reason = MSG_ReadLong();
+	active = MSG_ReadShort();
+	status = MSG_ReadLong();
 	percent = MSG_ReadByte();
 
 	host_client->uploadcount = percent;
-	COM_FileBase(host_client->extension, filename);
+
+	COM_FileBase(host_client->uploadfn, name);
 
 	if (size == -1)
 	{
-		if (reason == -1)
-			Con_Printf("Client refused upload %s.\n", filename);
+		if (status == -1)
+			Con_Printf("Client refused upload %s.\n", name);
 		else
-			Con_Printf("File %s not on client.\n", filename);
+			Con_Printf("File %s not on client.\n", name);
 
+		// Clean up if upload was unexpectedly active
 		if (host_client->upload)
 		{
 			Con_Printf("Error:  host_client->upload shouldn't have been set.\n");
@@ -220,205 +208,191 @@ void SV_ParseUpload( void )
 			host_client->upload = NULL;
 		}
 
-		host_client->isuploading = FALSE;
-		host_client->uploadingresource->ucFlags |= RES_WASMISSING;
-		SV_MoveToOnHandList(host_client->uploadingresource);
+		host_client->uploadinprogress = FALSE;
+		host_client->uploadresource->ucFlags |= RES_WASMISSING;
+		SV_MoveToOnHandList(host_client->uploadresource);
+		return;
 	}
-	else
+
+	if (!host_client->upload)
 	{
-		if (!host_client->upload)
+		sprintf(fullPath, "%s/%s", com_gamedir, host_client->uploadfntmp);
+
+		COM_CreatePath(fullPath);
+
+		if (active)
 		{
-			sprintf(buffer, "%s/%s", com_gamedir, host_client->uploadfn);
-			COM_CreatePath(buffer);
-
-			if (append)
-			{
-				host_client->upload = fopen(buffer, "a+b");
-				host_client->tempuploadCRC = host_client->uploadCRC;
-			}
-			else
-			{
-				host_client->upload = fopen(buffer, "wb");
-				CRC32_Init(&host_client->tempuploadCRC);
-			}
-
-			if (!host_client->upload)
-			{
-				// suck out rest of packet
-				msg_readcount += size;
-
-				Con_Printf("Failed to open %s\n", host_client->uploadfn);
-				host_client->isuploading = FALSE;
-
-				return;
-			}
-
-			Con_Printf("uploading %s\n", filename);
-		}
-
-		CRC32_ProcessBuffer(&host_client->tempuploadCRC, &net_message.data[msg_readcount], size);
-		fwrite(&net_message.data[msg_readcount], sizeof(byte), size, host_client->upload);
-
-		msg_readcount += size;
-		host_client->uploadsize -= size;
-
-		SV_UpdateUploadCount();
-
-		// woohoo finished
-		if (percent == 100)
-		{
-			Con_Printf("100%%\n");
-
-			scr_downloading.value = -1;
-
-			fclose(host_client->upload);
-
-			sprintf(file, "%s/%s", com_gamedir, host_client->uploadfn);
-			host_client->upload = fopen(file, "rb");
-			setvbuf(host_client->upload, NULL, _IOFBF, 4096);
-
-			if (host_client->upload)
-			{
-				bDuplicate = FALSE;
-
-				HPAK_AddLump("custom.hpk", host_client->uploadingresource, NULL, host_client->upload);
-
-				fseek(host_client->upload, 0, SEEK_SET);
-
-				host_client->uploadingresource->ucFlags &= ~RES_WASMISSING;
-
-				pLocal = (customization_t *)malloc(sizeof(customization_t));
-				memset(pLocal, 0, sizeof(*pLocal));
-
-				pLocal->bInUse = TRUE;
-
-				memcpy(&pLocal->resource, host_client->uploadingresource, sizeof(pLocal->resource));
-
-				pLocal->pBuffer = malloc(host_client->uploadingresource->nDownloadSize);
-				fread(pLocal->pBuffer, host_client->uploadingresource->nDownloadSize, sizeof(byte), host_client->upload);
-
-				pCust = host_client->customdata.pNext;
-				while (pCust)
-				{
-					if (!memcmp(pCust->resource.rgucMD5_hash, pLocal->resource.rgucMD5_hash, sizeof(pLocal->resource.rgucMD5_hash)))
-					{
-						bDuplicate = TRUE;
-						break;
-					}
-
-					pCust = pCust->pNext;
-				}
-
-				if (bDuplicate)
-				{
-					Con_DPrintf("Duplicate resource received and ignored.\n");
-					free(pLocal);
-				}
-				else
-				{
-					pLocal->pNext = host_client->customdata.pNext;
-					host_client->customdata.pNext = pLocal;
-				}
-
-				fclose(host_client->upload);
-			}
-
-			// Erase the file
-			_unlink(file);
-
-			// Reset stuff
-			host_client->upload = NULL;
-			host_client->uploadcount = 0;
-			host_client->tempuploadCRC = 0;
-			host_client->isuploading = FALSE;
+			// Append mode for active transfers
+			host_client->upload = fopen(fullPath, "a+b");
+			host_client->uploadcurrentCRC = host_client->uploadfinalCRC;
 		}
 		else
 		{
-			scr_downloading.value = (float)percent;
-			// Tell the client we're still listening
-			MSG_WriteByte(&host_client->netchan.message, 47); // TODO: Find out the message number
+			// New file
+			host_client->upload = fopen(fullPath, "wb");
+			CRC32_Init(&host_client->uploadcurrentCRC);
 		}
+
+		if (!host_client->upload)
+		{
+			msg_readcount += size;
+			Con_Printf("Failed to open %s\n", host_client->uploadfntmp);
+			host_client->uploadinprogress = FALSE;
+			return;
+		}
+
+		Con_Printf("uploading %s\n", name);
+	}
+
+	CRC32_ProcessBuffer(&host_client->uploadcurrentCRC, net_message.data + msg_readcount, size);
+	fwrite(net_message.data + msg_readcount, 1, size, host_client->upload);
+	msg_readcount += size;
+	host_client->nRemainingToTransfer -= size;
+
+	// Update upload stats
+	SV_UpdateUploadCount();
+
+	if (percent != 100)
+	{
+		// Update progress bar
+		scr_downloading.value = percent;
+		MSG_WriteByte(&host_client->netchan.message, svc_nextupload);
+	}
+	else
+	{
+		Con_Printf("100%%\n");
+		scr_downloading.value = -1; // Reset progress bar
+
+		fclose(host_client->upload);
+
+		sprintf(finalPath, "%s/%s", com_gamedir, host_client->uploadfntmp);
+
+		// Verify and add to HPAK
+		host_client->upload = fopen(finalPath, "rb");
+		setvbuf(host_client->upload, NULL, _IOFBF, 4096); // 4K buffer
+		if (host_client->upload)
+		{
+			customization_t* pCust, * pList;
+			qboolean bFound = FALSE;
+
+			// Add to HPAK
+			HPAK_AddLump(HASHPAK_FILENAME, host_client->uploadresource, NULL, host_client->upload);
+			fseek(host_client->upload, 0, SEEK_SET);
+			host_client->uploadresource->ucFlags &= ~RES_WASMISSING;
+
+			pCust = (customization_t*)malloc(sizeof(customization_t));
+			memset(pCust, 0, sizeof(customization_t));
+
+			pCust->bInUse = TRUE;
+			memcpy(&pCust->resource, host_client->uploadresource, sizeof(pCust->resource));
+
+			pCust->pBuffer = malloc(host_client->uploadresource->nDownloadSize);
+			fread(pCust->pBuffer, host_client->uploadresource->nDownloadSize, 1, host_client->upload);
+
+			// Search if this resource is already in customizations list
+			pList = host_client->customdata.pNext;
+			while (pList)
+			{
+				if (memcmp(pList->resource.rgucMD5_hash, pCust->resource.rgucMD5_hash, sizeof(pList->resource.rgucMD5_hash)) == 0)
+				{
+					bFound = TRUE;
+					break;
+				}
+
+				pList = pList->pNext;
+			}
+
+			if (bFound)
+			{
+				Con_DPrintf("Duplicate resource received and ignored.\n");
+				free(pCust);
+			}
+			else
+			{
+				pCust->pNext = host_client->customdata.pNext;
+				host_client->customdata.pNext = pCust;
+			}
+
+			fclose(host_client->upload);
+		}
+
+		// Clean up temp file
+		_unlink(finalPath);
+
+		// Reset upload state
+		host_client->upload = NULL;
+		host_client->uploadcount = 0;
+		host_client->uploadcurrentCRC = 0;
+		host_client->uploadinprogress = FALSE;
 	}
 }
 
 /*
-================
+==================
 SV_PrintResource
 
-Prints which data the resource passed contains.
-================
+==================
 */
 void SV_PrintResource( int index, resource_t* pResource )
 {
-	static char fatal[8];
 	static char type[12];
+	static char fatal[8];
 
-	// If the resource was missing, let the player know about that
-	//if (pResource->ucFlags & RES_WASMISSING)
-	//	sprintf(fatal, "Y");
-	//else
-		sprintf(fatal, "N");
+	sprintf(fatal, "N");
 
-	// Now let the player know which type this resource has
 	switch (pResource->type)
 	{
-		case t_sound:
-			sprintf(type, "sound");
-			break;
-		case t_skin:
-			sprintf(type, "skin");
-			break;
-		case t_model:
-			sprintf(type, "model");
-			break;
-		case t_decal:
-			sprintf(type, "decal");
-			break;
-		default:
-			sprintf(type, "unknown");
-			break;
+	case t_sound:
+		sprintf(type, "sound");
+		break;
+	case t_skin:
+		sprintf(type, "skin");
+		break;
+	case t_model:
+		sprintf(type, "model");
+		break;
+	case t_decal:
+		sprintf(type, "decal");
+		break;
+	default:
+		sprintf(type, "unknown");
+		break;
 	}
 
-	// Here we spit out the whole resource data
-	Con_Printf(
-	  "%3i %i %s:%15s %i %s\n",
-	  index,
-	  pResource->nDownloadSize,
-	  type,
-	  pResource->szFileName,
-	  pResource->nIndex,
-	  fatal);
-
-	// If the resource is a custom resource uploaded by somebody, print its MD5 hash
-	//if (pResource->ucFlags & RES_CUSTOM)
-	//{
-	//	Con_Printf("MD5:  %s\n", MD5_Print(pResource->rgucMD5_hash));
-	//}
+	Con_Printf("%3i %i %s:%15s %i %s\n", index, pResource->nDownloadSize, type, pResource->szFileName, pResource->nIndex, fatal);
 }
 
 /*
-================
+==================
 SV_PrintResourceLists_f
 
-================
+==================
 */
 void SV_PrintResourceLists_f( void )
 {
-	int				i;
-	resource_t*		res;
+	int		i;
+	resource_t* pResource;
+
+	i = 1;
 
 	Con_Printf("- Needed -------------------------------------------\n");
 	Con_Printf("#   Name                  Size Type Index Fatal\n");
-	for (i = 1, res = host_client->resourcesneeded.pNext; res != &host_client->resourcesneeded; res = res->pNext, i++)
+
+	for (pResource = host_client->resourcesneeded.pNext; pResource != &host_client->resourcesneeded; pResource = pResource->pNext)
 	{
-		SV_PrintResource(i, res);
+		SV_PrintResource(i, pResource);
+		i++;
 	}
+
 	Con_Printf("- On hand ------------------------------------------\n");
 	Con_Printf("#   Name                  Size Type Index Fatal\n");
-	for (res = host_client->resourcesonhand.pNext; res != &host_client->resourcesonhand; res = res->pNext, i++)
+
+	for (pResource = host_client->resourcesonhand.pNext; pResource != &host_client->resourcesonhand; pResource = pResource->pNext)
 	{
-		SV_PrintResource(i, res);
+		SV_PrintResource(i, pResource);
+		i++;
 	}
+
 	Con_Printf("--------------------------------------------\n\n");
 }
 
@@ -426,7 +400,6 @@ void SV_PrintResourceLists_f( void )
 ==================
 SV_ClearResourceLists
 
-Clears the resource lists of the client specified.
 ==================
 */
 void SV_ClearResourceLists( client_t* cl )
@@ -446,10 +419,10 @@ SV_PrintCusomizations_f
 */
 void SV_PrintCusomizations_f( void )
 {
-	int					i;
-	client_t*			cl;
-	int					j;
-	customization_t*	pCust;
+	int		i;
+	int		nIndex;
+	client_t* cl;
+	customization_t* pCust;
 
 	if (cmd_source == src_command && !sv.active)
 	{
@@ -457,27 +430,31 @@ void SV_PrintCusomizations_f( void )
 		return;
 	}
 
-	// Redirect the output so we print the stuff to the client's console, not ours.
 	if (!NET_IsLocalAddress(net_from))
 		Host_BeginRedirect(RD_CLIENT, &net_from);
 
-	for (i = 0, cl = svs.clients; i < svs.maxclients; ++cl)
+	for (i = 0, cl = svs.clients; i < svs.maxclients; i++, cl++)
 	{
-		if ((cl->active || cl->spawned) && cl->customdata.pNext)
+		if (!cl->active && !cl->spawned)
+			continue;
+		if (!cl->customdata.pNext)
+			continue;
+
+		nIndex = 1;
+		Con_DPrintf("SV Customizations:\nPlayer %i:%s\n", nIndex, cl->name);
+
+		for (pCust = cl->customdata.pNext; pCust; pCust = pCust->pNext)
 		{
-			Con_DPrintf("SV Customizations:\nPlayer %i:%s\n", i + 1, cl->name);
-			for (j = 1, pCust = cl->customdata.pNext; pCust; pCust = pCust->pNext, j++)
+			if (pCust->bInUse)
 			{
-				if (pCust->bInUse)
-				{
-					SV_PrintResource(j, &pCust->resource);
-				}
+				SV_PrintResource(nIndex, &pCust->resource);
+				nIndex++;
 			}
-			Con_DPrintf("-----------------\n\n");
 		}
+
+		Con_DPrintf("-----------------\n\n");
 	}
 
-	// End redirecting in case we were doing that.
 	if (!NET_IsLocalAddress(net_from))
 		Host_EndRedirect();
 }
@@ -486,57 +463,64 @@ void SV_PrintCusomizations_f( void )
 ==================
 SV_CreateCustomizationList
 
-Reinitializes customizations list. Tries to create customization for each resource in on-hands list.
 ==================
 */
 void SV_CreateCustomizationList( client_t* pHost )
 {
-	resource_t*			pResource;
-	qboolean			bDuplicate;
-	customization_t*	pCust;
-	cachewad_t*			pWad;
-	FILE*				pfHandle = NULL; 
+	resource_t* pResource;
 
 	pHost->customdata.pNext = NULL;
+
 	for (pResource = pHost->resourcesonhand.pNext; pResource != &pHost->resourcesonhand; pResource = pResource->pNext)
 	{
-		bDuplicate = FALSE;
-		pCust = pHost->customdata.pNext;
-		while (pCust)
+		customization_t* pList;
+		qboolean bFound = FALSE;
+
+		// Search if this resource is already in customizations list
+		pList = pHost->customdata.pNext;
+		while (pList)
 		{
-			if (!memcmp(pCust->resource.rgucMD5_hash, pResource->rgucMD5_hash, sizeof(pResource->rgucMD5_hash)))
+			if (memcmp(pList->resource.rgucMD5_hash, pResource->rgucMD5_hash, sizeof(pList->resource.rgucMD5_hash)) == 0)
 			{
-				Con_DPrintf("SV_CreateCustomization list, ignoring dup. resource for player %s\n", pHost->name);
-				bDuplicate = TRUE;
+				bFound = TRUE;
 				break;
 			}
 
-			pCust = pCust->pNext;
+			pList = pList->pNext;
 		}
 
-		if (!bDuplicate)
+		if (bFound)
 		{
-			pCust = (customization_t *)malloc(sizeof(customization_t));
-			memset(pCust, 0, sizeof(customization_t));
-			memcpy(&pCust->resource, pResource, sizeof(*pResource));
+			Con_DPrintf("SV_CreateCustomization list, ignoring dup. resource for player %s\n", pHost->name);
+		}
+		else
+		{
+			customization_t* pCust;
+			FILE* pFile;
+			cachewad_t* pWad;
 
-			if (pResource->nDownloadSize)
+			pCust = (customization_t*)malloc(sizeof(customization_t));
+			memset(pCust, 0, sizeof(customization_t));
+			memcpy(&pCust->resource, pResource, sizeof(pCust->resource));
+
+			if (pResource->nDownloadSize != 0)
 			{
 				pCust->bInUse = TRUE;
-				if (HPAK_GetDataPointer("custom.hpk", pResource, &pfHandle))
+
+				if (HPAK_GetDataPointer(HASHPAK_FILENAME, pResource, &pFile))
 				{
 					if (pResource->nDownloadSize <= 0)
 						Sys_Error("SV_CreateCustomizationList with resource download size <= 0");
 
 					pCust->pBuffer = malloc(pResource->nDownloadSize);
-					fread(pCust->pBuffer, pResource->nDownloadSize, sizeof(byte), pfHandle);
-					fclose(pfHandle);
+
+					fread(pCust->pBuffer, pResource->nDownloadSize, 1, pFile);
+					fclose(pFile);
 
 					pCust->resource.playernum = cl.playernum;
 
 					pWad = (cachewad_t*)malloc(sizeof(cachewad_t));
 					pCust->pInfo = pWad;
-
 					memset(pWad, 0, sizeof(cachewad_t));
 					CustomDecal_Init(pWad, pCust->pBuffer, pResource->nDownloadSize);
 
@@ -546,16 +530,16 @@ void SV_CreateCustomizationList( client_t* pHost )
 
 					free(pWad->cache);
 					free(pWad->lumps);
-					free(pWad);
-
+					free(pCust->pInfo);
 					pCust->pInfo = NULL;
 				}
 			}
-		}
 
-		pCust->pNext = pHost->customdata.pNext;
-		pHost->customdata.pNext = pCust;
-		gEntityInterface.pfnPlayerCustomization(pHost->edict, pCust);
+			pCust->pNext = pHost->customdata.pNext;
+			pHost->customdata.pNext = pCust;
+
+			gEntityInterface.pfnPlayerCustomization(pHost->edict, pCust);
+		}
 	}
 }
 
@@ -563,56 +547,59 @@ void SV_CreateCustomizationList( client_t* pHost )
 ==================
 SV_RegisterResources
 
-Creates customizations list for the current player and sends resources to other players.
+Creates customizations list for the current player and sends resources to other players
 ==================
 */
 void SV_RegisterResources( void )
 {
-	client_t* pHost = host_client;
 	resource_t* pResource;
+	client_t* pHost;
 
+	pHost = host_client;
 	pHost->uploading = FALSE;
+
 	for (pResource = pHost->resourcesonhand.pNext; pResource != &pHost->resourcesonhand; pResource = pResource->pNext)
 	{
 		SV_CreateCustomizationList(pHost);
 		SV_Customization(pHost, pResource, TRUE);
 	}
+
+	host_client = pHost;
 }
 
 /*
 ==================
 SV_MoveToOnHandList
 
-Adds pResource to the resourcesonhand in host_client
 ==================
 */
 void SV_MoveToOnHandList( resource_t* pResource )
 {
-	if (pResource)
-	{
-		if (pResource->type >= rt_max)
-			Con_DPrintf("Unknown resource type\n");
-
-		SV_RemoveFromResourceList(pResource);
-		SV_AddToResourceList(pResource, &host_client->resourcesonhand);
-	}
-	else
+	if (!pResource)
 	{
 		Con_DPrintf("Null resource passed to SV_MoveToOnHandList\n");
+		return;
 	}
+
+	if (pResource->type >= rt_max)
+		Con_DPrintf("Unknown resource type\n");
+
+	SV_RemoveFromResourceList(pResource);
+	SV_AddToResourceList(pResource, &host_client->resourcesonhand);
 }
 
 /*
-==================
+===============
 SV_SizeofResourceList
 
-Counts total size of the resources inside pList.
-==================
+===============
 */
 int SV_SizeofResourceList( resource_t* pList, int* nWorldSize, int* nModelsSize, int* nDecalsSize, int* nSoundsSize, int* nSkinsSize )
 {
 	resource_t* p;
-	int nSize = 0;
+	int nSize;
+
+	nSize = 0;
 
 	*nModelsSize = 0;
 	*nWorldSize = 0;
@@ -626,25 +613,25 @@ int SV_SizeofResourceList( resource_t* pList, int* nWorldSize, int* nModelsSize,
 
 		switch (p->type)
 		{
-			case t_sound:
-				*nSoundsSize += p->nDownloadSize;
-				break;
-			case t_skin:
-				*nSkinsSize += p->nDownloadSize;
-				break;
-			case t_model:
-				if (p->nIndex == 1) // worldmodel always take 1 slot
-				{
-					*nWorldSize = p->nDownloadSize;
-				}
-				else
-				{
-					*nModelsSize += p->nDownloadSize;
-				}
-				break;
-			case t_decal:
-				*nDecalsSize += p->nDownloadSize;
-				break;
+		case t_sound:
+			*nSoundsSize += p->nDownloadSize;
+			break;
+		case t_skin:
+			*nSkinsSize += p->nDownloadSize;
+			break;
+		case t_model:
+			if (p->nIndex == 1) // worldmodel always take 1 slot
+			{
+				*nWorldSize = p->nDownloadSize;
+			}
+			else
+			{
+				*nModelsSize += p->nDownloadSize;
+			}
+			break;
+		case t_decal:
+			*nDecalsSize += p->nDownloadSize;
+			break;
 		}
 	}
 
@@ -655,7 +642,6 @@ int SV_SizeofResourceList( resource_t* pList, int* nWorldSize, int* nModelsSize,
 ==================
 SV_AddToResourceList
 
-Adds pResource into the pList linked list.
 ==================
 */
 void SV_AddToResourceList( resource_t* pResource, resource_t* pList )
@@ -680,7 +666,7 @@ SV_ClearResourceList
 */
 void SV_ClearResourceList( resource_t* pList )
 {
-	resource_t* p, *n;
+	resource_t* p, * n = NULL;
 
 	for (p = pList->pNext; p && p != pList; p = n)
 	{
@@ -689,7 +675,6 @@ void SV_ClearResourceList( resource_t* pList )
 		SV_RemoveFromResourceList(p);
 		free(p);
 	}
-
 
 	pList->pPrev = pList;
 	pList->pNext = pList;
@@ -713,54 +698,56 @@ void SV_RemoveFromResourceList( resource_t* pResource )
 ==================
 SV_EstimateNeededResources
 
-For each t_decal and RES_CUSTOM resource the player had shown to us, tries to find it locally or count size required to be downloaded.
+Returns the size of needed resources to download
 ==================
 */
 int SV_EstimateNeededResources( void )
 {
 	resource_t* p;
-	int			nTotalSize = 0;
-	int			nSize, nDownloadSize;
+	int		missing;
+	int		size;
+	int		downloadSize;
 
-	for (p = host_client->resourcesneeded.pNext, nTotalSize = 0; p != &host_client->resourcesneeded; p = p->pNext)
+	missing = 0;
+
+	for (p = host_client->resourcesneeded.pNext; p != &host_client->resourcesneeded; p = p->pNext)
 	{
-		nSize = 0;
+		size = 0;
 
 		if (p->type == t_decal)
 		{
-			nSize = -1;
+			size = -1;
 			if (HPAK_ResourceForHash("custom.hpk", p->rgucMD5_hash, NULL))
-				nSize = p->nDownloadSize;
+				size = p->nDownloadSize;
 		}
 
-		if (nSize == -1)
+		if (size == -1)
 		{
-			p->ucFlags |= RES_CUSTOM;
-			nDownloadSize = p->nDownloadSize;
+			p->ucFlags |= RES_WASMISSING;
+			downloadSize = p->nDownloadSize;
 		}
 		else
 		{
-			nDownloadSize = 0;
+			downloadSize = 0;
 		}
 
-		nTotalSize += nDownloadSize;
+		missing += downloadSize;
 	}
 
-	return nTotalSize;
+	return missing;
 }
 
 /*
 ==================
 SV_RequestMissingResourcesFromClients
 
-This is called each frame to do checks on players if they uploaded all files that where requested from them.
 ==================
 */
 void SV_RequestMissingResourcesFromClients( void )
 {
-	int i;
+	int		i;
 
-	for (i = 0, host_client = svs.clients; i < svs.maxclients; host_client++, i++)
+	for (i = 0, host_client = svs.clients; i < svs.maxclients; i++, host_client++)
 	{
 		if (!host_client->active && !host_client->spawned)
 			continue;
@@ -773,28 +760,29 @@ void SV_RequestMissingResourcesFromClients( void )
 ==================
 SV_RequestMissingResources
 
-This is called each frame to do checks on players if they uploaded all files that where requested from them.
+This is used to perform repeated checks on the current player to see
+if it has uploaded all the required resources
 ==================
 */
 qboolean SV_RequestMissingResources( void )
 {
-	resource_t*		res;
-	char			buffer[MAX_OSPATH];
+	char	szCust[MAX_OSPATH];
+	resource_t* p;
 
-	// If the client is uploading a resource right now, wait for the them to finish uploading.
-	if (host_client->upload || host_client->isuploading)
+	if (host_client->upload || host_client->uploadinprogress)
 		return FALSE;
+
 	if (!host_client->uploading)
 		return FALSE;
 
-	// If the client has finished uploading all the needed resources, just return FALSE.
 	if (host_client->uploaddoneregistering)
 		return FALSE;
 
-	res = host_client->resourcesneeded.pNext;
-	host_client->uploadingresource = res;
+	p = host_client->resourcesneeded.pNext;
+	host_client->uploadresource = p;
 
-	if (res == &host_client->resourcesneeded) {
+	if (p == &host_client->resourcesneeded)
+	{
 		SV_RegisterResources();
 		SV_PropagateCustomizations();
 		Con_DPrintf("Custom resource propagation complete.\n");
@@ -802,27 +790,30 @@ qboolean SV_RequestMissingResources( void )
 		return FALSE;
 	}
 
-	// If the resource isn't missing on our side, just add it into the list of resources on hand.
-	if (!(res->ucFlags & RES_WASMISSING))
+	if (!(p->ucFlags & RES_WASMISSING))
 	{
-		SV_MoveToOnHandList(res);
+		SV_MoveToOnHandList(p);
 		return TRUE;
 	}
 
-	if (res->type == t_decal)
+	if (p->type == t_decal)
 	{
-		if (res->ucFlags & RES_CUSTOM)
+		if (p->ucFlags & RES_CUSTOM)
 		{
-			sprintf(buffer, "!MD5%s", MD5_Print(res->rgucMD5_hash));
-			if (SV_CheckOrUploadFile(buffer))
+			sprintf(szCust, "!MD5%s", MD5_Print(p->rgucMD5_hash));
+
+			if (SV_CheckOrUploadFile(szCust))
 			{
-				SV_MoveToOnHandList(res);
+				SV_MoveToOnHandList(p);
 				return TRUE;
 			}
 		}
-		else if (SV_CheckOrUploadFile(res->szFileName))
+		else
 		{
-			SV_MoveToOnHandList(res);
+			if (SV_CheckOrUploadFile(p->szFileName))
+			{
+				SV_MoveToOnHandList(p);
+			}
 		}
 	}
 
@@ -833,42 +824,37 @@ qboolean SV_RequestMissingResources( void )
 ================
 SV_RequestResourceList_f
 
-Request resource with i index from host_client.
+Request a resource from client
 ================
 */
 void SV_RequestResourceList_f( void )
 {
-	char*	s;
-	int		i;
+	int		servercount;
+	int		index;
 
-	if (Cmd_Argc() == 3)
-	{
-		s = Cmd_Argv(1);
-		i = atoi(s);
-		if (cls.demoplayback || i == svs.spawncount)
-		{
-			s = Cmd_Argv(2);
-			i = atoi(s);
-			if (i >= 0)
-			{
-				MSG_WriteByte(&host_client->netchan.message, svc_resourcerequest);
-				MSG_WriteLong(&host_client->netchan.message, svs.spawncount);
-				MSG_WriteLong(&host_client->netchan.message, i);
-			}
-			else
-			{
-				Con_Printf("Resource request with bogus starting index %i\n", i);
-			}
-		}
-		else
-		{
-			Con_Printf("Resource request with mismatched servercount\n");
-		}
-	}
-	else
+	if (Cmd_Argc() != 3)
 	{
 		Con_Printf("Invalid resource request\n");
+		return;
 	}
+
+	servercount = atoi(Cmd_Argv(1));
+	if (!cls.demoplayback && servercount != svs.spawncount)
+	{
+		Con_Printf("Resource request with mismatched servercount\n");
+		return;
+	}
+
+	index = atoi(Cmd_Argv(2));
+	if (index < 0)
+	{
+		Con_Printf("Resource request with bogus starting index %i\n", index);
+		return;
+	}
+
+	MSG_WriteByte(&host_client->netchan.message, svc_resourcerequest);
+	MSG_WriteLong(&host_client->netchan.message, svs.spawncount);
+	MSG_WriteLong(&host_client->netchan.message, index);
 }
 
 /*
@@ -878,40 +864,43 @@ SV_ParseResourceList
 */
 void SV_ParseResourceList( void )
 {
-	int				total, acknowledged;
-	resource_t*		res;
-	int				nWorldSize, nModelsSize, nDecalsSize, nSoundsSize, nSkinsSize;
+	int		i, total;
+	int		totalsize;
+	int		worldSize, modelsSize, decalsSize, soundsSize, skinsSize;
+	resource_t* resource;
 
-	nWorldSize = MSG_ReadShort();
+	totalsize = MSG_ReadShort();
+	i = MSG_ReadShort();
 	total = MSG_ReadShort();
-	acknowledged = MSG_ReadShort();
 
-	while (total < acknowledged)
+	for (; i < total; i++)
 	{
-		res = (resource_t*)malloc(sizeof(resource_t));
-		memset(res, 0, sizeof(*res));
-		res->type = MSG_ReadByte();
-		strcpy(res->szFileName, MSG_ReadString());
-		res->nIndex = MSG_ReadShort();
-		res->nDownloadSize = MSG_ReadLong();
-		res->ucFlags = MSG_ReadByte() & (~RES_WASMISSING);
-		res->pNext = NULL;
-		res->pPrev = NULL;
+		resource = (resource_t*)malloc(sizeof(resource_t));
+		memset(resource, 0, sizeof(resource_t));
 
-		if (res->ucFlags & RES_CUSTOM)
+		resource->type = MSG_ReadByte();
+		strcpy(resource->szFileName, MSG_ReadString());
+		resource->nIndex = MSG_ReadShort();
+		resource->nDownloadSize = MSG_ReadLong();
+		resource->pNext = resource->pPrev = NULL;
+		resource->ucFlags = MSG_ReadByte() & ~RES_WASMISSING;
+
+		if (resource->ucFlags & RES_CUSTOM)
 		{
-			MSG_ReadBuf(sizeof(res->rgucMD5_hash), res->rgucMD5_hash);
+			MSG_ReadBuf(sizeof(resource->rgucMD5_hash), resource->rgucMD5_hash);
 		}
-		if (total == 0)
+
+		if (i == 0)
 		{
 			SV_ClearResourceList(&host_client->resourcesneeded);
 			SV_ClearResourceList(&host_client->resourcesonhand);
 		}
 
-		++total;
-		SV_AddToResourceList(res, &host_client->resourcesneeded);
+		// Add new entry in the linked list
+		SV_AddToResourceList(resource, &host_client->resourcesneeded);
 	}
-	if (acknowledged < nWorldSize)
+
+	if (total < totalsize)
 	{
 		host_client->uploading = FALSE;
 	}
@@ -919,352 +908,41 @@ void SV_ParseResourceList( void )
 	{
 		Con_DPrintf("Verifying and uploading resources...\n");
 
-		host_client->nResourcesTotalSize = SV_SizeofResourceList(&host_client->resourcesneeded, &nWorldSize, &nModelsSize, &nDecalsSize, &nSoundsSize, &nSkinsSize);
-		host_client->nRemainingToTransfer = SV_EstimateNeededResources();
+		host_client->nTotalSize = SV_SizeofResourceList(&host_client->resourcesneeded, &worldSize, &modelsSize, &decalsSize, &soundsSize, &skinsSize);
+		host_client->nTotalToTransfer = SV_EstimateNeededResources();
 
-		if (host_client->nResourcesTotalSize != 0)
+		if (host_client->nTotalSize != 0)
 		{
-			Con_DPrintf("Custom resources total %.2fK\n", (float)host_client->nResourcesTotalSize / 1024.0f);
-			if (nModelsSize > 0)
-			{
-				Con_DPrintf("  Models:  %.2fK\n", (float)nModelsSize / 1024.f);
-			}
-			if (nSoundsSize)
-			{
-				Con_DPrintf("  Sounds:  %.2fK\n", (float)nSoundsSize / 1024.0f);
-			}
-			if (nDecalsSize)
-			{
-				Con_DPrintf("  Decals:  %.2fK\n", (float)nDecalsSize / 1024.0f);
-			}
-			if (nSkinsSize)
-			{
-				Con_DPrintf("  Skins :  %.2fK\n", (float)nSkinsSize / 1024.0f);
-			}
+			Con_DPrintf("Custom resources total %.2fK\n", host_client->nTotalSize / 1024.0);
+
+			if (modelsSize != 0)
+				Con_DPrintf("  Models:  %.2fK\n", modelsSize / 1024.0);
+			if (soundsSize != 0)
+				Con_DPrintf("  Sounds:  %.2fK\n", soundsSize / 1024.0);
+			if (decalsSize != 0)
+				Con_DPrintf("  Decals:  %.2fK\n", decalsSize / 1024.0);
+			if (skinsSize != 0)
+				Con_DPrintf("  Skins :  %.2fK\n", skinsSize / 1024.0);
+
 			Con_DPrintf("----------------------\n");
-			if (host_client->nRemainingToTransfer > 1024)
-				Con_DPrintf("Resources to request: %iK\n", host_client->nRemainingToTransfer / 1024);
+
+			if (host_client->nTotalToTransfer > 1024)
+				Con_DPrintf("Resources to request: %iK\n", host_client->nTotalToTransfer / 1024);
 			else
-				Con_DPrintf("Resources to request: %i bytes\n", host_client->nRemainingToTransfer);
+				Con_DPrintf("Resources to request: %i bytes\n", host_client->nTotalToTransfer);
 		}
+
 		host_client->uploading = TRUE;
+
 		host_client->uploaddoneregistering = FALSE;
-		host_client->isuploading = FALSE; // TODO: See if the name is really correct
-										  // TODO: Implement
-		host_client->uploadstarttime = realtime;
-		host_client->lastuploadtime = realtime;
-		host_client->uploadsize = host_client->nRemainingToTransfer;
-		memset(host_client->uploads, 0, sizeof(host_client->uploads));
-		host_client->numuploads = 0;
+		host_client->uploadinprogress = FALSE;
+
+		host_client->fLastStatusUpdate = realtime;
+		host_client->fLastUploadTime = realtime;
+
+		host_client->nRemainingToTransfer = host_client->nTotalToTransfer;
+
+		memset(host_client->rgUploads, 0, sizeof(host_client->rgUploads));
+		host_client->nCurUpload = 0;
 	}
-}
-
-// Functions below do NOT belong to sv_upld.c, move them away from here.
-// TODO: Implement
-
-/*
-================
-SV_ModelIndex
-
-================
-*/
-int SV_ModelIndex( char* name )
-{
-	int		i;
-
-	if (!name || !name[0])
-		return 0;
-
-	for (i = 0; i < MAX_MODELS && sv.model_precache[i]; i++)
-		if (!strcmp(sv.model_precache[i], name))
-			return i;
-	if (i == MAX_MODELS || !sv.model_precache[i])
-		Sys_Error("SV_ModelIndex: model %s not precached", name);
-	return i;
-}
-
-/*
-================
-SV_FlushSignon
-
-Moves to the next signon buffer if needed
-================
-*/
-void SV_FlushSignon( void )
-{
-	if (sv.signon.cursize < sv.signon.maxsize - 100)
-		return;
-
-	if (sv.num_signon_buffers == MAX_SIGNON_BUFFERS - 1)
-		Sys_Error("sv.num_signon_buffers == MAX_SIGNON_BUFFERS-1");
-
-	sv.signon_buffer_size[sv.num_signon_buffers - 1] = sv.signon.cursize;
-	sv.signon.data = sv.signon_buffers[sv.num_signon_buffers];
-	sv.num_signon_buffers++;
-	sv.signon.cursize = 0;
-}
-
-/*
-================
-SV_SendResourceListBlock_f
-================
-*/
-void SV_SendResourceListBlock_f( void )
-{
-	int			i, n;
-	resource_t* res;
-
-	if (cmd_source == src_command)
-	{
-		Cmd_ForwardToServer();
-		return;
-	}
-
-	if (!host_client->connected) {
-		Con_Printf("resourcelist not valid -- already spawned\n");
-		return;
-	}
-
-	// handle the case of a level changing while a client was connecting
-	if (!cls.demoplayback && atoi(Cmd_Argv(1)) != svs.spawncount)
-	{
-		Con_Printf("SV_SendResourceListBlock_f from different level\n");
-		SV_New_f();
-		return;
-	}
-
-	n = atoi(Cmd_Argv(2));
-
-	MSG_WriteByte(&host_client->netchan.message, svc_resourcelist);
-	MSG_WriteShort(&host_client->netchan.message, sv.num_resources);
-	MSG_WriteShort(&host_client->netchan.message, n);
-
-	// save index
-	i = host_client->netchan.message.cursize;
-
-	MSG_WriteShort(&host_client->netchan.message, 0);
-
-	if (sv.num_resources <= n)
-	{
-		*(unsigned short*)&host_client->netchan.message.data[i] = n;
-	}
-	else
-	{
-		for (res = &sv.resources[n]; n < sv.num_resources; n++, res++)
-		{
-			//leave a small window for other messages
-			if (host_client->netchan.message.maxsize - 512 <= host_client->netchan.message.cursize)
-				break;
-
-			MSG_WriteByte(&host_client->netchan.message, res->type);
-			MSG_WriteString(&host_client->netchan.message, res->szFileName);
-			MSG_WriteShort(&host_client->netchan.message, res->nIndex);
-			MSG_WriteLong(&host_client->netchan.message, res->nDownloadSize);
-			MSG_WriteByte(&host_client->netchan.message, res->ucFlags);
-			if (res->ucFlags & RES_CUSTOM)
-			{
-				SZ_Write(&cls.netchan.message, res->rgucMD5_hash, sizeof(res->rgucMD5_hash));
-			}
-		}
-
-		*(unsigned short*)&host_client->netchan.message.data[i] = n;
-	}
-
-	if (sv.num_resources > n)
-	{
-		MSG_WriteByte(&host_client->netchan.message, svc_stufftext);
-		MSG_WriteString(&host_client->netchan.message,
-						va("cmd resourcelist %i %i\n", svs.spawncount, n));
-	}
-}
-
-/*
-================
-SV_AddResource
-
-Put this very resource into resources array
-================
-*/
-void SV_AddResource( resourcetype_t type, const char *name, int size, byte flags, int index )
-{
-	resource_t*		res;
-
-	res = &sv.resources[sv.num_resources];
-
-	if (sv.num_resources >= MAX_RESOURCES)
-		Sys_Error("Too many resources on server.");
-
-	sv.num_resources++;
-
-	res->type = type;
-	strcpy(res->szFileName, name);
-	res->nDownloadSize = size;
-	res->nIndex = index;
-	res->ucFlags = flags;
-}
-
-/*
-================
-SV_CreateResourceList
-
-Add resources to precache list
-================
-*/
-void SV_CreateResourceList( void )
-{
-	int			i, nSize;
-	char*		s;
-	qboolean	bAddedFirst = FALSE;
-	FILE*		pf;
-
-	sv.num_resources = 0;
-
-	for (i = 1; i < MAX_SOUNDS; i++)
-	{
-		s = sv.sound_precache[i];
-
-		if (!s || s[0] == 0)
-			break;
-
-		if (s[0] == '!')
-		{
-			if (!bAddedFirst)
-			{
-				SV_AddResource(t_sound, "!", 0, RES_FATALIFMISSING, i);
-				bAddedFirst = TRUE;
-			}
-		}
-		else
-		{
-			if (svs.maxclients <= 1)
-			{
-				SV_AddResource(t_sound, s, 0, 0, i);
-			}
-			else
-			{
-				nSize = COM_FindFile(va("sound/%s", s), NULL, &pf);
-				if (pf)
-					fclose(pf);
-				if (nSize == -1)
-					nSize = 0;
-
-				SV_AddResource(t_sound, s, nSize, 0, i);
-			}
-		}
-	}
-
-	for (i = 1; i < MAX_MODELS; i++)
-	{
-		s = sv.model_precache[i];
-
-		if (!s || s[0] == 0)
-			break;
-
-		if (svs.maxclients <= 1)
-		{
-			SV_AddResource(t_model, s, 0, RES_FATALIFMISSING, i);
-		}
-		else
-		{
-			nSize = COM_FindFile(s, NULL, &pf);
-			if (pf)
-				fclose(pf);
-			if (nSize == -1)
-				nSize = 0;
-
-			SV_AddResource(t_model, s, nSize, RES_FATALIFMISSING, i);
-		}
-	}
-
-	for (i = 0; i < sv_decalnamecount; i++)
-	{
-		SV_AddResource(t_decal, sv_decalnames[i].name , Draw_DecalSize(i), 0, i);
-	}
-}
-
-/*
-==================
-SV_Customization
-
-Sends resource to all other players, optionally skipping originating player.
-==================
-*/
-void SV_Customization( client_t* pPlayer, resource_t* pResource, qboolean bSkipPlayer )
-{
-	int			i;
-	int			nPlayerNumber;
-
-	// Get originating player id
-	for (nPlayerNumber = -1, i = 0, host_client = svs.clients; i < svs.maxclients; i++, host_client++)
-	{
-		if (host_client == pPlayer)
-		{
-			nPlayerNumber = i;
-			break;
-		}
-	}
-	if (i >= svs.maxclients || nPlayerNumber == -1)
-	{
-		Sys_Error("Couldn't find player index for customization.");
-	}
-
-	// Send resource to all other active players
-	for (i = 0, host_client = svs.clients; i < svs.maxclients; i++, host_client++)
-	{
-		if (!host_client->active && !host_client->spawned)
-			continue;
-
-		if (host_client == pPlayer && bSkipPlayer)
-			continue;
-
-		MSG_WriteByte(&host_client->netchan.message, svc_customization);
-		MSG_WriteByte(&host_client->netchan.message, nPlayerNumber);
-		MSG_WriteByte(&host_client->netchan.message, pResource->type);
-		MSG_WriteString(&host_client->netchan.message, pResource->szFileName);
-		MSG_WriteShort(&host_client->netchan.message, pResource->nIndex);
-		MSG_WriteLong(&host_client->netchan.message, pResource->nDownloadSize);
-		MSG_WriteByte(&host_client->netchan.message, pResource->ucFlags);
-		if (pResource->ucFlags & RES_CUSTOM)
-		{
-			SZ_Write(&host_client->netchan.message, pResource->rgucMD5_hash, sizeof(pResource->rgucMD5_hash));
-		}
-	}
-}
-
-/*
-==================
-SV_PropagateCustomizations
-
-Sends customizations from all active players to the current player.
-==================
-*/
-void SV_PropagateCustomizations( void )
-{
-	int					i;
-	customization_t*	pCust;
-	client_t*			pOriginalHost;
-
-	pOriginalHost = host_client;
-	for (i = 0, host_client = svs.clients; i < svs.maxclients; host_client++, i++)
-	{
-		if (!host_client->active && !host_client->spawned)
-			continue;
-
-		for (pCust = host_client->customdata.pNext; pCust; pCust = pCust->pNext)
-		{
-			if (!pCust->bInUse)
-				continue;
-
-			MSG_WriteByte(&pOriginalHost->netchan.message, svc_customization);
-			MSG_WriteByte(&pOriginalHost->netchan.message, i);
-			MSG_WriteByte(&pOriginalHost->netchan.message, pCust->resource.type);
-			MSG_WriteString(&pOriginalHost->netchan.message, pCust->resource.szFileName);
-			MSG_WriteShort(&pOriginalHost->netchan.message, pCust->resource.nIndex);
-			MSG_WriteLong(&pOriginalHost->netchan.message, pCust->resource.nDownloadSize);
-			MSG_WriteByte(&pOriginalHost->netchan.message, pCust->resource.ucFlags);
-			if (pCust->resource.ucFlags & RES_CUSTOM)
-				SZ_Write(&pOriginalHost->netchan.message, pCust->resource.rgucMD5_hash, sizeof(pCust->resource.rgucMD5_hash));
-		}
-	}
-	host_client = pOriginalHost;
 }

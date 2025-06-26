@@ -47,7 +47,7 @@ typedef struct
 
 	int			percent;
 
-	qboolean	isdownloading;			// TRUE if downloading is in progress
+	qboolean	downloading;			// TRUE if downloading is in progress
 
 	int			nTotalSize;
 	int			nTotalToTransfer;

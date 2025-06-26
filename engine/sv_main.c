@@ -1846,3 +1846,310 @@ void SV_Keys_f( void )
 {
 	// TODO: Implement
 }
+
+/*
+================
+SV_ModelIndex
+
+================
+*/
+int SV_ModelIndex( char* name )
+{
+	int		i;
+
+	if (!name || !name[0])
+		return 0;
+
+	for (i = 0; i < MAX_MODELS && sv.model_precache[i]; i++)
+		if (!strcmp(sv.model_precache[i], name))
+			return i;
+	if (i == MAX_MODELS || !sv.model_precache[i])
+		Sys_Error("SV_ModelIndex: model %s not precached", name);
+	return i;
+}
+
+/*
+================
+SV_FlushSignon
+
+Moves to the next signon buffer if needed
+================
+*/
+void SV_FlushSignon( void )
+{
+	if (sv.signon.cursize < sv.signon.maxsize - 100)
+		return;
+
+	if (sv.num_signon_buffers == MAX_SIGNON_BUFFERS - 1)
+		Sys_Error("sv.num_signon_buffers == MAX_SIGNON_BUFFERS-1");
+
+	sv.signon_buffer_size[sv.num_signon_buffers - 1] = sv.signon.cursize;
+	sv.signon.data = sv.signon_buffers[sv.num_signon_buffers];
+	sv.num_signon_buffers++;
+	sv.signon.cursize = 0;
+}
+
+/*
+================
+SV_SendResourceListBlock_f
+================
+*/
+void SV_SendResourceListBlock_f( void )
+{
+	int			i, n;
+	resource_t* res;
+
+	if (cmd_source == src_command)
+	{
+		Cmd_ForwardToServer();
+		return;
+	}
+
+	if (!host_client->connected) {
+		Con_Printf("resourcelist not valid -- already spawned\n");
+		return;
+	}
+
+	// handle the case of a level changing while a client was connecting
+	if (!cls.demoplayback && atoi(Cmd_Argv(1)) != svs.spawncount)
+	{
+		Con_Printf("SV_SendResourceListBlock_f from different level\n");
+		SV_New_f();
+		return;
+	}
+
+	n = atoi(Cmd_Argv(2));
+
+	MSG_WriteByte(&host_client->netchan.message, svc_resourcelist);
+	MSG_WriteShort(&host_client->netchan.message, sv.num_resources);
+	MSG_WriteShort(&host_client->netchan.message, n);
+
+	// save index
+	i = host_client->netchan.message.cursize;
+
+	MSG_WriteShort(&host_client->netchan.message, 0);
+
+	if (sv.num_resources <= n)
+	{
+		*(unsigned short*)&host_client->netchan.message.data[i] = n;
+	}
+	else
+	{
+		for (res = &sv.resources[n]; n < sv.num_resources; n++, res++)
+		{
+			//leave a small window for other messages
+			if (host_client->netchan.message.maxsize - 512 <= host_client->netchan.message.cursize)
+				break;
+
+			MSG_WriteByte(&host_client->netchan.message, res->type);
+			MSG_WriteString(&host_client->netchan.message, res->szFileName);
+			MSG_WriteShort(&host_client->netchan.message, res->nIndex);
+			MSG_WriteLong(&host_client->netchan.message, res->nDownloadSize);
+			MSG_WriteByte(&host_client->netchan.message, res->ucFlags);
+			if (res->ucFlags & RES_CUSTOM)
+			{
+				SZ_Write(&cls.netchan.message, res->rgucMD5_hash, sizeof(res->rgucMD5_hash));
+			}
+		}
+
+		*(unsigned short*)&host_client->netchan.message.data[i] = n;
+	}
+
+	if (sv.num_resources > n)
+	{
+		MSG_WriteByte(&host_client->netchan.message, svc_stufftext);
+		MSG_WriteString(&host_client->netchan.message,
+						va("cmd resourcelist %i %i\n", svs.spawncount, n));
+	}
+}
+
+/*
+================
+SV_AddResource
+
+Put this very resource into resources array
+================
+*/
+void SV_AddResource( resourcetype_t type, const char *name, int size, byte flags, int index )
+{
+	resource_t*		res;
+
+	res = &sv.resources[sv.num_resources];
+
+	if (sv.num_resources >= MAX_RESOURCES)
+		Sys_Error("Too many resources on server.");
+
+	sv.num_resources++;
+
+	res->type = type;
+	strcpy(res->szFileName, name);
+	res->nDownloadSize = size;
+	res->nIndex = index;
+	res->ucFlags = flags;
+}
+
+/*
+================
+SV_CreateResourceList
+
+Add resources to precache list
+================
+*/
+void SV_CreateResourceList( void )
+{
+	int			i, nSize;
+	char*		s;
+	qboolean	bAddedFirst = FALSE;
+	FILE*		pf;
+
+	sv.num_resources = 0;
+
+	for (i = 1; i < MAX_SOUNDS; i++)
+	{
+		s = sv.sound_precache[i];
+
+		if (!s || s[0] == 0)
+			break;
+
+		if (s[0] == '!')
+		{
+			if (!bAddedFirst)
+			{
+				SV_AddResource(t_sound, "!", 0, RES_FATALIFMISSING, i);
+				bAddedFirst = TRUE;
+			}
+		}
+		else
+		{
+			if (svs.maxclients <= 1)
+			{
+				SV_AddResource(t_sound, s, 0, 0, i);
+			}
+			else
+			{
+				nSize = COM_FindFile(va("sound/%s", s), NULL, &pf);
+				if (pf)
+					fclose(pf);
+				if (nSize == -1)
+					nSize = 0;
+
+				SV_AddResource(t_sound, s, nSize, 0, i);
+			}
+		}
+	}
+
+	for (i = 1; i < MAX_MODELS; i++)
+	{
+		s = sv.model_precache[i];
+
+		if (!s || s[0] == 0)
+			break;
+
+		if (svs.maxclients <= 1)
+		{
+			SV_AddResource(t_model, s, 0, RES_FATALIFMISSING, i);
+		}
+		else
+		{
+			nSize = COM_FindFile(s, NULL, &pf);
+			if (pf)
+				fclose(pf);
+			if (nSize == -1)
+				nSize = 0;
+
+			SV_AddResource(t_model, s, nSize, RES_FATALIFMISSING, i);
+		}
+	}
+
+	for (i = 0; i < sv_decalnamecount; i++)
+	{
+		SV_AddResource(t_decal, sv_decalnames[i].name , Draw_DecalSize(i), 0, i);
+	}
+}
+
+/*
+==================
+SV_Customization
+
+Sends resource to all other players, optionally skipping originating player.
+==================
+*/
+void SV_Customization( client_t* pPlayer, resource_t* pResource, qboolean bSkipPlayer )
+{
+	int			i;
+	int			nPlayerNumber;
+
+	// Get originating player id
+	for (nPlayerNumber = -1, i = 0, host_client = svs.clients; i < svs.maxclients; i++, host_client++)
+	{
+		if (host_client == pPlayer)
+		{
+			nPlayerNumber = i;
+			break;
+		}
+	}
+	if (i >= svs.maxclients || nPlayerNumber == -1)
+	{
+		Sys_Error("Couldn't find player index for customization.");
+	}
+
+	// Send resource to all other active players
+	for (i = 0, host_client = svs.clients; i < svs.maxclients; i++, host_client++)
+	{
+		if (!host_client->active && !host_client->spawned)
+			continue;
+
+		if (host_client == pPlayer && bSkipPlayer)
+			continue;
+
+		MSG_WriteByte(&host_client->netchan.message, svc_customization);
+		MSG_WriteByte(&host_client->netchan.message, nPlayerNumber);
+		MSG_WriteByte(&host_client->netchan.message, pResource->type);
+		MSG_WriteString(&host_client->netchan.message, pResource->szFileName);
+		MSG_WriteShort(&host_client->netchan.message, pResource->nIndex);
+		MSG_WriteLong(&host_client->netchan.message, pResource->nDownloadSize);
+		MSG_WriteByte(&host_client->netchan.message, pResource->ucFlags);
+		if (pResource->ucFlags & RES_CUSTOM)
+		{
+			SZ_Write(&host_client->netchan.message, pResource->rgucMD5_hash, sizeof(pResource->rgucMD5_hash));
+		}
+	}
+}
+
+/*
+==================
+SV_PropagateCustomizations
+
+Sends customizations from all active players to the current player.
+==================
+*/
+void SV_PropagateCustomizations( void )
+{
+	int					i;
+	customization_t*	pCust;
+	client_t*			pOriginalHost;
+
+	pOriginalHost = host_client;
+	for (i = 0, host_client = svs.clients; i < svs.maxclients; host_client++, i++)
+	{
+		if (!host_client->active && !host_client->spawned)
+			continue;
+
+		for (pCust = host_client->customdata.pNext; pCust; pCust = pCust->pNext)
+		{
+			if (!pCust->bInUse)
+				continue;
+
+			MSG_WriteByte(&pOriginalHost->netchan.message, svc_customization);
+			MSG_WriteByte(&pOriginalHost->netchan.message, i);
+			MSG_WriteByte(&pOriginalHost->netchan.message, pCust->resource.type);
+			MSG_WriteString(&pOriginalHost->netchan.message, pCust->resource.szFileName);
+			MSG_WriteShort(&pOriginalHost->netchan.message, pCust->resource.nIndex);
+			MSG_WriteLong(&pOriginalHost->netchan.message, pCust->resource.nDownloadSize);
+			MSG_WriteByte(&pOriginalHost->netchan.message, pCust->resource.ucFlags);
+			if (pCust->resource.ucFlags & RES_CUSTOM)
+				SZ_Write(&pOriginalHost->netchan.message, pCust->resource.rgucMD5_hash, sizeof(pCust->resource.rgucMD5_hash));
+		}
+	}
+	host_client = pOriginalHost;
+}

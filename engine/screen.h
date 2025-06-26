@@ -52,5 +52,6 @@ extern	cvar_t		scr_graphhigh;
 extern	cvar_t		scr_graphmean;
 extern	cvar_t		scr_netusage;
 extern	cvar_t		scr_graphmedian;
+extern	cvar_t		scr_downloading;
 
 #endif // SCREEN_H

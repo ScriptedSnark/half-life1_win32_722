@@ -147,23 +147,23 @@ typedef struct
 // client_t
 typedef struct client_s
 {
-	qboolean active;	// false = client is free
-	qboolean spawned;	// false = don't send datagrams
+	qboolean active;					// false = client is free
+	qboolean spawned;					// false = don't send datagrams
+	qboolean connected;					// Has been assigned to a client_t, but not in game yet
+	qboolean uploading;					// true = client uploading custom resources
 
-	qboolean connected; // On server, getting data.
-	//FF:    ^^^ this can be client_state_t, but I'm unsure.
-
-	qboolean uploading; // true = uploading a file to the server
-
-	int spec_track; // the player we are tracking in spectator mode
+	int spec_track;						// the player we are tracking in spectator mode
 
 	//===== NETWORK ============
 	netchan_t netchan;					// The client's net connection.
+	int chokecount;						// amount of choke since last client message
 
-	int chokecount; // the amount of packets we couldn't transmit to the client
-
-	int delta_sequence;	// -1 = no compression.  This is where the server is creating the
+	int delta_sequence;					// -1 = no compression.  This is where the server is creating the
 										// compressed info from.
+
+
+
+
 
 	// TODO: Implement
 	//FF: one field (four bytes)
@@ -222,40 +222,37 @@ typedef struct client_s
 	// FF: If changing ANYTHING below, also insert the changes into sv_upld.c and other files!
 	// FF: Some fields may have wrong names e.g. isuploading. These names were just straight guessing
 
-	byte* download;			// the download data
-	int downloadsize;		// total bytes
-	int downloadcount;		// bytes sent
-	qboolean downloading;	// true = client is downloading a file
-	CRC32_t downloadCRC;	// CRC32 of the file we are downloading
+	byte* download;						// the download data
+	int downloadsize;					// total bytes
+	int downloadcount;					// bytes sent
+	qboolean downloading;				// true = client is downloading a file
+	CRC32_t downloadCRC;				// CRC32 of the file we are downloading
 
-	resource_t resourcesonhand; // Head of resources accounted for list
-	resource_t resourcesneeded; // Head of resources to download list
+	resource_t resourcesonhand;			// Head of resources accounted for list
+	resource_t resourcesneeded;			// Head of resources to download list
 
-	FILE* upload; // file being uploaded (by the client)
-	resource_t* uploadingresource; //the resource we're trying to retrieve from the client (e.g. spray)
+	FILE* upload;						// Handle of file being uploaded
+	resource_t* uploadresource;			// The resource we're trying to retrieve from the client (e.g. spray)
+	char		uploadfntmp[MAX_QPATH];
+	CRC32_t		uploadfinalCRC;
+	char		uploadfn[MAX_QPATH];
+	int			uploadcount;
 
-	char uploadfn[MAX_QPATH];
+	qboolean	uploadinprogress;
 
-	CRC32_t uploadCRC;
+	int			nTotalSize;
+	int			nTotalToTransfer;
+	int			nRemainingToTransfer;
 
-	char extension[MAX_QPATH];
+	float		fLastStatusUpdate;		// The time of the last update
+	float		fLastUploadTime;		// The last time the file was downloaded
 
-	int uploadcount;
+	downloadtime_t rgUploads[MAX_DL_STATS];
+	int			nCurUpload;
 
-	qboolean isuploading;
+	qboolean	uploaddoneregistering;
 
-	int nResourcesTotalSize;
-	int nRemainingToTransfer;
-
-	int uploadsize;
-	float uploadstarttime;
-	float lastuploadtime;
-	downloadtime_t uploads[MAX_DL_STATS];
-	int numuploads;
-
-	qboolean uploaddoneregistering;
-
-	CRC32_t tempuploadCRC;
+	CRC32_t		uploadcurrentCRC;
 
 	customization_t customdata;
 } client_t;

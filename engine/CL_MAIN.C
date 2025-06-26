@@ -1452,7 +1452,7 @@ void CL_CreateResourceList( void )
 		{
 			pNewResource->ucFlags |= RES_CUSTOM;
 			memcpy(pNewResource->rgucMD5_hash, rgucMD5_hash, sizeof(pNewResource->rgucMD5_hash));
-			HPAK_AddLump("custom.hpk", pNewResource, NULL, fp);
+			HPAK_AddLump(HASHPAK_FILENAME, pNewResource, NULL, fp);
 		}
 	}
 
