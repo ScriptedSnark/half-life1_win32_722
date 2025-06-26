@@ -190,9 +190,6 @@ void CPython::PrimaryAttack()
 	if (m_iClip || m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] == 0)
 */
 		SendWeaponAnim( PYTHON_FIRE1 );
-
-		// player "shoot" animation
-		m_pPlayer->SetAnimation( PLAYER_ATTACK1 );
 /*
 	else
 		Reload( );

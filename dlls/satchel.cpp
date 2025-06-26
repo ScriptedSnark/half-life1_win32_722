@@ -399,9 +399,6 @@ void CSatchel::Throw( void )
 		m_pPlayer->pev->weaponmodel = NULL;
 		SendWeaponAnim( SATCHEL_RADIO_DRAW );
 
-		// player "shoot" animation
-		m_pPlayer->SetAnimation( PLAYER_ATTACK1 );
-
 		m_chargeReady = 1;
 		
 		m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType]--;

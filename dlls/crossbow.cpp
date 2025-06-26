@@ -363,9 +363,6 @@ void CCrossbow::FireSniperBolt()
 	{
 		SendWeaponAnim( CROSSBOW_FIRE3 );
 	}
-
-	// player "shoot" animation
-	m_pPlayer->SetAnimation( PLAYER_ATTACK1 );
 	
 	Vector anglesAim = m_pPlayer->pev->v_angle + m_pPlayer->pev->punchangle;
 	UTIL_MakeVectors( anglesAim );
@@ -444,9 +441,6 @@ void CCrossbow::FireBolt()
 	{
 		SendWeaponAnim( CROSSBOW_FIRE3 );
 	}
-
-	// player "shoot" animation
-	m_pPlayer->SetAnimation( PLAYER_ATTACK1 );
 
 	Vector anglesAim = m_pPlayer->pev->v_angle + m_pPlayer->pev->punchangle;
 	UTIL_MakeVectors( anglesAim );

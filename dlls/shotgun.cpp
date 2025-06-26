@@ -176,9 +176,6 @@ void CShotgun::PrimaryAttack()
 
 	SendWeaponAnim( SHOTGUN_FIRE );
 
-	// player "shoot" animation
-	m_pPlayer->SetAnimation( PLAYER_ATTACK1 );
-
 	UTIL_MakeVectors( m_pPlayer->pev->v_angle + m_pPlayer->pev->punchangle );
 
 	Vector	vecShellVelocity = m_pPlayer->pev->velocity 
@@ -249,9 +246,6 @@ void CShotgun::SecondaryAttack( void )
 	m_pPlayer->pev->effects = (int)(m_pPlayer->pev->effects) | EF_MUZZLEFLASH;
 
 	SendWeaponAnim( SHOTGUN_FIRE2 );
-
-	// player "shoot" animation
-	m_pPlayer->SetAnimation( PLAYER_ATTACK1 );
 
 	UTIL_MakeVectors( m_pPlayer->pev->v_angle + m_pPlayer->pev->punchangle );
 		

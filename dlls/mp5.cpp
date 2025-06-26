@@ -171,9 +171,6 @@ void CMP5::PrimaryAttack()
 		m_flNextAnimTime = gpGlobals->time + 0.2;
 	}
 
-	// player "shoot" animation
-	m_pPlayer->SetAnimation( PLAYER_ATTACK1 );
-
 	switch( RANDOM_LONG(0,1) )
 	{
 	case 0: EMIT_SOUND_DYN(ENT(m_pPlayer->pev), CHAN_WEAPON, "weapons/hks1.wav", 1, ATTN_NORM, 0, 94 + RANDOM_LONG(0,0xf)); break;
@@ -246,9 +243,6 @@ void CMP5::SecondaryAttack( void )
 	m_pPlayer->m_rgAmmo[m_iSecondaryAmmoType]--;
 
 	SendWeaponAnim( MP5_LAUNCH );
-
-	// player "shoot" animation
-	m_pPlayer->SetAnimation( PLAYER_ATTACK1 );
 
 	if ( RANDOM_LONG(0,1) )
 	{

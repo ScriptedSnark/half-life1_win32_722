@@ -1053,6 +1053,8 @@ void CBasePlayer::SetAnimation( PLAYER_ANIM playerAnim )
 			if (speed <= 220)
 				break;
 
+			m_IdealActivity = ACT_RUN;
+
 			break;
 
 		case PLAYER_JUMP:

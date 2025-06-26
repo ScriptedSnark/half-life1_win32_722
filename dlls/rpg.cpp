@@ -536,9 +536,6 @@ void CRpg::PrimaryAttack()
 
 		SendWeaponAnim( RPG_FIRE2 );
 
-		// player "shoot" animation
-		m_pPlayer->SetAnimation( PLAYER_ATTACK1 );
-
 		UTIL_MakeVectors( m_pPlayer->pev->v_angle );
 		Vector vecSrc = m_pPlayer->GetGunPosition( ) + gpGlobals->v_forward * 16 + gpGlobals->v_right * 8 + gpGlobals->v_up * -8;
 		
