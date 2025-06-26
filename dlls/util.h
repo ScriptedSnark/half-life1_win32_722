@@ -236,8 +236,7 @@ extern void			UTIL_ScreenShake		( const Vector &center, float amplitude, float f
 extern void			UTIL_ScreenShakeAll		( const Vector &center, float amplitude, float frequency, float duration );
 extern void			UTIL_ShowMessage		( char *pString, CBaseEntity *pPlayer );
 extern void			UTIL_ShowMessageAll		( char *pString );
-extern void			UTIL_ScreenFadeAll		( const Vector &color, float fadeTime, float holdTime, int alpha, int flags );
-extern void			UTIL_ScreenFade			( CBaseEntity *pEntity, const Vector &color, float fadeTime, float fadeHold, int alpha, int flags );
+extern void			UTIL_ScreenFade		( const Vector &color, float fadeTime, float holdTime, int alpha, int flags );
 
 typedef enum { ignore_monsters=1, dont_ignore_monsters=0, missile=2 } IGNORE_MONSTERS;
 typedef enum { ignore_glass=1, dont_ignore_glass=0 } IGNORE_GLASS;
@@ -508,3 +507,61 @@ void EMIT_GROUPNAME_SUIT(edict_t *entity, char *groupname);
 	EMIT_SOUND_DYN ( ENT(pev), chan , array [ RANDOM_LONG(0,ARRAYSIZE( array )-1) ], 1.0, ATTN_NORM, 0, RANDOM_LONG(95,105) ); 
 
 #define RANDOM_SOUND_ARRAY( array ) (array) [ RANDOM_LONG(0,ARRAYSIZE( (array) )-1) ]
+
+inline float VectorNormalize(vec3_t v)
+{
+	float	length, ilength;
+
+	length = v[0] * v[0] + v[1] * v[1] + v[2] * v[2];
+	length = sqrt(length);		// FIXME
+
+	if (length)
+	{
+		ilength = 1 / length;
+		v[0] *= ilength;
+		v[1] *= ilength;
+		v[2] *= ilength;
+	}
+
+	return length;
+
+}
+
+inline void VectorInverse(vec3_t v)
+{
+	v[0] = -v[0];
+	v[1] = -v[1];
+	v[2] = -v[2];
+}
+
+inline void VectorScale(const vec3_t in, vec_t scale, vec3_t& out)
+{
+	out[0] = in[0] * scale;
+	out[1] = in[1] * scale;
+	out[2] = in[2] * scale;
+}
+
+inline void VectorTransform(const vec3_t in1, float in2[3][4], vec3_t out)
+{
+	out[0] = DotProduct(in1, in2[0]) + in2[0][3];
+	out[1] = DotProduct(in1, in2[1]) + in2[1][3];
+	out[2] = DotProduct(in1, in2[2]) + in2[2][3];
+}
+
+inline int VectorCompare(const vec3_t v1, const vec3_t v2)
+{
+	int		i;
+
+	for (i = 0; i < 3; i++)
+		if (v1[i] != v2[i])
+			return 0;
+
+	return 1;
+}
+
+inline void VectorMA(const vec3_t veca, float scale, const vec3_t vecb, vec3_t vecc)
+{
+	vecc[0] = veca[0] + scale * vecb[0];
+	vecc[1] = veca[1] + scale * vecb[1];
+	vecc[2] = veca[2] + scale * vecb[2];
+}

@@ -170,7 +170,7 @@ public:
 	virtual	int		GetToggleState( void ) { return TS_AT_TOP; }
 	virtual BOOL	AddPlayerItem( CBasePlayerItem *pItem ) { return 0; }
 	virtual BOOL	RemovePlayerItem( CBasePlayerItem *pItem ) { return 0; }
-	virtual int 	GiveAmmo( int iAmount, char *szName, int iMax ) { return -1; };
+	virtual int 	GiveAmmo( int iAmount, char *szName, int iMax, int *pIndex ) { return -1; };
 	virtual float	GetDelay( void ) { return 0; }
 	virtual int		IsMoving( void ) { return pev->velocity != g_vecZero; }
 	virtual void	OverrideReset( void ) {}

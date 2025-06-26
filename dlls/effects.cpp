@@ -1969,12 +1969,12 @@ void CFade::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType
 	{
 		if ( pActivator->pev->flags & FL_CLIENT )
 		{
-			UTIL_ScreenFade( pActivator, pev->rendercolor, Duration(), HoldTime(), pev->renderamt, fadeFlags );
+			UTIL_ScreenFade( pev->rendercolor, Duration(), HoldTime(), pev->renderamt, fadeFlags );
 		}
 	}
 	else
 	{
-		UTIL_ScreenFadeAll( pev->rendercolor, Duration(), HoldTime(), pev->renderamt, fadeFlags );
+		UTIL_ScreenFade( pev->rendercolor, Duration(), HoldTime(), pev->renderamt, fadeFlags );
 	}
 	SUB_UseTargets( this, USE_TOGGLE, 0 );
 }

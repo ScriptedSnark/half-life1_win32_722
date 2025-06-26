@@ -536,9 +536,6 @@ void CRpg::PrimaryAttack()
 
 		SendWeaponAnim( RPG_FIRE2 );
 
-		// player "shoot" animation
-		m_pPlayer->SetAnimation( PLAYER_ATTACK1 );
-
 		UTIL_MakeVectors( m_pPlayer->pev->v_angle );
 		Vector vecSrc = m_pPlayer->GetGunPosition( ) + gpGlobals->v_forward * 16 + gpGlobals->v_right * 8 + gpGlobals->v_up * -8;
 		
@@ -682,7 +679,7 @@ class CRpgAmmo : public CBasePlayerAmmo
 			iGive = AMMO_RPGCLIP_GIVE;
 		}
 
-		if (pOther->GiveAmmo( iGive, "rockets", ROCKET_MAX_CARRY ) != -1)
+		if (pOther->GiveAmmo( iGive, "rockets", ROCKET_MAX_CARRY, NULL ) != -1)
 		{
 			EMIT_SOUND(ENT(pev), CHAN_ITEM, "items/9mmclip1.wav", 1, ATTN_NORM);
 			return TRUE;

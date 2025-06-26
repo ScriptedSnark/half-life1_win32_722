@@ -183,9 +183,6 @@ void CHandGrenade::WeaponIdle( void )
 			SendWeaponAnim( HANDGRENADE_THROW3 );
 		}
 
-		// player "shoot" animation
-		m_pPlayer->SetAnimation( PLAYER_ATTACK1 );
-
 		m_flStartThrow = 0;
 		m_flNextPrimaryAttack = gpGlobals->time + 0.5;
 		m_flTimeWeaponIdle = gpGlobals->time + 0.5;

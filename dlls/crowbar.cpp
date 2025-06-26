@@ -223,9 +223,6 @@ int CCrowbar::Swing( int fFirst )
 			m_flNextPrimaryAttack = gpGlobals->time + 0.5;
 			// play wiff or swish sound
 			EMIT_SOUND_DYN(ENT(m_pPlayer->pev), CHAN_WEAPON, "weapons/cbar_miss1.wav", 1, ATTN_NORM, 0, 94 + RANDOM_LONG(0,0xF));
-
-			// player "shoot" animation
-			m_pPlayer->SetAnimation( PLAYER_ATTACK1 );
 		}
 	}
 	else
@@ -244,9 +241,6 @@ int CCrowbar::Swing( int fFirst )
 		case 2:
 			SendWeaponAnim( CROWBAR_ATTACK3HIT ); break;
 		}
-
-		// player "shoot" animation
-		m_pPlayer->SetAnimation( PLAYER_ATTACK1 );
 
 		ClearMultiDamage( );
 		if ( (m_flNextPrimaryAttack + 1 < gpGlobals->time) || g_pGameRules->IsMultiplayer() )

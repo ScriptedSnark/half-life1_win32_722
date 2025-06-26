@@ -1,18 +1,3 @@
-/***
-*
-*	Copyright (c) 1999, Valve LLC. All rights reserved.
-*	
-*	This product contains software technology licensed from Id 
-*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
-*	All Rights Reserved.
-*
-*   Use, distribution, and modification of this source code and/or resulting
-*   object code is restricted to non-commercial enhancements to products from
-*   Valve LLC.  All other use, distribution, or modification is prohibited
-*   without written permission from Valve LLC.
-*
-****/
-
 #include "extdll.h"
 #include "util.h"
 #include "cbase.h"
@@ -25,8 +10,7 @@
 
 enum mp5_e
 {
-	MP5_LONGIDLE = 0,
-	MP5_IDLE1,
+	MP5_IDLE1 = 0,
 	MP5_LAUNCH,
 	MP5_RELOAD,
 	MP5_DEPLOY,
@@ -171,9 +155,6 @@ void CMP5::PrimaryAttack()
 		m_flNextAnimTime = gpGlobals->time + 0.2;
 	}
 
-	// player "shoot" animation
-	m_pPlayer->SetAnimation( PLAYER_ATTACK1 );
-
 	switch( RANDOM_LONG(0,1) )
 	{
 	case 0: EMIT_SOUND_DYN(ENT(m_pPlayer->pev), CHAN_WEAPON, "weapons/hks1.wav", 1, ATTN_NORM, 0, 94 + RANDOM_LONG(0,0xf)); break;
@@ -247,9 +228,6 @@ void CMP5::SecondaryAttack( void )
 
 	SendWeaponAnim( MP5_LAUNCH );
 
-	// player "shoot" animation
-	m_pPlayer->SetAnimation( PLAYER_ATTACK1 );
-
 	if ( RANDOM_LONG(0,1) )
 	{
 		// play this sound through BODY channel so we can hear it if player didn't stop firing MP3
@@ -295,21 +273,6 @@ void CMP5::WeaponIdle( void )
 	if (m_flTimeWeaponIdle > gpGlobals->time)
 		return;
 
-	int iAnim;
-	switch ( RANDOM_LONG( 0, 1 ) )
-	{
-	case 0:	
-		iAnim = MP5_LONGIDLE;	
-		break;
-	
-	default:
-	case 1:
-		iAnim = MP5_IDLE1;
-		break;
-	}
-
-	SendWeaponAnim( iAnim );
-
 	m_flTimeWeaponIdle = gpGlobals->time + RANDOM_FLOAT ( 10, 15 );// how long till we do this again.
 }
 
@@ -330,7 +293,7 @@ class CMP5AmmoClip : public CBasePlayerAmmo
 	}
 	BOOL AddAmmo( CBaseEntity *pOther ) 
 	{ 
-		int bResult = (pOther->GiveAmmo( AMMO_MP5CLIP_GIVE, "9mm", _9MM_MAX_CARRY) != -1);
+		int bResult = (pOther->GiveAmmo( AMMO_MP5CLIP_GIVE, "9mm", _9MM_MAX_CARRY, NULL ) != -1);
 		if (bResult)
 		{
 			EMIT_SOUND(ENT(pev), CHAN_ITEM, "items/9mmclip1.wav", 1, ATTN_NORM);
@@ -358,7 +321,7 @@ class CMP5Chainammo : public CBasePlayerAmmo
 	}
 	BOOL AddAmmo( CBaseEntity *pOther ) 
 	{ 
-		int bResult = (pOther->GiveAmmo( AMMO_CHAINBOX_GIVE, "9mm", _9MM_MAX_CARRY) != -1);
+		int bResult = (pOther->GiveAmmo( AMMO_CHAINBOX_GIVE, "9mm", _9MM_MAX_CARRY, NULL) != -1);
 		if (bResult)
 		{
 			EMIT_SOUND(ENT(pev), CHAN_ITEM, "items/9mmclip1.wav", 1, ATTN_NORM);
@@ -384,7 +347,7 @@ class CMP5AmmoGrenade : public CBasePlayerAmmo
 	}
 	BOOL AddAmmo( CBaseEntity *pOther ) 
 	{ 
-		int bResult = (pOther->GiveAmmo( AMMO_M203BOX_GIVE, "ARgrenades", M203_GRENADE_MAX_CARRY ) != -1);
+		int bResult = (pOther->GiveAmmo( AMMO_M203BOX_GIVE, "ARgrenades", M203_GRENADE_MAX_CARRY, NULL ) != -1);
 
 		if (bResult)
 		{

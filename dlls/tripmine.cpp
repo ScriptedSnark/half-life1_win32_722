@@ -468,9 +468,6 @@ void CTripmine::PrimaryAttack( void )
 
 			m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType]--;
 
-			// player "shoot" animation
-			m_pPlayer->SetAnimation( PLAYER_ATTACK1 );
-
 			if (m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] > 0)
 			{
 				SendWeaponAnim( TRIPMINE_DRAW );

@@ -56,8 +56,6 @@
 #define	SOUND_FLASHLIGHT_ON		"items/flashlight1.wav"
 #define	SOUND_FLASHLIGHT_OFF	"items/flashlight1.wav"
 
-#define TEAM_NAME_LENGTH	16
-
 typedef enum
 {
 	PLAYER_IDLE,
@@ -159,12 +157,7 @@ public:
 	int					m_iDeaths;
 	float				m_iRespawnFrames;	// used in PlayerDeathThink() to make sure players can always respawn
 
-	int m_lastx, m_lasty;  // These are the previous update's crosshair angles, DON"T SAVE/RESTORE
-
 	int m_nCustomSprayFrames;// Custom clan logo frames for this player
-	float	m_flNextDecalTime;// next time this player can spray a decal
-
-	char m_szTeamName[TEAM_NAME_LENGTH];
 
 	virtual void Spawn( void );
 	void Pain( void );
@@ -189,7 +182,6 @@ public:
 
 	virtual BOOL IsNetClient( void ) { return TRUE; }		// Bots should return FALSE for this, they can't receive NET messages
 															// Spectators should return TRUE for this
-	virtual const char *TeamID( void );
 
 	virtual int		Save( CSave &save );
 	virtual int		Restore( CRestore &restore );
@@ -206,28 +198,24 @@ public:
 	// Player is moved across the transition by other means
 	virtual int		ObjectCaps( void ) { return CBaseMonster :: ObjectCaps() & ~FCAP_ACROSS_TRANSITION; }
 	virtual void	Precache( void );
-	BOOL			IsOnLadder( void );
 	BOOL			FlashlightIsOn( void );
 	void			FlashlightTurnOn( void );
 	void			FlashlightTurnOff( void );
 	
+	virtual void SetLadder(CBaseEntity *pLadder)
+	{
+		m_hEnemy = pLadder;
+	}
+
 	void UpdatePlayerSound ( void );
 	void DeathSound ( void );
 
 	int Classify ( void );
 	void SetAnimation( PLAYER_ANIM playerAnim );
-	void SetWeaponAnimType( const char *szExtention );
-	char m_szAnimExtention[32];
 
 	// custom player functions
 	virtual void ImpulseCommands( void );
-	void CheatImpulseCommands( int iImpulse );
 
-	void StartDeathCam( void );
-	void StartObserver( Vector vecPosition, Vector vecViewAngle );
-
-	void AddPoints( int score, BOOL bAllowNegativeScore );
-	void AddPointsToTeam( int score, BOOL bAllowNegativeScore );
 	BOOL AddPlayerItem( CBasePlayerItem *pItem );
 	BOOL RemovePlayerItem( CBasePlayerItem *pItem );
 	void DropPlayerItem ( char *pszItemName );
@@ -243,7 +231,7 @@ public:
 	void GiveNamedItem( const char *szName );
 	void EnableControl(BOOL fControl);
 
-	int  GiveAmmo( int iAmount, char *szName, int iMax );
+	int  GiveAmmo( int iAmount, char *szName, int iMax, int *pIndex );
 	void SendAmmoUpdate(void);
 
 	void WaterMove( void );
@@ -264,7 +252,6 @@ public:
 	static int GetAmmoIndex(const char *psz);
 	int AmmoInventory( int iAmmoIndex );
 	int Illumination( void );
-	void SetLadder( CBaseEntity *pLadder );
 
 	void ResetAutoaim( void );
 	Vector GetAutoaimVector( float flDelta  );

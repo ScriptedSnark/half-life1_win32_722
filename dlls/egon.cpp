@@ -257,7 +257,15 @@ void CEgon::PrimaryAttack( void )
 
 			m_flAmmoUseTime = gpGlobals->time;// start using ammo ASAP.
 
-			SendWeaponAnim( g_fireAnims1[ RANDOM_LONG(0,ARRAYSIZE(g_fireAnims1)-1) ] );
+			if ( m_fireMode == FIRE_WIDE )
+			{
+				SendWeaponAnim( g_fireAnims2[ RANDOM_LONG(0,ARRAYSIZE(g_fireAnims2)-1) ] );
+			}
+			else
+			{
+				SendWeaponAnim( g_fireAnims1[ RANDOM_LONG(0,ARRAYSIZE(g_fireAnims1)-1) ] );
+			}
+
 			m_shakeTime = 0;
 
 			m_pPlayer->m_iWeaponVolume = EGON_PRIMARY_VOLUME;
@@ -605,7 +613,7 @@ class CEgonAmmo : public CBasePlayerAmmo
 	}
 	BOOL AddAmmo( CBaseEntity *pOther ) 
 	{ 
-		if (pOther->GiveAmmo( AMMO_URANIUMBOX_GIVE, "uranium", URANIUM_MAX_CARRY ) != -1)
+		if (pOther->GiveAmmo( AMMO_URANIUMBOX_GIVE, "uranium", URANIUM_MAX_CARRY, NULL ) != -1)
 		{
 			EMIT_SOUND(ENT(pev), CHAN_ITEM, "items/9mmclip1.wav", 1, ATTN_NORM);
 			return TRUE;

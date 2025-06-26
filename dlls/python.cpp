@@ -190,9 +190,6 @@ void CPython::PrimaryAttack()
 	if (m_iClip || m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] == 0)
 */
 		SendWeaponAnim( PYTHON_FIRE1 );
-
-		// player "shoot" animation
-		m_pPlayer->SetAnimation( PLAYER_ATTACK1 );
 /*
 	else
 		Reload( );
@@ -306,7 +303,7 @@ class CPythonAmmo : public CBasePlayerAmmo
 	}
 	BOOL AddAmmo( CBaseEntity *pOther ) 
 	{ 
-		if (pOther->GiveAmmo( AMMO_357BOX_GIVE, "357", _357_MAX_CARRY ) != -1)
+		if (pOther->GiveAmmo( AMMO_357BOX_GIVE, "357", _357_MAX_CARRY, NULL ) != -1)
 		{
 			EMIT_SOUND(ENT(pev), CHAN_ITEM, "items/9mmclip1.wav", 1, ATTN_NORM);
 			return TRUE;

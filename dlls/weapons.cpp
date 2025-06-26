@@ -822,18 +822,18 @@ BOOL CBasePlayerWeapon :: AddPrimaryAmmo( int iCount, char *szName, int iMaxClip
 	if (iMaxClip < 1)
 	{
 		m_iClip = -1;
-		iIdAmmo = m_pPlayer->GiveAmmo( iCount, szName, iMaxCarry );
+		iIdAmmo = m_pPlayer->GiveAmmo( iCount, szName, iMaxCarry, NULL );
 	}
 	else if (m_iClip == 0)
 	{
 		int i;
 		i = min( m_iClip + iCount, iMaxClip ) - m_iClip;
 		m_iClip += i;
-		iIdAmmo = m_pPlayer->GiveAmmo( iCount - i, szName, iMaxCarry );
+		iIdAmmo = m_pPlayer->GiveAmmo( iCount - i, szName, iMaxCarry, NULL );
 	}
 	else
 	{
-		iIdAmmo = m_pPlayer->GiveAmmo( iCount, szName, iMaxCarry );
+		iIdAmmo = m_pPlayer->GiveAmmo( iCount, szName, iMaxCarry, NULL );
 	}
 	
 	// m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] = iMaxCarry; // hack for testing
@@ -857,7 +857,7 @@ BOOL CBasePlayerWeapon :: AddSecondaryAmmo( int iCount, char *szName, int iMax )
 {
 	int iIdAmmo;
 
-	iIdAmmo = m_pPlayer->GiveAmmo( iCount, szName, iMax );
+	iIdAmmo = m_pPlayer->GiveAmmo( iCount, szName, iMax, NULL );
 
 	//m_pPlayer->m_rgAmmo[m_iSecondaryAmmoType] = iMax; // hack for testing
 
@@ -1068,7 +1068,7 @@ void CBasePlayerAmmo :: DefaultTouch( CBaseEntity *pOther )
 //=========================================================
 int CBasePlayerWeapon::ExtractAmmo( CBasePlayerWeapon *pWeapon )
 {
-	int			iReturn;
+	int			iReturn = 0; // ScriptedSnark: remove 0 for authentic uninitialized experience
 
 	if ( pszAmmo1() != NULL )
 	{
@@ -1102,7 +1102,7 @@ int CBasePlayerWeapon::ExtractClipAmmo( CBasePlayerWeapon *pWeapon )
 		iAmmo = m_iClip;
 	}
 	
-	return pWeapon->m_pPlayer->GiveAmmo( iAmmo, (char *)pszAmmo1(), iAmmo1() ); // , &m_iPrimaryAmmoType
+	return pWeapon->m_pPlayer->GiveAmmo( iAmmo, (char *)pszAmmo1(), iAmmo1(), NULL ); // , &m_iPrimaryAmmoType
 }
 	
 //=========================================================
@@ -1232,7 +1232,7 @@ void CWeaponBox::Touch( CBaseEntity *pOther )
 		if ( !FStringNull( m_rgiszAmmo[ i ] ) )
 		{
 			// there's some ammo of this type. 
-			pPlayer->GiveAmmo( m_rgAmmo[ i ], (char *)STRING( m_rgiszAmmo[ i ] ), MaxAmmoCarry( m_rgiszAmmo[ i ] ) );
+			pPlayer->GiveAmmo( m_rgAmmo[ i ], (char *)STRING( m_rgiszAmmo[ i ] ), MaxAmmoCarry( m_rgiszAmmo[ i ] ), NULL );
 
 			//ALERT ( at_console, "Gave %d rounds of %s\n", m_rgAmmo[i], STRING(m_rgiszAmmo[i]) );
 

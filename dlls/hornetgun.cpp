@@ -148,9 +148,6 @@ void CHgun::PrimaryAttack()
 
 	SendWeaponAnim( HGUN_SHOOT );
 
-	// player "shoot" animation
-	m_pPlayer->SetAnimation( PLAYER_ATTACK1 );
-
 	m_flNextPrimaryAttack = m_flNextPrimaryAttack + 0.25;
 
 	if (m_flNextPrimaryAttack < gpGlobals->time)
@@ -226,9 +223,6 @@ void CHgun::SecondaryAttack( void )
 	m_flRechargeTime = gpGlobals->time + 0.5;
 
 	SendWeaponAnim( HGUN_SHOOT );
-
-	// player "shoot" animation
-	m_pPlayer->SetAnimation( PLAYER_ATTACK1 );
 
 	m_flNextPrimaryAttack = m_flNextSecondaryAttack = gpGlobals->time + 0.1;
 	m_flTimeWeaponIdle = gpGlobals->time + RANDOM_FLOAT ( 10, 15 );
