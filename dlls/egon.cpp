@@ -318,13 +318,13 @@ void CEgon::PrimaryAttack( void )
 
 void CEgon::SecondaryAttack( void )
 {
-	if (m_fireState)
+	if ( m_fireState != FIRE_OFF )
 	{
 		EndAttack();
 		m_fireState = FIRE_OFF;
 		m_flNextPrimaryAttack = gpGlobals->time + 1.0;
 	}
-	else if (m_fireMode == FIRE_WIDE)
+	else if ( m_fireMode == FIRE_WIDE )
 	{
 		m_fireMode = FIRE_NARROW;
 		SendWeaponAnim(EGON_ALTFIREOFF);
