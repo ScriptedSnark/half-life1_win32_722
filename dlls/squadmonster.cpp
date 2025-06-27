@@ -602,22 +602,3 @@ BOOL CSquadMonster :: SquadMemberInRange ( const Vector &vecLocation, float flDi
 	}
 	return FALSE;
 }
-
-
-extern Schedule_t	slChaseEnemyFailed[];
-
-Schedule_t *CSquadMonster::GetScheduleOfType( int iType )
-{
-	switch ( iType )
-	{
-
-	case SCHED_CHASE_ENEMY_FAILED:
-		{
-			return &slChaseEnemyFailed[ 0 ];
-		}
-	
-	default:
-		return CBaseMonster::GetScheduleOfType( iType );
-	}
-}
-

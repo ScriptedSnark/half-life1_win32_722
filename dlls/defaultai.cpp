@@ -609,10 +609,10 @@ Schedule_t	slSpecialAttack2[] =
 // Chase enemy schedule
 Task_t tlChaseEnemy1[] = 
 {
-	{ TASK_SET_FAIL_SCHEDULE,	(float)SCHED_CHASE_ENEMY_FAILED	},
-	{ TASK_GET_PATH_TO_ENEMY,	(float)0		},
-	{ TASK_RUN_PATH,			(float)0		},
-	{ TASK_WAIT_FOR_MOVEMENT,	(float)0		},
+	{ TASK_SET_FAIL_SCHEDULE,	(float)SCHED_TAKE_COVER_FROM_ENEMY		},
+	{ TASK_GET_PATH_TO_ENEMY,	(float)0								},
+	{ TASK_RUN_PATH,			(float)0								},
+	{ TASK_WAIT_FOR_MOVEMENT,	(float)0								},
 };
 
 Schedule_t slChaseEnemy[] =
@@ -1126,10 +1126,6 @@ Schedule_t* CBaseMonster :: GetScheduleOfType ( int Type )
 	case SCHED_CHASE_ENEMY:
 		{
 			return &slChaseEnemy[ 0 ];
-		}
-	case SCHED_CHASE_ENEMY_FAILED:
-		{
-			return &slFail[ 0 ];
 		}
 	case SCHED_SMALL_FLINCH:
 		{

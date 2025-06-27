@@ -115,6 +115,5 @@ public:
 	BOOL FValidateCover ( const Vector &vecCoverLocation );
 
 	MONSTERSTATE GetIdealState ( void );
-	Schedule_t	*GetScheduleOfType ( int iType );
 };
 
