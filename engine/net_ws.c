@@ -42,10 +42,9 @@ netadr_t net_local_ipx_adr;
 
 int			net_maxpacket = 0;
 int			net_maxingame = 0;
+int			net_activeconnections = 0;
 
 netadr_t	net_from;
-
-int			net_activeconnections = 0;
 
 static byte net_message_buffer[MAX_MSGLEN];
 sizebuf_t	net_message;

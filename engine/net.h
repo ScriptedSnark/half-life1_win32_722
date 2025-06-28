@@ -41,10 +41,9 @@ typedef struct netadr_s
 extern	netadr_t	net_local_adr;
 extern	netadr_t	net_from;		// address of who sent the packet
 extern	sizebuf_t	net_message;
+extern	int			net_activeconnections;
 
 extern	cvar_t	host_name;
-
-extern int		net_activeconnections;
 
 void		NET_InitColors( void );
 void		SCR_NetUsage( void );

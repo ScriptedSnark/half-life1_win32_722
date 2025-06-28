@@ -6,14 +6,6 @@
 #include "decal.h"
 #include "cmodel.h"
 
-server_t		sv;
-server_static_t	svs;
-
-
-// TODO: Implement
-
-
-char* pr_strings = NULL, * gNullString = "";
 globalvars_t gGlobalVariables;
 
 int sv_playermodel;
@@ -27,14 +19,6 @@ decalname_t	sv_decalnames[MAX_BASE_DECALS];
 
 // TODO: Implement
 
-int gPacketSuppressed = 0;
-int			sv_decalnamecount;
-
-// Usermsg
-UserMsg* sv_gpNewUserMsgs;
-UserMsg* sv_gpUserMsgs;
-int giNextUserMsg = 64;
-
 int		nReliableBytesSent = 0;
 int		nDatagramBytesSent = 0;
 int		nReliables = 0;
@@ -44,11 +28,25 @@ qboolean bUnreliableOverflow = FALSE;
 // TODO: Implement
 
 float g_LastScreenUpdateTime;
-float scr_centertime_off;
 
 qboolean bShouldUpdatePing = FALSE;
 
 //======================================================= FINISH LINE (START)
+
+server_t		sv;
+server_static_t	svs;
+
+// TODO: Implement
+
+char* pr_strings = NULL, * gNullString = "";
+
+int		gPacketSuppressed = 0;
+int		sv_decalnamecount = 0;
+
+// User messages
+UserMsg* sv_gpNewUserMsgs = NULL;
+UserMsg* sv_gpUserMsgs = NULL;
+int giNextUserMsg = 64;
 
 cvar_t	sv_language = { "sv_language", "0" };
 cvar_t	violence_hblood = { "violence_hblood", "1" };
@@ -62,13 +60,13 @@ cvar_t	showtriggers = { "showtriggers", "0" };
 cvar_t	laddermode = { "laddermode", "0" };
 cvar_t	sv_clienttrace = { "sv_clienttrace", "1", FALSE, TRUE };
 
-cvar_t	sv_timeout = { "sv_timeout", "65", FALSE, TRUE };
+cvar_t	timeout = { "sv_timeout", "65", FALSE, TRUE };
 cvar_t	sv_challengetime = { "sv_challengetime", "15.0" };
 
 cvar_t	sv_cheats = { "sv_cheats", "0", FALSE, TRUE };
 
-cvar_t	sv_spectator_password = { "sv_spectator_password", "" };	// password for entering as a sepctator
-cvar_t	sv_maxspectators = { "sv_maxspectators", "8", FALSE, TRUE };
+cvar_t	spectator_password = { "sv_spectator_password", "" };	// password for entering as a sepctator
+cvar_t	max_spectators = { "sv_maxspectators", "8", FALSE, TRUE };
 cvar_t	sv_spectalk = { "sv_spectalk", "1", FALSE, TRUE };
 cvar_t	sv_password = { "sv_password", "" };	// password for entering the game
 
@@ -122,14 +120,14 @@ void SV_Init( void )
 	Cvar_RegisterVariable(&sv_wateraccelerate);
 	Cvar_RegisterVariable(&sv_waterfriction);
 	Cvar_RegisterVariable(&sv_challengetime);
-	Cvar_RegisterVariable(&sv_timeout);
+	Cvar_RegisterVariable(&timeout);
 	Cvar_RegisterVariable(&sv_clienttrace);
 	Cvar_RegisterVariable(&sv_zmax);
 	Cvar_RegisterVariable(&sv_wateramp);
 	Cvar_RegisterVariable(&sv_skyname);
 	Cvar_RegisterVariable(&sv_maxvelocity);
-	Cvar_RegisterVariable(&sv_spectator_password);
-	Cvar_RegisterVariable(&sv_maxspectators);
+	Cvar_RegisterVariable(&spectator_password);
+	Cvar_RegisterVariable(&max_spectators);
 	Cvar_RegisterVariable(&sv_spectalk);
 	Cvar_RegisterVariable(&showtriggers);
 	Cvar_RegisterVariable(&sv_cheats);
@@ -597,6 +595,154 @@ void SV_SendServerinfo( client_t *client )
 	client->spawned = FALSE;
 }
 
+/*
+================
+SV_New_f
+
+Sends the first message from the server to a connected client.
+This will be sent on the initial connection and upon each server load.
+================
+*/
+void SV_New_f( void )
+{
+	int		size1, size2, size3, size4;
+	edict_t* ent;
+
+	if (host_client->spawned && !host_client->active)
+		return;
+
+	ent = host_client->edict;
+
+	host_client->connected = TRUE;
+	host_client->connection_started = realtime;
+
+	SZ_Clear(&host_client->netchan.message);
+
+	SV_SendServerinfo(host_client);
+
+	size1 = host_client->netchan.message.cursize;
+	if (sv_netsize.value)
+		Con_DPrintf("SINFO=%i\n", size1);
+
+	size2 = host_client->netchan.message.cursize;
+	if (sv_netsize.value)
+		Con_DPrintf("DECALS=%i\n", size2 - size1);
+
+	// Send user messages
+	if (sv_gpUserMsgs)
+	{
+		UserMsg* pTemp;
+
+		pTemp = sv_gpNewUserMsgs;
+		sv_gpNewUserMsgs = sv_gpUserMsgs;
+		SV_SendUserReg(&host_client->netchan.message);
+		sv_gpNewUserMsgs = pTemp;
+	}
+
+	size3 = host_client->netchan.message.cursize;
+	if (sv_netsize.value)
+		Con_DPrintf("USR=%i\n", size3 - size2);
+
+	if (host_client->spectator)
+	{
+		SV_SpawnSpectator();
+
+		// call the spawn function
+		gGlobalVariables.time = sv.time;
+		gEntityInterface.pfnParmsNewLevel();
+		gEntityInterface.pfnSpectatorConnect(ent);
+	}
+	else
+	{
+		// call the spawn function
+		gEntityInterface.pfnClientConnect(ent);
+	}
+
+	size4 = host_client->netchan.message.cursize;
+	if (sv_netsize.value)
+		Con_DPrintf("CLSIZE = %i\n", size4 - size3);
+
+	net_activeconnections++;
+}
+
+/*
+=================
+SV_PTrack_f
+
+Change the bandwidth estimate for a client
+=================
+*/
+void SV_PTrack_f( void )
+{
+	int i;
+
+	if (Cmd_Argc() != 2)
+	{
+		// turn off tracking
+		host_client->spec_track = 0;
+		return;
+	}
+
+	i = atoi(Cmd_Argv(1));
+	if (i < 0 || i >= svs.maxclientslimit || !svs.clients[i].active ||
+		svs.clients[i].spectator)
+	{
+		SV_ClientPrintf("Invalid client to track\n");
+		host_client->spec_track = 0;
+		return;
+	}
+	host_client->spec_track = i + 1; // now tracking
+}
+
+/*
+================
+SV_RejectConnection
+
+Rejects connection request and sends back a message
+================
+*/
+void SV_RejectConnection( netadr_t* adr, char* text )
+{
+	SZ_Clear(&net_message);
+	MSG_WriteLong(&net_message, -1); // -1 -1 -1 -1 signal
+	MSG_WriteByte(&net_message, A2C_PRINT);
+	MSG_WriteString(&net_message, text);
+	NET_SendPacket(NS_SERVER, net_message.cursize, net_message.data, *adr);
+	SZ_Clear(&net_message);
+}
+
+/*
+==================
+SV_SpawnSpectator
+==================
+*/
+void SV_SpawnSpectator( void )
+{
+	int		i;
+	edict_t* e;
+
+	VectorCopy(vec3_origin, sv_player->v.origin);
+	VectorCopy(vec3_origin, sv_player->v.view_ofs);
+	sv_player->v.view_ofs[2] = 22;
+
+	// search for an info_playerstart to spawn the spectator at
+	for (i = MAX_CLIENTS - 1; i < sv.num_edicts; i++)
+	{
+		e = EDICT_NUM(i);
+		if (!strcmp(pr_strings + e->v.classname, "info_player_start"))
+		{
+			VectorCopy(e->v.origin, sv_player->v.origin);
+			return;
+		}
+	}
+}
+
+
+
+
+
+
+
 
 
 
@@ -618,32 +764,6 @@ void SV_SendServerinfo( client_t *client )
 
 
 
-/*
-================
-SV_RejectConnection
-
-Rejects connection request and sends back a message
-================
-*/
-void SV_RejectConnection( netadr_t* adr, char* reason )
-{
-	SZ_Clear(&net_message);
-	MSG_WriteLong(&net_message, 0xFFFFFFFF);
-	MSG_WriteByte(&net_message, A2C_PRINT);
-	MSG_WriteString(&net_message, reason);
-	NET_SendPacket(NS_SERVER, net_message.cursize, net_message.data, *adr);
-	SZ_Clear(&net_message);
-}
-
-/*
-==================
-SV_SpawnSpectator
-==================
-*/
-void SV_SpawnSpectator( void )
-{
-	_asm { int 3 };
-}
 
 // TODO: Implement
 
@@ -830,7 +950,7 @@ void SV_ConnectClient( void )
 		s = Cmd_Argv(8);
 		if (s[0])
 		{
-			if (sv_spectator_password.string[0] && _strcmpi(sv_spectator_password.string, "none") != 0 && strcmp(sv_spectator_password.string, s) != 0)
+			if (spectator_password.string[0] && _strcmpi(spectator_password.string, "none") != 0 && strcmp(spectator_password.string, s) != 0)
 			{
 				Con_Printf("%s:spectator password failed\n", NET_AdrToString(net_from));
 				SV_RejectConnection(&net_from, "Invalid spectator password.\n");
@@ -844,7 +964,7 @@ void SV_ConnectClient( void )
 	clients = 0;
 	SV_CountPlayers(&clients, &spectators);
 	clients -= spectators;
-	if (bSpectator && spectators >= sv_maxspectators.value)
+	if (bSpectator && spectators >= max_spectators.value)
 	{
 		Con_Printf("%s:No space for spectator\n", NET_AdrToString(net_from));
 		SV_RejectConnection(&net_from, "No more spectators allowed.\n");
@@ -1466,76 +1586,6 @@ void SV_SendReconnect( void )
 }
 
 // TODO: Implement
-
-/*
-================
-SV_New_f
-
-Sends the first message from the server to a connected client.
-This will be sent on the initial connection and upon each server load.
-================
-*/
-void SV_New_f( void )
-{
-	UserMsg*	pMsg;
-	int			size;
-
-	if (host_client->spawned && !host_client->active)
-		return;
-
-	host_client->connection_started = realtime;
-	host_client->connected = TRUE;
-	SZ_Clear(&host_client->netchan.message);
-	SV_SendServerinfo(host_client);
-
-	size = host_client->netchan.message.cursize;
-	if (sv_netsize.value != 0.0)
-	{
-		Con_DPrintf("SINFO=%i\n", size);
-	}
-
-	size = host_client->netchan.message.cursize;
-	if (sv_netsize.value != 0.0)
-	{
-		Con_DPrintf("DECALS=%i\n", host_client->netchan.message.cursize - size);
-	}
-
-	size = host_client->netchan.message.cursize;
-	if (sv_gpUserMsgs)
-	{
-		pMsg = sv_gpNewUserMsgs;
-		sv_gpNewUserMsgs = sv_gpUserMsgs;
-		SV_SendUserReg(&host_client->netchan.message);
-		sv_gpNewUserMsgs = pMsg;
-	}
-
-	if (sv_netsize.value != 0.0)
-	{
-		Con_DPrintf("USR=%i\n", host_client->netchan.message.cursize - size);
-	}
-
-	if (host_client->spectator)
-	{
-		SV_SpawnSpectator();
-		gGlobalVariables.time = sv.time;
-		gEntityInterface.pfnParmsNewLevel();
-		gEntityInterface.pfnSpectatorConnect(host_client->edict);
-	}
-	else
-	{
-		gEntityInterface.pfnClientConnect(host_client->edict);
-	}
-
-	if (sv_netsize.value != 0.0)
-		Con_DPrintf("CLSIZE = %i\n", host_client->netchan.message.cursize - size);
-
-	++net_activeconnections;
-}
-
-void SV_PTrack_f( void )
-{
-	// TODO: Implement
-}
 
 /*
 ================

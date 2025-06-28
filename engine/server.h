@@ -385,6 +385,7 @@ void SV_BroadcastPrintf( char* fmt, ... );
 void SV_QueryMovevarsChanged( void );
 void SV_New_f( void );
 void SV_PTrack_f( void );
+void SV_SpawnSpectator( void );
 void SV_ActivateServer( qboolean runPhysics );
 int SV_SpawnServer( qboolean bIsDemo, char* server, char* startspot );
 void SV_LoadEntities( void );
