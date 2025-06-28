@@ -162,10 +162,440 @@ void SV_Init( void )
 	}
 }
 
+/*
+==================
+void SV_CountPlayers
 
+Counts number of connections.  Clients includes regular connections
+==================
+*/
+void SV_CountPlayers( int* clients, int* spectators )
+{
+	int			i;
+	client_t* cl;
 
+	*clients = 0;
 
+	if (spectators)
+		*spectators = 0;
 
+	for (i = 0, cl = svs.clients; i < svs.maxclients; i++, cl++)
+	{
+		if (cl->active || cl->spawned || cl->connected)
+		{
+			(*clients)++;
+
+			if (cl->spectator)
+			{
+				if (spectators)
+					(*spectators)++;
+			}
+		}
+	}
+}
+
+void SV_FindModelNumbers( void )
+{
+	int		i;
+
+	sv_playermodel = -1;
+
+	for (i = 0; i < MAX_MODELS; i++)
+	{
+		if (!sv.model_precache[i])
+			break;
+		if (!strcmp(sv.model_precache[i], "models/player.mdl"))
+			sv_playermodel = i;
+	}
+}
+
+/*
+=============================================================================
+
+EVENT MESSAGES
+
+=============================================================================
+*/
+
+/*
+==================
+SV_StartParticle
+
+Make sure the event gets sent to all clients
+==================
+*/
+void SV_StartParticle( const vec_t* org, const vec_t* dir, int color, int count )
+{
+	int		i, v;
+
+	if (sv.datagram.cursize > MAX_DATAGRAM - 16)
+		return;
+	MSG_WriteByte(&sv.datagram, svc_particle);
+	MSG_WriteCoord(&sv.datagram, org[0]);
+	MSG_WriteCoord(&sv.datagram, org[1]);
+	MSG_WriteCoord(&sv.datagram, org[2]);
+	for (i = 0; i < 3; i++)
+	{
+		v = dir[i] * 16;
+		if (v > 127)
+			v = 127;
+		else if (v < -128)
+			v = -128;
+		MSG_WriteChar(&sv.datagram, v);
+	}
+	MSG_WriteByte(&sv.datagram, count);
+	MSG_WriteByte(&sv.datagram, color);
+}
+
+/*
+==================
+SV_StartSound
+
+Each entity can have eight independant sound sources, like voice,
+weapon, feet, etc.
+
+Channel 0 is an auto-allocate channel, the others override anything
+allready running on that entity/channel pair.
+
+An attenuation of 0 will play full volume everywhere in the level.
+Larger attenuations will drop off.  (max 4 attenuation)
+
+Pitch should be PITCH_NORM (100) for no pitch shift. Values over 100 (up to 255)
+shift pitch higher, values lower than 100 lower the pitch.
+==================
+*/
+void SV_StartSound( edict_t* entity, int channel, const char* sample, int volume, float attenuation, int fFlags, int pitch )
+{
+	int         sound_num;
+	int			field_mask;
+	int			i;
+	int			ent;
+	vec3_t		origin;
+
+	if (volume < 0 || volume > 255)
+		Sys_Error("SV_StartSound: volume = %i", volume);
+
+	if (attenuation < 0 || attenuation > 4)
+		Sys_Error("SV_StartSound: attenuation = %f", attenuation);
+
+	if (channel < CHAN_AUTO || channel > CHAN_NETWORKVOICE_BASE)
+		Sys_Error("SV_StartSound: channel = %i", channel);
+
+	if (pitch < 0 || pitch > 255)
+		Sys_Error("SV_StartSound: pitch = %i", pitch);
+
+	// if this is a sentence, get sentence number
+	if (sample[0] == CHAR_SENTENCE)
+	{
+		fFlags |= SND_SENTENCE;
+		sound_num = atoi(sample + 1);
+		if (sound_num >= CVOXFILESENTENCEMAX)
+		{
+			Con_Printf("invalid sentence number: %s", sample + 1);
+			return;
+		}
+	}
+	else
+	{
+// find precache number for sound
+		for (sound_num = 1; sound_num < MAX_SOUNDS
+			&& sv.sound_precache[sound_num]; sound_num++)
+			if (!strcmp(sample, sv.sound_precache[sound_num]))
+				break;
+
+		if (sound_num == MAX_SOUNDS || !sv.sound_precache[sound_num])
+		{
+			Con_Printf("SV_StartSound: %s not precached (%d)\n", sample, sound_num);
+			return;
+		}
+	}
+
+	ent = NUM_FOR_EDICT(entity);
+
+	for (i = 0; i < 3; i++)
+		origin[i] = entity->v.origin[i] + (entity->v.mins[i] + entity->v.maxs[i]) * 0.5;
+
+	channel = (ent << 3) | channel;
+
+	field_mask = fFlags;
+
+	if (volume != DEFAULT_SOUND_PACKET_VOLUME)
+		field_mask |= SND_VOLUME;
+	if (attenuation != DEFAULT_SOUND_PACKET_ATTENUATION)
+		field_mask |= SND_ATTENUATION;
+	if (pitch != DEFAULT_SOUND_PACKET_PITCH)
+		field_mask |= SND_PITCH;
+	if (sound_num > 255)
+		field_mask |= SND_LARGE_INDEX;
+
+// directed messages go only to the entity the are targeted on
+	MSG_WriteByte(&sv.multicast, svc_sound);
+	MSG_WriteByte(&sv.multicast, field_mask);
+	if (field_mask & SND_VOLUME)
+		MSG_WriteByte(&sv.multicast, volume);
+	if (field_mask & SND_ATTENUATION)
+		MSG_WriteByte(&sv.multicast, attenuation * 64);
+	MSG_WriteShort(&sv.multicast, channel);
+	if (sound_num > 255)
+		MSG_WriteShort(&sv.multicast, sound_num);
+	else
+		MSG_WriteByte(&sv.multicast, sound_num);
+	for (i = 0; i < 3; i++)
+		MSG_WriteCoord(&sv.multicast, origin[i]);
+	if (field_mask & SND_PITCH)
+		MSG_WriteByte(&sv.multicast, pitch);
+	if (channel == CHAN_STATIC)
+		SV_Multicast(origin, MSG_BROADCAST, FALSE);
+	else
+		SV_Multicast(origin, MSG_ALL, FALSE);
+}
+
+/*
+=============================================================================
+
+MULTICAST MESSAGE
+
+=============================================================================
+*/
+
+qboolean IsSinglePlayerGame( void )
+{
+	return svs.maxclients == 1;
+}
+
+/*
+================
+SV_ValidClientMulticast
+
+Checks if a client should receive a multicast message
+================
+*/
+qboolean SV_ValidClientMulticast( client_t* client, int soundLeaf, int to )
+{
+	unsigned char* mask;
+
+	mask = NULL;
+
+	if (IsSinglePlayerGame())
+		return TRUE;
+
+	if (to == MSG_FL_NONE)
+	{
+	}
+	else if (to == MSG_FL_PVS)
+	{
+		mask = CM_LeafPVS(soundLeaf);
+	}
+	else if (to == MSG_FL_PAS)
+	{
+		mask = CM_LeafPAS(soundLeaf);
+	}
+	else
+	{
+		Con_Printf("MULTICAST: Error %d!\n", to);
+		return FALSE;
+	}
+
+	if (!mask)
+		return TRUE;
+
+	int bitNumber;
+
+	// Get the leaf number the client is on.
+	bitNumber = SV_PointLeafnum(client->edict->v.origin);
+
+	if (mask[(bitNumber - 1) >> 3] & (1 << ((bitNumber - 1) & 7)))
+		return TRUE;
+
+	return FALSE;
+}
+
+/*
+==================
+SV_Multicast
+
+Send a multicast message
+==================
+*/
+void SV_Multicast( vec_t* origin, int to, qboolean reliable )
+{
+	client_t* client;
+	int		leafnum;
+	int		j;
+	sizebuf_t* pBuffer;
+
+	// Get the leaf number
+	leafnum = SV_PointLeafnum(origin);
+
+	for (j = 0, client = svs.clients; j < svs.maxclients; j++, client++)
+	{
+		if (!client->active)
+			continue;
+
+		if (SV_ValidClientMulticast(client, leafnum, to))
+		{
+			if (reliable)
+			{
+				pBuffer = &client->netchan.message;
+			}
+			else
+			{
+				pBuffer = &client->datagram;
+			}
+
+			if (pBuffer->maxsize - pBuffer->cursize > sv.multicast.cursize)
+				SZ_Write(pBuffer, sv.multicast.data, sv.multicast.cursize);
+		}
+		else
+		{
+			gPacketSuppressed += sv.multicast.cursize;
+		}
+	}
+
+	// Flush the buffer
+	SZ_Clear(&sv.multicast);
+}
+
+/*
+==============================================================================
+
+CLIENT SPAWNING
+
+==============================================================================
+*/
+
+/*
+==================
+SV_WriteMovevarsToClient
+
+==================
+*/
+void SV_WriteMovevarsToClient( sizebuf_t* message )
+{
+	MSG_WriteByte(message, svc_newmovevars);
+	MSG_WriteFloat(message, movevars.gravity);
+	MSG_WriteFloat(message, movevars.stopspeed);
+	MSG_WriteFloat(message, movevars.maxspeed);
+	MSG_WriteFloat(message, movevars.spectatormaxspeed);
+	MSG_WriteFloat(message, movevars.accelerate);
+	MSG_WriteFloat(message, movevars.airaccelerate);
+	MSG_WriteFloat(message, movevars.wateraccelerate);
+	MSG_WriteFloat(message, movevars.friction);
+	MSG_WriteFloat(message, movevars.edgefriction);
+	MSG_WriteFloat(message, movevars.waterfriction);
+	MSG_WriteFloat(message, movevars.entgravity);
+	MSG_WriteFloat(message, movevars.bounce);
+	MSG_WriteFloat(message, movevars.stepsize);
+	MSG_WriteFloat(message, movevars.maxvelocity);
+	MSG_WriteFloat(message, movevars.zmax);
+	MSG_WriteFloat(message, movevars.waveHeight);
+	MSG_WriteString(message, movevars.skyName);
+}
+
+/*
+==================
+SV_QueryMovevarsChanged
+
+Check for changes in movevars and update them if necessary
+==================
+*/
+void SV_QueryMovevarsChanged( void )
+{
+	int i;
+	client_t* cl;
+
+	if (movevars.maxspeed			== sv_maxspeed.value &&
+		movevars.gravity			== sv_gravity.value &&
+		movevars.stopspeed			== sv_stopspeed.value &&
+		sv_spectatormaxspeed.value	== movevars.spectatormaxspeed &&
+		movevars.accelerate			== sv_accelerate.value &&
+		movevars.airaccelerate		== sv_airaccelerate.value &&
+		movevars.wateraccelerate	== sv_wateraccelerate.value &&
+		movevars.friction			== sv_friction.value &&
+		movevars.edgefriction		== sv_edgefriction.value &&
+		movevars.waterfriction		== sv_waterfriction.value &&
+		movevars.entgravity			== 1.0 &&
+		movevars.bounce				== sv_bounce.value &&
+		movevars.stepsize			== sv_stepsize.value &&
+		movevars.maxvelocity		== sv_maxvelocity.value &&
+		movevars.zmax				== sv_zmax.value &&
+		movevars.waveHeight			== sv_wateramp.value &&
+		!strcmp(sv_skyname.string, movevars.skyName))
+		return;
+
+	SV_SetMoveVars();
+
+	for (i = 0, cl = svs.clients; i < svs.maxclients; i++, cl++)
+	{
+		if (!cl->active && !cl->spawned && !cl->connected)
+			continue;
+
+		SV_WriteMovevarsToClient(&cl->netchan.message);
+	}
+}
+
+/*
+================
+SV_SendServerinfo
+
+Sends the first message from the server to a connected client.
+This will be sent on the initial connection and upon each server load.
+================
+*/
+void SV_SendServerinfo( client_t *client )
+{
+	char			message[2048];
+	int				playernum;
+
+	// Only send this message to developer console, or multiplayer clients.
+	if ((developer.value) || (svs.maxclients > 1))
+	{
+		MSG_WriteByte(&client->netchan.message, svc_print);
+		sprintf(message, "%c\nBUILD %d SERVER (%i CRC)\nServer # %i\n", 0x2, build_number(), 0, svs.spawncount);
+		MSG_WriteString(&client->netchan.message, message);
+	}
+
+	MSG_WriteByte(&client->netchan.message, svc_serverinfo);
+	MSG_WriteLong(&client->netchan.message, PROTOCOL_VERSION);
+	MSG_WriteLong(&client->netchan.message, svs.spawncount);
+	MSG_WriteLong(&client->netchan.message, sv.worldmapCRC);       // To prevent cheating with hacked maps
+	MSG_WriteLong(&client->netchan.message, sv.clientSideDllCRC);  // To prevent cheating with hacked client dlls
+	MSG_WriteByte(&client->netchan.message, svs.maxclients);
+
+	playernum = NUM_FOR_EDICT(client->edict) - 1;
+	if (client->spectator)
+		playernum |= PN_SPECTATOR;
+	MSG_WriteByte(&client->netchan.message, playernum);
+
+	if (!coop.value && deathmatch.value)
+		MSG_WriteByte(&client->netchan.message, GAME_DEATHMATCH);
+	else
+		MSG_WriteByte(&client->netchan.message, GAME_COOP);
+
+	sprintf(message, pr_strings + sv.edicts->v.message);
+
+	MSG_WriteString(&client->netchan.message, message);
+
+	SV_WriteMovevarsToClient(&host_client->netchan.message);
+
+// send music
+	MSG_WriteByte(&client->netchan.message, svc_cdtrack);
+	MSG_WriteByte(&client->netchan.message, gGlobalVariables.cdAudioTrack);
+	MSG_WriteByte(&client->netchan.message, gGlobalVariables.cdAudioTrack);
+
+// set view
+	MSG_WriteByte(&client->netchan.message, svc_setview);
+	MSG_WriteShort(&client->netchan.message, NUM_FOR_EDICT(client->edict));
+
+// send resource request
+	MSG_WriteByte(&client->netchan.message, svc_resourcerequest);
+	MSG_WriteLong(&client->netchan.message, svs.spawncount);
+	MSG_WriteLong(&client->netchan.message, 0);
+
+	client->connected = TRUE;
+	client->sendsignon = TRUE;
+	client->spawned = FALSE;
+}
 
 
 
@@ -179,6 +609,14 @@ void SV_Init( void )
 
 
 //======================================================= FINISH LINE (END)
+
+
+
+
+
+
+
+
 
 /*
 ================
@@ -883,36 +1321,6 @@ byte* SV_FatPVS(vec3_t org)
 	return fatpvs;
 }
 
-/*
-==================
-void SV_CountPlayers
-
-Counts number of connections.  Clients includes regular connections, while spectators counts the spectators count.
-==================
-*/
-void SV_CountPlayers( int* clients, int* spectators )
-{
-	int			i;
-	client_t*	cl;
-
-	*clients = 0;
-	if (spectators)
-		*spectators = 0;
-
-	for (i = 0, cl = svs.clients; i < svs.maxclients; i++, cl++)
-	{
-		if (cl->active || cl->spawned || cl->connected)
-		{
-			(*clients)++;
-			if (cl->spectator)
-			{
-				if (spectators)
-					(*spectators)++;
-			}
-		}
-	}
-}
-
 // TODO: Implement
 
 void SV_MemPrediction_f( void )
@@ -929,220 +1337,6 @@ int SV_PointLeafnum( vec_t* p )
 		return pLeaf - sv.worldmodel->leafs;
 
 	return 0;
-}
-
-// TODO: Implement
-
-/*
-=============================================================================
-
-EVENT MESSAGES
-
-=============================================================================
-*/
-
-/*
-==================
-SV_StartParticle
-
-Make sure the event gets sent to all clients
-==================
-*/
-void SV_StartParticle( const vec_t* org, const vec_t* dir, int color, int count )
-{
-	// TODO: Implement
-}
-
-/*
-==================
-SV_StartSound
-
-Each entity can have eight independant sound sources, like voice,
-weapon, feet, etc.
-
-Channel 0 is an auto-allocate channel, the others override anything
-allready running on that entity/channel pair.
-
-An attenuation of 0 will play full volume everywhere in the level.
-Larger attenuations will drop off.  (max 4 attenuation)
-
-Pitch should be PITCH_NORM (100) for no pitch shift. Values over 100 (up to 255)
-shift pitch higher, values lower than 100 lower the pitch.
-==================
-*/
-void SV_StartSound( edict_t* entity, int channel, const char* sample, int volume, float attenuation, int fFlags, int pitch )
-{
-	int         sound_num;
-	int			field_mask;
-	int			i;
-	int			ent;
-	vec3_t		origin;
-
-	if (volume < 0 || volume > 255)
-		Sys_Error("SV_StartSound: volume = %i", volume);
-
-	if (attenuation < 0 || attenuation > 4)
-		Sys_Error("SV_StartSound: attenuation = %f", attenuation);
-
-	if (channel < CHAN_AUTO || channel > CHAN_NETWORKVOICE_BASE)
-		Sys_Error("SV_StartSound: channel = %i", channel);
-
-	if (pitch < 0 || pitch > 255)
-		Sys_Error("SV_StartSound: pitch = %i", pitch);
-
-	// if this is a sentence, get sentence number
-	if (sample[0] == '!')
-	{
-		fFlags |= SND_SENTENCE;
-		sound_num = atoi(sample + 1);
-		if (sound_num >= CVOXFILESENTENCEMAX)
-		{
-			Con_Printf("invalid sentence number: %s", sample + 1);
-			return;
-		}
-	}
-	else
-	{
-// find precache number for sound
-		for (sound_num = 1; sound_num < MAX_SOUNDS
-			&& sv.sound_precache[sound_num]; sound_num++)
-			if (!strcmp(sample, sv.sound_precache[sound_num]))
-				break;
-
-		if (sound_num == MAX_SOUNDS || !sv.sound_precache[sound_num])
-		{
-			Con_Printf("SV_StartSound: %s not precached (%d)\n", sample, sound_num);
-			return;
-		}
-	}
-
-	ent = NUM_FOR_EDICT(entity);
-
-	for (i = 0; i < 3; i++)
-		origin[i] = entity->v.origin[i] + (entity->v.mins[i] + entity->v.maxs[i]) * 0.5;
-
-	channel = (ent << 3) | channel;
-
-	field_mask = fFlags;
-
-	if (volume != DEFAULT_SOUND_PACKET_VOLUME)
-		field_mask |= SND_VOLUME;
-	if (attenuation != DEFAULT_SOUND_PACKET_ATTENUATION)
-		field_mask |= SND_ATTENUATION;
-	if (pitch != DEFAULT_SOUND_PACKET_PITCH)
-		field_mask |= SND_PITCH;
-	if (sound_num > 255)
-		field_mask |= SND_LARGE_INDEX;
-
-// directed messages go only to the entity the are targeted on
-	MSG_WriteByte(&sv.multicast, svc_sound);
-	MSG_WriteByte(&sv.multicast, field_mask);
-	if (field_mask & SND_VOLUME)
-		MSG_WriteByte(&sv.multicast, volume);
-	if (field_mask & SND_ATTENUATION)
-		MSG_WriteByte(&sv.multicast, attenuation * 64);
-	MSG_WriteShort(&sv.multicast, channel);
-	if (sound_num > 255)
-		MSG_WriteShort(&sv.multicast, sound_num);
-	else
-		MSG_WriteByte(&sv.multicast, sound_num);
-	for (i = 0; i < 3; i++)
-		MSG_WriteCoord(&sv.multicast, origin[i]);
-	if ((field_mask & 8) != 0)
-		MSG_WriteByte(&sv.multicast, pitch);
-	if (channel == 6)
-		SV_Multicast(origin, MSG_BROADCAST, FALSE);
-	else
-		SV_Multicast(origin, MSG_ALL, FALSE);
-}
-
-// TODO: Implement
-
-/*
-=============================================================================
-
-MULTICAST MESSAGE
-
-=============================================================================
-*/
-
-qboolean IsSinglePlayerGame( void )
-{
-	return svs.maxclients == 1;
-}
-
-BOOL SV_ValidClientMulticast(client_t *a1, int leafnum, int ArgList)
-{
-	// TODO: Refactor
-
-	byte *v3; // esi
-	byte *v5; // eax
-	int v6; // eax
-
-	v3 = 0;
-	if (IsSinglePlayerGame())
-		return 1;
-	if (ArgList)
-	{
-		if (ArgList == 1)
-		{
-			v5 = CM_LeafPVS(leafnum);
-		}
-		else
-		{
-			if (ArgList != 2)
-			{
-				Con_Printf("MULTICAST: Error %d!\n", ArgList);
-				return 0;
-			}
-			v5 = CM_LeafPAS(leafnum);
-		}
-		v3 = v5;
-	}
-	if (!v3)
-		return 1;
-	v6 = SV_PointLeafnum(a1->edict->v.origin);
-	return (v3[(v6 - 1) >> 3] & (1 << ((v6 - 1) & 7))) != 0;
-}
-
-/*
-==================
-SV_Multicast
-
-Write client buffers based on valid multicast recipients
-==================
-*/
-void SV_Multicast( vec_t* origin, int to, qboolean reliable )
-{
-	// TODO: Refactor
-
-	int i; // ebp
-	int v4; // ebx
-	client_t *client; // edi
-	sizebuf_t *p_message; // ecx
-
-	i = 0;
-	v4 = SV_PointLeafnum(origin);
-	for (client = svs.clients; svs.maxclients > i; ++client)
-	{
-		if (client->active)
-		{
-			if (SV_ValidClientMulticast(client, v4, to))
-			{
-				p_message = &client->netchan.message;
-				if (reliable == FALSE)
-					p_message = &client->datagram;
-				if (p_message->maxsize - p_message->cursize > sv.multicast.cursize)
-					SZ_Write(p_message, sv.multicast.data, sv.multicast.cursize);
-			}
-			else
-			{
-				gPacketSuppressed += sv.multicast.cursize;
-			}
-		}
-		++i;
-	}
-	SZ_Clear(&sv.multicast);
 }
 
 // TODO: Implement
@@ -1272,142 +1466,6 @@ void SV_SendReconnect( void )
 }
 
 // TODO: Implement
-
-/*
-================
-SV_WriteMovevarsToClient
-
-Send the movevars to the specified client's netchan
-================
-*/
-void SV_WriteMovevarsToClient( sizebuf_t* sb )
-{
-	MSG_WriteByte(sb, svc_newmovevars);
-	MSG_WriteFloat(sb, movevars.gravity);
-	MSG_WriteFloat(sb, movevars.stopspeed);
-	MSG_WriteFloat(sb, movevars.maxspeed);
-	MSG_WriteFloat(sb, movevars.spectatormaxspeed);
-	MSG_WriteFloat(sb, movevars.accelerate);
-	MSG_WriteFloat(sb, movevars.airaccelerate);
-	MSG_WriteFloat(sb, movevars.wateraccelerate);
-	MSG_WriteFloat(sb, movevars.friction);
-	MSG_WriteFloat(sb, movevars.edgefriction);
-	MSG_WriteFloat(sb, movevars.waterfriction);
-	MSG_WriteFloat(sb, movevars.entgravity);
-	MSG_WriteFloat(sb, movevars.bounce);
-	MSG_WriteFloat(sb, movevars.stepsize);
-	MSG_WriteFloat(sb, movevars.maxvelocity);
-	MSG_WriteFloat(sb, movevars.zmax);
-	MSG_WriteFloat(sb, movevars.waveHeight);
-	MSG_WriteString(sb, movevars.skyName);
-}
-
-/*
-================
-SV_QueryMovevarsChanged
-
-Tell all the clients about new movevars, if any
-================
-*/
-void SV_QueryMovevarsChanged( void )
-{
-	// TODO: FF: Move me
-
-	int			i;
-	client_t*	cl;
-
-	if (movevars.maxspeed != sv_maxspeed.value
-	  || movevars.gravity != sv_gravity.value
-	  || movevars.stopspeed != sv_stopspeed.value
-	  || sv_spectatormaxspeed.value != movevars.spectatormaxspeed
-	  || movevars.accelerate != sv_accelerate.value
-	  || movevars.airaccelerate != sv_airaccelerate.value
-	  || movevars.wateraccelerate != sv_wateraccelerate.value
-	  || movevars.friction != sv_friction.value
-	  || movevars.edgefriction != sv_edgefriction.value
-	  || movevars.waterfriction != sv_waterfriction.value
-	  || movevars.entgravity != 1
-	  || movevars.bounce != sv_bounce.value
-	  || movevars.stepsize != sv_stepsize.value
-	  || movevars.maxvelocity != sv_maxvelocity.value
-	  || movevars.zmax != sv_zmax.value
-	  || movevars.waveHeight != sv_wateramp.value
-	  || strcmp(sv_skyname.string, movevars.skyName) != 0)
-	{
-		SV_SetMoveVars();
-		for (i = 0, cl = svs.clients; i < svs.maxclients; i++, cl++)
-		{
-			if (cl->active || cl->spawned || cl->connected)
-				SV_WriteMovevarsToClient(&cl->netchan.message);
-		}
-	}
-}
-
-/*
-================
-SV_SendServerinfo
-
-Sends the first message from the server to a connected client.
-This will be sent on the initial connection and upon each server load.
-================
-*/
-void SV_SendServerinfo( client_t *client )
-{
-	client_t*		cl;
-	char			message[2048];
-	int				i;
-
-	if (developer.value == 0 && svs.maxclients <= 1)
-	{
-		cl = client;
-	}
-	else
-	{
-		cl = client;
-		MSG_WriteByte(&client->netchan.message, svc_print);
-		sprintf(message, "%c\nBUILD %d SERVER (%i CRC)\nServer # %i\n", 2, build_number(), 0, svs.spawncount);
-		MSG_WriteString(&client->netchan.message, message);
-	}
-
-	MSG_WriteByte(&cl->netchan.message, svc_serverinfo);
-	MSG_WriteLong(&cl->netchan.message, PROTOCOL_VERSION);
-	MSG_WriteLong(&cl->netchan.message, svs.spawncount);
-	MSG_WriteLong(&cl->netchan.message, sv.worldmapCRC);
-	MSG_WriteLong(&cl->netchan.message, sv.clientSideDllCRC);
-	MSG_WriteByte(&cl->netchan.message, svs.maxclients);
-	i = NUM_FOR_EDICT(cl->edict) - 1;
-	if (cl->spectator)
-		i |= PN_SPECTATOR;
-	MSG_WriteByte(&cl->netchan.message, i);
-
-	if (!coop.value && deathmatch.value)
-		MSG_WriteByte(&client->netchan.message, GAME_DEATHMATCH);
-	else
-		MSG_WriteByte(&client->netchan.message, GAME_COOP);
-
-	sprintf(message, pr_strings + sv.edicts->v.message);
-
-	MSG_WriteString(&client->netchan.message, message);
-
-	SV_WriteMovevarsToClient(&host_client->netchan.message);
-
-// send music
-	MSG_WriteByte(&client->netchan.message, svc_cdtrack);
-	MSG_WriteByte(&client->netchan.message, gGlobalVariables.cdAudioTrack);
-	MSG_WriteByte(&client->netchan.message, gGlobalVariables.cdAudioTrack);
-
-// set view	
-	MSG_WriteByte(&client->netchan.message, svc_setview);
-	MSG_WriteShort(&client->netchan.message, NUM_FOR_EDICT(client->edict));
-
-	MSG_WriteByte(&client->netchan.message, svc_resourcerequest);
-	MSG_WriteLong(&client->netchan.message, svs.spawncount);
-	MSG_WriteLong(&client->netchan.message, 0);
-
-	client->connected = TRUE;
-	client->sendsignon = TRUE;
-	client->spawned = FALSE;
-}
 
 /*
 ================

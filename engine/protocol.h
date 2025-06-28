@@ -290,7 +290,8 @@
 
 //==============================================
 
-// usermsg flags
+// Message send destination flags
+#define MSG_FL_NONE				0		// No flags
 #define MSG_FL_PVS				(1<<0)	// Send to PVS
 #define MSG_FL_PAS				(1<<1)	// Send to PAS
 

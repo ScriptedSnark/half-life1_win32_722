@@ -365,6 +365,8 @@ void SV_FullClientUpdate( client_t* cl, sizebuf_t* sb );
 void SV_CountPlayers( int* clients, int* spectators );
 void SV_DropClient( client_t* drop, qboolean crash );
 
+int SV_PointLeafnum( vec_t* p );
+
 int SV_CalcPing( client_t* cl );
 
 
