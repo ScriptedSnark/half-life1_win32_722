@@ -1524,16 +1524,17 @@ void Host_ServerFrame( void )
 
 	SV_RequestMissingResourcesFromClients();
 
-	// Send a heartbeat to the master if needed
+// send a heartbeat to the master if needed
 	Master_Heartbeat();
 
-	// Kill self if sv.time is greater than host_killtime
 	if (host_killtime.value && sv.time > host_killtime.value)
 		Host_Quit_f();
 
 	if (host_speeds.value)
 		time5 = Sys_FloatTime();
 }
+
+//============================================================================
 
 /*
 ==================
@@ -1596,11 +1597,12 @@ void Master_RequestHeartbeat( void )
 }
 
 /*
-==================
+================
 Master_Heartbeat
 
-Requests a challenge so we can then send a heartbeat
-==================
+Send a message to the master every few minutes to
+let it know we are alive, and log information
+================
 */
 #define	HEARTBEAT_SECONDS	300
 void Master_Heartbeat( void )

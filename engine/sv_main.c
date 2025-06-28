@@ -62,34 +62,123 @@ cvar_t	showtriggers = { "showtriggers", "0" };
 cvar_t	laddermode = { "laddermode", "0" };
 cvar_t	sv_clienttrace = { "sv_clienttrace", "1", FALSE, TRUE };
 
+cvar_t	sv_timeout = { "sv_timeout", "65", FALSE, TRUE };
+cvar_t	sv_challengetime = { "sv_challengetime", "15.0" };
+
+cvar_t	sv_cheats = { "sv_cheats", "0", FALSE, TRUE };
+
+cvar_t	sv_spectator_password = { "sv_spectator_password", "" };	// password for entering as a sepctator
+cvar_t	sv_maxspectators = { "sv_maxspectators", "8", FALSE, TRUE };
+cvar_t	sv_spectalk = { "sv_spectalk", "1", FALSE, TRUE };
+cvar_t	sv_password = { "sv_password", "" };	// password for entering the game
+
+cvar_t	sv_masterprint = { "sv_masterprint", "1" };
+cvar_t	sv_masterprinttime = { "sv_masterprinttime", "5.0" };
+
+cvar_t	sv_netsize = { "sv_netsize", "0" };
+
+cvar_t	sv_allow_download = { "sv_allowdownload", "1", FALSE, TRUE };
+cvar_t	sv_allow_upload = { "sv_allowupload", "1", FALSE, TRUE };
+cvar_t	sv_upload_maxsize = { "sv_upload_maxsize", "0", FALSE, TRUE };
+
+cvar_t	sv_showcmd = { "sv_showcmd", "0" };
+
+cvar_t	filterban = { "filterban", "1" };
+
+//=============================================================================
+
+/*
+===============
+SV_Init
+===============
+*/
+void SV_Init( void )
+{
+	int i;
+	client_t* client;
+
+	Cvar_RegisterVariable(&sv_password);
+	Cvar_RegisterVariable(&sv_masterprint);
+	Cvar_RegisterVariable(&sv_masterprinttime);
+	Cvar_RegisterVariable(&sv_idealpitchscale);
+	Cvar_RegisterVariable(&sv_aim);
+	Cvar_RegisterVariable(&sv_language);
+	Cvar_RegisterVariable(&violence_hblood);
+	Cvar_RegisterVariable(&violence_ablood);
+	Cvar_RegisterVariable(&violence_hgibs);
+	Cvar_RegisterVariable(&violence_agibs);
+	Cvar_RegisterVariable(&sv_newunit);
+	Cvar_RegisterVariable(&sv_gravity);
+	Cvar_RegisterVariable(&sv_friction);
+	Cvar_RegisterVariable(&sv_edgefriction);
+	Cvar_RegisterVariable(&sv_stopspeed);
+	Cvar_RegisterVariable(&sv_maxspeed);
+	Cvar_RegisterVariable(&sv_accelerate);
+	Cvar_RegisterVariable(&sv_stepsize);
+	Cvar_RegisterVariable(&sv_clipmode);
+	Cvar_RegisterVariable(&sv_bounce);
+	Cvar_RegisterVariable(&sv_airmove);
+	Cvar_RegisterVariable(&sv_airaccelerate);
+	Cvar_RegisterVariable(&sv_wateraccelerate);
+	Cvar_RegisterVariable(&sv_waterfriction);
+	Cvar_RegisterVariable(&sv_challengetime);
+	Cvar_RegisterVariable(&sv_timeout);
+	Cvar_RegisterVariable(&sv_clienttrace);
+	Cvar_RegisterVariable(&sv_zmax);
+	Cvar_RegisterVariable(&sv_wateramp);
+	Cvar_RegisterVariable(&sv_skyname);
+	Cvar_RegisterVariable(&sv_maxvelocity);
+	Cvar_RegisterVariable(&sv_spectator_password);
+	Cvar_RegisterVariable(&sv_maxspectators);
+	Cvar_RegisterVariable(&sv_spectalk);
+	Cvar_RegisterVariable(&showtriggers);
+	Cvar_RegisterVariable(&sv_cheats);
+	Cvar_RegisterVariable(&sv_spectatormaxspeed);
+	Cvar_RegisterVariable(&sv_netsize);
+	Cvar_RegisterVariable(&sv_showcmd);
+
+	Cvar_RegisterVariable(&pm_pushfix);
+
+	Cvar_RegisterVariable(&sv_upload_maxsize);
+	Cvar_RegisterVariable(&sv_allow_download);
+	Cvar_RegisterVariable(&sv_allow_upload);
+
+	Pmove_Init();
+
+	for (i = 0; i < MAX_MODELS; i++)
+	{
+		sprintf(localmodels[i], "*%i", i);
+	}
+
+	for (i = 0; i < svs.maxclients; i++)
+	{
+		client = &svs.clients[i];
+		memset(client, 0, sizeof(client_t));
+
+		client->resourcesonhand.pPrev = &client->resourcesonhand;
+		client->resourcesonhand.pNext = &client->resourcesonhand;
+		client->resourcesneeded.pPrev = &client->resourcesneeded;
+		client->resourcesneeded.pNext = &client->resourcesneeded;
+	}
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 //======================================================= FINISH LINE (END)
-
-
-
-
-
-
-
-
-cvar_t sv_password = { "sv_password", "" };
-cvar_t sv_spectator_password = { "sv_spectator_password", "" };
-cvar_t sv_maxspectators = { "sv_maxspectators", "8", FALSE, TRUE };
-
-
-
-cvar_t sv_cheats = { "sv_cheats", "0", FALSE, TRUE };
-
-
-
-
-cvar_t sv_netsize = { "sv_netsize", "0" };
-cvar_t sv_allow_download = { "sv_allowdownload", "1", FALSE, TRUE };
-cvar_t sv_allow_upload = { "sv_allowupload", "1", FALSE, TRUE };
-cvar_t sv_upload_maxsize = { "sv_upload_maxsize", "0", FALSE, TRUE };
-
-cvar_t sv_showcmd = { "sv_showcmd", "0" };
-
-cvar_t filterban = { "filterban", "1" };
 
 /*
 ================
@@ -792,78 +881,6 @@ byte* SV_FatPVS(vec3_t org)
 	Q_memset(fatpvs, 0, fatbytes);
 	SV_AddToFatPVS(org, sv.worldmodel->nodes);
 	return fatpvs;
-}
-
-//=============================================================================
-
-/*
-==================
-SV_Init
-
-General initialization of the server
-==================
-*/
-void SV_Init( void )
-{
-	int		i;
-
-	Cvar_RegisterVariable(&sv_password);
-
-	// TODO: Implement
-	
-	Cvar_RegisterVariable(&sv_idealpitchscale);
-	Cvar_RegisterVariable(&sv_aim);
-	Cvar_RegisterVariable(&sv_language);
-	Cvar_RegisterVariable(&violence_hblood);
-	Cvar_RegisterVariable(&violence_ablood);
-	Cvar_RegisterVariable(&violence_hgibs);
-	Cvar_RegisterVariable(&violence_agibs);	
-	Cvar_RegisterVariable(&sv_newunit);
-	Cvar_RegisterVariable(&sv_gravity);
-	Cvar_RegisterVariable(&sv_friction);
-	Cvar_RegisterVariable(&sv_edgefriction);
-	Cvar_RegisterVariable(&sv_stopspeed);
-	Cvar_RegisterVariable(&sv_maxspeed);
-	Cvar_RegisterVariable(&sv_accelerate);
-	Cvar_RegisterVariable(&sv_stepsize);
-	Cvar_RegisterVariable(&sv_clipmode);
-	Cvar_RegisterVariable(&sv_bounce);
-	Cvar_RegisterVariable(&sv_airmove);
-	Cvar_RegisterVariable(&sv_airaccelerate);
-	Cvar_RegisterVariable(&sv_wateraccelerate);
-	Cvar_RegisterVariable(&sv_waterfriction);
-
-	// TODO: Implement
-	Cvar_RegisterVariable(&sv_clienttrace);
-	Cvar_RegisterVariable(&sv_zmax);
-	Cvar_RegisterVariable(&sv_wateramp);
-	Cvar_RegisterVariable(&sv_skyname);
-	Cvar_RegisterVariable(&sv_maxvelocity);
-	Cvar_RegisterVariable(&sv_spectator_password);
-	Cvar_RegisterVariable(&sv_maxspectators);
-
-	// TODO: Implement
-
-	Cvar_RegisterVariable(&showtriggers);
-	Cvar_RegisterVariable(&sv_cheats);
-	Cvar_RegisterVariable(&sv_spectatormaxspeed);
-	Cvar_RegisterVariable(&sv_netsize);
-	Cvar_RegisterVariable(&sv_showcmd);
-
-	Cvar_RegisterVariable(&pm_pushfix);
-
-	Cvar_RegisterVariable(&sv_upload_maxsize);
-	Cvar_RegisterVariable(&sv_allow_download);
-	Cvar_RegisterVariable(&sv_allow_upload);
-
-	Pmove_Init();
-
-	for (i = 0; i < MAX_MODELS; i++)
-	{
-		sprintf(localmodels[i], "*%i", i);
-	}
-
-	// TODO: Implement
 }
 
 /*
