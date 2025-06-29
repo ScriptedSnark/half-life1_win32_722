@@ -211,7 +211,7 @@ typedef struct client_s
 
 	const edict_t* pViewEntity; // View Entity (camera or the client itself)
 
-	char hashedcdkey[33];
+	char hashedcdkey[SIGNED_GUID_LEN + 1];
 
 	char name[32];	// for printing to other people
 

@@ -66,6 +66,12 @@
 #define M2A_CHALLENGE			's'
 								//'s' + challenge value
 
+#define PROTOCOL_AUTHCERTIFICATE 0x01   // Connection from client is using a WON authenticated certificate
+#define PROTOCOL_HASHEDCDKEY     0x02    // Connection from client is using hashed CD key because WON comm. channel was unreachable
+#define PROTOCOL_LASTVALID       0x02    // Last valid protocol
+
+#define SIGNED_GUID_LEN 32 // Hashed CD Key (32 hex alphabetic chars + 0 terminator )
+
 //==================
 // note that there are some defs.qc that mirror to these numbers
 // also related to svc_strings[] in cl_parse
@@ -107,7 +113,6 @@
 #define svc_centerprint			26		// [string] to put in center of the screen
 #define svc_killedmonster		27
 #define svc_foundsecret			28
-
 #define svc_spawnstaticsound	29		// [coord3] [byte] samp [byte] vol [byte] aten
 #define svc_intermission		30		// [string] music
 #define svc_finale				31		// [string] music [string] text
@@ -209,9 +214,6 @@
 #define	PF_BASEVELOCITY	(1<<23)
 #define	PF_FRICTION		(1<<24)
 #define	PF_PING			(1<<25)
-
-
-
 
 #define PN_SPECTATOR	(1<<7)		// extra playernum flag to determine if we joined as spectator
 
@@ -318,7 +320,6 @@ typedef struct
 
 // Server default maxplayers value
 #define DEFAULT_SERVER_CLIENTS	8
-
 
 typedef struct usercmd_s
 {
