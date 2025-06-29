@@ -49,7 +49,7 @@ typedef struct exefuncs_s
 	void		(*Launcher_GetCDKey)( char* pszCDKey, int* nLength, int* bDedicated );
 	void		(*Launcher_GetClientID)( void* pID );
 	void		(*Launcher_GetUUID)( void* pUUID, int* nLength, int* bDedicated );
-	void*		(*Launcher_VerifyMessage)( int nLength, byte* pKey, int nMsgLength, char* pMsg, int nSignLength, byte* pSign );
+	char*		(*Launcher_VerifyMessage)( int nLength, byte* pKey, int nMsgLength, char* pMsg, int nSignLength, byte* pSign );
 	// Retrieves the user's raw auth certificate
 	int			(*Launcher_GetCertificate)( void* pBuffer, int* nLength );
 	int			(*Launcher_RequestNewClientCertificate)( void );

@@ -30,21 +30,6 @@
 // Server is ending current game
 #define	S2M_SHUTDOWN			'b' // no params
 
-// Client connection is initiated by requesting a challenge value
-//  the server sends this value back
-#define S2C_CHALLENGE			'A'	// + challenge value
-
-// Send a userid, client remote address, is this server secure and engine build number
-#define S2C_CONNECTION			'B'
-
-// Response to server info requests
-#define S2A_INFO				'C' // + Address, hostname, map, gamedir, gamedescription, active players, maxplayers, protocol
-
-
-
-
-
-
 // Request for MOTD from Server Master  (Message of the Day)
 #define	A2M_GET_MOTD			'g'	// no params
 
@@ -63,8 +48,25 @@
 // Another user is requesting a challenge value from this machine
 #define A2A_GETCHALLENGE		'q'	// Request challenge # from another machine
 // Challenge response from master
-#define M2A_CHALLENGE			's'
-								//'s' + challenge value
+#define M2A_CHALLENGE			's'	//'s' + challenge value
+
+#define M2A_ACTIVEMODS			'y' // response:  modname\r\nusers\r\nservers
+
+#define M2M_MSG					'z' // Master peering message
+
+// Client connection is initiated by requesting a challenge value
+//  the server sends this value back
+#define S2C_CHALLENGE			'A'	// + challenge value
+
+// Send a userid, client remote address, is this server secure and engine build number
+#define S2C_CONNECTION			'B'
+
+// Response to server info requests
+#define S2A_INFO				'C' // + Address, hostname, map, gamedir, gamedescription, active players, maxplayers, protocol
+#define S2A_PLAYER				'D' // + Playernum, name, frags, /*deaths*/, time on server
+
+// Request for detailed server/rule information.
+#define S2A_RULES				'E' // + number of rules + string key and string value pairs
 
 #define PROTOCOL_AUTHCERTIFICATE 0x01   // Connection from client is using a WON authenticated certificate
 #define PROTOCOL_HASHEDCDKEY     0x02    // Connection from client is using hashed CD key because WON comm. channel was unreachable

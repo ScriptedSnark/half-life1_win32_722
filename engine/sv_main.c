@@ -1037,11 +1037,432 @@ void SV_ConnectClient( void )
 }
 
 
+/*
+==============================================================================
 
+CONNECTIONLESS COMMANDS
 
+==============================================================================
+*/
 
+/*
+================
+SVC_Ping
 
+Just responds with an acknowledgement
+================
+*/
+void SVC_Ping( void )
+{
+	char	data;
 
+	data = A2A_ACK;
+
+	NET_SendPacket(NS_SERVER, 1, &data, net_from);
+}
+
+/*
+================
+SVC_Status
+
+Responds with all the info that qplug or qspy can see
+This message can be up to around 5k with worst case string lengths.
+================
+*/
+void SVC_Status( void )
+{
+}
+
+/*
+=================
+SVC_GetChallenge
+
+Returns a challenge number that can be used
+in a subsequent client_connect command.
+We do this to prevent denial of service attacks that
+flood the server with invalid connection IPs.  With a
+challenge, they must give a valid IP address.
+=================
+*/
+void SVC_GetChallenge( void )
+{
+	int		i;
+	int		oldest;
+	int		oldestTime;
+	char	data[8 + 1];
+
+	oldest = 0;
+	oldestTime = 0x7fffffff;
+
+	// see if we already have a challenge for this ip
+	for (i = 0; i < MAX_CHALLENGES; i++)
+	{
+		if (NET_CompareClassBAdr(net_from, g_rg_sv_challenges[i].adr))
+			break;
+		if (g_rg_sv_challenges[i].time < oldestTime)
+		{
+			oldestTime = g_rg_sv_challenges[i].time;
+			oldest = i;
+		}
+	}
+
+	if (i == MAX_CHALLENGES)
+	{
+		// overwrite the oldest
+		g_rg_sv_challenges[oldest].challenge = (RandomLong(0, 0xFFFF) << 16 | RandomLong(0, 0xFFFF));
+		g_rg_sv_challenges[oldest].adr = net_from;
+		g_rg_sv_challenges[oldest].time = realtime;
+		i = oldest;
+	}
+
+	// send it back
+	sprintf(data, "%c%c%c%c%c", 255, 255, 255, 255, S2C_CHALLENGE);
+	*(int*)(data + 5) = BigLong(g_rg_sv_challenges[i].challenge);
+	NET_SendPacket(NS_SERVER, 9, data, net_from);
+}
+
+/*
+================
+SVC_Info
+
+Responds with short or long info for broadcast scans
+================
+*/
+void SVC_Info( void )
+{
+	int		i, count;
+	sizebuf_t buf;
+
+	if (!sv.active)            // Must be running a server.
+		return;
+
+	if (svs.maxclients <= 1)   // ignore in single player
+		return;
+
+	if (!noip.value && NET_CompareClassBAdr(net_local_adr, net_from))
+		return;
+#ifdef _WIN32
+	if (!noipx.value && NET_CompareClassBAdr(net_local_ipx_adr, net_from))
+		return;
+#endif //_WIN32
+
+	count = 0;
+	for (i = 0; i < svs.maxclients; i++)
+	{
+		if (svs.clients[i].active)
+			count++;
+	}
+
+	MSG_WriteLong(&buf, 0xffffffff);
+	MSG_WriteByte(&buf, S2A_INFO);
+
+	// Send the IP address
+	MSG_WriteString(&buf, NET_AdrToString(net_local_adr));
+
+	MSG_WriteString(&buf, host_name.string);
+	MSG_WriteString(&buf, sv.name);
+
+	MSG_WriteString(&buf, com_gamedir);
+	MSG_WriteString(&buf, gEntityInterface.pfnGetGameDescription());
+
+	MSG_WriteByte(&buf, count);
+	MSG_WriteByte(&buf, svs.maxclients);
+	MSG_WriteByte(&buf, 7);
+
+	NET_SendPacket(NS_SERVER, buf.cursize, buf.data, net_from);
+}
+
+/*
+=================
+SVC_PlayerInfo
+
+Returns info about requested player.
+=================
+*/
+void SVC_PlayerInfo( void )
+{
+	int		i, count;
+	client_t* client;
+	sizebuf_t buf;
+	byte	data[2048];
+
+	buf.data = data;
+	buf.maxsize = sizeof(data);
+	buf.cursize = 0;
+
+	if (!sv.active)            // Must be running a server.
+		return;
+
+	if (svs.maxclients <= 1)   // ignore in single player
+		return;
+
+	// Find Player
+	MSG_WriteLong(&buf, -1);
+	MSG_WriteByte(&buf, S2A_PLAYER);
+
+	count = 0;
+	for (i = 0, client = svs.clients; i < svs.maxclients; i++, client++)
+	{
+		if (!svs.clients[i].active)
+			continue;
+
+		count++;
+	}
+
+	MSG_WriteByte(&buf, count);
+	count = 0;
+	for (i = 0, client = svs.clients; i < svs.maxclients; i++, client++)
+	{
+		if (!svs.clients[i].active)
+			continue;
+
+		count++;
+
+		MSG_WriteByte(&buf, count);
+		MSG_WriteString(&buf, client->name);
+		MSG_WriteLong(&buf, client->edict->v.frags);
+		MSG_WriteFloat(&buf, realtime - client->netchan.connect_time);
+	}
+
+	NET_SendPacket(NS_SERVER, buf.cursize, buf.data, net_from);
+}
+
+/*
+=================
+SVC_RuleInfo
+
+More detailed server information
+=================
+*/
+void SVC_RuleInfo( void )
+{
+	int		nNumRules;
+	cvar_t* var;
+	sizebuf_t buf;
+	byte	data[2048];
+
+	buf.data = data;
+	buf.maxsize = sizeof(data);
+	buf.cursize = 0;
+
+	if (!sv.active)            // Must be running a server.
+		return;
+	
+	if (svs.maxclients <= 1)   // ignore in single player
+		return;
+
+	nNumRules = Cvar_CountServerVariables();
+	if (nNumRules <= 0)        // No server rules active.
+		return;
+
+	// Find Player
+	MSG_WriteLong(&buf, -1);
+	MSG_WriteByte(&buf, S2A_RULES);  // All players coming now.
+	MSG_WriteShort(&buf, nNumRules);
+
+	// Need to respond with game directory, game name, and any server variables that have been set that
+	//  effect rules.  Also, probably need a hook into the .dll to respond with additional rule information.
+	for (var = cvar_vars; var; var = var->next)
+	{
+		if (!var->server)
+			continue;
+
+		MSG_WriteString(&buf, var->name);   // Cvar Name
+		MSG_WriteString(&buf, var->string); // Value
+	}
+
+	NET_SendPacket(NS_SERVER, buf.cursize, buf.data, net_from);
+}
+
+/*
+=================
+SV_SetMasterPeeringMessage
+
+Set master peering message
+=================
+*/
+char g_szMasterMsg[1024];
+int g_iMasterMsgSize;
+void SV_SetMasterPeeringMessage( qboolean skipHeader )
+{
+	char	pBuf[1024];
+	int		nSize;
+
+	if (skipHeader)
+	{
+		msg_readcount = 0;
+		MSG_ReadLong();
+		MSG_ReadByte();
+		MSG_ReadByte();
+	}
+
+	nSize = MSG_ReadLong();
+	if (nSize <= 0 || nSize >= sizeof(pBuf))
+		return;
+
+	if (MSG_ReadBuf(nSize, pBuf) == -1)
+		return;
+
+	g_iMasterMsgSize = nSize;
+	memcpy(g_szMasterMsg, pBuf, g_iMasterMsgSize);
+}
+
+/*
+=================
+SVC_Heartbeat
+
+=================
+*/
+void SVC_Heartbeat( void )
+{
+	gfHeartbeatWaiting = FALSE;                   // // Kill timer
+	gHeartbeatChallenge = MSG_ReadLong();
+
+	if (MSG_ReadByte() == M2A_ACTIVEMODS)
+		SV_SetMasterPeeringMessage(FALSE);
+
+	// Send the actual heartbeat request to this master server.
+	Master_RequestHeartbeat();
+}
+
+/*
+=================
+SVC_MasterPrint
+
+Master message
+=================
+*/
+float gfLastMasterPrintTime = 0.0f;
+void SVC_MasterPrint( void )
+{
+	char	pBuf[1024];
+	byte	pSign[1024];
+	int		nSize, nSignSize;
+	char* pMsg;
+
+	if (!g_iMasterMsgSize)
+		return;
+
+	msg_readcount = 0;
+	MSG_ReadLong();
+	MSG_ReadByte();
+	MSG_ReadByte();
+
+	nSize = MSG_ReadLong();
+	if (nSize <= 0 || nSize >= sizeof(pBuf))
+		return;
+
+	if (MSG_ReadBuf(nSize, pBuf) == -1)
+		return;
+
+	nSignSize = MSG_ReadLong();
+	if (nSignSize <= 0 || nSignSize >= sizeof(pSign))
+		return;
+
+	if (MSG_ReadBuf(nSignSize, pSign) == -1)
+		return;
+
+	// Verify the message
+	pMsg = Launcher_VerifyMessage(g_iMasterMsgSize, g_szMasterMsg, nSize, pBuf, nSignSize, pSign);
+	if (!pMsg)
+		return;
+
+	if (sv_masterprint.value)
+	{
+		if ((realtime - gfLastMasterPrintTime) >= sv_masterprinttime.value)
+		{
+			gfLastMasterPrintTime = realtime;
+			Con_Printf("%s\n", pMsg);
+		}
+	}
+}
+
+/*
+=================
+SV_ConnectionlessPacket
+
+A connectionless packet has four leading 0xff
+characters to distinguish it from a game channel.
+Clients that are in the game can still send
+connectionless packets.
+=================
+*/
+void SV_ConnectionlessPacket( void )
+{
+	char* s;
+	char* c;
+
+	MSG_BeginReading();
+	MSG_ReadLong();		// skip the -1 marker
+
+	s = MSG_ReadStringLine();
+	Cmd_TokenizeString(s);
+
+	c = Cmd_Argv(0);
+
+	if (!strcmp(c, "ping") ||
+		(c[0] == A2A_PING && (c[1] == 0 || c[1] == '\n')))
+	{
+		SVC_Ping();
+		return;
+	}
+	else if (c[0] == A2A_ACK && (c[1] == 0 || c[1] == '\n'))
+	{
+		Con_Printf("A2A_ACK from %s\n", NET_AdrToString(net_from));
+		return;
+	}
+	else if (c[0] == M2A_CHALLENGE && (c[1] == 0 || c[1] == '\n'))
+	{
+		SVC_Heartbeat();
+		return;
+	}
+	else if (c[0] == M2M_MSG && (c[1] == 0 || c[1] == '\n'))
+	{
+		if (NET_CompareClassBAdr(gMasterAddress, net_from))
+			SVC_MasterPrint();
+		return;
+	}
+	else if (!strcmp(c, "status"))
+	{
+		SVC_Status();
+		return;
+	}
+	else if (!strcmp(c, "getchallenge"))
+	{
+		SVC_GetChallenge();
+		return;
+	}
+	else if (!_stricmp(c, "info"))
+	{
+		SVC_Info();
+		return;
+	}
+	else if (!_stricmp(c, "players")) // Player info request.
+	{
+		SVC_PlayerInfo();
+		return;
+	}
+	else if (!_stricmp(c, "rules"))   // Rule info request.
+	{
+		SVC_RuleInfo();
+		return;
+	}
+	else if (!strcmp(c, "connect"))  // Must include correct challenge #
+	{
+		SV_ConnectClient();
+		return;
+	}
+	else if (!strcmp(c, "rcon"))
+	{
+		Host_RemoteCommand(&net_from);
+	}
+	else
+	{
+		// Just ignore it.
+		Con_Printf("bad connectionless packet from %s:\n%s\n",
+			NET_AdrToString(net_from), s);
+	}
+}
 
 
 
@@ -1063,169 +1484,6 @@ void SV_ConnectClient( void )
 
 
 // TODO: Implement
-
-/*
-================
-SVC_Ping
-
-Just responds with an acknowledgement
-================
-*/
-void SVC_Ping( void )
-{
-	char	data;
-
-	data = A2A_ACK;
-
-	NET_SendPacket(NS_SERVER, 1, &data, net_from);
-}
-
-/*
-================
-SVC_GetChallenge
-================
-*/
-void SVC_GetChallenge( void )
-{
-	int		i, oldest, oldestTime = 0x7FFFFFFF; //INT_MAX
-	char	data[9]; // -1 mark + S2C_CHALLENGE + challenge value
-
-	for (i = 0; i < MAX_CHALLENGES; i++)
-	{
-		if (NET_CompareClassBAdr(net_from, g_rg_sv_challenges[i].adr))
-			break;
-		if (g_rg_sv_challenges[i].time < oldestTime)
-		{
-			oldestTime = g_rg_sv_challenges[i].time;
-			oldest = i;
-		}
-	}
-
-	if (i == MAX_CHALLENGES)
-	{
-		i = oldest;
-		g_rg_sv_challenges[i].challenge = RandomLong(0, 0xFFFF) | (RandomLong(0, 0xFFFF) << 16);
-		g_rg_sv_challenges[i].adr = net_from;
-		g_rg_sv_challenges[i].time = (int) realtime;
-	}
-
-	sprintf(data, "%c%c%c%c%c", 255, 255, 255, 255, S2C_CHALLENGE);
-	(*(int*)&data[5]) = BigLong(g_rg_sv_challenges[i].challenge);
-	NET_SendPacket(NS_SERVER, sizeof(data), data, net_from);
-}
-
-/*
-================
-SVC_Info
-================
-*/
-void SVC_Info( void )
-{
-	sizebuf_t	sb;
-	char		buf[2048];
-	int			i, cNumActiveClients;
-	client_t*	cl;
-
-	cNumActiveClients = 0;
-	sb.data = buf;
-
-	if (sv.active && svs.maxclients > 1 
-		&& (noip.value || !NET_CompareClassBAdr(net_local_adr, net_from))
-#ifdef _WIN32
-		&& (noipx.value || !NET_CompareClassBAdr(net_local_ipx_adr, net_from))
-#endif //_WIN32
-		)
-	{
-		for (i = 0, cl = svs.clients; i < svs.maxclients; i++, cl++)
-		{
-			if (cl->active)
-				cNumActiveClients++;
-		}
-
-		MSG_WriteLong(&sb, 0xFFFFFFFF); // -1 mark
-		MSG_WriteByte(&sb, S2A_INFO);
-		MSG_WriteString(&sb, NET_AdrToString(net_local_adr));
-		MSG_WriteString(&sb, host_name.string);
-		MSG_WriteString(&sb, sv.name);
-		MSG_WriteString(&sb, com_gamedir);
-		MSG_WriteString(&sb, gEntityInterface.pfnGetGameDescription());
-		MSG_WriteByte(&sb, cNumActiveClients);
-		MSG_WriteByte(&sb, svs.maxclients);
-		MSG_WriteByte(&sb, 7); // TODO: Wtf is 7?
-		NET_SendPacket(NS_SERVER, sb.cursize, sb.data, net_from);
-	}
-}
-
-/*
-================
-SVC_Heartbeat
-================
-*/
-void SVC_Heartbeat( void )
-{
-	// TODO: Implement
-	MSG_ReadLong();
-	MSG_ReadByte();
-}
-
-/*
-=================
-SV_ConnectionlessPacket
-
-A connectionless packet has four leading 0xff
-characters to distinguish it from a game channel.
-Clients that are in the game can still send
-connectionless packets.
-=================
-*/
-void SV_ConnectionlessPacket( void )
-{
-	char	*s;
-	char	*c;
-
-	MSG_BeginReading();
-	MSG_ReadLong();		// skip the -1 marker
-
-	s = MSG_ReadStringLine();
-
-	Cmd_TokenizeString(s);
-
-	c = Cmd_Argv(0);
-
-	if (!strcmp(c, "ping") || (c[0] == A2A_PING && (c[1] == 0 || c[1] == '\n')))
-	{
-		SVC_Ping();
-		return;
-	}
-	if (c[0] == A2A_ACK && (c[1] == 0 || c[1] == '\n'))
-	{
-		Con_Printf("A2A_ACK from %s\n", NET_AdrToString(net_from));
-		return;
-	}
-	else if (c[0] == M2A_CHALLENGE && (c[1] == 0 || c[1] == '\n'))
-	{
-		SVC_Heartbeat();
-	}
-	// TODO: Implement
-	else if (!strcmp(c, "getchallenge"))
-	{
-		SVC_GetChallenge();
-	}
-	else if (!strcmp(c, "connect"))
-	{
-		SV_ConnectClient();
-	}
-	else if (!strcmp(c, "rcon"))
-	{
-		Host_RemoteCommand(&net_from);
-	}
-	else
-	{
-		Con_Printf("bad connectionless packet from %s:\n%s\n", NET_AdrToString(net_from), s);
-	}
-
-	// TODO: Implement
-}
 
 /*
 =================

@@ -247,6 +247,7 @@ extern	netadr_t	gMasterAddress;
 void Master_Heartbeat( void );
 void Master_Shutdown( void );
 void Master_RequestMOTD_f( void );
+void Master_RequestHeartbeat( void );
 
 extern	char		gszDefaultRoom[64];
 

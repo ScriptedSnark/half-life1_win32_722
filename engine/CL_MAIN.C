@@ -78,7 +78,7 @@ dlight_t		cl_elights[MAX_ELIGHTS];
 
 qboolean cl_inmovie;
 
-int playerbitcounts[MAX_CLIENTS];
+int playerbitcounts[MAX_CLIENTS];  // # of bytes of player data for this slot
 
 /*
 =================
