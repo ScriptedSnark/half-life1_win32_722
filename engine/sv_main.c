@@ -1464,45 +1464,29 @@ void SV_ConnectionlessPacket( void )
 	}
 }
 
-
-
-
-
-
-
-
-
-//======================================================= FINISH LINE (END)
-
-
-
-
-
-
-
-
-
-
-// TODO: Implement
+//============================================================================
 
 /*
 =================
 SV_ReadPackets
+
+Read's packets from clients and executes messages as appropriate.
 =================
 */
 void SV_ReadPackets( void )
 {
 	int			i;
-	client_t*	cl;
+	client_t* cl;
+	float		start, end;
 	float		time1, time2, time3, time4, time5, time6;
-	float		timetotal1, timetotal2, timetotal3;
+	float		packettime, exectime, processtime;
 
-	timetotal1 = 0;
-	timetotal2 = 0;
-	timetotal3 = 0;
+	packettime = 0;
+	exectime = 0;
+	processtime = 0;
 
 	if (host_speeds.value == 2)
-		Sys_FloatTime();
+		start = Sys_FloatTime();
 
 	while (NET_GetPacket(NS_SERVER))
 	{
@@ -1517,29 +1501,25 @@ void SV_ReadPackets( void )
 		time2 = Sys_FloatTime();
 
 		if (host_speeds.value == 2)
-			timetotal1 += time2 - time1;
+			packettime += time2 - time1;
 
 		// check for connectionless packet (0xffffffff) first
-		if (*(int *)net_message.data == -1)
+		if (*(int*)net_message.data == -1)
 		{
 			SV_ConnectionlessPacket();
 			continue;
 		}
 
-		i = 0;
-		cl = svs.clients;
-		if (svs.maxclientslimit > 0)
+		// check for packets from connected clients
+		for (i = 0, cl = svs.clients; i < svs.maxclientslimit; i++, cl++)
 		{
-			// check for packets from connected clients
-			while (!cl->connected && !cl->active && !cl->spawned
-			   || NET_CompareAdr(net_from, cl->netchan.remote_address) == FALSE)
-			{
-				++i;
-				++cl;
-				if (svs.maxclientslimit <= i)
-					break;
-			}
+			if (!cl->connected && !cl->active && !cl->spawned)
+				continue;
+			if (!NET_CompareAdr(net_from, cl->netchan.remote_address))
+				continue;
+
 			time3 = Sys_FloatTime();
+
 			if (Netchan_Process(&cl->netchan))
 			{	// this is a valid, sequenced packet, so process it
 				svs.stats.packets++;
@@ -1550,23 +1530,32 @@ void SV_ReadPackets( void )
 				time5 = Sys_FloatTime();
 
 				if (host_speeds.value == 2)
-					timetotal2 += time5 - time4;
+					exectime += time5 - time4;
 			}
+
 			time6 = Sys_FloatTime();
+
 			if (host_speeds.value == 2)
-				timetotal3 += time6 - time3;
+				processtime += time6 - time3;
 		}
+
+		if (i != MAX_CLIENTS)
+			continue;
+
+		// packet is not from a known client
+		//	Con_Printf("%s:sequenced packet without connection\n"
+		// , NET_AdrToString(net_from));
 	}
 
 	if (host_speeds.value == 2)
-		Sys_FloatTime();
+		end = Sys_FloatTime();
 }
 
 /*
 ==================
 SV_CheckTimeouts
 
-If a packet has not been received from a client in sv_timeout.value
+If a packet has not been received from a client in sv_timeout.GetFloat()
 seconds, drop the conneciton.
 
 When a client is normally dropped, the client_t goes into a zombie state
@@ -1576,64 +1565,87 @@ if necessary
 */
 void SV_CheckTimeouts( void )
 {
-	// TODO: Implement
+	int		    i;
+	client_t* cl;
+	float	    droptime;
+
+	droptime = realtime - timeout.value;
+
+	for (i = 0, cl = svs.clients; i < svs.maxclientslimit; i++, cl++)
+	{
+		if (cl->fakeclient)
+			continue;
+
+		if ((cl->connected || cl->active || cl->spawned) &&
+			(cl->netchan.last_received < droptime))
+		{
+			SV_BroadcastPrintf("%s timed out\n", cl->name);
+			SV_DropClient(cl, FALSE);
+			cl->active = FALSE;
+			cl->spawned = FALSE;
+			cl->connected = FALSE;
+		}
+	}
 }
 
-/*
-===================
-SV_CalcPing
-
-===================
-*/
 int SV_CalcPing( client_t* cl )
 {
 	float		ping;
 	int			i;
 	int			count;
-	register	client_frame_t* frame;
+	client_frame_t* frame;
+	int idx;
+
+	idx = cl - svs.clients;
 
 	ping = 0;
 	count = 0;
-	for (frame = cl->frames, i = 0; i < UPDATE_BACKUP; i++, frame++)
+
+	for (i = 0; i < UPDATE_BACKUP; i++)
 	{
+		frame = &cl->frames[i];
 		if (frame->ping_time > 0)
 		{
 			ping += frame->ping_time;
 			count++;
 		}
 	}
+
 	if (!count)
 		return 9999;
 	ping /= count;
-
-	return ping * 1000;
+	return (ping * 1000);
 }
 
 /*
 ===================
 SV_FullClientUpdate
 
-Writes all update values to a sizebuf
+sends all the info about *cl to *sb
 ===================
 */
 void SV_FullClientUpdate( client_t* cl, sizebuf_t* sb )
 {
-	int			i, nClientNum;
-	client_t*	client;
+	int		i;
+	int		index;
+	client_t* client;
 
+// send notification to all clients
 	for (i = 0, client = svs.clients; i < svs.maxclients; i++, client++)
 	{
-		// skip inactive, fake clients, and the specified client
-		if (!client->active || client->fakeclient || cl == client)
+		if (!client->active)
+			continue;
+		if (client->fakeclient)
+			continue;
+		if (cl == client)
 			continue;
 
 		MSG_WriteByte(sb, svc_updatename);
-		nClientNum = cl - svs.clients;
-		if (!cl->active && !cl->spawned && cl->name[0] == 0)
-			nClientNum |= PN_SPECTATOR;
-		MSG_WriteByte(sb, nClientNum);
+		index = cl - svs.clients;
+		if (!cl->active && !cl->spawned && !cl->name[0])
+			index |= PN_SPECTATOR;
+		MSG_WriteByte(sb, index);
 		MSG_WriteString(sb, cl->name);
-
 		MSG_WriteByte(sb, svc_updatecolors);
 		MSG_WriteByte(sb, cl - svs.clients);
 		MSG_WriteByte(sb, 0);
@@ -1654,10 +1666,27 @@ SV_ClearDatagram
 
 ==================
 */
-void SV_ClearDatagram(void)
+void SV_ClearDatagram( void )
 {
 	SZ_Clear(&sv.datagram);
 }
+
+
+
+//======================================================= FINISH LINE (END)
+
+
+
+
+
+
+
+
+
+
+
+
+// TODO: Implement
 
 /*
 =============================================================================
