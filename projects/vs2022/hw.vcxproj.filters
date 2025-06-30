@@ -45,9 +45,6 @@
     <ClCompile Include="..\..\engine\zone.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\engine\sv_main.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\engine\gl_screen.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -238,6 +235,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\engine\ha3dg.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\engine\sv_main.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

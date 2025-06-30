@@ -5,6 +5,7 @@
 #include "pmove.h"
 #include "decal.h"
 #include "cmodel.h"
+#include "customentity.h"
 
 globalvars_t gGlobalVariables;
 
@@ -412,11 +413,12 @@ qboolean SV_ValidClientMulticast( client_t* client, int soundLeaf, int to )
 }
 
 /*
-==================
+=================
 SV_Multicast
 
-Send a multicast message
-==================
+Sends the contents of sv.multicast to a subset of the clients,
+then clears sv.multicast.
+=================
 */
 void SV_Multicast( vec_t* origin, int to, qboolean reliable )
 {
@@ -425,9 +427,9 @@ void SV_Multicast( vec_t* origin, int to, qboolean reliable )
 	int		j;
 	sizebuf_t* pBuffer;
 
-	// Get the leaf number
 	leafnum = SV_PointLeafnum(origin);
 
+	// send the data to all relevent clients
 	for (j = 0, client = svs.clients; j < svs.maxclients; j++, client++)
 	{
 		if (!client->active)
@@ -453,7 +455,6 @@ void SV_Multicast( vec_t* origin, int to, qboolean reliable )
 		}
 	}
 
-	// Flush the buffer
 	SZ_Clear(&sv.multicast);
 }
 
@@ -1671,23 +1672,6 @@ void SV_ClearDatagram( void )
 	SZ_Clear(&sv.datagram);
 }
 
-
-
-//======================================================= FINISH LINE (END)
-
-
-
-
-
-
-
-
-
-
-
-
-// TODO: Implement
-
 /*
 =============================================================================
 
@@ -1701,12 +1685,11 @@ crosses a waterline.
 
 int		fatbytes;
 byte	fatpvs[MAX_MAP_LEAFS / 8];
-
-void SV_AddToFatPVS(vec3_t org, mnode_t* node)
+void SV_AddToFatPVS( vec_t* org, mnode_t* node )
 {
 	int		i;
-	byte*	pvs;
-	mplane_t*	plane;
+	byte* pvs;
+	mplane_t* plane;
 	float	d;
 
 	while (1)
@@ -1745,7 +1728,7 @@ Calculates a PVS that is the inclusive or of all leafs within 8 pixels of the
 given point.
 =============
 */
-byte* SV_FatPVS(vec3_t org)
+byte* SV_FatPVS( float* org )
 {
 	fatbytes = (sv.worldmodel->numleafs + 31) >> 3;
 	Q_memset(fatpvs, 0, fatbytes);
@@ -1753,12 +1736,7 @@ byte* SV_FatPVS(vec3_t org)
 	return fatpvs;
 }
 
-// TODO: Implement
-
-void SV_MemPrediction_f( void )
-{
-	// TODO: Implement
-}
+//=============================================================================
 
 int SV_PointLeafnum( vec_t* p )
 {
@@ -1770,6 +1748,255 @@ int SV_PointLeafnum( vec_t* p )
 
 	return 0;
 }
+
+/*
+===============
+SV_MemPrediction_f
+
+Show memory usage stats
+===============
+*/
+void SV_MemPrediction_f( void )
+{
+	int		i, j;
+	int		totalSize;
+	int		totalEnts;
+	int		totalClients;
+	int		totalPackets = 0;
+	int		entCount, entSize;
+	float	avgEnts, avgSize;
+	client_t* cl;
+	client_frame_t* frame;
+
+	if (!sv.active)
+		return;
+
+	totalSize = 0;
+	totalEnts = 0;
+	totalClients = 0;
+
+	// Scan through all client slots
+	for (i = 0, cl = svs.clients; i < svs.maxclients; i++, cl++)
+	{
+		entSize = 0;
+
+		if (!cl->active)
+			continue;
+		
+		entCount = 0;
+		totalClients++;
+
+		// Analyze last frames
+		for (j = 0; j < UPDATE_BACKUP; j++)
+		{
+			frame = &cl->frames[j & UPDATE_MASK];
+			// Only count frames with entities
+			if (frame->entities.num_entities > 0)
+			{
+				entCount += frame->entities.num_entities;
+				entSize += sizeof(entity_state_t) * frame->entities.num_entities;
+				totalPackets++;
+			}
+		}
+
+		totalSize += entSize;
+		totalEnts += entCount;
+	}
+
+	// Calculate averages
+	if (totalPackets)
+	{
+		avgSize = totalSize / (float)totalPackets;
+		avgEnts = totalEnts / (float)totalPackets;
+	}
+	else
+	{
+		avgEnts = 0.0f;
+		avgSize = 0.0f;
+	}
+
+	Con_Printf("--- Prediction Memory Usage ---\n");
+	Con_Printf("# Clients  :  %i\n", totalClients);
+	Con_Printf("# Packets  :  %i\n", totalPackets);
+	Con_Printf("# Entities :  %i\n", totalEnts);
+	Con_Printf("Total Size :  %i\n", totalSize);
+	Con_Printf("Avg. Ents  :  %.2f\n", avgEnts);
+	Con_Printf("Avg. Size  :  %.2f\n", avgSize);
+	Con_Printf("\n");
+}
+
+//=============================================================================
+
+/*
+==================
+SV_WriteCustomEntityDeltaToClient
+
+Writes part of a custom entity message.
+Can delta from either a baseline or a previous packet_entity
+==================
+*/
+void SV_WriteCustomEntityDeltaToClient( entity_state_t* from, entity_state_t* to, sizebuf_t* msg, qboolean force )
+{
+	int		bits;
+	int		i;
+	int		rendermode;
+	float	miss;
+
+// send an update
+	if (to->rendermode == from->rendermode)
+		bits = (U_MOREBITS | U_EVENMOREBITS | U_CUSTOM);
+	else
+		bits = (U_MOREBITS | U_EVENMOREBITS | U_BEAM_TYPE | U_CUSTOM);		
+
+	rendermode = (to->rendermode & 15);
+	if (rendermode == kRenderNormal || rendermode == kRenderTransColor)
+	{
+		for (i = 0; i < 3; i++)
+		{
+			miss = to->origin[i] - from->origin[i];
+			if (miss < -0.1 || miss > 0.1)
+				bits |= U_BEAM_STARTX << i;
+		}
+
+		if (rendermode == kRenderNormal)
+		{
+			for (i = 0; i < 3; i++)
+			{
+				miss = to->angles[i] - from->angles[i];
+				if (miss < -0.1 || miss > 0.1)
+					bits |= U_BEAM_ENDX << i;
+			}
+		}
+	}
+
+	if ((rendermode == kRenderTransColor || rendermode == kRenderTransTexture) &&
+		(to->sequence != from->sequence || to->skin != from->skin))
+		bits |= U_BEAM_ENTS;
+
+	if (from->modelindex != to->modelindex)
+		bits |= U_BEAM_MODEL;
+
+	if (from->scale != to->scale)
+		bits |= U_BEAM_WIDTH;
+
+	if (from->body != to->body)
+		bits |= U_BEAM_NOISE;
+
+	if (to->rendercolor.r != from->rendercolor.r ||
+		to->rendercolor.g != from->rendercolor.g ||
+		to->rendercolor.b != from->rendercolor.b ||
+		to->renderfx != from->renderfx)
+	{
+		bits |= U_BEAM_RENDER;
+	}
+
+	if (from->renderamt != to->renderamt)
+		bits |= U_BEAM_BRIGHTNESS;
+
+	if (from->frame != to->frame)
+		bits |= U_BEAM_FRAME;
+
+	if ((int)from->animtime != (int)to->animtime)
+		bits |= U_BEAM_SCROLL;
+
+	if (to->number > 255)
+		bits |= U_LONGENTITY;
+
+	if (bits > 0xFF)
+		bits |= U_MOREBITS;
+	if (bits > 0xFFFF)
+		bits |= U_EVENMOREBITS;
+	if (bits > 0xFFFFFF)
+		bits |= U_YETMOREBITS;
+
+	//
+	// write the message
+	//
+	if (!to->number)
+		Sys_Error("Unset entity number");
+
+	if (!bits && !force)
+		return;		// nothing to send!
+
+	MSG_WriteByte(msg, bits);
+
+	if (bits & U_MOREBITS)
+		MSG_WriteByte(msg, bits >> 8);
+	if (bits & U_EVENMOREBITS)
+		MSG_WriteByte(msg, bits >> 16);
+	if (bits & U_YETMOREBITS)
+		MSG_WriteByte(msg, bits >> 24);
+
+	if (bits & U_LONGENTITY)
+		MSG_WriteShort(msg, to->number);
+	else
+		MSG_WriteByte(msg, to->number);
+
+	if (bits & U_BEAM_STARTX)
+		MSG_WriteCoord(msg, to->origin[0]);
+	if (bits & U_BEAM_STARTY)
+		MSG_WriteCoord(msg, to->origin[1]);
+	if (bits & U_BEAM_STARTZ)
+		MSG_WriteCoord(msg, to->origin[2]);
+	if (bits & U_BEAM_ENDX)
+		MSG_WriteCoord(msg, to->angles[0]);
+	if (bits & U_BEAM_ENDY)
+		MSG_WriteCoord(msg, to->angles[1]);
+	if (bits & U_BEAM_ENDZ)
+		MSG_WriteCoord(msg, to->angles[2]);
+
+	if (bits & U_BEAM_ENTS)
+	{
+		MSG_WriteShort(msg, to->sequence);
+		MSG_WriteShort(msg, to->skin);
+	}
+
+	if (bits & U_BEAM_TYPE)
+		MSG_WriteByte(msg, to->rendermode);
+
+	if (bits & U_BEAM_MODEL)
+		MSG_WriteShort(msg, to->modelindex);
+
+	if (bits & U_BEAM_WIDTH)
+		MSG_WriteByte(msg, to->scale);
+
+	if (bits & U_BEAM_NOISE)
+		MSG_WriteByte(msg, to->body);
+
+	if (bits & U_BEAM_RENDER)
+	{
+		MSG_WriteByte(msg, to->rendercolor.r);
+		MSG_WriteByte(msg, to->rendercolor.g);
+		MSG_WriteByte(msg, to->rendercolor.b);
+		MSG_WriteByte(msg, to->renderfx);
+	}
+
+	if (bits & U_BEAM_BRIGHTNESS)
+		MSG_WriteByte(msg, to->renderamt);
+
+	if (bits & U_BEAM_FRAME)
+		MSG_WriteByte(msg, to->frame);
+
+	if (bits & U_BEAM_SCROLL)
+		MSG_WriteByte(msg, to->animtime);
+}
+
+
+
+
+
+//======================================================= FINISH LINE (END)
+
+
+
+
+
+
+
+
+
+
+
 
 // TODO: Implement
 
