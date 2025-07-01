@@ -30,7 +30,7 @@ qboolean bUnreliableOverflow = FALSE;
 
 float g_LastScreenUpdateTime;
 
-qboolean bShouldUpdatePing = FALSE;
+qboolean g_bShouldUpdatePing = FALSE;
 
 //======================================================= FINISH LINE (START)
 
@@ -1628,7 +1628,7 @@ sends all the info about *cl to *sb
 void SV_FullClientUpdate( client_t* cl, sizebuf_t* sb )
 {
 	int		i;
-	int		index;
+	int		playernum;
 	client_t* client;
 
 // send notification to all clients
@@ -1642,10 +1642,10 @@ void SV_FullClientUpdate( client_t* cl, sizebuf_t* sb )
 			continue;
 
 		MSG_WriteByte(sb, svc_updatename);
-		index = cl - svs.clients;
+		playernum = cl - svs.clients;
 		if (!cl->active && !cl->spawned && !cl->name[0])
-			index |= PN_SPECTATOR;
-		MSG_WriteByte(sb, index);
+			playernum |= PN_SPECTATOR;
+		MSG_WriteByte(sb, playernum);
 		MSG_WriteString(sb, cl->name);
 		MSG_WriteByte(sb, svc_updatecolors);
 		MSG_WriteByte(sb, cl - svs.clients);
@@ -1918,14 +1918,14 @@ void SV_WriteCustomEntityDeltaToClient( entity_state_t* from, entity_state_t* to
 	if (!bits && !force)
 		return;		// nothing to send!
 
-	MSG_WriteByte(msg, bits);
+	MSG_WriteByte(msg, bits & 255);
 
 	if (bits & U_MOREBITS)
-		MSG_WriteByte(msg, bits >> 8);
+		MSG_WriteByte(msg, (bits >> 8) & 255);
 	if (bits & U_EVENMOREBITS)
-		MSG_WriteByte(msg, bits >> 16);
+		MSG_WriteByte(msg, (bits >> 16) & 255);
 	if (bits & U_YETMOREBITS)
-		MSG_WriteByte(msg, bits >> 24);
+		MSG_WriteByte(msg, (bits >> 24) & 255);
 
 	if (bits & U_LONGENTITY)
 		MSG_WriteShort(msg, to->number);
@@ -1980,6 +1980,735 @@ void SV_WriteCustomEntityDeltaToClient( entity_state_t* from, entity_state_t* to
 	if (bits & U_BEAM_SCROLL)
 		MSG_WriteByte(msg, to->animtime);
 }
+
+/*
+==================
+SV_WriteDelta
+
+Writes part of a packetentities message.
+Can delta from either a baseline or a previous packet_entity
+==================
+*/
+void SV_WriteDelta( entity_state_t* from, entity_state_t* to, sizebuf_t* msg, qboolean force )
+{
+	int     bits, bboxbits;
+	int		i;
+	float   miss;
+
+	if (to->entityType != ENTITY_NORMAL)
+	{
+		SV_WriteCustomEntityDeltaToClient(from, to, msg, force);
+		return;
+	}
+
+// send an update
+	bits = 0;
+	bboxbits = 0;
+
+	for (i = 0; i < 3; i++)
+	{
+		miss = to->origin[i] - from->origin[i];
+		if (miss < -0.1 || miss > 0.1)
+			bits |= (U_ORIGIN1 << i);
+	}
+
+	if (to->angles[0] != from->angles[0])
+		bits |= U_ANGLE1;
+
+	if (to->angles[1] != from->angles[1])
+		bits |= U_ANGLE2;
+
+	if (to->angles[2] != from->angles[2])
+		bits |= U_ANGLE3;
+
+	if (to->movetype != from->movetype)
+		bits |= U_MOVETYPE;
+
+	if (to->colormap != from->colormap)
+		bits |= U_COLORMAP;
+
+	if (to->skin != from->skin || to->solid != from->solid)
+		bits |= U_CONTENTS;
+
+	if (to->frame != from->frame)
+		bits |= U_FRAME;
+
+	if (to->scale != from->scale)
+		bits |= U_SCALE;
+
+	if (to->effects != from->effects)
+		bits |= U_EFFECTS;
+
+	if (to->modelindex != from->modelindex )
+		bits |= U_MODELINDEX;
+
+	if (to->animtime != from->animtime || to->sequence != from->sequence)
+		bits |= U_SEQUENCE;
+
+	if (to->framerate != from->framerate)
+		bits |= U_FRAMERATE;
+
+	if (to->body != from->body)
+		bits |= U_BODY;
+
+	if (to->controller[0] != from->controller[0])
+		bits |= U_CONTROLLER1;
+	if (to->controller[1] != from->controller[1])
+		bits |= U_CONTROLLER2;
+	if (to->controller[2] != from->controller[2])
+		bits |= U_CONTROLLER3;
+	if (to->controller[3] != from->controller[3])
+		bits |= U_CONTROLLER4;
+
+	if (to->blending[0] != from->blending[0])
+		bits |= U_BLENDING1;
+	if (to->blending[1] != from->blending[1])
+		bits |= U_BLENDING2;
+
+	if (to->rendermode != from->rendermode ||
+		to->renderamt != from->renderamt ||
+		to->renderfx != from->renderfx ||
+		to->rendercolor.r != from->rendercolor.r ||
+		to->rendercolor.g != from->rendercolor.g ||
+		to->rendercolor.b != from->rendercolor.b)
+	{
+		bits |= U_RENDER;
+	}
+
+	if (to->animtime != 0.0 && to->velocity[0] == 0 && to->velocity[1] == 0 && to->velocity[2] == 0)
+		bits |= U_MONSTERMOVE;
+
+	for (i = 0; i < 3; i++)
+	{
+		miss = to->mins[i] - from->mins[i];
+		if (miss < -0.1 || miss > 0.1)
+			bboxbits |= (U_BBOXMINS1 << i);
+
+		miss = to->maxs[i] - from->maxs[i];
+		if (miss < -0.1 || miss > 0.1)
+			bboxbits |= (U_BBOXMAXS1 << i);
+	}
+
+	if (to->number > 255)
+		bits |= U_LONGENTITY;
+
+	if (bits > 0xFF)
+		bits |= U_MOREBITS;
+	if (bits > 0xFFFF)
+		bits |= U_EVENMOREBITS;
+	if (bits > 0xFFFFFF)
+		bits |= U_YETMOREBITS;
+
+	if (bboxbits)
+		bits |= (U_YETMOREBITS | U_EVENMOREBITS | U_MOREBITS | U_BBOXBITS);
+
+	//
+	// write the message
+	//
+	if (!to->number)
+		Sys_Error("Unset entity number");
+
+	if (!bits && !bboxbits && !force)
+		return;		// nothing to send!
+
+	MSG_WriteByte(msg, bits & 255);
+
+	if (bits & U_MOREBITS)
+		MSG_WriteByte(msg, (bits >> 8) & 255);
+	if (bits & U_EVENMOREBITS)
+		MSG_WriteByte(msg, (bits >> 16) & 255);
+	if (bits & U_YETMOREBITS)
+		MSG_WriteByte(msg, (bits >> 24) & 255);
+
+	if (bits & U_BBOXBITS)
+		MSG_WriteByte(msg, bboxbits);
+
+	if (bits & U_LONGENTITY)
+		MSG_WriteShort(msg, to->number);
+	else
+		MSG_WriteByte(msg, to->number);
+
+	if (bits & U_MODELINDEX)
+		MSG_WriteShort(msg, to->modelindex);
+	if (bits & U_FRAME)
+		MSG_WriteWord(msg, to->frame * 256);
+	if (bits & U_MOVETYPE)
+		MSG_WriteByte(msg, to->movetype);
+	if (bits & U_COLORMAP)
+		MSG_WriteByte(msg, to->colormap);
+
+	if (bits & U_CONTENTS)
+	{
+		MSG_WriteShort(msg, to->skin);
+		MSG_WriteByte(msg, to->solid);
+	}
+
+	if (bits & U_SCALE)
+		MSG_WriteWord(msg, to->scale * 256);
+
+	if (bits & U_EFFECTS)
+		MSG_WriteByte(msg, to->effects);
+
+	if (bits & U_ORIGIN1)
+		MSG_WriteCoord(msg, to->origin[0]);
+	if (bits & U_ANGLE1)
+		MSG_WriteHiresAngle(msg, to->angles[0]);
+	if (bits & U_ORIGIN2)
+		MSG_WriteCoord(msg, to->origin[1]);
+	if (bits & U_ANGLE2)
+		MSG_WriteHiresAngle(msg, to->angles[1]);
+	if (bits & U_ORIGIN3)
+		MSG_WriteCoord(msg, to->origin[2]);
+	if (bits & U_ANGLE3)
+		MSG_WriteHiresAngle(msg, to->angles[2]);
+
+	if (bits & U_SEQUENCE)
+	{
+		MSG_WriteByte(msg, to->sequence);
+		MSG_WriteByte(msg, (byte)(to->animtime * 100));
+	}
+
+	if (bits & U_FRAMERATE)
+		MSG_WriteChar(msg, to->framerate * 16);
+
+	if (bits & U_CONTROLLER1)
+		MSG_WriteByte(msg, to->controller[0]);
+	if (bits & U_CONTROLLER2)
+		MSG_WriteByte(msg, to->controller[1]);
+	if (bits & U_CONTROLLER3)
+		MSG_WriteByte(msg, to->controller[2]);
+	if (bits & U_CONTROLLER4)
+		MSG_WriteByte(msg, to->controller[3]);
+
+	if (bits & U_BLENDING1)
+		MSG_WriteByte(msg, to->blending[0]);
+	if (bits & U_BLENDING2)
+		MSG_WriteByte(msg, to->blending[1]);
+
+	if (bits & U_BODY)
+		MSG_WriteByte(msg, to->body);
+
+	if (bits & U_RENDER)
+	{
+		MSG_WriteByte(msg, to->rendermode);
+		MSG_WriteByte(msg, to->renderamt);
+		MSG_WriteByte(msg, to->rendercolor.r);
+		MSG_WriteByte(msg, to->rendercolor.g);
+		MSG_WriteByte(msg, to->rendercolor.b);
+		MSG_WriteByte(msg, to->renderfx);
+	}
+
+	if (bboxbits & U_BBOXMINS1)
+		MSG_WriteCoord(msg, to->mins[0]);
+	if (bboxbits & U_BBOXMINS2)
+		MSG_WriteCoord(msg, to->mins[1]);
+	if (bboxbits & U_BBOXMINS3)
+		MSG_WriteCoord(msg, to->mins[2]);
+	if (bboxbits & U_BBOXMAXS1)
+		MSG_WriteCoord(msg, to->maxs[0]);
+	if (bboxbits & U_BBOXMAXS2)
+		MSG_WriteCoord(msg, to->maxs[1]);
+	if (bboxbits & U_BBOXMAXS3)
+		MSG_WriteCoord(msg, to->maxs[2]);
+}
+
+/*
+=============
+SV_EmitPacketEntities
+
+Writes a delta update of a packet_entities_t to the message.
+=============
+*/
+void SV_EmitPacketEntities( client_t* client, packet_entities_t* to, sizebuf_t* msg )
+{
+	edict_t* ent;
+	client_frame_t* fromframe;
+	packet_entities_t* from;
+
+	int         oldnum, newnum;
+	int         oldindex;
+	int         newindex;
+	int         oldmax;
+	unsigned int        bits;
+
+	// this is the frame that we are going to delta update from
+	if (client->delta_sequence != -1)
+	{
+		fromframe = &client->frames[client->delta_sequence & UPDATE_MASK];
+		from = &fromframe->entities;
+		oldmax = from->num_entities;
+
+		MSG_WriteByte(msg, svc_deltapacketentities);
+		MSG_WriteShort(msg, to->num_entities);
+		MSG_WriteByte(msg, client->delta_sequence);
+	}
+	else
+	{
+		oldmax = 0;	// no delta update
+		from = NULL;
+
+		MSG_WriteByte(msg, svc_packetentities);
+		MSG_WriteShort(msg, to->num_entities);
+	}
+
+	newindex = 0;
+	oldindex = 0;
+//Con_Printf("---%i to %i ----\n", client->delta_sequence & UPDATE_MASK
+//			, client->netchan.outgoing_sequence & UPDATE_MASK);
+	while (newindex < to->num_entities || oldindex < oldmax)
+	{
+		newnum = newindex >= to->num_entities ? 9999 : to->entities[newindex].number;
+		oldnum = oldindex >= oldmax ? 9999 : from->entities[oldindex].number;
+
+		if (newnum == oldnum)
+		{	// delta update from old position
+//Con_Printf("delta %i\n", newnum);
+			SV_WriteDelta(&from->entities[oldindex], &to->entities[newindex], msg, FALSE);
+			newindex++;
+			oldindex++;
+			continue;
+		}
+
+		if (newnum < oldnum)
+		{	// this is a new entity, send it from the baseline
+			ent = EDICT_NUM(newnum);
+//Con_Printf("baseline %i\n", newnum);
+			SV_WriteDelta(&ent->baseline, &to->entities[newindex], msg, TRUE);
+			newindex++;
+			continue;
+		}
+
+		if (newnum > oldnum)
+		{	// the old entity isn't present in the new message
+//Con_Printf("remove %i\n", oldnum);
+			bits = U_REMOVE;
+
+			if (oldnum > 255)
+				bits |= U_LONGENTITY;
+
+			if (bits > 0xFF)
+				bits |= U_MOREBITS;
+			if (bits > 0xFFFF)
+				bits |= U_EVENMOREBITS;
+			if (bits > 0xFFFFFF)
+				bits |= U_YETMOREBITS;
+
+			MSG_WriteByte(msg, bits & 255);
+
+			if (bits & U_MOREBITS)
+				MSG_WriteByte(msg, (bits >> 8) & 255);
+			if (bits & U_EVENMOREBITS)
+				MSG_WriteByte(msg, (bits >> 16) & 255);
+			if (bits & U_YETMOREBITS)
+				MSG_WriteByte(msg, (bits >> 24) & 255);
+
+			oldindex++;
+
+			if (bits & U_LONGENTITY)
+				MSG_WriteShort(msg, oldnum);
+			else
+				MSG_WriteByte(msg, oldnum);
+
+			continue;
+		}
+	}
+
+	MSG_WriteLong(msg, 0);	// end of packetentities
+}
+
+/*
+=============
+SV_WritePlayersToClient
+
+=============
+*/
+void SV_WritePlayersToClient( client_t* client, byte* pvs, sizebuf_t* msg )
+{
+	int			i, j;
+	int			playernum;
+	client_t* cl;
+	edict_t* ent, * clent;
+	int			msec;
+	usercmd_t	cmd, nullcmd;
+	int			pflags;
+
+	clent = client->edict;
+
+	for (j = 0, cl = svs.clients; j < svs.maxclientslimit; j++, cl++)
+	{
+		if (!cl->spawned && !cl->active)
+			continue;
+
+		ent = cl->edict;
+
+		// ZOID visibility tracking
+		if (ent != clent &&
+			!(client->spec_track && client->spec_track - 1 == j))
+		{
+			if (cl->spectator)
+				continue;
+
+			// ignore if not touching a PV leaf
+			for (i = 0; i < ent->num_leafs; i++)
+				if (pvs[ent->leafnums[i] >> 3] & (1 << (ent->leafnums[i] & 7)))
+					break;
+			if (i == ent->num_leafs)
+				continue;		// not visible
+		}
+
+		pflags = PF_MSEC | PF_COMMAND;
+
+		if (g_bShouldUpdatePing)
+			pflags |= PF_PING;
+
+		if (ent->v.modelindex != sv_playermodel)
+			pflags |= PF_MODEL;
+		for (i = 0; i < 3; i++)
+			if (ent->v.velocity[i])
+				pflags |= PF_VELOCITY1 << i;
+		if (ent->v.effects)
+			pflags |= PF_EFFECTS;
+		if (ent->v.skin)
+			pflags |= PF_SKINNUM;
+		if (ent->v.health <= 0)
+			pflags |= PF_DEAD;
+		if (ent->v.mins[2] != -24)
+			pflags |= PF_GIB;
+
+		if (cl->spectator)
+		{	// only sent origin and velocity to spectators
+			pflags &= PF_VELOCITY1 | PF_VELOCITY2 | PF_VELOCITY3;
+		}
+		else if (ent == clent)
+		{	// don't send a lot of data on personal entity
+			pflags &= ~PF_MSEC;
+		}
+
+		if (ent->v.weaponmodel)
+			pflags |= PF_WEAPONMODEL;
+		if (ent->v.movetype)
+			pflags |= PF_MOVETYPE;
+		if (ent->v.sequence || ent->v.animtime)
+			pflags |= PF_SEQUENCE;
+
+		if (ent->v.rendermode ||
+			ent->v.renderamt ||
+			ent->v.renderfx ||
+			ent->v.rendercolor[0] ||
+			ent->v.rendercolor[1] ||
+			ent->v.rendercolor[2])
+		{
+			pflags |= PF_RENDER;
+		}
+
+		if (ent->v.framerate != 1.0)
+			pflags |= PF_FRAMERATE;
+
+		if (ent->v.body)
+			pflags |= PF_BODY;
+
+		for (i = 0; i < 4; i++)
+		{
+			if (ent->v.controller[i])
+				pflags |= PF_CONTROLLER1 << i;
+		}
+
+		for (i = 0; i < 2; i++)
+		{
+			if (ent->v.blending[i])
+				pflags |= PF_BLENDING1 << i;
+		}
+
+		if (ent->v.clbasevelocity[0] != 0 || ent->v.clbasevelocity[1] != 0 || ent->v.clbasevelocity[2] != 0)
+			pflags |= PF_BASEVELOCITY;
+
+		if (ent->v.friction != 1.0)
+			pflags |= PF_FRICTION;
+
+		MSG_WriteByte(msg, svc_playerinfo);
+		playernum = j;
+		if (cl->spectator)
+			playernum |= PN_SPECTATOR;
+		MSG_WriteByte(msg, playernum);
+		MSG_WriteLong(msg, pflags);
+		MSG_WriteLong(msg, ent->v.flags);
+
+		for (i = 0; i < 3; i++)
+			MSG_WriteCoord(msg, ent->v.origin[i]);
+
+		MSG_WriteByte(msg, ent->v.frame);
+
+		if (pflags & PF_MSEC)
+		{
+			msec = 1000 * (sv.time - cl->localtime);
+			if (msec > 255)
+				msec = 255;
+			MSG_WriteByte(msg, msec);
+		}
+
+		if (pflags & PF_COMMAND)
+		{
+			cmd = cl->lastcmd;
+
+			if (ent->v.health <= 0)
+			{	// don't show the corpse looking around...
+				cmd.angles[0] = 0;
+				cmd.angles[1] = ent->v.angles[1];
+				cmd.angles[0] = 0;
+			}
+
+			cmd.buttons = 0;	// never send buttons
+			cmd.impulse = 0;	// never send impulses
+
+			memset(&nullcmd, 0, sizeof(nullcmd));
+			MSG_WriteDeltaUsercmd(msg, &cmd, &nullcmd);
+		}
+
+		for (i = 0; i < 3; i++)
+		{
+			if (pflags & (PF_VELOCITY1 << i))
+				MSG_WriteShort(msg, ent->v.velocity[i]);
+		}
+
+		if (pflags & PF_MODEL)
+			MSG_WriteShort(msg, ent->v.modelindex);
+
+		if (pflags & PF_SKINNUM)
+			MSG_WriteByte(msg, ent->v.skin);
+
+		if (pflags & PF_EFFECTS)
+			MSG_WriteByte(msg, ent->v.effects);
+
+		if (pflags & PF_WEAPONMODEL)
+			MSG_WriteShort(msg, SV_ModelIndex(pr_strings + ent->v.weaponmodel));
+
+		if (pflags & PF_MOVETYPE)
+			MSG_WriteByte(msg, ent->v.movetype);
+
+		if (pflags & PF_SEQUENCE)
+		{
+			MSG_WriteByte(msg, ent->v.sequence);
+			MSG_WriteByte(msg, ent->v.animtime * 100);
+		}
+
+		if (pflags & PF_RENDER)
+		{
+			MSG_WriteByte(msg, ent->v.rendermode);
+			MSG_WriteByte(msg, ent->v.renderamt);
+			MSG_WriteByte(msg, ent->v.rendercolor[0]);
+			MSG_WriteByte(msg, ent->v.rendercolor[1]);
+			MSG_WriteByte(msg, ent->v.rendercolor[2]);
+			MSG_WriteByte(msg, ent->v.renderfx);
+		}
+
+		if (pflags & PF_FRAMERATE)
+			MSG_WriteChar(msg, ent->v.framerate * 16);
+
+		if (pflags & PF_BODY)
+			MSG_WriteByte(msg, ent->v.body);
+
+		if (pflags & PF_CONTROLLER1)
+			MSG_WriteByte(msg, ent->v.controller[0]);
+		if (pflags & PF_CONTROLLER2)
+			MSG_WriteByte(msg, ent->v.controller[1]);
+		if (pflags & PF_CONTROLLER3)
+			MSG_WriteByte(msg, ent->v.controller[2]);
+		if (pflags & PF_CONTROLLER4)
+			MSG_WriteByte(msg, ent->v.controller[3]);
+
+		if (pflags & PF_BLENDING1)
+			MSG_WriteByte(msg, ent->v.blending[0]);
+		if (pflags & PF_BLENDING2)
+			MSG_WriteByte(msg, ent->v.blending[1]);
+
+		if (pflags & PF_BASEVELOCITY)
+		{
+			MSG_WriteShort(msg, ent->v.clbasevelocity[0]);
+			MSG_WriteShort(msg, ent->v.clbasevelocity[1]);
+			MSG_WriteShort(msg, ent->v.clbasevelocity[2]);
+		}
+
+		if (pflags & PF_FRICTION)
+			MSG_WriteShort(msg, ent->v.friction);
+
+		if (pflags & PF_PING)
+			MSG_WriteShort(msg, SV_CalcPing(cl));
+	}
+}
+
+typedef struct full_packet_entities_s
+{
+	int num_entities;
+	entity_state_t entities[MAX_PACKET_ENTITIES];
+} full_packet_entities_t;
+
+/*
+==================
+SV_AddToFullPack
+
+Return 1 if the entity state has been filled in for the ent and the entity will be propagated to the client, 0 otherwise
+
+state is the server maintained copy of the state info that is transmitted to the client
+a MOD could alter values copied into state to send the "host" a different look for a particular entity update, etc.
+e and ent are the entity that is being added to the update, if 1 is returned
+host is the player's edict of the player whom we are sending the update to
+player is 1 if the ent/e is a player and 0 otherwise
+pSet is either the PAS or PVS that we previous set up.  We can use it to ask the engine to filter the entity against the PAS or PVS.
+we could also use the pas/ pvs that we set in SetupVisibility, if we wanted to.  Caching the value is valid in that case, but still only for the current frame
+==================
+*/
+void SV_AddToFullPack( full_packet_entities_t* pack, int e, unsigned char* pSet )
+{
+	int					i;
+	edict_t* ent;
+	entity_state_t*	state;
+
+	ent = &sv.edicts[e];
+
+	// don't send if flagged for NODRAW
+	if (ent->v.effects == EF_NODRAW)
+		return;
+
+	// Ignore ents without valid / visible models
+	if (!ent->v.modelindex || !(pr_strings + ent->v.model))
+		return;
+
+	// If pSet is NULL, then the test will always succeed and the entity will be added to the update
+	if (pSet)
+	{
+		if (ent->num_leafs < 0)
+			if (!CM_HeadnodeVisible(&sv.worldmodel->nodes[ent->leafnums[0]], pSet))
+				return;
+
+		// ignore if not touching a PV leaf
+		for (i = 0; i < ent->num_leafs; i++)
+			if (pSet[ent->leafnums[i] >> 3] & (1 << (ent->leafnums[i] & 7)))
+				break;
+		if (i == ent->num_leafs)
+			return;		// not visible
+	}
+
+	if (pack->num_entities >= MAX_PACKET_ENTITIES)
+	{
+		Con_DPrintf("Too many entities in visible packet list.\n");
+		return;
+	}
+	state = &pack->entities[pack->num_entities];
+	pack->num_entities++;
+
+	state->number = e;
+	state->flags = 0;
+	state->entityType = ENTITY_NORMAL;
+
+	// flag custom entities
+	if (ent->v.flags & FL_CUSTOMENTITY)
+		state->entityType = ENTITY_BEAM;
+		
+	VectorCopy(ent->v.origin, state->origin);
+	VectorCopy(ent->v.angles, state->angles);
+	VectorCopy(ent->v.mins, state->mins);
+	VectorCopy(ent->v.maxs, state->maxs);
+	VectorCopy(ent->v.velocity, state->velocity);
+
+	state->modelindex = ent->v.modelindex;
+	state->frame = ent->v.frame;
+	state->skin = ent->v.skin;
+	state->colormap = ent->v.colormap;
+	state->solid = ent->v.solid;
+	state->effects = ent->v.effects;
+	state->scale = ent->v.scale;
+	state->movetype = ent->v.movetype;
+	state->animtime = ent->v.animtime;
+	state->sequence = ent->v.sequence;
+	state->framerate = ent->v.framerate;
+	state->body = ent->v.body;
+
+	for (i = 0; i < 4; i++)
+	{
+		state->controller[i] = ent->v.controller[i];
+	}
+
+	for (i = 0; i < 2; i++)
+	{
+		state->blending[i] = ent->v.blending[i];
+	}
+
+	state->rendermode = ent->v.rendermode;
+	state->renderamt = ent->v.renderamt;
+	state->renderfx = ent->v.renderfx;
+	state->rendercolor.r = ent->v.rendercolor[0];
+	state->rendercolor.g = ent->v.rendercolor[1];
+	state->rendercolor.b = ent->v.rendercolor[2];
+}
+
+/*
+=============
+SV_WriteEntitiesToClient
+
+Encodes the current state of the world as
+a svc_packetentities messages and
+svc_playerinfo messages
+=============
+*/
+void SV_WriteEntitiesToClient( client_t* client, sizebuf_t* msg )
+{
+	int		i;
+	byte* pvs;
+	vec3_t	org;
+	packet_entities_t* pack;
+	int		entsinpacket;
+	edict_t* clent;
+	client_frame_t* frame;
+	full_packet_entities_t fullpack;
+
+	// this is the frame we are creating
+	frame = &client->frames[client->netchan.incoming_sequence & UPDATE_MASK];
+
+	// find the client's PVS
+	clent = client->edict;
+	VectorAdd(clent->v.origin, clent->v.view_ofs, org);
+	pvs = SV_FatPVS(org);
+
+	// send over the players in the PVS
+	SV_WritePlayersToClient(client, pvs, msg);
+
+	// put other visible entities into either a packet_entities or a nails message
+	pack = &frame->entities;
+	pack->num_entities = 0;
+
+	if (pack->entities)
+		free(pack->entities);
+
+	pack->entities = NULL;
+
+	fullpack.num_entities = 0;
+	for (i = svs.maxclients + 1; i < sv.num_edicts; i++)
+	{
+		// add to the packetentities
+		SV_AddToFullPack(&fullpack, i, pvs);
+	}
+
+	entsinpacket = fullpack.num_entities;
+	pack->num_entities = entsinpacket;
+
+	if (entsinpacket == 0)
+		entsinpacket = 1;
+
+	pack->entities = (entity_state_t*)malloc(sizeof(entity_state_t) * entsinpacket);
+	if (!pack->entities)
+		Sys_Error("Failed to allocate space for %i packet entities\n", entsinpacket);
+
+	if (pack->num_entities)
+		memcpy(pack->entities, fullpack.entities, sizeof(entity_state_t) * pack->num_entities);
+	else
+		memset(pack->entities, 0, sizeof(entity_state_t));
+
+	// encode the packet entities as a delta from the
+	// last packetentities acknowledged by the client
+
+	SV_EmitPacketEntities(client, pack, msg);
+}
+
 
 
 

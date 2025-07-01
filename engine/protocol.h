@@ -267,6 +267,7 @@
 #define	U_BLENDING1		(1<<28)
 #define	U_BLENDING2		(1<<29)
 #define U_SCALE			(1<<30)
+#define U_BBOXBITS		(1<<31)
 
 #define U_BBOXMINS1		(1<<0)
 #define U_BBOXMINS2		(1<<1)
