@@ -55,25 +55,6 @@ qboolean SV_FilterPacket( void )
 }
 
 /*
-=======================
-SV_CleanupEnts
-
-Send datagram to the client who need one
-=======================
-*/
-void SV_CleanupEnts( void )
-{
-	int			i;
-	edict_t*	ent;
-
-	for (i = 0, ent = sv.edicts; i < sv.max_edicts; i++, ent++)
-	{
-		ent->v.effects &= ~EF_MUZZLEFLASH;
-		ent->v.effects &= ~EF_NOINTERP;
-	}
-}
-
-/*
 ==================
 SV_WriteClientdataToMessage
 
@@ -308,7 +289,8 @@ void SV_UpdateToReliableMessages( void )
 SV_SendClientMessages
 =======================
 */
-extern void SCR_UpdateNetUsage( int numbytes, int numlisteners, qboolean bIsDatagram );
+void SCR_UpdateNetUsage( int numbytes, int numlisteners, qboolean bIsDatagram ); // TODO: Remove me!!!
+void SV_CleanupEnts( void ); // TODO: Remove me!!!
 void SV_SendClientMessages(void)
 {
 	int			i;

@@ -2709,6 +2709,31 @@ void SV_WriteEntitiesToClient( client_t* client, sizebuf_t* msg )
 	SV_EmitPacketEntities(client, pack, msg);
 }
 
+/*
+=============
+SV_CleanupEnts
+
+=============
+*/
+void SV_CleanupEnts( void )
+{
+	int		e;
+	edict_t* ent;
+
+	for (e = 1; e < sv.num_edicts; e++)
+	{
+		ent = &sv.edicts[e];
+
+		ent->v.effects &= ~EF_MUZZLEFLASH;
+		ent->v.effects &= ~EF_NOINTERP;
+	}
+}
+
+
+
+
+
+
 
 
 
