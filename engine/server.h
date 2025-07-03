@@ -319,10 +319,7 @@ extern	cvar_t	filterban;
 
 extern cvar_t	sv_uploadinterval;
 
-extern float		g_LastScreenUpdateTime;
 extern float		scr_centertime_off;
-
-extern qboolean		g_bShouldUpdatePing;
 
 extern UserMsg* sv_gpNewUserMsgs;
 extern UserMsg* sv_gpUserMsgs;

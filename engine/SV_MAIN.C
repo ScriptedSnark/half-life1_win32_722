@@ -17,20 +17,14 @@ qboolean	allow_cheats;
 
 decalname_t	sv_decalnames[MAX_BASE_DECALS];
 
-
-// TODO: Implement
-
-int		nReliableBytesSent = 0;
-int		nDatagramBytesSent = 0;
+// Net usage
 int		nReliables = 0;
 int		nDatagrams = 0;
+int		nReliableBytesSent = 0;
+int		nDatagramBytesSent = 0;
 qboolean bUnreliableOverflow = FALSE;
 
 // TODO: Implement
-
-float g_LastScreenUpdateTime;
-
-qboolean g_bShouldUpdatePing = FALSE;
 
 //======================================================= FINISH LINE (START)
 
@@ -51,6 +45,9 @@ int		sv_decalnamecount = 0;
 UserMsg* sv_gpNewUserMsgs = NULL;
 UserMsg* sv_gpUserMsgs = NULL;
 int giNextUserMsg = 64;
+
+float g_fLastPingUpdateTime = 0.0f;
+qboolean g_bShouldUpdatePing = FALSE;
 
 cvar_t	sv_language = { "sv_language", "0" };
 cvar_t	violence_hblood = { "violence_hblood", "1" };
@@ -2729,6 +2726,540 @@ void SV_CleanupEnts( void )
 	}
 }
 
+/*
+==================
+SV_WriteClientdataToMessage
+
+==================
+*/
+void SV_WriteClientdataToMessage( client_t* client, sizebuf_t* msg )
+{
+	int		bits;
+	int		i;
+	edict_t* ent;
+
+	ent = client->edict;
+
+	// send the chokecount for r_netgraph
+	if (client->chokecount)
+	{
+		MSG_WriteByte(msg, svc_chokecount);
+		MSG_WriteByte(msg, client->chokecount);
+		client->chokecount = 0;
+	}
+
+//
+// send the current viewpos offset from the view entity
+//
+	SV_SetIdealPitch();		// how much to look up / down ideally
+
+// a fixangle might get lost in a dropped packet.  Oh well.
+	if (ent->v.fixangle)
+	{
+		if (ent->v.fixangle == 2)
+		{
+			MSG_WriteByte(msg, svc_addangle);
+			MSG_WriteHiresAngle(msg, ent->v.avelocity[1]);
+			ent->v.avelocity[1] = 0;
+		}
+		else
+		{
+			MSG_WriteByte(msg, svc_setangle);
+			for (i = 0; i < 3; i++)
+				MSG_WriteHiresAngle(msg, ent->v.angles[i]);
+		}
+		ent->v.fixangle = 0;
+	}
+
+	bits = 0;
+
+	if (ent->v.view_ofs[2] != DEFAULT_VIEWHEIGHT)
+		bits |= SU_VIEWHEIGHT;
+
+	if (ent->v.idealpitch)
+		bits |= SU_IDEALPITCH;
+
+	if (ent->v.weapons)
+		bits |= SU_WEAPONS;
+
+	if (ent->v.flags & FL_ONGROUND)
+		bits |= SU_ONGROUND;
+
+	if (ent->v.waterlevel >= 2)
+		bits |= SU_INWATER;
+
+	if (ent->v.waterlevel >= 3)
+		bits |= SU_FULLYINWATER;
+
+	if (ent->v.viewmodel)
+		bits |= SU_ITEMS;
+
+	for (i = 0; i < 3; i++)
+	{
+		if (ent->v.punchangle[i])
+			bits |= (SU_PUNCH1 << i);
+		if (ent->v.velocity[i])
+			bits |= (SU_VELOCITY1 << i);
+	}
+
+// send the data
+
+	MSG_WriteByte(msg, svc_clientdata);
+	MSG_WriteShort(msg, bits);
+
+	if (bits & SU_VIEWHEIGHT)
+		MSG_WriteChar(msg, ent->v.view_ofs[2]);
+
+	if (bits & SU_IDEALPITCH)
+		MSG_WriteChar(msg, ent->v.idealpitch);
+
+	for (i = 0; i < 3; i++)
+	{
+		if (bits & (SU_PUNCH1 << i))
+			MSG_WriteHiresAngle(msg, ent->v.punchangle[i]);
+		if (bits & (SU_VELOCITY1 << i))
+			MSG_WriteChar(msg, ent->v.velocity[i] / 16);
+	}
+
+	if (bits & SU_WEAPONS)
+		MSG_WriteLong(msg, ent->v.weapons);
+
+	if (bits & SU_ITEMS)
+		MSG_WriteShort(msg, SV_ModelIndex(pr_strings + ent->v.viewmodel));
+
+	MSG_WriteShort(msg, ent->v.health);
+}
+
+/*
+=======================
+SV_SendClientDatagram
+=======================
+*/
+qboolean SV_SendClientDatagram( client_t* client )
+{
+	byte		buf[MAX_DATAGRAM];
+	sizebuf_t	msg;
+
+	msg.data = buf;
+	msg.maxsize = sizeof(buf);
+	msg.cursize = 0;
+	msg.allowoverflow = TRUE;
+	msg.overflowed = FALSE;
+
+	MSG_WriteByte(&msg, svc_time);
+	MSG_WriteFloat(&msg, sv.time);
+
+// add the client specific data to the datagram
+	SV_WriteClientdataToMessage(client, &msg);
+
+	// send over all the objects that are in the PVS
+	// this will include clients, a packetentities, and
+	// possibly a nails update
+	SV_WriteEntitiesToClient(client, &msg);
+
+	// copy the accumulated multicast datagram
+	// for this client out to the message
+	if (client->datagram.overflowed)
+		Con_Printf("WARNING: datagram overflowed for %s\n", client->name);
+	else
+		SZ_Write(&msg, client->datagram.data, client->datagram.cursize);
+	SZ_Clear(&client->datagram);
+
+	if (scr_graphmean.value)
+	{
+		nDatagrams++;
+		nDatagramBytesSent += msg.cursize;
+	}
+	else
+	{
+		if (nDatagramBytesSent < msg.cursize)
+			nDatagramBytesSent = msg.cursize;
+	}
+
+	if (msg.overflowed)
+	{
+		Con_Printf("WARNING: msg overflowed for %s\n", client->name);
+		SZ_Clear(&msg);
+	}
+
+// send the datagram
+	Netchan_Transmit(&client->netchan, msg.cursize, buf);
+
+	return TRUE;
+}
+
+/*
+=======================
+SV_UpdateToReliableMessages
+=======================
+*/
+void SV_UpdateToReliableMessages( void )
+{
+	int			i, j;
+	client_t* client;
+
+// check for changes to be sent over the reliable streams to all clients
+	for (i = 0, host_client = svs.clients; i < svs.maxclients; i++, host_client++)
+	{
+		if (!host_client->edict)
+			continue;
+		if (host_client->fakeclient)
+			continue;
+		if (!host_client->active && !host_client->connected)
+			continue;
+		if (!sv_gpNewUserMsgs)
+			continue;
+
+		SV_SendUserReg(&host_client->netchan.message);
+	}
+
+	// Link new user messages to the global messages chain
+	if (sv_gpNewUserMsgs)
+	{
+		if (sv_gpUserMsgs)
+		{
+			UserMsg* pMsg = sv_gpUserMsgs;
+			while (pMsg->next)
+			{
+				pMsg = pMsg->next;
+			}
+			pMsg->next = sv_gpNewUserMsgs;
+		}
+		else
+		{
+			sv_gpUserMsgs = sv_gpNewUserMsgs;
+		}
+		sv_gpNewUserMsgs = NULL;
+	}
+
+	if (sv.datagram.overflowed)
+	{
+		Con_DPrintf("sv.datagram overflowed!\n");
+		SZ_Clear(&sv.datagram);
+	}
+
+	// append the broadcast messages to each client messages
+	for (j = 0, client = svs.clients; j < svs.maxclients; j++, client++)
+	{
+		if (!client->active || client->fakeclient)
+			continue;
+
+		SZ_Write(&client->netchan.message, sv.reliable_datagram.data, sv.reliable_datagram.cursize);
+		SZ_Write(&client->datagram, sv.datagram.data, sv.datagram.cursize);
+	}
+
+	SZ_Clear(&sv.reliable_datagram);
+	SZ_Clear(&sv.datagram);
+}
+
+/*
+=======================
+SV_SendClientMessages
+=======================
+*/
+void SV_SendClientMessages( void )
+{
+	int			i;
+
+// update frags, names, etc
+	SV_UpdateToReliableMessages();
+
+	nReliableBytesSent = 0;
+	nDatagramBytesSent = 0;
+	nReliables = 0;
+	nDatagrams = 0;
+	bUnreliableOverflow = FALSE;
+
+	if (g_fLastPingUpdateTime <= sv.time)
+	{
+		g_bShouldUpdatePing = TRUE;
+		g_fLastPingUpdateTime = sv.time + 1.0f;
+	}
+
+// build individual updates
+	for (i = 0, host_client = svs.clients; i < svs.maxclients; i++, host_client++)
+	{
+		if (!host_client->active && !host_client->connected && !host_client->spawned)
+			continue;
+
+		if (host_client->fakeclient)
+			continue;
+
+		// if the reliable message overflowed,
+		// drop the client
+		if (host_client->netchan.message.overflowed)
+		{
+			SZ_Clear(&host_client->netchan.message);
+			SZ_Clear(&host_client->datagram);
+			SV_BroadcastPrintf("%s overflowed\n", host_client->name);
+			Con_Printf("WARNING: reliable overflow for %s\n", host_client->name);
+			SV_DropClient(host_client, FALSE);
+			host_client->send_message = TRUE;
+			host_client->netchan.cleartime = 0;	// don't choke this message
+		}
+
+		// only send messages if the client has sent one
+		// and the bandwidth is not choked
+		if (!host_client->send_message)
+			continue;
+
+		host_client->send_message = FALSE;	// try putting this after choke?
+
+		if (!Netchan_CanPacket(&host_client->netchan))
+		{
+			host_client->chokecount++;
+			continue;		// bandwidth choke
+		}
+
+		if (host_client->active)
+			SV_SendClientDatagram(host_client);
+		else
+			Netchan_Transmit(&host_client->netchan, 0, NULL);
+	}
+
+	SCR_UpdateNetUsage(nReliableBytesSent, nReliables, FALSE);
+
+	if (bUnreliableOverflow)
+		SCR_UpdateNetUsage(nDatagramBytesSent, MAX_MSGLEN + 1, TRUE);
+	else
+		SCR_UpdateNetUsage(nDatagramBytesSent, nDatagrams, TRUE);
+
+	g_bShouldUpdatePing = FALSE;
+
+// clear muzzle flashes
+	SV_CleanupEnts();
+}
+
+
+/*
+==============================================================================
+
+SERVER SPAWNING
+
+==============================================================================
+*/
+
+/*
+================
+SV_ModelIndex
+
+================
+*/
+int SV_ModelIndex( char* name )
+{
+	int		i;
+
+	if (!name || !name[0])
+		return 0;
+
+	for (i = 0; i < MAX_MODELS && sv.model_precache[i]; i++)
+		if (!strcmp(sv.model_precache[i], name))
+			return i;
+	if (i == MAX_MODELS || !sv.model_precache[i])
+		Sys_Error("SV_ModelIndex: model %s not precached", name);
+	return i;
+}
+
+/*
+================
+SV_FlushSignon
+
+Moves to the next signon buffer if needed
+================
+*/
+void SV_FlushSignon( void )
+{
+	if (sv.signon.cursize < sv.signon.maxsize - 100)
+		return;
+
+	if (sv.num_signon_buffers == MAX_SIGNON_BUFFERS - 1)
+		Sys_Error("sv.num_signon_buffers == MAX_SIGNON_BUFFERS-1");
+
+	sv.signon_buffer_size[sv.num_signon_buffers - 1] = sv.signon.cursize;
+	sv.signon.data = sv.signon_buffers[sv.num_signon_buffers];
+	sv.num_signon_buffers++;
+	sv.signon.cursize = 0;
+}
+
+/*
+================
+SV_SendResourceListBlock_f
+
+================
+*/
+void SV_SendResourceListBlock_f( void )
+{
+	int		n;
+	int		savepos;
+
+	if (cmd_source == src_command)
+	{
+		Cmd_ForwardToServer();
+		return;
+	}
+
+	if (!host_client->connected)
+	{
+		Con_Printf("resourcelist not valid -- already spawned\n");
+		return;
+	}
+
+	// handle the case of a level changing while a client was connecting
+	if (!cls.demoplayback && atoi(Cmd_Argv(1)) != svs.spawncount)
+	{
+		Con_Printf("SV_SendResourceListBlock_f from different level\n");
+		SV_New_f();
+		return;
+	}
+
+	n = atoi(Cmd_Argv(2));
+
+	MSG_WriteByte(&host_client->netchan.message, svc_resourcelist);
+	MSG_WriteShort(&host_client->netchan.message, sv.num_resources);
+	MSG_WriteShort(&host_client->netchan.message, n);
+
+	savepos = host_client->netchan.message.cursize;
+	MSG_WriteShort(&host_client->netchan.message, 0);
+
+	for (n; n < sv.num_resources; n++)
+	{
+		if (host_client->netchan.message.maxsize - 512 <= host_client->netchan.message.cursize)
+			break;
+
+		MSG_WriteByte(&host_client->netchan.message, sv.resources[n].type);
+		MSG_WriteString(&host_client->netchan.message, sv.resources[n].szFileName);
+		MSG_WriteShort(&host_client->netchan.message, sv.resources[n].nIndex);
+		MSG_WriteLong(&host_client->netchan.message, sv.resources[n].nDownloadSize);
+		MSG_WriteByte(&host_client->netchan.message, sv.resources[n].ucFlags);
+
+		if (sv.resources[n].ucFlags & RES_CUSTOM)
+			SZ_Write(&cls.netchan.message, sv.resources[n].rgucMD5_hash, sizeof(sv.resources[n].rgucMD5_hash));
+	}
+
+	*(unsigned short*)&host_client->netchan.message.data[savepos] = n;
+
+	if (sv.num_resources > n)
+	{
+		MSG_WriteByte(&host_client->netchan.message, svc_stufftext);
+		MSG_WriteString(&host_client->netchan.message, va("cmd resourcelist %i %i\n", svs.spawncount, n));
+	}
+}
+
+/*
+================
+SV_AddResource
+
+Adds a new resource to the server resource list
+================
+*/
+void SV_AddResource( resourcetype_t type, const char *name, int size, byte flags, int index )
+{
+	resource_t*	r;
+
+	r = &sv.resources[sv.num_resources];
+	if (sv.num_resources >= MAX_RESOURCES)
+		Sys_Error("Too many resources on server.");
+	sv.num_resources++;
+
+	r->type = type;
+	strcpy(r->szFileName, name);
+	r->nDownloadSize = size;
+	if (flags)
+		r->ucFlags |= RES_FATALIFMISSING;
+	r->nIndex = index;
+}
+
+/*
+================
+SV_CreateResourceList
+
+Creates a common list of all server resources
+================
+*/
+void SV_CreateResourceList( void )
+{
+	char** s;
+	int		ffirstsent = 0;
+	FILE* pFile;
+
+	int			i, nSize;
+
+	sv.num_resources = 0;
+
+	// Add sound files to svc_resourcelist
+	i = 1;
+	s = &sv.sound_precache[i];
+	while (*s)
+	{
+		if (**s == CHAR_SENTENCE)
+		{
+			if (!ffirstsent)
+			{
+				ffirstsent = 1;
+				SV_AddResource(t_sound, "!", 0, RES_FATALIFMISSING, i);
+			}
+		}
+		else
+		{
+			if (svs.maxclients <= 1)
+			{
+				nSize = 0;
+			}
+			else
+			{
+				nSize = COM_FindFile(va("sound/%s", *s), NULL, &pFile);
+				if (pFile)
+					fclose(pFile);
+				if (nSize == -1)
+					nSize = 0;
+			}
+
+			SV_AddResource(t_sound, *s, nSize, 0, i);
+		}
+
+		i++;
+		s++;
+	}
+
+	// Add model files to svc_resourcelist
+	i = 1;
+	s = &sv.model_precache[i];
+	while (*s)
+	{
+		if (svs.maxclients <= 1)
+		{
+			nSize = 0;
+		}
+		else
+		{
+			nSize = COM_FindFile(*s, NULL, &pFile);
+			if (pFile)
+				fclose(pFile);
+			if (nSize == -1)
+				nSize = 0;
+		}
+
+		SV_AddResource(t_model, *s, nSize, RES_FATALIFMISSING, i);
+
+		i++;
+		s++;
+	}
+
+	// Add decals to svc_resourcelist
+	for (i = 0; i < sv_decalnamecount; i++)
+	{
+		SV_AddResource(t_decal, sv_decalnames[i].name, Draw_DecalSize(i), 0, i);
+	}
+}
+
+
+
+
+
+
+
+
+
 
 
 
@@ -2971,7 +3502,7 @@ int SV_SpawnServer( qboolean bIsDemo, char* server, char* startspot )
 	else
 		Con_DPrintf("Spawn Server %s\n", server);
 
-	g_LastScreenUpdateTime = 0;
+	g_fLastPingUpdateTime = 0.0;
 
 	// Any partially connected client will be restarted if the spawncount is not matched.
 	// in "spawn" command
@@ -3263,226 +3794,6 @@ void SV_WriteIP_f( void )
 void SV_Keys_f( void )
 {
 	// TODO: Implement
-}
-
-/*
-================
-SV_ModelIndex
-
-================
-*/
-int SV_ModelIndex( char* name )
-{
-	int		i;
-
-	if (!name || !name[0])
-		return 0;
-
-	for (i = 0; i < MAX_MODELS && sv.model_precache[i]; i++)
-		if (!strcmp(sv.model_precache[i], name))
-			return i;
-	if (i == MAX_MODELS || !sv.model_precache[i])
-		Sys_Error("SV_ModelIndex: model %s not precached", name);
-	return i;
-}
-
-/*
-================
-SV_FlushSignon
-
-Moves to the next signon buffer if needed
-================
-*/
-void SV_FlushSignon( void )
-{
-	if (sv.signon.cursize < sv.signon.maxsize - 100)
-		return;
-
-	if (sv.num_signon_buffers == MAX_SIGNON_BUFFERS - 1)
-		Sys_Error("sv.num_signon_buffers == MAX_SIGNON_BUFFERS-1");
-
-	sv.signon_buffer_size[sv.num_signon_buffers - 1] = sv.signon.cursize;
-	sv.signon.data = sv.signon_buffers[sv.num_signon_buffers];
-	sv.num_signon_buffers++;
-	sv.signon.cursize = 0;
-}
-
-/*
-================
-SV_SendResourceListBlock_f
-================
-*/
-void SV_SendResourceListBlock_f( void )
-{
-	int			i, n;
-	resource_t* res;
-
-	if (cmd_source == src_command)
-	{
-		Cmd_ForwardToServer();
-		return;
-	}
-
-	if (!host_client->connected) {
-		Con_Printf("resourcelist not valid -- already spawned\n");
-		return;
-	}
-
-	// handle the case of a level changing while a client was connecting
-	if (!cls.demoplayback && atoi(Cmd_Argv(1)) != svs.spawncount)
-	{
-		Con_Printf("SV_SendResourceListBlock_f from different level\n");
-		SV_New_f();
-		return;
-	}
-
-	n = atoi(Cmd_Argv(2));
-
-	MSG_WriteByte(&host_client->netchan.message, svc_resourcelist);
-	MSG_WriteShort(&host_client->netchan.message, sv.num_resources);
-	MSG_WriteShort(&host_client->netchan.message, n);
-
-	// save index
-	i = host_client->netchan.message.cursize;
-
-	MSG_WriteShort(&host_client->netchan.message, 0);
-
-	if (sv.num_resources <= n)
-	{
-		*(unsigned short*)&host_client->netchan.message.data[i] = n;
-	}
-	else
-	{
-		for (res = &sv.resources[n]; n < sv.num_resources; n++, res++)
-		{
-			//leave a small window for other messages
-			if (host_client->netchan.message.maxsize - 512 <= host_client->netchan.message.cursize)
-				break;
-
-			MSG_WriteByte(&host_client->netchan.message, res->type);
-			MSG_WriteString(&host_client->netchan.message, res->szFileName);
-			MSG_WriteShort(&host_client->netchan.message, res->nIndex);
-			MSG_WriteLong(&host_client->netchan.message, res->nDownloadSize);
-			MSG_WriteByte(&host_client->netchan.message, res->ucFlags);
-			if (res->ucFlags & RES_CUSTOM)
-			{
-				SZ_Write(&cls.netchan.message, res->rgucMD5_hash, sizeof(res->rgucMD5_hash));
-			}
-		}
-
-		*(unsigned short*)&host_client->netchan.message.data[i] = n;
-	}
-
-	if (sv.num_resources > n)
-	{
-		MSG_WriteByte(&host_client->netchan.message, svc_stufftext);
-		MSG_WriteString(&host_client->netchan.message,
-						va("cmd resourcelist %i %i\n", svs.spawncount, n));
-	}
-}
-
-/*
-================
-SV_AddResource
-
-Put this very resource into resources array
-================
-*/
-void SV_AddResource( resourcetype_t type, const char *name, int size, byte flags, int index )
-{
-	resource_t*		res;
-
-	res = &sv.resources[sv.num_resources];
-
-	if (sv.num_resources >= MAX_RESOURCES)
-		Sys_Error("Too many resources on server.");
-
-	sv.num_resources++;
-
-	res->type = type;
-	strcpy(res->szFileName, name);
-	res->nDownloadSize = size;
-	res->nIndex = index;
-	res->ucFlags = flags;
-}
-
-/*
-================
-SV_CreateResourceList
-
-Add resources to precache list
-================
-*/
-void SV_CreateResourceList( void )
-{
-	int			i, nSize;
-	char*		s;
-	qboolean	bAddedFirst = FALSE;
-	FILE*		pf;
-
-	sv.num_resources = 0;
-
-	for (i = 1; i < MAX_SOUNDS; i++)
-	{
-		s = sv.sound_precache[i];
-
-		if (!s || s[0] == 0)
-			break;
-
-		if (s[0] == '!')
-		{
-			if (!bAddedFirst)
-			{
-				SV_AddResource(t_sound, "!", 0, RES_FATALIFMISSING, i);
-				bAddedFirst = TRUE;
-			}
-		}
-		else
-		{
-			if (svs.maxclients <= 1)
-			{
-				SV_AddResource(t_sound, s, 0, 0, i);
-			}
-			else
-			{
-				nSize = COM_FindFile(va("sound/%s", s), NULL, &pf);
-				if (pf)
-					fclose(pf);
-				if (nSize == -1)
-					nSize = 0;
-
-				SV_AddResource(t_sound, s, nSize, 0, i);
-			}
-		}
-	}
-
-	for (i = 1; i < MAX_MODELS; i++)
-	{
-		s = sv.model_precache[i];
-
-		if (!s || s[0] == 0)
-			break;
-
-		if (svs.maxclients <= 1)
-		{
-			SV_AddResource(t_model, s, 0, RES_FATALIFMISSING, i);
-		}
-		else
-		{
-			nSize = COM_FindFile(s, NULL, &pf);
-			if (pf)
-				fclose(pf);
-			if (nSize == -1)
-				nSize = 0;
-
-			SV_AddResource(t_model, s, nSize, RES_FATALIFMISSING, i);
-		}
-	}
-
-	for (i = 0; i < sv_decalnamecount; i++)
-	{
-		SV_AddResource(t_decal, sv_decalnames[i].name , Draw_DecalSize(i), 0, i);
-	}
 }
 
 /*

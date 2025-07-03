@@ -70,6 +70,8 @@ qboolean	NET_StringToSockaddr( char* s, struct sockaddr* sadr );
 qboolean	NET_StringToAdr( char* s, netadr_t* a );
 qboolean	NET_IsLocalAddress( netadr_t adr );
 
+void SCR_UpdateNetUsage( int nBytes, int nListeners, qboolean bIsDatagram );
+
 //============================================================================
 
 #define	OLD_AVG		0.99		// total = oldtotal*OLD_AVG + new*(1-OLD_AVG)
