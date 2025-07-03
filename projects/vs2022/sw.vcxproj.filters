@@ -242,9 +242,6 @@
     <ClCompile Include="..\..\engine\zone.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\engine\sv_main.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\engine\SCREEN.C">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -381,6 +378,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\engine\sv_move.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\engine\SV_MAIN.C">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

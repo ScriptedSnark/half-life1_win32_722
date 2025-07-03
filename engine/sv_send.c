@@ -3,14 +3,6 @@
 #include "quakedef.h"
 #include "cmodel.h"
 
-#define CHAN_AUTO   0
-#define CHAN_WEAPON 1
-#define CHAN_VOICE  2
-#define CHAN_ITEM   3
-#define CHAN_BODY   4
-
-extern int sv_playermodel;
-
 /*
 ==================
 SV_SendUserReg
