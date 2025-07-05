@@ -217,7 +217,7 @@ typedef struct client_s
 
 	int colors;
 
-	int saverestoredatasize; // the amount this client's edict is taking in our SAVERESTOREDATA
+	int saveSize; // the amount this client's edict is taking in our SAVERESTOREDATA
 
 	// FF: If changing ANYTHING below, also insert the changes into sv_upld.c and other files!
 	// FF: Some fields may have wrong names e.g. isuploading. These names were just straight guessing

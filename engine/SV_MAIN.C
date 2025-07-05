@@ -2,6 +2,7 @@
 
 #include "quakedef.h"
 #include "pr_cmds.h"
+#include "pr_edict.h"
 #include "pmove.h"
 #include "decal.h"
 #include "cmodel.h"
@@ -81,8 +82,6 @@ cvar_t	sv_allow_upload = { "sv_allowupload", "1", FALSE, TRUE };
 cvar_t	sv_upload_maxsize = { "sv_upload_maxsize", "0", FALSE, TRUE };
 
 cvar_t	sv_showcmd = { "sv_showcmd", "0" };
-
-cvar_t	filterban = { "filterban", "1" };
 
 //=============================================================================
 
@@ -3353,32 +3352,6 @@ void SV_PropagateCustomizations( void )
 	host_client = pHost;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-//======================================================= FINISH LINE (END)
-
-
-
-
-
-
-
-
-
-
-
-
-// TODO: Implement
-
 /*
 ================
 SV_CreateBaseline
@@ -3387,16 +3360,13 @@ SV_CreateBaseline
 */
 void SV_CreateBaseline( void )
 {
-	int				i;
-	edict_t*		svent;
-	int				entnum;
-
-	if (!sv.num_edicts)
-		return;
+	int			i;
+	edict_t* svent;
+	int			entnum;
 
 	for (entnum = 0; entnum < sv.num_edicts; entnum++)
 	{
-		// get the current server version
+	// get the current server version
 		svent = &sv.edicts[entnum];
 		if (svent->free)
 			continue;
@@ -3404,21 +3374,20 @@ void SV_CreateBaseline( void )
 			continue;
 
 		svent->baseline.entityType = ENTITY_NORMAL;
-		if ((svent->v.flags & FL_CUSTOMENTITY) != 0)
+		if (svent->v.flags & FL_CUSTOMENTITY)
 			svent->baseline.entityType = ENTITY_BEAM;
 
-		//
-		// create entity baseline
-		//
+	//
+	// create entity baseline
+	//
 		VectorCopy(svent->v.origin, svent->baseline.origin);
 		VectorCopy(svent->v.angles, svent->baseline.angles);
 		VectorCopy(svent->v.mins, svent->baseline.mins);
 		VectorCopy(svent->v.maxs, svent->baseline.maxs);
-		svent->baseline.skin = svent->v.skin;
 		svent->baseline.frame = svent->v.frame;
+		svent->baseline.skin = svent->v.skin;
 		svent->baseline.scale = svent->v.scale;
 		svent->baseline.solid = svent->v.solid;
-
 		if (entnum > 0 && entnum <= svs.maxclients)
 		{
 			svent->baseline.colormap = entnum;
@@ -3440,9 +3409,9 @@ void SV_CreateBaseline( void )
 
 		SV_FlushSignon();
 
-		//
-		// add to the message
-		//
+	//
+	// add to the message
+	//
 		MSG_WriteByte(&sv.signon, svc_spawnbaseline);
 		MSG_WriteShort(&sv.signon, entnum);
 
@@ -3451,10 +3420,10 @@ void SV_CreateBaseline( void )
 		MSG_WriteByte(&sv.signon, svent->baseline.sequence);
 		MSG_WriteByte(&sv.signon, svent->baseline.frame);
 
-		if (svent->baseline.entityType != ENTITY_NORMAL)
-			MSG_WriteByte(&sv.signon, svent->baseline.scale);
-		else
+		if (svent->baseline.entityType == ENTITY_NORMAL)
 			MSG_WriteWord(&sv.signon, svent->baseline.scale * 256);
+		else
+			MSG_WriteByte(&sv.signon, svent->baseline.scale);
 
 		MSG_WriteByte(&sv.signon, svent->baseline.colormap);
 		MSG_WriteShort(&sv.signon, svent->baseline.skin);
@@ -3484,11 +3453,36 @@ SV_BroadcastCommand
 Sends text to all active clients
 =================
 */
-
-void SV_BroadcastCommand( char *fmt, ... )
+void SV_BroadcastCommand( char* fmt, ... )
 {
-	// TODO: Implement
-	//FF: what does this do here? it must be in sv_send.c
+	va_list		argptr;
+	char		string[1024];
+	char		data[128];
+	sizebuf_t	msg;
+	int			i;
+	client_t* cl;
+
+	msg.data = data;
+	msg.maxsize = sizeof(data);
+	msg.cursize = 0;
+
+	if (!sv.active)
+		return;
+
+	va_start(argptr, fmt);
+	vsprintf(string, fmt, argptr);
+	va_end(argptr);
+
+	MSG_WriteByte(&msg, svc_stufftext);
+	MSG_WriteString(&msg, string);
+
+	for (i = 0, cl = svs.clients; i < svs.maxclients; i++, cl++)
+	{
+		if ((!cl->active && !cl->connected && !cl->spawned) || cl->fakeclient)
+			continue;
+
+		SZ_Write(&cl->netchan.message, msg.data, msg.cursize);
+	}
 }
 
 /*
@@ -3500,10 +3494,41 @@ Tell all the clients that the server is changing levels
 */
 void SV_SendReconnect( void )
 {
-	// TODO: Implement
+	SV_BroadcastCommand("reconnect\n");
+
+	/*if (cls.state != ca_dedicated)
+		Cbuf_InsertText("reconnect\n");
+	*/
 }
 
-// TODO: Implement
+
+/*
+================
+SV_SaveSpawnparms
+
+Grabs the current state of each client for saving across the
+transition to another level
+================
+*/
+void SV_SaveSpawnparms( SAVERESTOREDATA* pSaveData )
+{
+	int		i;
+
+	svs.serverflags = gGlobalVariables.serverflags;
+
+	gEntityInterface.pfnParmsChangeLevel();
+
+	for (i = 0, host_client = svs.clients; i < svs.maxclients; i++, host_client++)
+	{
+		if (!host_client->active && !host_client->connected)
+			continue;
+
+	// call the progs to get default spawn parms for the new client
+		host_client->saveSize = pSaveData->size;
+		pSaveData->currentIndex = NUM_FOR_EDICT(host_client->edict);
+		gEntityInterface.pfnSave(host_client->edict, pSaveData);
+	}
+}
 
 /*
 ================
@@ -3511,10 +3536,9 @@ SV_ActivateServer
 
 ================
 */
-void SV_ActivateServer( qboolean runPhysics )
+void SV_ActivateServer( int runPhysics )
 {
-	int			i;
-	UserMsg*	pMsg;
+	int i;
 
 	Cvar_Set("sv_newunit", "0");
 
@@ -3527,7 +3551,6 @@ void SV_ActivateServer( qboolean runPhysics )
 
 	if (runPhysics)
 	{
-		// run two frames to allow everything to settle
 		host_frametime = 0.1;
 		SV_Physics();
 	}
@@ -3538,25 +3561,28 @@ void SV_ActivateServer( qboolean runPhysics )
 
 	SV_Physics();
 
-	// create a baseline for more efficient communications
+// create a baseline for more efficient communications
 	SV_CreateBaseline();
 
+	// update signon buffer size
 	sv.signon_buffer_size[sv.num_signon_buffers - 1] = sv.signon.cursize;
 
 	SV_CreateResourceList();
 
-	// Send serverinfo to all connected clients
+// send serverinfo to all connected clients
 	for (i = 0, host_client = svs.clients; i < svs.maxclients; i++, host_client++)
 	{
 		if (host_client->active || host_client->connected)
 		{
 			SV_SendServerinfo(host_client);
+
+			// Send usermsgs
 			if (sv_gpUserMsgs)
 			{
-				pMsg = sv_gpNewUserMsgs;
+				UserMsg* pTemp = sv_gpNewUserMsgs;
 				sv_gpNewUserMsgs = sv_gpUserMsgs;
 				SV_SendUserReg(&host_client->netchan.message);
-				sv_gpNewUserMsgs = pMsg;
+				sv_gpNewUserMsgs = pTemp;
 			}
 		}
 	}
@@ -3581,14 +3607,12 @@ This is called at the start of each level
 */
 int SV_SpawnServer( qboolean bIsDemo, char* server, char* startspot )
 {
-	edict_t*		ent;
-	int				i;
-	char			szDllName[MAX_QPATH];
+	edict_t* ent;
+	int			i;
 
 	// let's not have any servers with no name
 	if (host_name.string[0] == 0)
 		Cvar_Set("hostname", "Half-Life");
-
 	scr_centertime_off = 0;
 
 	if (startspot)
@@ -3596,7 +3620,7 @@ int SV_SpawnServer( qboolean bIsDemo, char* server, char* startspot )
 	else
 		Con_DPrintf("Spawn Server %s\n", server);
 
-	g_fLastPingUpdateTime = 0.0;
+	g_fLastPingUpdateTime = 0.0f;
 
 	// Any partially connected client will be restarted if the spawncount is not matched.
 	// in "spawn" command
@@ -3615,7 +3639,6 @@ int SV_SpawnServer( qboolean bIsDemo, char* server, char* startspot )
 //
 	if (coop.value)
 		Cvar_SetValue("deathmatch", 0);
-
 	current_skill = (int)(skill.value + 0.5);
 	if (current_skill < 0)
 		current_skill = 0;
@@ -3632,7 +3655,6 @@ int SV_SpawnServer( qboolean bIsDemo, char* server, char* startspot )
 	memset(&sv, 0, sizeof(sv));
 
 	strcpy(sv.name, server);
-
 	if (startspot)
 		strcpy(sv.startspot, startspot);
 	else
@@ -3655,7 +3677,7 @@ int SV_SpawnServer( qboolean bIsDemo, char* server, char* startspot )
 	// Assume no entities beyond world and client slots
 	gGlobalVariables.maxEntities = sv.max_edicts;
 
-	sv.edicts = Hunk_AllocName(sizeof(edict_t) * sv.max_edicts, "edicts");
+	sv.edicts = (edict_t*)Hunk_AllocName(sizeof(edict_t) * sv.max_edicts, "edicts");
 
 	sv.datagram.maxsize = sizeof(sv.datagram_buf);
 	sv.datagram.cursize = 0;
@@ -3666,54 +3688,54 @@ int SV_SpawnServer( qboolean bIsDemo, char* server, char* startspot )
 	sv.reliable_datagram.data = sv.reliable_datagram_buf;
 
 	sv.master.maxsize = sizeof(sv.master_buf);
-	sv.master.cursize = 0;
 	sv.master.data = sv.master_buf;
 
-	sv.signon.maxsize = sizeof(sv.master_buf);
+	sv.signon.maxsize = sizeof(sv.signon_buffers[0]);
 	sv.signon.cursize = 0;
 	sv.signon.data = sv.signon_buffers[0];
-
 	sv.num_signon_buffers = 1;
 
 	sv.multicast.maxsize = sizeof(sv.multicast_buf);
 	sv.multicast.data = sv.multicast_buf;
 
-	// leave slots at start for clients only
+// leave slots at start for clients only
 	sv.num_edicts = svs.maxclients + 1;
-	for (i = 0; i < MAX_CLIENTS; i++)
+	for (i = 0; i < svs.maxclients; i++)
 	{
-		svs.clients[i].edict = &sv.edicts[i + 1];
+		ent = &sv.edicts[i + 1];
+		svs.clients[i].edict = ent;
 	}
 
 	gGlobalVariables.maxClients = svs.maxclients;
-	sv.paused = FALSE;
+
 	sv.state = ss_loading;
+	sv.paused = FALSE;
 
 	// Set initial time values.
 	sv.time = 1.0;
-	gGlobalVariables.time = 1.0f;
+	gGlobalVariables.time = 1.0;
 
 	strcpy(sv.name, server);
-
-	// Load the world model.
 	sprintf(sv.modelname, "maps/%s.bsp", server);
 	sv.worldmodel = Mod_ForName(sv.modelname, FALSE);
 	if (!sv.worldmodel)
 	{
 		Con_Printf("Couldn't spawn server %s\n", sv.modelname);
 		sv.active = FALSE;
-		return 0;
+		return FALSE;
 	}
 
 	if (svs.maxclients > 1)
 	{
+		char szDllName[MAX_QPATH];
+
 		// Server map CRC check.
 		CRC32_Init(&sv.worldmapCRC);
 		if (!CRC_MapFile(&sv.worldmapCRC, sv.modelname))
 		{
 			Con_Printf("Couldn't CRC server map:  %s\n", sv.modelname);
 			sv.active = FALSE;
-			return 0;
+			return FALSE;
 		}
 
 		// DLL CRC check.
@@ -3724,8 +3746,10 @@ int SV_SpawnServer( qboolean bIsDemo, char* server, char* startspot )
 		{
 			Con_Printf("Couldn't CRC client side dll:  %s\n", szDllName);
 			sv.active = FALSE;
-			return 0;
+			return FALSE;
 		}
+
+		CM_CalcPAS(sv.worldmodel);
 	}
 	else
 	{
@@ -3735,58 +3759,68 @@ int SV_SpawnServer( qboolean bIsDemo, char* server, char* startspot )
 
 	sv.models[1] = sv.worldmodel;
 
-	//
-	// clear world interaction links
-	//
+//
+// clear world interaction links
+//
 	SV_ClearWorld();
+
 	sv.sound_precache[0] = pr_strings;
+
 	sv.model_precache[0] = pr_strings;
 	sv.model_precache[1] = sv.modelname;
-
-	if (sv.worldmodel->numsubmodels > 1)
+	for (i = 1; i < sv.worldmodel->numsubmodels; i++)
 	{
-		for (i = 1; i < sv.worldmodel->numsubmodels; i++)
-		{
-			sv.model_precache[1 + i] = localmodels[i];
-			sv.models[i + 1] = Mod_ForName(localmodels[i], FALSE);
-		}
+		sv.model_precache[1 + i] = localmodels[i];
+		sv.models[i + 1] = Mod_ForName(localmodels[i], FALSE);
 	}
 
 //
 // load the rest of the entities
 //
-	ent = &sv.edicts[0];
-	memset(&ent->v, 0, sizeof(ent->v));
+	ent = sv.edicts;
+	memset(&ent->v, 0, sizeof(entvars_t));
 	ent->free = FALSE;
 	ent->v.model = sv.worldmodel->name - pr_strings;
-	ent->v.modelindex = 1; // world model
+	ent->v.modelindex = 1;		// world model
 	ent->v.solid = SOLID_BSP;
 	ent->v.movetype = MOVETYPE_PUSH;
 
-	if (!coop.value)
-	{
-		gGlobalVariables.deathmatch = deathmatch.value;
-	}
-	else
-	{
+	if (coop.value)
 		gGlobalVariables.coop = coop.value;
-	}
+	else
+		gGlobalVariables.deathmatch = deathmatch.value;
 
 	gGlobalVariables.mapname = sv.name - pr_strings;
 	gGlobalVariables.startspot = sv.startspot - pr_strings;
+
+// serverflags are for cross level information (sigils)
 	gGlobalVariables.serverflags = svs.serverflags;
 
 	allow_cheats = sv_cheats.value;
 
 	SV_SetMoveVars();
 
-	return 1;
+	return TRUE;
+}
+
+void SV_LoadEntities( void )
+{
+	ED_LoadFromFile(sv.worldmodel->entities);
 }
 
 // Clears all entities
 void SV_ClearEntities( void )
 {
-	// TODO: Implement
+	int i;
+
+	for (i = 0; i < sv.num_edicts; i++)
+	{
+		edict_t* pEdict = &sv.edicts[i];
+		if (pEdict->free)
+			continue;
+
+		ReleaseEntityDLLFields(pEdict);
+	}
 }
 
 /*
@@ -3794,8 +3828,6 @@ void SV_ClearEntities( void )
 RegUserMsg
 
 Registers a user message
-The name of the message is used to find an exported function in the client library
-The format is MsgFunc_<name>
 =================
 */
 int RegUserMsg( const char* pszName, int iSize )
@@ -3803,17 +3835,13 @@ int RegUserMsg( const char* pszName, int iSize )
 	UserMsg* pUserMsgs;
 	UserMsg* pNewMsg;
 	int iFound = 0;
-	int iRet;
 
 	if (giNextUserMsg > MAX_USERMSGS)
 		return 0;
-
 	if (!pszName)
 		return 0;
-
 	if (strlen(pszName) > 11)
 		return 0;
-
 	if (iSize > MAX_USER_MSG_DATA)
 		return 0;
 
@@ -3829,9 +3857,7 @@ int RegUserMsg( const char* pszName, int iSize )
 	}
 
 	if (iFound)
-	{
 		return pUserMsgs->iMsg;
-	}
 
 	pNewMsg = (UserMsg*)malloc(sizeof(UserMsg));
 	pNewMsg->iSize = iSize;
@@ -3844,48 +3870,246 @@ int RegUserMsg( const char* pszName, int iSize )
 	{
 		pNewMsg->next = sv_gpNewUserMsgs;
 		sv_gpNewUserMsgs = pNewMsg;
-		iRet = pNewMsg->iMsg;
-		return iRet;
+		return pNewMsg->iMsg;
 	}
 
 	return 0;
 }
 
-// TODO: Implement
-
 /*
-================
-SV_LoadEntities
+==================
+SV_SendUserReg
 
-Load up the entities from the bsp
-=======
+==================
 */
-void SV_LoadEntities( void )
+void SV_SendUserReg( sizebuf_t* sb )
 {
-	ED_LoadFromFile(sv.worldmodel->entities);
+	UserMsg* pMsg;
+
+	pMsg = sv_gpNewUserMsgs;
+	while (pMsg)
+	{
+		MSG_WriteByte(sb, svc_newusermsg);
+		MSG_WriteByte(sb, pMsg->iMsg);
+		MSG_WriteByte(sb, pMsg->iSize);
+		MSG_WriteLong(sb, *(int*)(pMsg->szName + 0));
+		MSG_WriteLong(sb, *(int*)(pMsg->szName + 4));
+		MSG_WriteLong(sb, *(int*)(pMsg->szName + 8));
+		MSG_WriteLong(sb, (int)pMsg->next);
+		pMsg = pMsg->next;
+	}
 }
 
+/*
+==============================================================================
+
+PACKET FILTERING
+
+
+You can add or remove addresses from the filter list with:
+
+addip <ip>
+removeip <ip>
+
+The ip address is specified in dot format, and any unspecified digits will match any value, so you can specify an entire class C network with "addip 192.246.40".
+
+Removeip will only remove an address specified exactly the same way.  You cannot addip a subnet, then removeip a single host.
+
+listip
+Prints the current list of filters.
+
+writeip
+Dumps "addip <ip>" commands to listip.cfg so it can be execed at a later date.  The filter lists are not saved and restored by default, because I beleive it would cause too much confusion.
+
+filterban <0 or 1>
+
+If 1 (the default), then ip addresses matching the current list will be prohibited from entering the game.  This is the default setting.
+
+If 0, then only addresses matching the list will be allowed.  This lets you easily set up a private game, or a game that only allows players from your local network.
+
+
+==============================================================================
+*/
+
+
+typedef struct
+{
+	unsigned	mask;
+	unsigned	compare;
+	float		banEndTime; // 0 for permanent ban
+	float		banTime;
+} ipfilter_t;
+
+#define	MAX_IPFILTERS	1024
+
+ipfilter_t	ipfilters[MAX_IPFILTERS];
+int			numipfilters;
+
+cvar_t	filterban = { "filterban", "1" };
+
+/*
+=================
+SV_SendBan
+=================
+*/
+void SV_SendBan( void )
+{
+	char		data[16];
+
+	sprintf(data, "banned.\n");
+
+	SZ_Clear(&net_message);
+	MSG_WriteLong(&net_message, 0xFFFFFFFF); // -1 -1 -1 -1 signal
+	MSG_WriteByte(&net_message, A2C_PRINT);
+	MSG_WriteString(&net_message, data);
+	NET_SendPacket(NS_SERVER, net_message.cursize, net_message.data, net_from);
+	SZ_Clear(&net_message);
+}
+
+/*
+=================
+SV_FilterPacket
+=================
+*/
+qboolean SV_FilterPacket( void )
+{
+	int		i, j;
+	unsigned	in;
+
+	in = *(unsigned*)net_from.ip;
+
+	// Handle timeouts 
+	for (i = numipfilters - 1; i >= 0; i--)
+	{
+		if ((ipfilters[i].compare != 0xffffffff) &&
+			 (ipfilters[i].banEndTime != 0.0f) &&
+			 (ipfilters[i].banEndTime <= realtime))
+		{
+			for (j = i + 1; j < numipfilters; j++)
+			{
+				ipfilters[j - 1] = ipfilters[j];
+			}
+			numipfilters--;
+			continue;
+		}
+
+		// Only get here if ban is still in effect.
+		if ((in & ipfilters[i].mask) == ipfilters[i].compare)
+			return filterban.value;
+	}
+	return !filterban.value;
+}
+
+/*
+=================
+StringToFilter
+=================
+*/
+qboolean StringToFilter( char* s, ipfilter_t* f )
+{
+	char	num[128];
+	int		i, j;
+	byte	b[4];
+	byte	m[4];
+
+	for (i = 0; i < 4; i++)
+	{
+		b[i] = 0;
+		m[i] = 0;
+	}
+
+	for (i = 0; i < 4; i++)
+	{
+		if (*s < '0' || *s > '9')
+		{
+			Con_Printf("Bad filter address: %s\n", s);
+			return FALSE;
+		}
+
+		j = 0;
+		while (*s >= '0' && *s <= '9')
+		{
+			num[j++] = *s++;
+		}
+		num[j] = 0;
+		b[i] = atoi(num);
+		if (b[i] != 0)
+			m[i] = 255;
+
+		if (!*s)
+			break;
+		s++;
+	}
+
+	f->mask = *(unsigned*)m;
+	f->compare = *(unsigned*)b;
+
+	return TRUE;
+}
+
+/*
+=================
+SV_AddIP_f
+=================
+*/
 void SV_AddIP_f( void )
 {
 	// TODO: Implement
 }
 
+/*
+=================
+SV_RemoveIP_f
+=================
+*/
 void SV_RemoveIP_f( void )
 {
 	// TODO: Implement
 }
 
+/*
+=================
+SV_ListIP_f
+=================
+*/
 void SV_ListIP_f( void )
 {
 	// TODO: Implement
 }
 
+/*
+=================
+SV_WriteIP_f
+=================
+*/
 void SV_WriteIP_f( void )
 {
 	// TODO: Implement
 }
 
+//============================================================================
+
+// Print CD keys
 void SV_Keys_f( void )
 {
-	// TODO: Implement
+	int		i;
+	char	szKey[1024];
+	client_t* cl;
+
+	if (!sv.active)
+	{
+		Con_Printf("Not running a server\n");
+		return;
+	}
+
+	Con_Printf("CD Keys =================\n");
+	for (i = 0, cl = svs.clients; i < svs.maxclients; i++, cl++)
+	{
+		if (cl->active || cl->connected || cl->spawned)
+		{
+			sprintf(szKey, "%3i %s : %s\n", i + 1, cl->name, cl->hashedcdkey);
+			Con_Printf(szKey);
+		}
+	}
+	Con_Printf("==========================\n");
 }

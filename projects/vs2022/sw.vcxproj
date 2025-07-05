@@ -130,7 +130,6 @@
     <ClCompile Include="..\..\engine\SND_WIN.C" />
     <ClCompile Include="..\..\engine\SV_MAIN.C" />
     <ClCompile Include="..\..\engine\sv_move.c" />
-    <ClCompile Include="..\..\engine\sv_send.c" />
     <ClCompile Include="..\..\engine\sys_win.c" />
     <ClCompile Include="..\..\engine\textures.c" />
     <ClCompile Include="..\..\engine\tmessage.c" />
