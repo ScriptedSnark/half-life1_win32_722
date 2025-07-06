@@ -1517,9 +1517,7 @@ void CL_Init( void )
 	Cvar_RegisterVariable(&m_side);
 	Cvar_RegisterVariable(&cl_pitchup);
 	Cvar_RegisterVariable(&cl_pitchdown);
-
-	// TODO: Implement
-
+	Cvar_RegisterVariable(&cl_appendmixed);
 	Cvar_RegisterVariable(&cl_resend);
 	Cvar_RegisterVariable(&cl_timeout);
 	Cvar_RegisterVariable(&cl_shownet);
@@ -1540,6 +1538,10 @@ void CL_Init( void )
 
 	Cmd_AddCommand("record", CL_Record_f);
 	Cmd_AddCommand("stop", CL_Stop_f);
+
+	// TODO: Implement
+
+	Cmd_AddCommand("appenddemo", CL_AppendDemo_f);
 
 	// TODO: Implement
 

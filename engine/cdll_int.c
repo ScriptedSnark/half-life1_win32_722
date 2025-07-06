@@ -235,11 +235,11 @@ void ClientDLL_DemoUpdateClientData( client_data_t* cdat )
 
 /*
 ==============
-ClientDLL_Reset
+ClientDLL_HudReset
 
 ==============
 */
-void ClientDLL_Reset( client_data_t* cdat )
+void ClientDLL_HudReset( void )
 {
 	cl_funcs.pHudResetFunc();
 }

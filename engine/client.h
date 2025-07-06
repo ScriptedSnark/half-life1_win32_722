@@ -206,6 +206,15 @@ typedef struct
 	qboolean	demoappending;
 
 	// TODO: Implement
+	
+	// Name of demo file we are appending onto.
+	char		demofilename[MAX_OSPATH];
+
+	// TODO: Implement
+	
+	int			demoframecount;		// # of demo frames in the segment.
+
+	// TODO: Implement
 
 	qboolean skipdemomessage;
 
