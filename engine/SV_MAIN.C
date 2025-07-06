@@ -8,39 +8,30 @@
 #include "cmodel.h"
 #include "customentity.h"
 
-globalvars_t gGlobalVariables;
-
-int sv_playermodel;
-
-char	localmodels[MAX_MODELS][5];			// inline model names for precache
-
-qboolean	allow_cheats;
-
-decalname_t	sv_decalnames[MAX_BASE_DECALS];
-
-// Net usage
-int		nReliables = 0;
-int		nDatagrams = 0;
-int		nReliableBytesSent = 0;
-int		nDatagramBytesSent = 0;
-qboolean bUnreliableOverflow = FALSE;
-
-// TODO: Implement
-
-//======================================================= FINISH LINE (START)
-
 // This many players on a Lan with same key, is ok.
 #define MAX_IDENTICAL_CDKEYS	5
 
 server_t		sv;
 server_static_t	svs;
 
-// TODO: Implement
-
 char* pr_strings = NULL, * gNullString = "";
+globalvars_t gGlobalVariables;
 
+qboolean	allow_cheats;
+
+decalname_t	sv_decalnames[MAX_BASE_DECALS];
+
+// netusage info
+int		nReliables = 0;
+int		nDatagrams = 0;
+int		nReliableBytesSent = 0;
+int		nDatagramBytesSent = 0;
+qboolean bUnreliableOverflow = FALSE;
+
+int		num_servers;
 int		gPacketSuppressed = 0;
 int		sv_decalnamecount = 0;
+char	localmodels[MAX_MODELS][5];			// inline model names for precache
 
 // User messages
 UserMsg* sv_gpNewUserMsgs = NULL;
@@ -82,6 +73,8 @@ cvar_t	sv_allow_upload = { "sv_allowupload", "1", FALSE, TRUE };
 cvar_t	sv_upload_maxsize = { "sv_upload_maxsize", "0", FALSE, TRUE };
 
 cvar_t	sv_showcmd = { "sv_showcmd", "0" };
+
+int sv_playermodel;
 
 //=============================================================================
 
@@ -4054,7 +4047,48 @@ SV_AddIP_f
 */
 void SV_AddIP_f( void )
 {
-	// TODO: Implement
+	int		i;
+	float banTime;
+
+	if (Cmd_Argc() != 3)
+	{
+		Con_Printf("Usage:  addip <minutes> <ipaddress>\nUse 0 minutes for permanent\n");
+		return;
+	}
+
+	for (i = 0; i < numipfilters; i++)
+	{
+		if (ipfilters[i].compare == 0xffffffff)
+			break;		// free spot
+	}
+
+	if (i == numipfilters)
+	{
+		if (numipfilters == MAX_IPFILTERS)
+		{
+			Con_Printf("IP filter list is full\n");
+			return;
+		}
+		numipfilters++;
+	}
+
+	banTime = atof(Cmd_Argv(1));
+	if (banTime < 0.01f)
+		banTime = 0.0f;
+
+	ipfilters[i].banTime = banTime;
+
+	if (banTime)
+	{
+		banTime *= 60.0f;
+		banTime += realtime; // Time when we are done banning.
+	}
+
+	// Time to unban.
+	ipfilters[i].banEndTime = banTime;
+
+	if (!StringToFilter(Cmd_Argv(2), &ipfilters[i]))
+		ipfilters[i].compare = 0xffffffff;
 }
 
 /*
@@ -4064,7 +4098,27 @@ SV_RemoveIP_f
 */
 void SV_RemoveIP_f( void )
 {
-	// TODO: Implement
+	ipfilter_t	f;
+	int			i, j;
+
+	if (!StringToFilter(Cmd_Argv(1), &f))
+		return;
+
+	for (i = 0; i < numipfilters; i++)
+	{
+		if ((ipfilters[i].mask == f.mask) &&
+			 (ipfilters[i].compare == f.compare))
+		{
+			for (j = i + 1; j < numipfilters; j++)
+			{
+				ipfilters[j - 1] = ipfilters[j];
+			}
+			numipfilters--;
+			Con_Printf("Filter removed.\n");
+			return;
+		}
+	}
+	Con_Printf("Didn't find %s.\n", Cmd_Argv(1));
 }
 
 /*
@@ -4074,7 +4128,18 @@ SV_ListIP_f
 */
 void SV_ListIP_f( void )
 {
-	// TODO: Implement
+	int		i;
+	byte	b[4];
+
+	Con_Printf("Filter list:\n");
+	for (i = 0; i < numipfilters; i++)
+	{
+		*(unsigned*)b = ipfilters[i].compare;
+		if (ipfilters[i].banTime != 0.0f)
+			Con_Printf("%3i.%3i.%3i.%3i : %.3f min\n", b[0], b[1], b[2], b[3], ipfilters[i].banTime);
+		else
+			Con_Printf("%3i.%3i.%3i.%3i : permanent\n", b[0], b[1], b[2], b[3]);
+	}
 }
 
 /*
@@ -4084,7 +4149,36 @@ SV_WriteIP_f
 */
 void SV_WriteIP_f( void )
 {
-	// TODO: Implement
+	FILE* f;
+	char	name[MAX_OSPATH];
+	byte	b[4];
+	int		i;
+	float banTime;
+
+	sprintf(name, "%s/listip.cfg", com_gamedir);
+
+	Con_Printf("Writing %s.\n", name);
+
+	f = fopen(name, "wb");
+	if (!f)
+	{
+		Con_Printf("Couldn't open %s\n", name);
+		return;
+	}
+
+	for (i = 0; i < numipfilters; i++)
+	{
+		*(unsigned*)b = ipfilters[i].compare;
+
+		// Only store out the permanent bad guys from this server.
+		banTime = ipfilters[i].banTime;
+		if (banTime != 0.0f)
+			continue;
+
+		fprintf(f, "addip 0.0 %i.%i.%i.%i\n", b[0], b[1], b[2], b[3]);
+	}
+
+	fclose(f);
 }
 
 //============================================================================
