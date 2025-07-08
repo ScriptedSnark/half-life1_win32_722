@@ -1544,6 +1544,10 @@ void CL_Init( void )
 	Cmd_AddCommand("appenddemo", CL_AppendDemo_f);
 
 	// TODO: Implement
+	
+	Cmd_AddCommand("swapdemo", CL_SwapDemo_f);
+
+	// TODO: Implement
 
 	Cmd_AddCommand("snapshot", CL_TakeSnapshot_f);
 	// TODO: Implement

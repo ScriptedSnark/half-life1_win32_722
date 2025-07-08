@@ -151,6 +151,7 @@ void CL_AppendDemo_f( void )
 	fseek(cls.demofile, 0, SEEK_SET);
 	// Read in the demoheader
 	fread(&demoheader, sizeof(demoheader), 1, cls.demofile);
+
 	if (strcmp(demoheader.szFileStamp, "HLDEMO"))
 	{
 		Con_Printf("%s is not a demo file\n", name);
@@ -287,6 +288,193 @@ void COM_CopyFileChunk( FILE* dst, FILE* src, int nSize )
 	fflush(src);
 	fflush(dst);
 }
+
+/*
+====================
+CL_SwapDemo_f
+
+Swap two segments (positions) in a demo
+====================
+*/
+void CL_SwapDemo_f( void )
+{
+	char	name[MAX_OSPATH];
+	int		c;
+	FILE* fp;
+	char	szTempName[MAX_OSPATH];
+	char	szOriginalName[MAX_OSPATH];
+	int		nSegment1;
+	int		nSegment2;
+	demoentry_t* oldentry, * newentry;
+	demoentry_t temp;
+	int		n, i;
+
+	if (cmd_source != src_command)
+		return;
+
+	if (cls.demorecording || cls.demoplayback)
+	{
+		Con_Printf("Swapdemo only available when not running or recording a demo.\n");
+		return;
+	}
+
+	c = Cmd_Argc();
+	if (c != 4)
+	{
+		Con_Printf("Swapdemo <demoname> <seg#> <seg#>\nSwaps segments, segment 1 cannot be moved\n");
+		return;
+	}
+
+	if (strstr(Cmd_Argv(1), ".."))
+	{
+		Con_Printf("Relative pathnames are not allowed.\n");
+		return;
+	}
+
+	nSegment1 = atoi(Cmd_Argv(2));
+	if (nSegment1 <= 1)
+	{
+		Con_Printf("Cannot swap the STARTUP segment.\n");
+		return;
+	}
+
+	nSegment2 = atoi(Cmd_Argv(3));
+
+	//
+	// open the demo file
+	//
+	sprintf(name, "%s/%s", com_gamedir, Cmd_Argv(1));
+
+	COM_DefaultExtension(name, ".dem");
+
+	Con_Printf("Swapping segment %i for %i from demo %s.\n", nSegment1, nSegment2, name);
+
+	strcpy(szOriginalName, name);
+	fp = fopen(szOriginalName, "rb");
+	if (!fp)
+	{
+		Con_Printf("Error:  couldn't open demo file %s for swapping.\n", name);
+		return;
+	}
+
+	COM_StripExtension(name, szTempName);
+	COM_DefaultExtension(szTempName, ".dm2");
+
+	cls.demofile = fopen(szTempName, "w+b");
+	if (!cls.demofile)
+	{
+		Con_Printf("ERROR: couldn't open %s.\n", name);
+		return;
+	}
+
+	// Ready to start reading
+	// Now copy the stuff we cached from the server.
+	fseek(fp, 0, SEEK_END);
+	n = ftell(fp);
+
+	fseek(fp, 0, SEEK_SET);
+	fseek(cls.demofile, 0, SEEK_SET);
+
+	COM_CopyFileChunk(cls.demofile, fp, n);
+
+	fseek(fp, 0, SEEK_SET);
+	fseek(cls.demofile, 0, SEEK_SET);
+	// Read in the demoheader
+	fread(&demoheader, sizeof(demoheader), 1, fp);
+
+	if (strcmp(demoheader.szFileStamp, "HLDEMO"))
+	{
+		Con_Printf("%s is not a demo file\n", name);
+		fclose(cls.demofile);
+		fclose(fp);
+		_unlink(szTempName);
+		cls.demofile = NULL;
+		return;
+	}
+
+	if (demoheader.nNetProtocolVersion != PROTOCOL_VERSION ||
+		demoheader.nDemoProtocol != DEMO_PROTOCOL)
+	{
+		Con_Printf(
+			"ERROR: demo protocol outdated\n"
+			"Demo file protocols %iN:%iD\n"
+			"Server protocol is at %iN:%iD\n",
+			demoheader.nNetProtocolVersion,
+			demoheader.nDemoProtocol,
+			PROTOCOL_VERSION,
+			DEMO_PROTOCOL
+		);
+		fclose(cls.demofile);
+		fclose(fp);
+		_unlink(szTempName);
+		cls.demofile = NULL;
+		return;
+	}
+
+	// Now read in the directory structure.
+	fseek(fp, demoheader.nDirectoryOffset, SEEK_SET);
+
+	fread(&demodir.nEntries, sizeof(int), 1, fp);
+
+	if (demodir.nEntries < 1 ||
+		demodir.nEntries > 1024)
+	{
+		Con_Printf("ERROR: demo had bogus # of directory entries:  %i\n",
+			demodir.nEntries);
+		fclose(cls.demofile);
+		fclose(fp);
+		_unlink(szTempName);
+		cls.demofile = NULL;
+		return;
+	}
+
+	demodir.p_rgEntries = (demoentry_t*)malloc(sizeof(demoentry_t) * demodir.nEntries);
+	fread(demodir.p_rgEntries, sizeof(demoentry_t), demodir.nEntries, fp);
+
+	// Swap these 2 segments
+	oldentry = &demodir.p_rgEntries[nSegment1 - 1];
+	memcpy(&temp, oldentry, sizeof(temp));
+
+	newentry = &demodir.p_rgEntries[nSegment2 - 1];
+	memcpy(oldentry, newentry, sizeof(*oldentry));
+	memcpy(newentry, &temp, sizeof(*newentry));
+
+	fseek(cls.demofile, demoheader.nDirectoryOffset, SEEK_SET);
+
+	fwrite(&demodir.nEntries, sizeof(int), 1, cls.demofile);
+
+	for (i = 0; i < demodir.nEntries; i++)
+	{
+		fwrite(&demodir.p_rgEntries[i], sizeof(demoentry_t), 1, cls.demofile);
+	}
+
+	// Close the file
+	fclose(cls.demofile);
+	cls.demofile = NULL;
+	fclose(fp);
+
+	// Replace original file
+	Con_Printf("Replacing old demo with edited version.\n");
+	_unlink(szOriginalName);
+	rename(szTempName, szOriginalName);
+
+	// Release entry info
+	free(demodir.p_rgEntries);
+	demodir.p_rgEntries = NULL;
+
+	demodir.nEntries = 0;
+}
+
+
+
+
+
+
+
+
+
+
+
 
 //=============================================== FINISH LINE END
 

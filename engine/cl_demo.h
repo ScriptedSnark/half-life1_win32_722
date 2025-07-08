@@ -25,8 +25,8 @@ typedef struct demoheader_s
 	char szFileStamp[8];		// Should be HLDEMO
 	int nDemoProtocol;			// Should be DEMO_PROTOCOL
 	int nNetProtocolVersion;	// Should be PROTOCOL_VERSION
-	char szMapName[128];		// Name of map
-	char szDllDir[128];			// Name of game directory (com_gamedir)
+	char szMapName[MAX_OSPATH];	// Name of map
+	char szDllDir[MAX_OSPATH];	// Name of game directory (com_gamedir)
 	CRC32_t mapCRC;
 	int nDirectoryOffset;		// Offset of Entry Directory.
 } demoheader_t;
@@ -63,6 +63,7 @@ void CL_WriteDLLUpdate( client_data_t* cdata );
 
 
 void CL_AppendDemo_f( void );
+void CL_SwapDemo_f( void );
 void CL_Stop_f( void );
 void CL_Record_f( void );
 
