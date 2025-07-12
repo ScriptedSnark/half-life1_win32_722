@@ -17,6 +17,14 @@ read from the demo file.
 ==============================================================================
 */
 
+// Demo flags
+#define FDEMO_TITLE			0x01	// Show title
+#define FDEMO_CDTRACK		0x04	// Playing cd track
+#define FDEMO_FADE_IN_SLOW	0x08	// Fade in (slow)
+#define FDEMO_FADE_IN_FAST	0x10	// Fade in (fast)
+#define FDEMO_FADE_OUT_SLOW	0x20	// Fade out (slow)
+#define FDEMO_FADE_OUT_FAST	0x40	// Fade out (fast)
+
 cvar_t	cl_appendmixed = { "cl_appendmixed", "0" };
 
 char	gDemoMessageBuffer[4];
@@ -465,12 +473,308 @@ void CL_SwapDemo_f( void )
 	demodir.nEntries = 0;
 }
 
+/*
+====================
+CL_SetDemoInfo_f
 
+Add info to demo: info = title "text", play tracknum, fade <IN|OUT><FAST|SLOW>
+====================
+*/
+void CL_SetDemoInfo_f( void )
+{
+	char	name[MAX_OSPATH];
+	int		c;
+	FILE* fp;
+	char	szTempName[MAX_OSPATH];
+	char	szOriginalName[MAX_OSPATH];
+	int		nSegment;
+	demoentry_t* newentry;
+	int		n, i;
+	qboolean bDone;
+	int		nCurArg;
+	char* pFlag;
+	char* pValue;
+	char* pDirection;
 
+	if (cmd_source != src_command)
+		return;
 
+	if (cls.demorecording || cls.demoplayback)
+	{
+		Con_Printf("Setdemoinfo only available when not running or recording a demo.\n");
+		return;
+	}
 
+	c = Cmd_Argc();
+	if (c < 3)
+	{
+		Con_Printf("Setdemoinfo <demoname> <seg#> <info ...>\n");
+		Con_Printf("   title \"text\"\n");
+		Con_Printf("   play tracknum\n");
+		Con_Printf("   fade <in | out> <fast | slow>\n\n");
+		Con_Printf("Use -option to disable, e.g., -title\n");
+		return;
+	}
 
+	if (strstr(Cmd_Argv(1), ".."))
+	{
+		Con_Printf("Relative pathnames are not allowed.\n");
+		return;
+	}
 
+	nSegment = atoi(Cmd_Argv(2));
+	if (nSegment <= 1)
+	{
+		Con_Printf("Cannot Setdemoinfo the STARTUP segment.\n");
+		return;
+	}
+
+	//
+	// open the demo file
+	//
+	sprintf(name, "%s/%s", com_gamedir, Cmd_Argv(1));
+
+	COM_DefaultExtension(name, ".dem");
+	Con_Printf("Setting info for segment %i in demo %s.\n", nSegment, name);
+
+	strcpy(szOriginalName, name);
+	fp = fopen(szOriginalName, "rb");
+	if (!fp)
+	{
+		Con_Printf("Error:  couldn't open demo file %s for Setdemoinfo.\n", name);
+		return;
+	}
+
+	COM_StripExtension(name, szTempName);
+	COM_DefaultExtension(szTempName, ".dm2");
+	cls.demofile = fopen(szTempName, "w+b");
+	if (!cls.demofile)
+	{
+		Con_Printf("ERROR: couldn't open %s.\n", name);
+		return;
+	}
+
+	// Ready to start reading
+	// Now copy the stuff we cached from the server.
+	fseek(fp, 0, SEEK_END);
+
+	n = ftell(fp);
+	fseek(fp, 0, SEEK_SET);
+	fseek(cls.demofile, 0, SEEK_SET);
+
+	// Copy the chunk
+	COM_CopyFileChunk(cls.demofile, fp, n);
+
+	// Read in the demofile
+	fseek(fp, 0, SEEK_SET);
+	fseek(cls.demofile, 0, SEEK_SET);
+
+	// Read in the demoheader
+	fread(&demoheader, sizeof(demoheader), 1, fp);
+
+	if (strcmp(demoheader.szFileStamp, "HLDEMO"))
+	{
+		Con_Printf("%s is not a demo file\n", name);
+		fclose(cls.demofile);
+		fclose(fp);
+		_unlink(szTempName);
+		cls.demofile = NULL;
+		return;
+	}
+
+	if (demoheader.nNetProtocolVersion != PROTOCOL_VERSION ||
+		demoheader.nDemoProtocol != DEMO_PROTOCOL)
+	{
+		Con_Printf(
+			"ERROR: demo protocol outdated\n"
+			"Demo file protocols %iN:%iD\n"
+			"Server protocol is at %iN:%iD\n",
+			demoheader.nNetProtocolVersion,
+			demoheader.nDemoProtocol,
+			PROTOCOL_VERSION,
+			DEMO_PROTOCOL
+		);
+		fclose(cls.demofile);
+		fclose(fp);
+		_unlink(szTempName);
+		cls.demofile = NULL;
+		return;
+	}
+
+	// Now read in the directory structure
+	fseek(fp, demoheader.nDirectoryOffset, SEEK_SET);
+
+	fread(&demodir.nEntries, sizeof(int), 1, fp);
+
+	if (demodir.nEntries < 1 ||
+		demodir.nEntries > 1024)
+	{
+		Con_Printf("ERROR: demo had bogus # of directory entries:  %i\n",
+			demodir.nEntries);
+		fclose(cls.demofile);
+		fclose(fp);
+		_unlink(szTempName);
+		cls.demofile = NULL;
+		return;
+	}
+
+	// Read in the entry info structure
+	demodir.p_rgEntries = (demoentry_t*)malloc(sizeof(demoentry_t) * demodir.nEntries);
+	fread(demodir.p_rgEntries, sizeof(demoentry_t), demodir.nEntries, fp);
+
+	nCurArg = 3;
+	newentry = &demodir.p_rgEntries[nSegment - 1];
+
+	bDone = FALSE;
+	while (!bDone)
+	{
+		pFlag = Cmd_Argv(nCurArg);
+		if (!pFlag || !pFlag[0])
+			break;
+
+		nCurArg++;
+
+		if (!_stricmp(pFlag, "-TITLE"))
+		{
+			newentry->nFlags &= ~FDEMO_TITLE;
+		}
+		else if (!_stricmp(pFlag, "-PLAY"))
+		{
+			newentry->nFlags &= ~FDEMO_CDTRACK;
+		}
+		else if (!_stricmp(pFlag, "-FADE"))
+		{
+			newentry->nFlags &= ~(FDEMO_FADE_IN_SLOW | FDEMO_FADE_IN_FAST | FDEMO_FADE_OUT_SLOW | FDEMO_FADE_OUT_FAST);
+		}
+		else if (!_stricmp(pFlag, "TITLE"))
+		{
+			pValue = Cmd_Argv(nCurArg);
+			nCurArg++;
+
+			if (!pValue || !pValue[0])
+			{
+				Con_Printf("Title flag requires a double-quoted value.\n");
+				continue;
+			}
+
+			strncpy(newentry->szDescription, pValue, sizeof(newentry->szDescription) - 1);
+			newentry->szDescription[sizeof(newentry->szDescription) - 1] = 0;
+			newentry->nFlags |= FDEMO_TITLE;
+		}
+		else if (!_stricmp(pFlag, "PLAY"))
+		{
+			pValue = Cmd_Argv(nCurArg);
+			nCurArg++;
+
+			if (!pValue || !pValue[0])
+			{
+				Con_Printf("Play flag requires a cd track #.\n");
+				continue;
+			}
+
+			newentry->nCDTrack = atoi(pValue);
+			newentry->nFlags |= FDEMO_CDTRACK;
+		}
+		else if (!_stricmp(pFlag, "FADE"))
+		{
+			pDirection = Cmd_Argv(nCurArg);
+			nCurArg++;
+
+			if (!pDirection || !pDirection[0])
+			{
+				Con_Printf("Fade flag requires a direction and speed (in fast, e.g.)\n");
+				continue;
+			}
+
+			if (!_stricmp(pDirection, "IN"))
+			{
+				pValue = Cmd_Argv(nCurArg);
+				nCurArg++;
+
+				if (!pValue || !pValue[0])
+				{
+					Con_Printf("Fade flag requires a speed (fast or slow).\n");
+					continue;
+				}
+
+				if (!_stricmp(pValue, "FAST"))
+				{
+					newentry->nFlags |= FDEMO_FADE_IN_FAST;
+				}
+				else if (!_stricmp(pValue, "SLOW"))
+				{
+					newentry->nFlags |= FDEMO_FADE_IN_SLOW;
+				}
+				else
+				{
+					Con_Printf("Fade flag requires a speed (fast or slow).\n");
+					continue;
+				}
+			}
+			else if (!_stricmp(pDirection, "OUT"))
+			{
+				pValue = Cmd_Argv(nCurArg);
+				nCurArg++;
+
+				if (!pValue || !pValue[0])
+				{
+					Con_Printf("Fade flag requires a speed (fast or slow).\n");
+					continue;
+				}
+
+				if (!_stricmp(pValue, "FAST"))
+				{
+					newentry->nFlags |= FDEMO_FADE_OUT_FAST;
+				}
+				else if (!_stricmp(pValue, "SLOW"))
+				{
+					newentry->nFlags |= FDEMO_FADE_OUT_SLOW;
+				}
+				else
+				{
+					Con_Printf("Fade flag requires a speed (fast or slow).\n");
+					continue;
+				}
+			}
+			else
+			{
+				Con_Printf("Fade flag requires a direction (in or out).\n");
+				continue;
+			}
+		}
+		else
+		{
+			Con_Printf("Setdemoinfo, unrecognized flag:  %s\n", pFlag);
+			bDone = TRUE;
+		}
+	}
+
+	fseek(cls.demofile, demoheader.nDirectoryOffset, SEEK_SET);
+
+	// Read in the directory structure.
+	fwrite(&demodir.nEntries, sizeof(int), 1, cls.demofile);
+
+	for (i = 0; i < demodir.nEntries; i++)
+	{
+		fwrite(&demodir.p_rgEntries[i], sizeof(demoentry_t), 1, cls.demofile);
+	}
+
+	// Close the file
+	fclose(cls.demofile);
+	cls.demofile = NULL;
+	fclose(fp);
+
+	// Replace original file
+	Con_Printf("Replacing old demo with edited version.\n");
+	_unlink(szOriginalName);
+	rename(szTempName, szOriginalName);
+
+	// Release entry info
+	free(demodir.p_rgEntries);
+	demodir.p_rgEntries = NULL;
+
+	demodir.nEntries = 0;
+}
 
 
 
