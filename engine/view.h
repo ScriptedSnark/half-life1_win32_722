@@ -26,4 +26,7 @@ void V_UpdatePalette( void );
 
 float V_CalcRoll( float* angles, float* velocity );
 
+int V_ScreenShake( const char* pszName, int iSize, void* pbuf );
+int V_ScreenFade( const char* pszName, int iSize, void* pbuf );
+
 #endif // VIEW_H

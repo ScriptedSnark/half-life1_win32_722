@@ -206,7 +206,7 @@ void ClientDLL_UpdateClientData( void )
 		}
 
 		if (cls.demorecording)
-			CL_WriteDLLUpdate(&oldcdat);
+			CL_DemoUpdateClientData(&oldcdat);
 	}
 }
 

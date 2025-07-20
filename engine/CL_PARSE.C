@@ -433,13 +433,13 @@ qboolean CL_CheckFile( char* filename )
 			return TRUE;
 		}
 
-		sprintf(cls.dl.filename, "cust.dat");
+		sprintf(cls.dl.szFileName, "cust.dat");
 	}
 	else
 	{
 		if (COM_FindFile(szName, NULL, &pfHandle) == -1)
 		{
-			strcpy(cls.dl.filename, szName); // It doesn't exist, so we need to download it
+			strcpy(cls.dl.szFileName, szName); // It doesn't exist, so we need to download it
 		}
 		else
 		{
@@ -457,7 +457,7 @@ qboolean CL_CheckFile( char* filename )
 	//FF: ^ this is somehow related to demos idk what the hell is this
 
 	// Strip the extension of the file we're going to download and place either .cst or .tmp there.
-	COM_StripExtension(cls.dl.filename, cls.dl.extension);
+	COM_StripExtension(cls.dl.szFileName, cls.dl.extension);
 	strcat(&cls.dl.extension[strlen(cls.dl.extension)], cls.dl.custom ? ".cst" : ".tmp");
 
 	cls.dl.crcFile = 0;
@@ -2006,6 +2006,15 @@ void CL_ParseServerMessage( void )
 	SHOWNET("END OF MESSAGE");
 
 	// TODO: Implement
+
+	if (!cls.demoplayback)
+	{
+		if (cls.state != ca_active)
+			CL_WriteDemoStartup(&net_message);
+
+		if (cls.demorecording && !cls.demowaiting && cls.state == ca_active)
+			CL_WriteDemoMessage(&net_message);
+	}
 
 	CL_SetSolidEntities();
 }

@@ -1666,14 +1666,14 @@ void CL_EmitEntities( void )
 
 	if (cls.demoplayback)
 	{
-		if (!cls.skipdemomessage)
+		if (!cls.demoupdateentities)
 			return;
 
-		cls.skipdemomessage = FALSE;
+		cls.demoupdateentities = FALSE;
 	}
 
 	if (cls.demorecording)
-		CL_WriteDemoUpdate();
+		CL_WriteDLLUpdate();
 
 	cl_oldnumvisedicts = cl_numvisedicts;
 	slot = cl_visedicts_list[(cls.netchan.incoming_sequence + 1) & 1];

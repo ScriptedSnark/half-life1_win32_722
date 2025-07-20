@@ -39,7 +39,7 @@ typedef struct
 	char		extension[MAX_QPATH];	// The extension of a file that we are downloading from the server
 										// ".cst" if it's a custom resource
 	CRC32_t		crcFile;				// For detecting that client's resource is different
-	char		filename[MAX_QPATH];	// The filename
+	char		szFileName[MAX_QPATH];	// Name
 
 	int			nNumFileChunksRead;		// How much chunks of the incoming transfer (the file itself) have we read?
 
@@ -205,20 +205,19 @@ typedef struct
 	qboolean	demowaiting;
 	qboolean	demoappending;
 
-	// TODO: Implement
+	qboolean	demomaxdelayexceeded;	// Set when demo playback lags(> 0.1s behind)
 	
 	// Name of demo file we are appending onto.
 	char		demofilename[MAX_OSPATH];
 
-	// TODO: Implement
-	
+	qboolean	demoupdateentities;	// TRUE if entities need to be updated while playing the demo
+
 	int			demoframecount;		// # of demo frames in the segment.
 
-	// TODO: Implement
-
-	qboolean skipdemomessage;
-
-	// TODO: Implement
+	float		demototaltimediff;		// Accumulated time difference for demo sync correction
+	int			demonorewinds;			// Count of dem_norewind commands in current demo segment
+	int			demoskippedmessages;	// Messages deferred due to timing constraints
+	float		democurrenttimediff;	// Current delta between playback and demo time
 
 	int			td_lastframe;		// to meter out one message a frame
 	int			td_startframe;		// host_framecount at start
@@ -357,9 +356,6 @@ typedef struct
 
 	vec3_t		mvelocity[3];	// update by server, used for lean+bob
 								// (0 is newest)
-
-
-	// TODO: Implement
 
 	vec3_t		punchangle;		// temporary offset
 	vec3_t		crosshairangle;

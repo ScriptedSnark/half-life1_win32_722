@@ -1538,13 +1538,11 @@ void CL_Init( void )
 
 	Cmd_AddCommand("record", CL_Record_f);
 	Cmd_AddCommand("stop", CL_Stop_f);
-
-	// TODO: Implement
-
+	Cmd_AddCommand("playdemo", CL_PlayDemo_f);
+	Cmd_AddCommand("timedemo", CL_TimeDemo_f);
+	Cmd_AddCommand("listdemo", CL_ListDemo_f);
 	Cmd_AddCommand("appenddemo", CL_AppendDemo_f);
-
-	// TODO: Implement
-	
+	Cmd_AddCommand("removedemo", CL_RemoveDemo_f);	
 	Cmd_AddCommand("swapdemo", CL_SwapDemo_f);
 	Cmd_AddCommand("setdemoinfo", CL_SetDemoInfo_f);
 	Cmd_AddCommand("snapshot", CL_TakeSnapshot_f);

@@ -1448,7 +1448,7 @@ DLL_EXPORT int GetGameInfo( struct GameInfo_s* pGI, char* pszChannel )
 	case ca_uninitialized:
 		if (cls.dl.download)
 		{
-			sprintf(gi.szStatus, "Downloading %s, %i percent complete", cls.dl.filename, cls.dl.percent);
+			sprintf(gi.szStatus, "Downloading %s, %i percent complete", cls.dl.szFileName, cls.dl.percent);
 		}
 		else
 		{

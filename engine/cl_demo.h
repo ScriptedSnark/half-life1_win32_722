@@ -12,8 +12,24 @@
 #define DEMO_STARTUP		0	// This lump contains startup info needed to spawn into the server
 #define DEMO_NORMAL			1	// This lump contains playback info of messages, etc., needed during playback.
 
+// unknown message
+#define dem_unknown			0
+// it's a startup message, process as fast as possible
+#define dem_norewind		1
 // move the demostart time value forward by this amount
 #define dem_jumptime		2
+// sequence info
+#define dem_sequenceinfo	3
+// update entities
+#define dem_updateents		4
+// HUD message
+#define dem_hud				5
+// userdata from the client.dll
+#define dem_userdata		6
+// demo header
+#define dem_header			7
+// it's a normal network packet
+#define dem_stop			8
 
 //
 // Structures
@@ -57,20 +73,25 @@ extern cvar_t	cl_appendmixed;
 
 void COM_CopyFileChunk( FILE* dst, FILE* src, int nSize );
 
-void CL_StopPlayback( void );
-void CL_WriteDemoUpdate( void );
-void CL_WriteDLLUpdate( client_data_t* cdata );
-
-
 void CL_AppendDemo_f( void );
 void CL_SwapDemo_f( void );
 void CL_SetDemoInfo_f( void );
+void CL_RemoveDemo_f( void );
+void CL_ListDemo_f( void );
 void CL_Stop_f( void );
 void CL_Record_f( void );
-
-
+void CL_PlayDemo_f( void );
+void CL_TimeDemo_f( void );
 
 void CL_BeginDemoStartup( void );
+void CL_WriteDemoStartup( sizebuf_t* msg );
+void CL_WriteDemoMessage( sizebuf_t* msg );
+void CL_WriteDLLUpdate( void );
 void CL_RecordHUDCommand( char* cmdname );
+void CL_DemoUpdateClientData( client_data_t* cdata );
+void CL_StopPlayback( void );
+
+qboolean CL_ReadDemoMessage( void );
+qboolean CL_ReadDemoViewInfo( float* origin, float* angles );
 
 #endif // CL_DEMO_H
