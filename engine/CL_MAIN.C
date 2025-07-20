@@ -64,6 +64,10 @@ cvar_t cl_download_max = { "cl_download_max", "0" };
 cvar_t	rcon_address = { "rcon_address", "" };
 cvar_t	rcon_port = { "rcon_port", "0" };
 
+cvar_t		cl_pitchup = { "cl_pitchup", "89" };
+cvar_t		cl_pitchdown = { "cl_pitchdown", "89" };
+cvar_t		rcon_password = { "rcon_password", "" };
+
 client_static_t	cls;
 client_state_t cl;
 // FIXME: put these on hunk?

@@ -608,7 +608,11 @@ void CL_InitInput( void );
 float CL_LerpPoint( void );
 void CL_SendCmd( void );
 
+void CAM_Init( void );
 void CAM_Think( void );
+void CAM_ClearStates( void );
+void CAM_StartMouseMove( void );
+void CAM_EndMouseMove( void );
 
 // TODO: Implement
 

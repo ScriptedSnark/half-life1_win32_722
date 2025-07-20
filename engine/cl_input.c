@@ -27,84 +27,16 @@ state bit 2 is edge triggered on the down to up transition
 ===============================================================================
 */
 
-int in_cancel;
 
 kbutton_t	in_mlook, in_klook;
 kbutton_t	in_left, in_right, in_forward, in_back;
 kbutton_t	in_lookup, in_lookdown, in_moveleft, in_moveright;
-kbutton_t	in_strafe, in_speed, in_use, in_jump, in_duck, in_attack, in_attack2, in_reload;
+kbutton_t	in_strafe, in_speed, in_use, in_jump, in_attack, in_attack2;
 kbutton_t	in_up, in_down;
+kbutton_t	in_duck, in_reload;
 
 int			in_impulse;
-
-enum ECAM_Command
-{
-	CAM_COMMAND_NONE = 0,
-	CAM_COMMAND_TOTHIRDPERSON = 1,
-	CAM_COMMAND_TOFIRSTPERSON = 2
-};
-
-cvar_t		cam_command		 = { "cam_command", "0" };		// tells camera to go to thirdperson
-cvar_t		cam_snapto		 = { "cam_snapto", "0" };		// snap to thirdperson view
-cvar_t		cam_idealyaw	 = { "cam_idealyaw", "90" };	// thirdperson yaw
-cvar_t		cam_idealpitch	 = { "cam_idealpitch", "0" };	// thirperson pitch
-cvar_t		cam_idealdist	 = { "cam_idealdist", "64" };	// thirdperson distance
-cvar_t		cam_contain		 = { "cam_contain", "0" };		// contain camera to world
-
-cvar_t		c_maxpitch		 = { "c_maxpitch", "90.0" };
-cvar_t		c_minpitch		 = { "c_minpitch", "0.0" };
-cvar_t		c_maxyaw		 = { "c_maxyaw",   "135.0" };
-cvar_t		c_minyaw		 = { "c_minyaw",   "-135.0" };
-cvar_t		c_maxdistance	 = { "c_maxdistance",   "200.0" };
-cvar_t		c_mindistance	 = { "c_mindistance",   "30.0" };
-
-cvar_t		cl_anglespeedkey = { "cl_anglespeedkey", "0.67" };
-cvar_t		cl_yawspeed		 = { "cl_yawspeed", "210" };
-cvar_t		cl_pitchspeed	 = { "cl_pitchspeed", "225" };
-cvar_t		cl_upspeed		 = { "cl_upspeed", "320" };
-cvar_t		cl_forwardspeed	 = { "cl_forwardspeed", "400", TRUE };
-cvar_t		cl_backspeed	 = { "cl_backspeed", "400", TRUE };
-cvar_t		cl_sidespeed	 = { "cl_sidespeed", "400" };
-cvar_t		cl_movespeedkey	 = { "cl_movespeedkey", "0.3" };
-cvar_t		cl_pitchup		 = { "cl_pitchup", "89" };
-cvar_t		cl_pitchdown	 = { "cl_pitchdown", "89" };
-
-cvar_t		rcon_password = { "rcon_password", "" };
-
-
-// In third person
-int cam_thirdperson;
-int cam_mousemove; //true if we are moving the cam with the mouse, False if not
-int iMouseInUse = 0;
-int cam_distancemove;
-extern int mouse_x, mouse_y;  //used to determine what the current x and y values are
-int cam_old_mouse_x, cam_old_mouse_y; //holds the last ticks mouse movement
-POINT		cam_mouse;
-int cam_distancemove;
-
-static kbutton_t cam_pitchup, cam_pitchdown, cam_yawleft, cam_yawright;
-static kbutton_t cam_in, cam_out, cam_move;
-
-#define CAM_DIST_DELTA 1.0
-#define CAM_ANGLE_DELTA 2.5
-#define CAM_ANGLE_SPEED 2.5
-#define CAM_MIN_DIST 30.0
-#define CAM_ANGLE_MOVE .5
-#define MAX_ANGLE_DIFF 10.0
-#define PITCH_MAX 90.0
-#define PITCH_MIN 0
-#define YAW_MAX  135.0
-#define YAW_MIN	 -135.0
-
-
-//======================Forward Declarations========================
-void CAM_Init( void );
-void CAM_ToThirdPerson( void );
-void CAM_ToFirstPerson( void );
-void CAM_StartMouseMove( void );
-void CAM_EndMouseMove( void );
-void CAM_StartDistance( void );
-void CAM_EndDistance( void );
+int			in_cancel;
 
 /*
 ============
@@ -179,11 +111,11 @@ void KeyUp( kbutton_t *b )
 	b->state |= 4; 		// impulse up
 }
 
-
 void IN_KLookDown( void ) { KeyDown(&in_klook); }
 void IN_KLookUp( void ) { KeyUp(&in_klook); }
 void IN_MLookDown( void ) { KeyDown(&in_mlook); }
-void IN_MLookUp( void ) {
+void IN_MLookUp( void )
+{
 	KeyUp(&in_mlook);
 	if (!(in_mlook.state & 1) && lookspring.value)
 		V_StartPitchDrift();
@@ -208,38 +140,30 @@ void IN_MoveleftDown( void ) { KeyDown(&in_moveleft); }
 void IN_MoveleftUp( void ) { KeyUp(&in_moveleft); }
 void IN_MoverightDown( void ) { KeyDown(&in_moveright); }
 void IN_MoverightUp( void ) { KeyUp(&in_moveright); }
-
 void IN_SpeedDown( void ) { KeyDown(&in_speed); }
 void IN_SpeedUp( void ) { KeyUp(&in_speed); }
 void IN_StrafeDown( void ) { KeyDown(&in_strafe); }
 void IN_StrafeUp( void ) { KeyUp(&in_strafe); }
-
 void IN_AttackDown( void ) { KeyDown(&in_attack); }
-void IN_AttackUp( void ) 
+void IN_AttackUp( void )
 {
-	KeyUp(&in_attack); 
+	KeyUp(&in_attack);
 	in_cancel = 0;
 }
-
 void IN_Attack2Down( void ) { KeyDown(&in_attack2); }
 void IN_Attack2Up( void ) { KeyUp(&in_attack2); }
-
 void IN_UseDown( void ) { KeyDown(&in_use); }
 void IN_UseUp( void ) { KeyUp(&in_use); }
 void IN_JumpDown( void ) { KeyDown(&in_jump); }
 void IN_JumpUp( void ) { KeyUp(&in_jump); }
-
 void IN_DuckDown( void ) { KeyDown(&in_duck); }
 void IN_DuckUp( void ) { KeyUp(&in_duck); }
-
 // Special handling
 void IN_Cancel( void )
 {
 	in_cancel = 1;
 }
-
 void IN_Impulse( void ) { in_impulse = Q_atoi(Cmd_Argv(1)); }
-
 void IN_ReloadDown( void ) { KeyDown(&in_reload); }
 void IN_ReloadUp( void ) { KeyUp(&in_reload); }
 
@@ -255,12 +179,13 @@ Returns 0.25 if a key was pressed and released during the frame,
 */
 float CL_KeyState( kbutton_t* key )
 {
-	float		val = 0.0;
+	float		val;
 	int			impulsedown, impulseup, down;
 
 	impulsedown = key->state & 2;
 	impulseup = key->state & 4;
 	down = key->state & 1;
+	val = 0;
 
 	if (impulsedown && !impulseup)
 	{
@@ -299,6 +224,24 @@ float CL_KeyState( kbutton_t* key )
 	return val;
 }
 
+
+
+
+//==========================================================================
+
+cvar_t	cl_upspeed = { "cl_upspeed", "320" };
+cvar_t	cl_forwardspeed = { "cl_forwardspeed", "400", TRUE };
+cvar_t	cl_backspeed = { "cl_backspeed", "400", TRUE };
+cvar_t	cl_sidespeed = { "cl_sidespeed", "400" };
+
+cvar_t	cl_movespeedkey = { "cl_movespeedkey", "0.3" };
+
+cvar_t	cl_yawspeed = { "cl_yawspeed", "210" };
+cvar_t	cl_pitchspeed = { "cl_pitchspeed", "225" };
+
+cvar_t	cl_anglespeedkey = { "cl_anglespeedkey", "0.67" };
+
+
 /*
 ================
 CL_AdjustAngles
@@ -312,13 +255,9 @@ void CL_AdjustAngles( void )
 	float	up, down;
 
 	if (in_speed.state & 1)
-	{
 		speed = host_frametime * cl_anglespeedkey.value;
-	}
 	else
-	{
 		speed = host_frametime;
-	}
 
 	if (!(in_strafe.state & 1))
 	{
@@ -396,6 +335,23 @@ void CL_BaseMove( usercmd_t *cmd )
 		cmd->sidemove *= cl_movespeedkey.value;
 		cmd->upmove *= cl_movespeedkey.value;
 	}
+
+	// clip to maxspeed
+	if (cl.maxspeed != 0.0)
+	{
+		// scale the 3 speeds so that the total velocity is not > cl.maxspeed
+		float fmov = sqrt((cmd->forwardmove * cmd->forwardmove) + (cmd->sidemove * cmd->sidemove) + (cmd->upmove * cmd->upmove));
+
+		if (fmov > cl.maxspeed)
+		{
+			float fratio = cl.maxspeed / fmov;
+			cmd->forwardmove *= fratio;
+			cmd->sidemove *= fratio;
+			cmd->upmove *= fratio;
+		}
+	}
+
+	cmd->lightlevel = cl.light_level;
 }
 
 /*
@@ -568,14 +524,68 @@ void CL_InitInput( void )
 	Cmd_AddCommand("-duck", IN_DuckUp);
 	Cmd_AddCommand("+reload", IN_ReloadDown);
 	Cmd_AddCommand("-reload", IN_ReloadUp);
+
 	CAM_Init();
 }
+
+#define CAM_DIST_DELTA 1.0
+#define CAM_ANGLE_DELTA 2.5
+#define CAM_ANGLE_SPEED 2.5
+#define CAM_MIN_DIST 30.0
+#define CAM_ANGLE_MOVE .5
+#define MAX_ANGLE_DIFF 10.0
+#define PITCH_MAX 90.0
+#define PITCH_MIN 0
+#define YAW_MAX  135.0
+#define YAW_MIN	 -135.0
+
+enum ECAM_Command
+{
+	CAM_COMMAND_NONE = 0,
+	CAM_COMMAND_TOTHIRDPERSON = 1,
+	CAM_COMMAND_TOFIRSTPERSON = 2
+};
+
+cvar_t	cam_command = { "cam_command", "0" };	 // tells camera to go to thirdperson
+cvar_t	cam_snapto = { "cam_snapto", "0" };	 // snap to thirdperson view
+cvar_t	cam_idealyaw = { "cam_idealyaw", "90" };	 // thirdperson yaw
+cvar_t	cam_idealpitch = { "cam_idealpitch", "0" };	 // thirperson pitch
+cvar_t	cam_idealdist = { "cam_idealdist", "64" };	 // thirdperson distance
+cvar_t	cam_contain = { "cam_contain", "0" };	// contain camera to world
+
+cvar_t	c_maxpitch = { "c_maxpitch", "90.0" };
+cvar_t	c_minpitch = { "c_minpitch", "0.0" };
+cvar_t	c_maxyaw = { "c_maxyaw", "135.0" };
+cvar_t	c_minyaw = { "c_minyaw", "-135.0" };
+cvar_t	c_maxdistance = { "c_maxdistance", "200.0" };
+cvar_t	c_mindistance = { "c_mindistance", "30.0" };
+
+// pitch, yaw, dist
+vec3_t cam_ofs;
+
+
+// In third person
+int cam_thirdperson;
+int cam_mousemove; //true if we are moving the cam with the mouse, False if not
+int iMouseInUse = 0;
+int cam_distancemove;
+extern int mouse_x, mouse_y;  //used to determine what the current x and y values are
+int cam_old_mouse_x, cam_old_mouse_y; //holds the last ticks mouse movement
+POINT		cam_mouse;
+
+static kbutton_t cam_pitchup, cam_pitchdown, cam_yawleft, cam_yawright;
+static kbutton_t cam_in, cam_out, cam_move;
+
+void CAM_ToThirdPerson( void );
+void CAM_ToFirstPerson( void );
+void CAM_StartDistance( void );
+void CAM_EndDistance( void );
 
 float MoveToward( float cur, float goal, float maxspeed )
 {
 	if (cur != goal)
 	{
-		if (abs(cur - goal) > 180.0)
+		if (fabs(cur - goal) > 180.0)
 		{
 			if (cur < goal)
 				cur += 360.0;
@@ -609,30 +619,42 @@ float MoveToward( float cur, float goal, float maxspeed )
 	return cur;
 }
 
+typedef struct
+{
+	vec3_t		boxmins, boxmaxs;// enclose the test object along entire move
+	float* mins, * maxs;	// size of the moving object
+	vec3_t		mins2, maxs2;	// size when clipping against mosnters
+	float* start, * end;
+	trace_t		trace;
+	int			type;
+	edict_t		*passedict;
+	qboolean	monsterclip;
+} moveclip_t;
+
 extern trace_t SV_ClipMoveToEntity( edict_t* ent, const vec_t* start, const vec_t* mins, const vec_t* maxs, const vec_t* end );
 
 void CAM_Think( void )
 {
-	vec3_t origin;
 	vec3_t ext, pnt, camForward, camRight, camUp;
+	moveclip_t	clip;
 	float dist;
 	vec3_t camAngles;
 	int i;
-	trace_t trace;
+	cl_entity_t* ent = NULL;
 
 	switch ((int)cam_command.value)
 	{
-	case CAM_COMMAND_TOTHIRDPERSON:
-		CAM_ToThirdPerson();
-		break;
+		case CAM_COMMAND_TOTHIRDPERSON:
+			CAM_ToThirdPerson();
+			break;
 
-	case CAM_COMMAND_TOFIRSTPERSON:
-		CAM_ToFirstPerson();
-		break;
+		case CAM_COMMAND_TOFIRSTPERSON:
+			CAM_ToFirstPerson();
+			break;
 
-	case CAM_COMMAND_NONE:
-	default:
-		break;
+		case CAM_COMMAND_NONE:
+		default:
+			break;
 	}
 
 	if (!cam_thirdperson)
@@ -641,10 +663,11 @@ void CAM_Think( void )
 	if (cam_contain.value)
 	{
 		ext[0] = ext[1] = ext[2] = 0.0;
+		ent = &cl_entities[cl.viewentity];
 	}
 
-	camAngles[ PITCH ] = cam_idealpitch.value;
-	camAngles[ YAW ] = cam_idealyaw.value;
+	camAngles[PITCH] = cam_idealpitch.value;
+	camAngles[YAW] = cam_idealyaw.value;
 	dist = cam_idealdist.value;
 	//
 	//movement of the camera with the mouse
@@ -662,28 +685,28 @@ void CAM_Think( void )
 			//keep the camera within certain limits around the player (ie avoid certain bad viewing angles)  
 			if (cam_mouse.x > window_center_x)
 			{
-				//if ((camAngles[ YAW ]>=225.0)||(camAngles[ YAW ]<135.0))
-				if (camAngles[ YAW ] < c_maxyaw.value)
+				//if ((camAngles[YAW] >= 225.0) || (camAngles[YAW] < 135.0))
+				if (camAngles[YAW] < c_maxyaw.value)
 				{
-					camAngles[ YAW ] += (CAM_ANGLE_MOVE)*((cam_mouse.x - window_center_x) / 2);
+					camAngles[YAW] += (CAM_ANGLE_MOVE) * ((cam_mouse.x - window_center_x) / 2);
 				}
-				if (camAngles[ YAW ] > c_maxyaw.value)
+				if (camAngles[YAW] > c_maxyaw.value)
 				{
 
-					camAngles[ YAW ] = c_maxyaw.value;
+					camAngles[YAW] = c_maxyaw.value;
 				}
 			}
 			else if (cam_mouse.x < window_center_x)
 			{
-				//if ((camAngles[ YAW ]<=135.0)||(camAngles[ YAW ]>225.0))
-				if (camAngles[ YAW ] > c_minyaw.value)
+				//if ((camAngles[YAW] <= 135.0) || (camAngles[YAW] > 225.0))
+				if (camAngles[YAW] > c_minyaw.value)
 				{
-					camAngles[ YAW ] -= (CAM_ANGLE_MOVE)* ((window_center_x - cam_mouse.x) / 2);
+					camAngles[YAW] += (CAM_ANGLE_MOVE) * ((cam_mouse.x - window_center_x) / 2);
 
 				}
-				if (camAngles[ YAW ] < c_minyaw.value)
+				if (camAngles[YAW] < c_minyaw.value)
 				{
-					camAngles[ YAW ] = c_minyaw.value;
+					camAngles[YAW] = c_minyaw.value;
 
 				}
 			}
@@ -693,46 +716,46 @@ void CAM_Think( void )
 			//also make sure camera is within bounds
 			if (cam_mouse.y > window_center_y)
 			{
-				if (camAngles[ PITCH ] < c_maxpitch.value)
+				if (camAngles[PITCH] < c_maxpitch.value)
 				{
-					camAngles[ PITCH ] += (CAM_ANGLE_MOVE)* ((cam_mouse.y - window_center_y) / 2);
+					camAngles[PITCH] += (CAM_ANGLE_MOVE) * ((cam_mouse.y - window_center_y) / 2);
 				}
-				if (camAngles[ PITCH ] > c_maxpitch.value)
+				if (camAngles[PITCH] > c_maxpitch.value)
 				{
-					camAngles[ PITCH ] = c_maxpitch.value;
+					camAngles[PITCH] = c_maxpitch.value;
 				}
 			}
 			else if (cam_mouse.y < window_center_y)
 			{
-				if (camAngles[ PITCH ] > c_minpitch.value)
+				if (camAngles[PITCH] > c_minpitch.value)
 				{
-					camAngles[ PITCH ] -= (CAM_ANGLE_MOVE)*((window_center_y - cam_mouse.y) / 2);
+					camAngles[PITCH] += (CAM_ANGLE_MOVE) * ((cam_mouse.y - window_center_y) / 2);
 				}
-				if (camAngles[ PITCH ] < c_minpitch.value)
-				{								 
-					camAngles[ PITCH ] = c_minpitch.value;
+				if (camAngles[PITCH] < c_minpitch.value)
+				{
+					camAngles[PITCH] = c_minpitch.value;
 				}
 			}
 
 			//set old mouse coordinates to current mouse coordinates
 			//since we are done with the mouse
 
-			cam_old_mouse_y = cam_mouse.y*sensitivity.value;
-
+			cam_old_mouse_x = cam_mouse.x * sensitivity.value;
+			cam_old_mouse_y = cam_mouse.y * sensitivity.value;
 			SetCursorPos(window_center_x, window_center_y);
 		}
 	}
 
 	//Nathan code here
 	if (CL_KeyState(&cam_pitchup))
-		camAngles[ PITCH ] += CAM_ANGLE_DELTA;
+		camAngles[PITCH] += CAM_ANGLE_DELTA;
 	else if (CL_KeyState(&cam_pitchdown))
-		camAngles[ PITCH ] -= CAM_ANGLE_DELTA;
+		camAngles[PITCH] -= CAM_ANGLE_DELTA;
 
 	if (CL_KeyState(&cam_yawleft))
-		camAngles[ YAW ] -= CAM_ANGLE_DELTA;
+		camAngles[YAW] -= CAM_ANGLE_DELTA;
 	else if (CL_KeyState(&cam_yawright))
-		camAngles[ YAW ] += CAM_ANGLE_DELTA;
+		camAngles[YAW] += CAM_ANGLE_DELTA;
 
 	if (CL_KeyState(&cam_in))
 	{
@@ -740,8 +763,8 @@ void CAM_Think( void )
 		if (dist < CAM_MIN_DIST)
 		{
 			// If we go back into first person, reset the angle
-			camAngles[ PITCH ] = 0;
-			camAngles[ YAW ] = 0;
+			camAngles[PITCH] = 0;
+			camAngles[YAW] = 0;
 			dist = CAM_MIN_DIST;
 		}
 
@@ -766,7 +789,7 @@ void CAM_Think( void )
 		{
 			if (dist > c_mindistance.value)
 			{
-				dist -= (CAM_DIST_DELTA)*((window_center_y - cam_mouse.y) / 2);
+				dist += (CAM_DIST_DELTA) * ((cam_mouse.y - window_center_y) / 2);
 			}
 			if (dist < c_mindistance.value)
 			{
@@ -775,33 +798,34 @@ void CAM_Think( void )
 		}
 		//set old mouse coordinates to current mouse coordinates
 		//since we are done with the mouse
-		cam_old_mouse_x = cam_mouse.x*sensitivity.value;
-		cam_old_mouse_y = cam_mouse.y*sensitivity.value;
+		cam_old_mouse_x = cam_mouse.x * sensitivity.value;
+		cam_old_mouse_y = cam_mouse.y * sensitivity.value;
 		SetCursorPos(window_center_x, window_center_y);
 	}
 	if (cam_contain.value)
 	{
 		// check new ideal
-		VectorCopy(origin, pnt);
+		VectorCopy(ent->origin, pnt);
 		AngleVectors(camAngles, camForward, camRight, camUp);
 		for (i = 0; i < 3; i++)
 			pnt[i] += -dist * camForward[i];
 
 		// check line from r_refdef.vieworg to pnt
-		trace = SV_ClipMoveToEntity(sv.edicts, r_refdef.vieworg, ext, ext, pnt);
-		if (trace.fraction == 1.0)
+		memset(&clip, 0, sizeof(moveclip_t));
+		clip.trace = SV_ClipMoveToEntity(sv.edicts, r_refdef.vieworg, ext, ext, pnt);
+		if (clip.trace.fraction == 1.0)
 		{
 			// update ideal
-			cam_idealpitch.value = camAngles[ PITCH ];
-			cam_idealyaw.value = camAngles[ YAW ];
+			cam_idealpitch.value = camAngles[PITCH];
+			cam_idealyaw.value = camAngles[YAW];
 			cam_idealdist.value = dist;
 		}
 	}
 	else
 	{
 		// update ideal
-		cam_idealpitch.value = camAngles[ PITCH ];
-		cam_idealyaw.value = camAngles[ YAW ];
+		cam_idealpitch.value = camAngles[PITCH];
+		cam_idealyaw.value = camAngles[YAW];
 		cam_idealdist.value = dist;
 	}
 
@@ -810,17 +834,17 @@ void CAM_Think( void )
 
 	if (cam_snapto.value)
 	{
-		camAngles[ YAW ] = cam_idealyaw.value + cl.viewangles[ YAW ];
-		camAngles[ PITCH ] = cam_idealpitch.value + cl.viewangles[ PITCH ];
+		camAngles[YAW] = cam_idealyaw.value + cl.viewangles[YAW];
+		camAngles[PITCH] = cam_idealpitch.value + cl.viewangles[PITCH];
 		camAngles[2] = cam_idealdist.value;
 	}
 	else
 	{
-		if (camAngles[ YAW ] - cl.viewangles[ YAW ] != cam_idealyaw.value)
-			camAngles[ YAW ] = MoveToward(camAngles[ YAW ], cam_idealyaw.value + cl.viewangles[ YAW ], CAM_ANGLE_SPEED);
+		if (camAngles[YAW] - cl.viewangles[YAW] != cam_idealyaw.value)
+			camAngles[YAW] = MoveToward(camAngles[YAW], cam_idealyaw.value + cl.viewangles[YAW], CAM_ANGLE_SPEED);
 
-		if (camAngles[ PITCH ] - cl.viewangles[ PITCH ] != cam_idealpitch.value)
-			camAngles[ PITCH ] = MoveToward(camAngles[ PITCH ], cam_idealpitch.value + cl.viewangles[ PITCH ], CAM_ANGLE_SPEED);
+		if (camAngles[PITCH] - cl.viewangles[PITCH] != cam_idealpitch.value)
+			camAngles[PITCH] = MoveToward(camAngles[PITCH], cam_idealpitch.value + cl.viewangles[PITCH], CAM_ANGLE_SPEED);
 
 		if (abs(camAngles[2] - cam_idealdist.value) < 2.0)
 			camAngles[2] = cam_idealdist.value;
@@ -830,18 +854,19 @@ void CAM_Think( void )
 	if (cam_contain.value)
 	{
 		// Test new position
-		dist = camAngles[ ROLL ];
-		camAngles[ ROLL ] = 0;
+		dist = camAngles[ROLL];
+		camAngles[ROLL] = 0;
 
-		VectorCopy(origin, pnt);
+		VectorCopy(ent->origin, pnt);
 		AngleVectors(camAngles, camForward, camRight, camUp);
 		for (i = 0; i < 3; i++)
 			pnt[i] += -dist * camForward[i];
 
 		// check line from r_refdef.vieworg to pnt
+		memset(&clip, 0, sizeof(clip));
 		ext[0] = ext[1] = ext[2] = 0.0;
-		trace = SV_ClipMoveToEntity(sv.edicts, r_refdef.vieworg, ext, ext, pnt);
-		if (trace.fraction != 1.0)
+		clip.trace = SV_ClipMoveToEntity(sv.edicts, r_refdef.vieworg, ext, ext, pnt);
+		if (clip.trace.fraction != 1.0)
 			return;
 	}
 	cam_ofs[0] = camAngles[0];
@@ -864,14 +889,12 @@ void CAM_OutUp( void ) { KeyUp(&cam_out); }
 
 void CAM_ToThirdPerson( void )
 {
-	//we are not in 3rd person view mode, so let's enter it.
 	if (!cam_thirdperson)
 	{
-		//we are going into 3rd person view.
 		cam_thirdperson = 1;
 
-		cam_ofs[ YAW ] = cl.viewangles[ YAW ]; 
-		cam_ofs[ PITCH ] = cl.viewangles[ PITCH ]; 
+		cam_ofs[YAW] = cl.viewangles[YAW];
+		cam_ofs[PITCH] = cl.viewangles[PITCH];
 		cam_ofs[2] = CAM_MIN_DIST;
 	}
 
@@ -880,7 +903,6 @@ void CAM_ToThirdPerson( void )
 
 void CAM_ToFirstPerson( void )
 {
-	//we are going out of 3rd person view.
 	cam_thirdperson = 0;
 
 	Cvar_SetValue("cam_command", 0);
@@ -912,12 +934,14 @@ void CAM_Init( void )
 	Cmd_AddCommand("+camdistance", CAM_StartDistance);
 	Cmd_AddCommand("-camdistance", CAM_EndDistance);
 	Cmd_AddCommand("snapto", CAM_ToggleSnapto);
+
 	Cvar_RegisterVariable(&cam_command);
 	Cvar_RegisterVariable(&cam_snapto);
 	Cvar_RegisterVariable(&cam_idealyaw);
 	Cvar_RegisterVariable(&cam_idealpitch);
 	Cvar_RegisterVariable(&cam_idealdist);
 	Cvar_RegisterVariable(&cam_contain);
+
 	Cvar_RegisterVariable(&c_maxpitch);
 	Cvar_RegisterVariable(&c_minpitch);
 	Cvar_RegisterVariable(&c_maxyaw);
@@ -942,12 +966,12 @@ void CAM_ClearStates( void )
 	cam_snapto.value = 0;
 	cam_distancemove = 0;
 
-	cam_ofs[ PITCH ] = 0.0;
-	cam_ofs[ YAW ] = 0.0;
-	cam_ofs[ ROLL ] = CAM_MIN_DIST;
+	cam_ofs[0] = 0.0;
+	cam_ofs[1] = 0.0;
+	cam_ofs[2] = CAM_MIN_DIST;
 
-	cam_idealpitch.value = cl.viewangles[ PITCH ];
-	cam_idealyaw.value = cl.viewangles[ YAW ];
+	cam_idealpitch.value = cl.viewangles[PITCH];
+	cam_idealyaw.value = cl.viewangles[YAW];
 	cam_idealdist.value = CAM_MIN_DIST;
 }
 
@@ -963,9 +987,8 @@ void CAM_StartMouseMove( void )
 			cam_mousemove = 1;
 			iMouseInUse = 1;
 			GetCursorPos(&cam_mouse);
-
-			cam_old_mouse_x = cam_mouse.x*sensitivity.value;
-			cam_old_mouse_y = cam_mouse.y*sensitivity.value;
+			cam_old_mouse_x = cam_mouse.x * sensitivity.value;
+			cam_old_mouse_y = cam_mouse.y * sensitivity.value;
 		}
 	}
 	//we are not in 3rd person view..therefore do not allow camera movement
@@ -984,6 +1007,7 @@ void CAM_EndMouseMove( void )
 	iMouseInUse = 0;
 }
 
+
 //----------------------------------------------------------
 //routines to start the process of moving the cam in or out 
 //using the mouse
@@ -1001,8 +1025,8 @@ void CAM_StartDistance( void )
 			cam_mousemove = 1;
 			iMouseInUse = 1;
 			GetCursorPos(&cam_mouse);
-			cam_old_mouse_x = cam_mouse.x*sensitivity.value;
-			cam_old_mouse_y = cam_mouse.y*sensitivity.value;
+			cam_old_mouse_x = cam_mouse.x * sensitivity.value;
+			cam_old_mouse_y = cam_mouse.y * sensitivity.value;
 		}
 	}
 	//we are not in 3rd person view..therefore do not allow camera movement
