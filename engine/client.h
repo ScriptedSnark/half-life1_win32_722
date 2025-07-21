@@ -662,8 +662,12 @@ extern	int		spec_track; // player# of who we are tracking
 extern	int		cam_thirdperson;
 
 void Cam_GetPredictedTopDownOrigin( vec_t* vec );
-void Cam_GetTopDownOrigin( vec_t* source, vec_t* vec );
+void Cam_GetTopDownOrigin( vec_t* source, vec_t* dest );
 void Cam_GetPredictedFirstPersonOrigin( vec_t* vec );
+void Cam_Track( usercmd_t* cmd );
+void Cam_FinishMove( usercmd_t* cmd );
+void Cam_Reset( void );
+void CL_InitCam( void );
 
 //
 // cl_parse.c

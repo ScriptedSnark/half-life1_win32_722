@@ -494,7 +494,7 @@ void CL_Disconnect( void )
 
 	CL_DeallocateDynamicData();
 
-	// TODO: Implement
+	Cam_Reset();
 }
 
 /*
@@ -1219,8 +1219,6 @@ CL_SendCmd
 */
 void CL_SendCmd( void )
 {
-	// TODO: Reimplement
-
 	sizebuf_t	buf;
 	byte		data[128];
 	int			i;
@@ -1275,7 +1273,8 @@ void CL_SendCmd( void )
 
 	if (cl.spectator)
 	{
-		// TODO: Implement
+		Cam_Track(&cl.frames[i].cmd);
+		Cam_FinishMove(&cl.frames[i].cmd);
 	}
 
 	memset(&nullcmd, 0, sizeof(nullcmd));
@@ -1559,7 +1558,7 @@ void CL_Init( void )
 	
 	CL_InitPrediction();
 
-	// TODO: Implement
+	CL_InitCam();
 
 	Pmove_Init();
 
