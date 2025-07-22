@@ -654,6 +654,7 @@ void CL_PredictUsercmd( player_state_t* from, player_state_t* to, usercmd_t* u, 
 #define CAM_TRACK		1
 #define CAM_FIRSTPERSON	2
 #define CAM_TOPDOWN		3
+#define CAM_NUMMODES	4
 
 extern	vec3_t	cam_ofs;
 

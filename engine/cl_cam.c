@@ -10,13 +10,20 @@
 #include "winquake.h"
 #include "pmove.h"
 
+#define	PM_SPECTATORMAXSPEED	500
+#define	PM_STOPSPEED	100
+#define	PM_MAXSPEED		320
+#define BUTTON_JUMP		2
+#define BUTTON_ATTACK	1
+#define BUTTON_ATTACK2	2048
+#define MAX_ANGLE_TURN	10
+
 static vec3_t desired_position; // where the camera wants to be
 static qboolean locked = FALSE;
+static int oldbuttons;
 
 // track high fragger
 cvar_t cl_hightrack = { "cl_hightrack", "0" };
-
-//cvar_t cl_chasecam = { "cl_chasecam", "0" };
 
 //cvar_t cl_camera_maxpitch = { "cl_camera_maxpitch", "10" };
 //cvar_t cl_camera_maxyaw = { "cl_camera_maxyaw", "30" };
@@ -104,7 +111,40 @@ pmtrace_t Cam_DoTrace( vec_t* vec1, vec_t* vec2 )
 // Returns distance or 9999 if invalid for some reason
 static float Cam_TryFlyby( player_state_t* self, player_state_t* player, vec_t* vec, qboolean checkvis )
 {
-	// TODO: Implement
+	vec3_t v;
+	pmtrace_t trace;
+	float len, scale;
+
+	if (autocam == CAM_FIRSTPERSON)
+		scale = 32;
+	else
+		scale = 800;
+
+	vectoangles(vec, v);
+//	v[0] = -v[0];
+	VectorCopy(v, pmove.angles);
+	VectorNormalize(vec);
+	VectorMA(player->origin, scale, vec, v);
+	// v is endpos
+	// fake a player move
+	trace = Cam_DoTrace(player->origin, v);
+	if (/*trace.inopen ||*/ trace.inwater)
+		return 9999;
+	VectorCopy(trace.endpos, vec);
+	VectorSubtract(trace.endpos, player->origin, v);
+	len = sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
+	if (len < 8 || len > scale)
+		return 9999;
+	if (checkvis)
+	{
+		VectorSubtract(trace.endpos, self->origin, v);
+		len = sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
+
+		trace = Cam_DoTrace(self->origin, vec);
+		if (trace.fraction != 1 || trace.inwater)
+			return 9999;
+	}
+	return len;
 }
 
 // Is player visible?
@@ -424,7 +464,82 @@ void Cam_TrackTopDown( void )
 // We find a nice position to watch the player and move there
 void Cam_Track( usercmd_t* cmd )
 {
-	// TODO: Implement
+	player_state_t* player, * self;
+	frame_t* frame;
+	vec3_t vec;
+	float len;
+
+	if (!cl.spectator)
+		return;
+
+	if (autocam == CAM_FIRSTPERSON)
+	{
+		Cam_TrackFirstPerson();
+		return;
+	}
+
+	if (autocam == CAM_TOPDOWN)
+	{
+		Cam_TrackTopDown();
+		return;
+	}
+
+	if (cl_hightrack.value && !locked)
+		Cam_CheckHighTarget();
+
+	if (!Cam_IsTracking(autocam) || cls.state != ca_active)
+		return;
+
+	if (locked && (!cl.players[spec_track].name[0] || cl.players[spec_track].spectator))
+	{
+		locked = FALSE;
+		if (cl_hightrack.value)
+			Cam_CheckHighTarget();
+		else
+			Cam_Unlock();		
+		return;
+	}
+
+	frame = &cl.frames[cls.netchan.incoming_sequence & UPDATE_MASK];
+	player = frame->playerstate + spec_track;
+	self = frame->playerstate + cl.playernum;
+
+	if (!locked || !Cam_IsVisible(player, desired_position))
+	{
+		if (!locked || realtime - cam_lastviewtime > 0.1)
+		{
+			if (!InitFlyby(self, player, TRUE))
+				InitFlyby(self, player, FALSE);
+			cam_lastviewtime = realtime;
+		}
+	}
+	else
+		cam_lastviewtime = realtime;
+
+	// couldn't track for some reason
+	if (!locked || !Cam_IsTracking(autocam))
+		return;
+
+	// Ok, move to our desired position and set our angles to view
+	// the player
+	VectorSubtract(desired_position, self->origin, vec);
+	len = vlen(vec);
+	cmd->forwardmove = cmd->sidemove = cmd->upmove = 0;
+	if (len > 16)
+	{ // close enough?
+		MSG_WriteByte(&cls.netchan.message, clc_tmove);
+		MSG_WriteCoord(&cls.netchan.message, desired_position[0]);
+		MSG_WriteCoord(&cls.netchan.message, desired_position[1]);
+		MSG_WriteCoord(&cls.netchan.message, desired_position[2]);
+	}
+
+	// move there locally immediately
+	VectorCopy(desired_position, self->origin);
+
+	VectorSubtract(player->origin, desired_position, vec);
+	vectoangles(vec, cl.viewangles);
+	cl.viewangles[0] = -cl.viewangles[0];
+	VectorCopy(cl.viewangles, cl.simangles);
 }
 
 #if 0
@@ -482,12 +597,14 @@ void Cam_SetView( void )
 	self = frame->playerstate + cl.playernum;
 
 	VectorSubtract(player->origin, cl.simorg, vec);
-	if (cam_forceview) {
+	if (cam_forceview)
+	{
 		cam_forceview = FALSE;
 		vectoangles(vec, cam_viewangles);
 		cam_viewangles[0] = -cam_viewangles[0];
 	}
-	else {
+	else
+	{
 		vectoangles(vec, vec2);
 		vec2[PITCH] = -vec2[PITCH];
 
@@ -535,7 +652,138 @@ char* Cam_GetModeDescription( int cam )
 
 void Cam_FinishMove( usercmd_t* cmd )
 {
-	// TODO: Implement
+	int i;
+	player_info_t* s;
+	int end;
+
+	if (cls.state != ca_active)
+		return;
+
+	if (!cl.spectator) // only in spectator mode
+		return;
+
+#if 0
+	if (autocam && locked)
+	{
+		frame = &cl.frames[cls.netchan.incoming_sequence & UPDATE_MASK];
+		player = frame->playerstate + spec_track;
+		self = frame->playerstate + cl.playernum;
+
+		VectorSubtract(player->origin, self->origin, vec);
+		if (cam_forceview)
+		{
+			cam_forceview = FALSE;
+			vectoangles(vec, cam_viewangles);
+			cam_viewangles[0] = -cam_viewangles[0];
+		}
+		else
+		{
+			vectoangles(vec, vec2);
+			vec2[PITCH] = -vec2[PITCH];
+
+			cam_viewangles[PITCH] = adjustang(cam_viewangles[PITCH], vec2[PITCH], cl_camera_maxpitch.value);
+			cam_viewangles[YAW] = adjustang(cam_viewangles[YAW], vec2[YAW], cl_camera_maxyaw.value);
+		}
+		VectorCopy(cam_viewangles, cl.viewangles);
+	}
+#endif
+
+	if (cmd->buttons & BUTTON_ATTACK)
+	{
+		if (!(oldbuttons & BUTTON_ATTACK))
+		{
+			oldbuttons |= BUTTON_ATTACK;
+			autocam = (autocam + 1) % CAM_NUMMODES;
+
+			Con_Printf("Specator mode set to %s\n", Cam_GetModeDescription(autocam));
+			if (!Cam_IsTracking(autocam))
+			{
+				Cam_Unlock();
+				VectorCopy(cl.viewangles, cmd->angles);
+				return;
+			}
+		}
+		else
+			return;
+	}
+	else
+	{
+		oldbuttons &= ~BUTTON_ATTACK;
+		if (!Cam_IsTracking(autocam))
+			return;
+	}
+
+	if (cmd->buttons & BUTTON_ATTACK2)
+	{
+		if (!(oldbuttons & BUTTON_ATTACK2))
+		{
+			oldbuttons |= BUTTON_ATTACK2;
+			autocam = (autocam - 1) % CAM_NUMMODES;
+
+			Con_Printf("Specator mode set to %s\n", Cam_GetModeDescription(autocam));
+			if (!Cam_IsTracking(autocam))
+			{
+				Cam_Unlock();
+				VectorCopy(cl.viewangles, cmd->angles);
+				return;
+			}
+		}
+		else
+			return;
+	}
+	else
+	{
+		oldbuttons &= ~BUTTON_ATTACK2;
+		if (!Cam_IsTracking(autocam))
+			return;
+	}
+
+	if (Cam_IsTracking(autocam) && cl_hightrack.value)
+	{
+		Cam_CheckHighTarget();
+		return;
+	}
+
+	if (locked)
+	{
+		if ((cmd->buttons & BUTTON_JUMP) && (oldbuttons & BUTTON_JUMP))
+			return;		// don't pogo stick
+
+		if (!(cmd->buttons & BUTTON_JUMP))
+		{
+			oldbuttons &= ~BUTTON_JUMP;
+			return;
+		}
+		oldbuttons |= BUTTON_JUMP;	// don't jump again until released
+	}
+
+//	Con_Printf("Selecting track target...\n");
+
+	if (locked && Cam_IsTracking(autocam))
+		end = (spec_track + 1) % MAX_CLIENTS;
+	else
+		end = spec_track;
+	i = end;
+	do
+	{
+		s = &cl.players[i];
+		if (s->name[0] && !s->spectator)
+		{
+			Cam_Lock(i);
+			return;
+		}
+		i = (i + 1) % MAX_CLIENTS;
+	} while (i != end);
+	// stay on same guy?
+	i = spec_track;
+	s = &cl.players[i];
+	if (s->name[0] && !s->spectator)
+	{
+		Cam_Lock(i);
+		return;
+	}
+	Con_Printf("No target found ...\n");
+	autocam = locked = FALSE;
 }
 
 void Cam_Reset( void )
@@ -547,7 +795,6 @@ void Cam_Reset( void )
 void CL_InitCam( void )
 {
 	Cvar_RegisterVariable(&cl_hightrack);
-//	Cvar_RegisterVariable(&cl_chasecam);
 //	Cvar_RegisterVariable(&cl_camera_maxpitch);
 //	Cvar_RegisterVariable(&cl_camera_maxyaw);
 }
