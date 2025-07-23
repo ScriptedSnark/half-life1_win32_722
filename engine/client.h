@@ -548,8 +548,9 @@ extern	lightstyle_t	cl_lightstyle[MAX_LIGHTSTYLES];
 extern	dlight_t		cl_dlights[MAX_DLIGHTS];
 extern	dlight_t		cl_elights[MAX_ELIGHTS];
 
-extern int	msg_buckets[64];
-extern int	total_data[64];
+#define MAX_DATA_HISTORY	64
+extern int	msg_buckets[MAX_DATA_HISTORY];
+extern int	total_data[MAX_DATA_HISTORY];
 
 //=============================================================================
 

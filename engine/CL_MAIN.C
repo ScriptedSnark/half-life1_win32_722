@@ -229,8 +229,8 @@ Handles recording and playback of demos, on top of NET_ code
 */
 qboolean CL_GetMessage( void )
 {
-//	if (cls.demoplayback) TODO: Implement
-//		return CL_ReadDemoMessage();
+	if (cls.demoplayback)
+		return CL_ReadDemoMessage();
 
 	return NET_GetPacket(NS_CLIENT);
 }

@@ -8,8 +8,8 @@
 #include "cl_draw.h"
 #include "hashpak.h"
 
-int		last_data[64];
-int		msg_buckets[64];
+int		last_data[MAX_DATA_HISTORY];
+int		msg_buckets[MAX_DATA_HISTORY];
 
 UserMsg* gClientUserMsgs = NULL;
 
@@ -1409,10 +1409,10 @@ void CL_ParseBaseline( cl_entity_t* ent )
 	ent->baseline.sequence = MSG_ReadByte();
 	ent->baseline.frame = MSG_ReadByte();
 
-	if (ent->baseline.entityType != ENTITY_NORMAL)
-		ent->baseline.scale = MSG_ReadByte() * (1.0 / 10.0);
-	else
+	if (ent->baseline.entityType == ENTITY_NORMAL)
 		ent->baseline.scale = MSG_ReadWord() * (1.0 / 256.0);
+	else
+		ent->baseline.scale = MSG_ReadByte() * (1.0 / 10.0);	
 
 	ent->baseline.colormap = MSG_ReadByte();
 	ent->baseline.skin = MSG_ReadShort();
@@ -1537,7 +1537,33 @@ CL_ParseStatic
 */
 void CL_ParseStatic( void )
 {
-	// TODO: Implement
+	cl_entity_t* ent;
+	int		i;
+
+	i = cl.num_statics;
+	if (i >= MAX_STATIC_ENTITIES)
+		Host_Error("Too many static entities");
+	ent = &cl_static_entities[i];
+	cl.num_statics++;
+	CL_ParseBaseline(ent);
+
+// copy it to the current state
+	ent->model = cl.model_precache[ent->baseline.modelindex];
+	ent->frame = ent->baseline.frame;
+	ent->colormap = (byte*)vid.colormap;
+	ent->skin = ent->baseline.skin;
+	ent->effects = ent->baseline.effects;
+	ent->scale = ent->baseline.scale;
+	ent->rendermode = ent->baseline.rendermode;
+	ent->renderamt = ent->baseline.renderamt;
+	ent->rendercolor.r = ent->baseline.rendercolor.r;
+	ent->rendercolor.g = ent->baseline.rendercolor.g;
+	ent->rendercolor.b = ent->baseline.rendercolor.b;
+	ent->renderfx = ent->baseline.renderfx;
+
+	VectorCopy(ent->baseline.origin, ent->origin);
+	VectorCopy(ent->baseline.angles, ent->angles);
+	R_AddEfrags(ent);
 }
 
 /*
@@ -1569,6 +1595,7 @@ void CL_ParseStaticSound( void )
 
 	if (flags & SND_SENTENCE)
 	{
+		// make dummy sfx for sentences
 		sfx = &sfxsentence;
 		strcpy(sfx->name, "!");
 		strcat(sfx->name, rgpszrawsentence[sound_num]);
@@ -1706,7 +1733,7 @@ void CL_PlayerDropped( int nPlayerNumber )
 	COM_ClearCustomizationList(&cl.players[nPlayerNumber].customdata, TRUE);
 }
 
-int total_data[64];
+int total_data[MAX_DATA_HISTORY];
 
 /*
 =================
@@ -1715,7 +1742,28 @@ CL_DumpMessageLoad_f
 */
 void CL_DumpMessageLoad_f( void )
 {
-	// TODO: Implement
+	int		i, total;
+
+	total = 0;
+
+	Con_Printf("-------- Message Load ---------\n");
+
+	for (i = 0; i < MAX_DATA_HISTORY - 1; i++)
+	{
+		if (i > svc_lastmsg)
+		{
+			Con_Printf("%i:%s: %i msgs:%.2fK\n", i, "bogus #", msg_buckets[i], total_data[i] / 1024.0);
+		}
+		else
+		{
+			Con_Printf("%i:%s: %i msgs:%.2fK\n", i, svc_strings[i], msg_buckets[i], total_data[i] / 1024.0);
+		}
+
+		total += msg_buckets[i];
+	}
+
+	Con_Printf("User messages:  %i:%.2fK\n", msg_buckets[MAX_DATA_HISTORY - 1], total_data[MAX_DATA_HISTORY - 1] / 1024.0);
+	Con_Printf("------ End:  %i Total----\n", msg_buckets[MAX_DATA_HISTORY - 1] + total);
 }
 
 /*
@@ -1725,7 +1773,27 @@ CL_BitCounts_f
 */
 void CL_BitCounts_f( void )
 {
-	// TODO: Implement
+	int		i, bits;
+
+	bits = 0;
+
+	Con_Printf("------- Bit Counts -------\n");
+	Con_Printf("Bit    Delta   Player  Custom\n");
+
+	for (i = 0; i < (32 + 8); i++)
+	{
+		if (i >= 32)
+		{
+			Con_Printf("(1<<%2i) %6.6i\n", bits, bitcounts[i]);
+		}
+		else
+		{
+			Con_Printf("(1<<%2i) %6.6i  %6.6i  %6.6i\n", bits, bitcounts[i], playerbitcounts[i], custombitcounts[i]);
+		}
+		bits++;
+	}
+
+	Con_Printf("--------------------------\n");
 }
 
 /*
@@ -1737,13 +1805,13 @@ void CL_TransferMessageData( void )
 {
 	int i;
 
-	for (i = 0; i < 64; i++)
+	for (i = 0; i < MAX_DATA_HISTORY; i++)
 	{
 		total_data[i] += last_data[i];
 	}
 }
 
-int data_history[UPDATE_BACKUP][64];
+int data_history[UPDATE_BACKUP][MAX_DATA_HISTORY];
 int history_index = 0;
 
 /*
@@ -1781,7 +1849,7 @@ void CL_ShowSizes( void )
 	SCR_DrawOutlineRect(&rcFill, color);
 
 	// draw scale markers
-	for (i = 0; i < 64; i++)
+	for (i = 0; i < MAX_DATA_HISTORY; i++)
 	{
 		if ((i % 5) == 0)
 		{
@@ -1807,7 +1875,7 @@ void CL_ShowSizes( void )
 	}
 
 	// draw the actual data graph
-	for (i = 0; i < 64; i++)
+	for (i = 0; i < MAX_DATA_HISTORY; i++)
 	{
 		peak = 0;
 		for (j = 0; j < UPDATE_BACKUP; j++)
