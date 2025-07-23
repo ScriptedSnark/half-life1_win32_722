@@ -1749,11 +1749,16 @@ int history_index = 0;
 /*
 =================
 CL_ShowSizes
+
 =================
 */
 void CL_ShowSizes( void )
 {
-	int		i;
+	int		i, j;
+	int		peak;
+	int		x, offset;
+	float	flScale;
+	float	flMax, flNormalized;
 	vrect_t rcFill;
 	byte	color[3];
 
@@ -1763,34 +1768,37 @@ void CL_ShowSizes( void )
 	memcpy(data_history[history_index & UPDATE_MASK], last_data, sizeof(last_data));
 	history_index++;
 
+	x = scr_vrect.x;
+
 	color[0] = 200;
 	color[1] = 150;
 	color[2] = 63;
 
-	rcFill.x = scr_vrect.x;
+	rcFill.x = x;
 	rcFill.y = scr_vrect.y;
 	rcFill.width = 256;
 	rcFill.height = 64;
 	SCR_DrawOutlineRect(&rcFill, color);
 
+	// draw scale markers
 	for (i = 0; i < 64; i++)
 	{
-		if (!(i % 5))
+		if ((i % 5) == 0)
 		{
-			if (i % 10)
-			{
-				color[0] = 200;
-				color[1] = 150;
-				color[2] = 63;
-			}
-			else
+			if ((i % 10) == 0)
 			{
 				color[0] = 255;
 				color[1] = 200;
 				color[2] = 127;
 			}
+			else
+			{
+				color[0] = 200;
+				color[1] = 150;
+				color[2] = 63;
+			}
 
-			rcFill.x = scr_vrect.x + i * 4 + 1;
+			rcFill.x = x + (i * 4) + 1;
 			rcFill.y = scr_vrect.y + 64;
 			rcFill.width = 2;
 			rcFill.height = 2;
@@ -1798,7 +1806,84 @@ void CL_ShowSizes( void )
 		}
 	}
 
-	// TODO: Implement
+	// draw the actual data graph
+	for (i = 0; i < 64; i++)
+	{
+		peak = 0;
+		for (j = 0; j < UPDATE_BACKUP; j++)
+		{
+			if (peak < data_history[(history_index - j - 1) & UPDATE_MASK][i])
+				peak = data_history[(history_index - j - 1) & UPDATE_MASK][i];
+		}
+		flMax = 0.0f;
+		for (j = 0; j < 128; j++)
+		{
+			if (flMax < data_history[(history_index - j - 1) & UPDATE_MASK][i])
+				flMax = data_history[(history_index - j - 1) & UPDATE_MASK][i];
+		}
+
+		if (flMax != 0.0)
+		{
+			// draw bar showing extended history maximum
+			flNormalized = flMax / 255.0;
+			flScale = flNormalized;
+			if (flScale > 1.0)
+				flScale = (511.0 - flMax) / 255.0;
+
+			if (flNormalized > 1.0 && flScale > 1.0)
+			{
+				color[0] = 255;
+				color[1] = 63 + (int)(flScale * 192.0 + 0.5);
+				color[2] = 0;
+			}
+			else
+			{
+				color[0] = 0;
+				color[1] = 63 + (int)(flScale * 192.0 + 0.5);
+				color[2] = 0;
+			}
+
+			if (flNormalized > 1.0)
+				flNormalized = 1.0;
+
+			offset = (flNormalized * 64.0) + 0.5;
+			rcFill.x = x;
+			rcFill.y = scr_vrect.y + 64 - offset;
+			rcFill.width = 3;
+			rcFill.height = offset;
+			D_FillRect(&rcFill, color);
+
+			// draw marker showing recent history peak
+			flNormalized = (float)peak / 255.0;
+			flScale = flNormalized;
+			if (flNormalized > 1.0)
+				flScale = (511.0 - (float)peak) / 255.0;
+
+			if (flNormalized > 1.0 && flScale > 1.0)
+			{
+				color[0] = 255;
+				color[1] = 0;
+				color[2] = 63 + (int)(flScale * 192.0 + 0.5);
+			}
+			else
+			{
+				color[0] = 0;
+				color[1] = 0;
+				color[2] = 63 + (int)(flScale * 192.0 + 0.5);
+			}
+
+			if (flNormalized > 1.0)
+				flNormalized = 1.0;
+
+			offset = (flNormalized * 64.0) + 0.5;
+			rcFill.x = x;
+			rcFill.y = scr_vrect.y + 64 - offset;
+			rcFill.width = 3;
+			rcFill.height = 2;
+			D_FillRect(&rcFill, color);
+		}
+		x += 4;
+	}
 }
 
 #define SHOWNET(x) \
