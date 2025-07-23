@@ -46,6 +46,7 @@ extern	int			net_activeconnections;
 extern	cvar_t	host_name;
 
 void		NET_InitColors( void );
+void		SCR_DrawOutlineRect( vrect_t* r, byte* color );
 void		SCR_NetUsage( void );
 void		R_NetGraph( void );
 

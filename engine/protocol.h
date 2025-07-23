@@ -107,7 +107,7 @@
 #define	svc_particle			18		// [vec3] <variable>
 #define	svc_damage				19
 #define svc_spawnstatic			20
-
+//	svc_spawnbinary		21
 #define svc_spawnbaseline		22
 #define svc_tempentity			23
 #define svc_setpause			24
@@ -122,7 +122,7 @@
 #define svc_restore				33
 #define svc_cutscene			34
 #define svc_weaponanim			35
-
+#define svc_decalname			36		// [byte] index [string] name
 #define svc_roomtype			37		// [byte] roomtype (dsp effect)
 #define svc_addangle			38		// [angle3] set the view angle to this absolute value
 #define svc_newusermsg			39

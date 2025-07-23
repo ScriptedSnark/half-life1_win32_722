@@ -8,6 +8,7 @@
 #include "hashpak.h"
 #include "cl_demo.h"
 #include "cl_tent.h"
+#include "cl_servercache.h"
 #include "tmessage.h"
 
 
@@ -22,6 +23,7 @@ cvar_t	cl_color = { "_cl_color", "0", TRUE };
 
 cvar_t	cl_timeout = { "cl_timeout", "305", TRUE };
 cvar_t	cl_shownet = { "cl_shownet", "0" };	// can be 0, 1, or 2
+cvar_t	cl_showsizes = { "cl_showsizes", "0" };
 cvar_t	cl_nolerp = { "cl_nolerp","0" };
 cvar_t	cl_stats = { "cl_stats", "0" };
 cvar_t	cl_spectator_password = { "cl_spectator_password", "0" };
@@ -70,6 +72,9 @@ cvar_t		rcon_password = { "rcon_password", "" };
 
 client_static_t	cls;
 client_state_t cl;
+
+static server_cache_t	cached_servers[MAX_LOCAL_SERVERS];
+
 // FIXME: put these on hunk?
 efrag_t			cl_efrags[MAX_EFRAGS];
 cl_entity_t*	cl_entities = NULL;
@@ -768,7 +773,7 @@ void CL_Connect_f( void )
 	// For the check for resend timer to fire a connection / getchallenge request.
 	cls.state = ca_connecting;
 	// Force connection request to fire.
-	cls.connect_time = -99999.0;
+	cls.connect_time = -99999;
 
 	cls.connect_retry = 0;
 }
@@ -782,7 +787,59 @@ User command to connect to server as spectator
 */
 void CL_Spectate_f( void )
 {
+	char* server;
+	char name[128], * p;
+	int num;
+
+	cls.spectator = TRUE;
+
+	if (Cmd_Argc() < 2)
+	{
+		Con_Printf("usage: spectate <server> [server password]\n");
+		return;
+	}
+
+	server = Cmd_Args();
+	if (!server)
+		return;
+
+	// Disconnect from current server
+	// Don't call Host_Disconnect, because we don't want to shutdown the listen server!
+	CL_Disconnect();
+
+	// Get new server name
+	memset(name, 0, sizeof(name));
+	strncpy(name, server, sizeof(name));
+
+	p = name;
+	while (*p++)
+	{
+		if (*p == ' ')
+			break;
+	}
+
+	if (p[0] && p[1])
+		strcpy(cls.trueaddress, p + 1);
+	else
+		strcpy(cls.trueaddress, "0");
+
+	num = atoi(server);
+
+
 	// TODO: Implement
+
+
+	memset(msg_buckets, 0, sizeof(msg_buckets));
+	memset(total_data, 0, sizeof(total_data));
+
+	strncpy(cls.servername, name, sizeof(cls.servername) - 1);
+
+	// For the check for resend timer to fire a connection / getchallenge request.
+	cls.state = ca_connecting;
+	// Force connection request to fire.
+	cls.connect_time = -99999;
+
+	cls.connect_retry = 0;
 }
 
 // TODO: Implement
@@ -1323,6 +1380,17 @@ void CL_SendCmd( void )
 	Netchan_Transmit(&cls.netchan, buf.cursize, buf.data);
 }
 
+/*
+=================
+CL_ParseNextUpload
+
+=================
+*/
+void CL_ParseNextUpload( void )
+{
+	// TODO: Implement
+}
+
 // TODO: Implement
 
 /*
@@ -1524,6 +1592,7 @@ void CL_Init( void )
 	Cvar_RegisterVariable(&cl_resend);
 	Cvar_RegisterVariable(&cl_timeout);
 	Cvar_RegisterVariable(&cl_shownet);
+	Cvar_RegisterVariable(&cl_showsizes);
 
 	// TODO: Implement
 
@@ -1553,6 +1622,10 @@ void CL_Init( void )
 	// TODO: Implement
 
 	Cmd_AddCommand("rcon", CL_Rcon_f);
+
+	// TODO: Implement
+	
+	Cmd_AddCommand("cl_usr", CL_UserMsgs_f);
 
 	// TODO: Implement
 	

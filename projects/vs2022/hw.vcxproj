@@ -97,6 +97,7 @@
     <ClInclude Include="..\..\common\r_efx.h" />
     <ClInclude Include="..\..\common\winsani_in.h" />
     <ClInclude Include="..\..\common\winsani_out.h" />
+    <ClInclude Include="..\..\engine\cl_servercache.h" />
     <ClInclude Include="..\..\engine\snd_a3d.h" />
     <ClInclude Include="..\..\engine\anorms.h" />
     <ClInclude Include="..\..\engine\anorm_dots.h" />

@@ -85,6 +85,7 @@ void CL_TimeDemo_f( void );
 
 void CL_BeginDemoStartup( void );
 void CL_WriteDemoStartup( sizebuf_t* msg );
+void CL_WriteDemoHeader( char* filename );
 void CL_WriteDemoMessage( sizebuf_t* msg );
 void CL_WriteDLLUpdate( void );
 void CL_RecordHUDCommand( char* cmdname );

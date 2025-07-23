@@ -467,6 +467,7 @@ extern	cvar_t	cl_color;
 
 extern	cvar_t	cl_timeout;
 extern	cvar_t	cl_shownet;
+extern	cvar_t	cl_showsizes;
 extern	cvar_t	cl_nolerp;
 extern	cvar_t	cl_stats;
 extern	cvar_t	cl_spectator_password;
@@ -627,6 +628,7 @@ void CL_Connect_f( void );
 void CL_Spectate_f( void );
 void CL_Disconnect_f( void );
 void CL_NextDemo( void );
+void CL_ParseNextUpload( void );
 
 //
 // cl_ents.c
@@ -674,6 +676,11 @@ void CL_InitCam( void );
 // cl_parse.c
 //
 cl_entity_t* CL_EntityNum( int num );
+void CL_UserMsgs_f( void );
+void CL_Resources_f( void );
+void CL_DumpMessageLoad_f( void );
+void CL_BitCounts_f( void );
+void CL_ShowSizes( void );
 void CL_ParseServerMessage( void );
 
 

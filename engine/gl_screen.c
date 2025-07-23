@@ -761,6 +761,8 @@ void SCR_UpdateScreen( void )
 	if (r_netgraph.value)
 		R_NetGraph();
 
+	CL_ShowSizes();
+
 	// TODO: Implement
 
 	GLFinishHud();

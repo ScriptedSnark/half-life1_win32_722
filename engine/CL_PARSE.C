@@ -8,7 +8,6 @@
 #include "cl_draw.h"
 #include "hashpak.h"
 
-
 int		last_data[64];
 int		msg_buckets[64];
 
@@ -248,8 +247,6 @@ int DispatchDirectUserMsg( const char* pszName, int iSize, void* pBuf )
 	return fFound;
 }
 
-// TODO: Implement
-
 pfnUserMsgHook HookServerMsg( const char* pszName, pfnUserMsgHook pfn )
 {
 	UserMsg* pList, * pLastMatch;
@@ -288,8 +285,23 @@ pfnUserMsgHook HookServerMsg( const char* pszName, pfnUserMsgHook pfn )
 	return NULL;
 }
 
-// TODO: Implement
+void CL_UserMsgs_f( void )
+{
+	UserMsg* pMsg;
 
+	pMsg = gClientUserMsgs;
+	while (pMsg)
+	{
+		Con_Printf("%i:%s Sz %i\n", pMsg->iMsg, pMsg->szName, pMsg->iSize);
+		pMsg = pMsg->next;
+	}
+}
+
+///////////////////////////////////////////////////
+//
+// SOUND
+//
+//
 
 /*
 ==================
@@ -369,7 +381,6 @@ CL_CheckFile
 Checks if the file exists or if we can download it
 ==================
 */
-extern void COM_HexConvert( const char* pszInput, int nInputLength, unsigned char* pOutput );
 qboolean CL_CheckFile( char* filename )
 {
 	// TODO: Reimplement
@@ -522,7 +533,15 @@ qboolean CL_CheckFile( char* filename )
 	return FALSE;
 }
 
-// TODO: Implement
+/*
+==================
+CL_ParseDownload
+==================
+*/
+void CL_UpdateDownloadStats( void )
+{
+	// TODO: Implement
+}
 
 /*
 ==================
@@ -545,13 +564,15 @@ void CL_ParseDownload( void )
 
 /*
 ================
-CL_PrintResource
+CL_PrintResourceInfo
 
 Prints which data the resource passed contains.
 ================
 */
-void CL_PrintResource( int index, resource_t* pResource )
+void CL_PrintResourceInfo( int index, resource_t* pResource )
 {
+	// TODO: Reimplement
+
 	static char fatal[8];
 	static char type[12];
 
@@ -598,7 +619,16 @@ void CL_PrintResource( int index, resource_t* pResource )
 	}
 }
 
-// TODO: Implement
+/*
+===============
+CL_ClearResourceLists
+
+===============
+*/
+void CL_Resources_f( void )
+{
+	// TODO: Implement
+}
 
 /*
 ===============
@@ -965,8 +995,6 @@ qboolean CL_RequestMissingResources( void )
 			CL_MoveToOnHandList(p);
 		}
 		break;
-	default:
-		return TRUE;
 	}
 
 	return TRUE;
@@ -1084,17 +1112,18 @@ Sees if the specified customization type exists for the nPlayerNum
 */
 customization_t* CL_PlayerHasCustomization( int nPlayerNum, resourcetype_t type )
 {
-	customization_t* pCust = cl.players[nPlayerNum].customdata.pNext;
+	customization_t* pList;
 
-	if (!pCust)
-		return NULL;
-
-	while (pCust && pCust->resource.type != type)
+	pList = cl.players[nPlayerNum].customdata.pNext;
+	while (pList)
 	{
-		pCust = pCust->pNext;
+		if (pList->resource.type == type)
+			return pList;
+
+		pList = pList->pNext;
 	}
 
-	return pCust;
+	return NULL;
 }
 
 /*
@@ -1117,6 +1146,8 @@ CL_ParseCustomization
 */
 void CL_ParseCustomization( void )
 {
+	// TODO: Reimplement
+
 	int					nPlayerIndex;
 	resource_t*			res;
 	customization_t*	pCust;
@@ -1143,7 +1174,7 @@ void CL_ParseCustomization( void )
 
 	// If developer cvar is enabled, print some debug info about the resource we're downloading
 	if (developer.value)
-		CL_PrintResource(nPlayerIndex, res);
+		CL_PrintResourceInfo(nPlayerIndex, res);
 
 	res->playernum = nPlayerIndex;
 	if (cls.demoplayback)
@@ -1260,7 +1291,6 @@ CL_ReallocateDynamicData
 void CL_ReallocateDynamicData( int nMaxClients )
 {
 	cl.max_edicts = COM_EntsForPlayerSlots(nMaxClients);
-
 	if (cl.max_edicts <= 0)
 		Sys_Error("CL_ReallocateDynamicData allocating 0 entities");
 
@@ -1500,7 +1530,15 @@ void CL_ParseClientdata( int bits )
 	}
 }
 
-// TODO: Implement
+/*
+=====================
+CL_ParseStatic
+=====================
+*/
+void CL_ParseStatic( void )
+{
+	// TODO: Implement
+}
 
 /*
 ===================
@@ -1543,10 +1581,11 @@ void CL_ParseStaticSound( void )
 	S_StartStaticSound(ent, CHAN_STATIC, sfx, org, vol, atten, flags, pitch);
 }
 
-
-// TODO: Implement
-
-
+/*
+===================
+CL_ParseMovevars
+===================
+*/
 void CL_ParseMovevars( void )
 {
 	movevars.gravity			= MSG_ReadFloat();
@@ -1581,8 +1620,28 @@ void CL_ParseMovevars( void )
 #endif
 }
 
+/*
+===============
+CL_ParseSoundFade
 
-// TODO: Implement
+===============
+*/
+void CL_ParseSoundFade( void )
+{
+	int percent;
+	int inTime, holdTime, outTime;
+
+	percent = MSG_ReadByte();
+	holdTime = MSG_ReadByte();
+	inTime = MSG_ReadByte();
+	outTime = MSG_ReadByte();
+
+	cls.soundfade.soundFadeStartTime = realtime;
+	cls.soundfade.nStartPercent = percent;
+	cls.soundfade.soundFadeHoldTime = holdTime;
+	cls.soundfade.soundFadeInTime = inTime;
+	cls.soundfade.soundFadeOutTime = outTime;
+}
 
 /*
 ===============
@@ -1642,22 +1701,105 @@ void CL_Restore( char* fileName )
 	}
 }
 
-// TODO: Implement
-
-
 void CL_PlayerDropped( int nPlayerNumber )
 {
 	COM_ClearCustomizationList(&cl.players[nPlayerNumber].customdata, TRUE);
 }
 
+int total_data[64];
 
-// TODO: Implement
+/*
+=================
+CL_DumpMessageLoad_f
+=================
+*/
+void CL_DumpMessageLoad_f( void )
+{
+	// TODO: Implement
+}
 
+/*
+=================
+CL_BitCounts_f
+=================
+*/
+void CL_BitCounts_f( void )
+{
+	// TODO: Implement
+}
 
-int	total_data[64];
+/*
+=================
+CL_TransferMessageData
+=================
+*/
+void CL_TransferMessageData( void )
+{
+	int i;
 
+	for (i = 0; i < 64; i++)
+	{
+		total_data[i] += last_data[i];
+	}
+}
 
+int data_history[UPDATE_BACKUP][64];
+int history_index = 0;
 
+/*
+=================
+CL_ShowSizes
+=================
+*/
+void CL_ShowSizes( void )
+{
+	int		i;
+	vrect_t rcFill;
+	byte	color[3];
+
+	if (!cl_showsizes.value)
+		return;
+
+	memcpy(data_history[history_index & UPDATE_MASK], last_data, sizeof(last_data));
+	history_index++;
+
+	color[0] = 200;
+	color[1] = 150;
+	color[2] = 63;
+
+	rcFill.x = scr_vrect.x;
+	rcFill.y = scr_vrect.y;
+	rcFill.width = 256;
+	rcFill.height = 64;
+	SCR_DrawOutlineRect(&rcFill, color);
+
+	for (i = 0; i < 64; i++)
+	{
+		if (!(i % 5))
+		{
+			if (i % 10)
+			{
+				color[0] = 200;
+				color[1] = 150;
+				color[2] = 63;
+			}
+			else
+			{
+				color[0] = 255;
+				color[1] = 200;
+				color[2] = 127;
+			}
+
+			rcFill.x = scr_vrect.x + i * 4 + 1;
+			rcFill.y = scr_vrect.y + 64;
+			rcFill.width = 2;
+			rcFill.height = 2;
+			D_FillRect(&rcFill, color);
+		}
+	}
+
+	// TODO: Implement
+}
 
 #define SHOWNET(x) \
 	if (cl_shownet.value == 2.0 && Q_strlen(x) > 1) \
@@ -1849,7 +1991,9 @@ void CL_ParseServerMessage( void )
 		case svc_damage:
 			break;
 
-		// TODO: Implement
+		case svc_spawnstatic:
+			CL_ParseStatic();
+			break;
 
 		case svc_spawnbaseline:
 			i = MSG_ReadShort();
@@ -1928,7 +2072,10 @@ void CL_ParseServerMessage( void )
 			cl.viewent.baseline.body = MSG_ReadByte();
 			break;
 
-		// TODO: Implement
+		case svc_decalname:
+			i = MSG_ReadByte();
+			Draw_DecalSetName(i, MSG_ReadString());
+			break;
 
 		case svc_roomtype:
 			Cvar_SetValue("room_type", MSG_ReadShort());
@@ -1943,9 +2090,7 @@ void CL_ParseServerMessage( void )
 			break;
 
 		case svc_download:
-
-	// sub_59B3550(); // TODO: Implement
-	//FF: ^ this is somehow related to demos idk what the hell is this
+			CL_WriteDemoHeader(cls.dl.szFileName);
 			CL_ParseDownload();
 			break;
 
@@ -1975,26 +2120,37 @@ void CL_ParseServerMessage( void )
 			CL_ParseMovevars();
 			break;
 
-		// TODO: Implement
+		case svc_nextupload:
+			CL_ParseNextUpload();
+			break;
 
 		case svc_resourcerequest:
 			CL_SendResourceListBlock();
 			break;
-		case svc_customization:
 
-	// sub_59B3550(); // TODO: Implement
-	//FF: ^ this is somehow related to demos idk what the hell is this
+		case svc_customization:
+			CL_WriteDemoHeader(cls.dl.szFileName);
 			CL_ParseCustomization();
 			break;
 
-		// TODO: Implement
-
 		case svc_crosshairangle:
-			cl.crosshairangle[PITCH] = MSG_ReadChar() * 0.2f;
-			cl.crosshairangle[YAW] = MSG_ReadChar() * 0.2f;
+			cl.crosshairangle[PITCH] = MSG_ReadChar() * 0.2;
+			cl.crosshairangle[YAW] = MSG_ReadChar() * 0.2;
 			break;
 
-		// TODO: Implement
+		case svc_soundfade:
+			CL_ParseSoundFade();
+			break;
+
+		case svc_clientmaxspeed:
+			i = MSG_ReadByte();
+			if (i >= cl.maxclients)
+				Host_Error("CL_ParseServerMessage: svc_clientmaxspeed >= cl.maxclients");
+
+			cl.players[i].maxspeed = MSG_ReadFloat();
+			if (cl.players[i].maxspeed > movevars.maxspeed)
+				cl.players[i].maxspeed = movevars.maxspeed;
+			break;
 		}
 
 		// Mark end position
@@ -2005,8 +2161,12 @@ void CL_ParseServerMessage( void )
 	// end of message
 	SHOWNET("END OF MESSAGE");
 
-	// TODO: Implement
+	CL_TransferMessageData();
 
+	//
+	// we don't know if it is ok to save a demo message until
+	// after we have parsed the frame
+	//
 	if (!cls.demoplayback)
 	{
 		if (cls.state != ca_active)
