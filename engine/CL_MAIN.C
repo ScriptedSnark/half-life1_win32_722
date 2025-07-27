@@ -59,9 +59,11 @@ cvar_t	cl_resend = { "cl_resend", "3.0" };
 
 
 
-cvar_t cl_allowdownload = { "cl_allowdownload", "1" };
-cvar_t cl_download_ingame = { "cl_download_ingame", "1" };
-cvar_t cl_download_max = { "cl_download_max", "0" };
+cvar_t	cl_downloadinterval = { "cl_downloadinterval", "1.0" };
+
+cvar_t	cl_allowdownload = { "cl_allowdownload", "1" };
+cvar_t	cl_download_ingame = { "cl_download_ingame", "1" };
+cvar_t	cl_download_max = { "cl_download_max", "0" };
 
 cvar_t	rcon_address = { "rcon_address", "" };
 cvar_t	rcon_port = { "rcon_port", "0" };
@@ -86,6 +88,9 @@ dlight_t		cl_elights[MAX_ELIGHTS];
 
 
 qboolean cl_inmovie;
+
+qboolean g_bSkipDownload = FALSE;
+qboolean g_bSkipUpload = FALSE;
 
 int playerbitcounts[MAX_CLIENTS];  // # of bytes of player data for this slot
 
@@ -483,16 +488,16 @@ void CL_Disconnect( void )
 	cls.demoplayback = FALSE;
 	cls.signon = 0;
 
-	if (cls.dl.download)
+	if (cls.download)
 	{
-		fclose(cls.dl.download);
-		cls.dl.download = NULL;
+		fclose(cls.download);
+		cls.download = NULL;
 	}
 
-	if (cls.dl.upload)
+	if (cls.upload)
 	{
-		COM_FreeFile(cls.dl.upload);
-		cls.dl.upload = NULL;
+		COM_FreeFile(cls.upload);
+		cls.upload = NULL;
 	}
 
 	CL_ClearState(TRUE);

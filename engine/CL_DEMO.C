@@ -1619,7 +1619,7 @@ qboolean CL_ReadDemoMessage( void )
 			{
 				char szFileName[128];
 				fread(szFileName, sizeof(szFileName), 1, cls.demofile);
-				strcpy(cls.dl.szFileName, szFileName);
+				strcpy(cls.downloadfn, szFileName);
 			}
 			break;
 		}

@@ -186,12 +186,12 @@ typedef struct client_s
 
 	double localtime; // of last message
 
-	int oldbuttons;
+	int		oldbuttons;
 
 	// TODO: Implement
 	//FF: 48 bytes
 
-	float maxspeed; // localized maxspeed
+	float	maxspeed; // localized maxspeed
 
 	// TODO: Implement
 	//FF: one field (four bytes), probably "entgravity"
@@ -201,9 +201,9 @@ typedef struct client_s
 	sizebuf_t datagram;
 	byte datagram_buf[MAX_DATAGRAM];
 
-	double connection_started;	// the time this client has started receiving messages from us
+	double		connection_started;	// the time this client has started receiving messages from us
 
-	qboolean send_message;		// set on frames a datagram arived on
+	qboolean	send_message;		// set on frames a datagram arived on
 
 	client_frame_t frames[UPDATE_BACKUP]; // updates can be deltad from here
 
@@ -211,26 +211,24 @@ typedef struct client_s
 
 	const edict_t* pViewEntity; // View Entity (camera or the client itself)
 
-	char hashedcdkey[SIGNED_GUID_LEN + 1];
+	char		hashedcdkey[SIGNED_GUID_LEN + 1];
 
-	char name[32];	// for printing to other people
+	char		name[32];	// for printing to other people
 
-	int colors;
+	int			colors;
 
-	int saveSize; // the amount this client's edict is taking in our SAVERESTOREDATA
-
-	// FF: If changing ANYTHING below, also insert the changes into sv_upld.c and other files!
-	// FF: Some fields may have wrong names e.g. isuploading. These names were just straight guessing
+	int			saveSize; // the amount this client's edict is taking in our SAVERESTOREDATA
 
 	byte* download;						// the download data
-	int downloadsize;					// total bytes
-	int downloadcount;					// bytes sent
-	qboolean downloading;				// true = client is downloading a file
-	CRC32_t downloadCRC;				// CRC32 of the file we are downloading
+	int			downloadsize;			// total bytes
+	int			downloadcount;			// bytes sent
+	qboolean	downloading;			// true = client is downloading a file
+	CRC32_t		downloadCRC;			// CRC32 of the file we are downloading
 
 	resource_t resourcesonhand;			// Head of resources accounted for list
 	resource_t resourcesneeded;			// Head of resources to download list
 
+// upload information
 	FILE* upload;						// Handle of file being uploaded
 	resource_t* uploadresource;			// The resource we're trying to retrieve from the client (e.g. spray)
 	char		uploadfntmp[MAX_QPATH];
@@ -238,14 +236,14 @@ typedef struct client_s
 	char		uploadfn[MAX_QPATH];
 	int			uploadcount;
 
-	qboolean	uploadinprogress;
+	qboolean	uploadinprogress;		// TRUE if uploading is in progress
 
 	int			nTotalSize;
 	int			nTotalToTransfer;
 	int			nRemainingToTransfer;
 
-	float		fLastStatusUpdate;		// The time of the last update
-	float		fLastUploadTime;		// The last time the file was downloaded
+	float		fLastStatusUpdate;		// The time of the last upload status
+	float		fLastUploadTime;		// The last time the file was uploaded
 
 	downloadtime_t rgUploads[MAX_DL_STATS];
 	int			nCurUpload;

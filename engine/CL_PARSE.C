@@ -383,251 +383,526 @@ Checks if the file exists or if we can download it
 */
 qboolean CL_CheckFile( char* filename )
 {
-	// TODO: Reimplement
+	byte	buffer[1024];
+	int		i, size;
+	CRC32_t	crc;
+	resource_t	p;
+	qboolean hasRemainingFileSegments;
+	FILE* pFile, * pFileSegment;
+	char* s;
+	char	name[MAX_QPATH];
 
-	qboolean	bDoWeHaveOnlyAPartOfTheFile = FALSE;
-	int			nNumChunksRead;
-	int			filesize;
-	FILE*		pfHandle;
-	CRC32_t		crc;
-	char		szName[MAX_QPATH];
-	resource_t	res;
-	char		buffer[1024];
+	hasRemainingFileSegments = FALSE;
 
-	// Filter out the junkies, who wanna abuse our pretty system.
+	pFile = NULL;
+
 	if (strstr(filename, ".."))
 	{
 		Con_Printf("Refusing to download a path with '..'\n");
-
 		return TRUE;
 	}
 
-	// You shall not pass!
 	if (!cl_allowdownload.value)
 	{
 		Con_Printf("Download refused, cl_allow_download is 0\n");
-
 		return TRUE;
 	}
 
-	// That bitch is way too heavy, I ain't downloading it over my sweaty dial-up.
-	if (cl_download_max.value && cls.dl.resource)
+	if (cl_download_max.value)
 	{
-		if (cls.dl.resource->nDownloadSize > cl_download_max.value)
+		if (cls.downloadresource)
 		{
-			Con_Printf("Download refused, cl_download_maxsize is %i, file is %i bytes\n", (int)cl_download_max.value, cls.dl.resource->nDownloadSize);
-
-			return TRUE;
+			if (cls.downloadresource->nDownloadSize > cl_download_max.value)
+			{
+				Con_Printf("Download refused, cl_download_maxsize is %i, file is %i bytes\n",
+					(int)cl_download_max.value, cls.downloadresource->nDownloadSize);
+				return TRUE;
+			}
 		}
 	}
 
-	// I don't wanna have lag spikes when I'm playing just because some bozo decided to join, so GTFO and take your file back!
 	if (cls.state == ca_active && !cl_download_ingame.value)
 	{
 		Con_Printf("In-game download refused, cl_download_ingame is 0\n");
-
 		return TRUE;
 	}
 
-	sprintf(szName, filename);
+	sprintf(name, filename);
 
-	// This is a custom resource (MD5), handle it differently
-	if (strlen(filename) == 36 && !_strnicmp(filename, "!MD5", 4))
+	// Handle hashed resources
+	if (strlen(filename) == 36 &&
+		!_strnicmp(filename, "!MD5", 4))
 	{
-		memset(&res, 0, sizeof(res));
+		memset(&p, 0, sizeof(p));
 
-		COM_HexConvert(&filename[4] /* skip !MD5 */, 32, res.rgucMD5_hash);
+		// MD5 signature is correct, lets try to find this resource locally
+		COM_HexConvert(filename + 4, 32, p.rgucMD5_hash);
 
-		if (HPAK_GetDataPointer("custom.hpk", &res, &pfHandle))
+		// See if it's already in HPAK
+		if (HPAK_GetDataPointer(HASHPAK_FILENAME, &p, &pFile))
 		{
-			fclose(pfHandle);
+			fclose(pFile);
 			return TRUE;
 		}
 
-		sprintf(cls.dl.szFileName, "cust.dat");
+		sprintf(cls.downloadfn, "cust.dat");
 	}
 	else
 	{
-		if (COM_FindFile(szName, NULL, &pfHandle) == -1)
+		// Non custom upload
+		size = COM_FindFile(name, NULL, &pFile);
+		if (size != -1)
 		{
-			strcpy(cls.dl.szFileName, szName); // It doesn't exist, so we need to download it
-		}
-		else
-		{
-			if (pfHandle)
-			{
-				fclose(pfHandle);
-			}
+			if (pFile)
+				fclose(pFile);
 
-			// It exists, return  T R U E
 			return TRUE;
 		}
+
+		strcpy(cls.downloadfn, name);
 	}
-	
-	// sub_59B3550(); // TODO: Implement
-	//FF: ^ this is somehow related to demos idk what the hell is this
 
-	// Strip the extension of the file we're going to download and place either .cst or .tmp there.
-	COM_StripExtension(cls.dl.szFileName, cls.dl.extension);
-	strcat(&cls.dl.extension[strlen(cls.dl.extension)], cls.dl.custom ? ".cst" : ".tmp");
+	CL_WriteDemoHeader(cls.downloadfn);
 
-	cls.dl.crcFile = 0;
+	COM_StripExtension(cls.downloadfn, cls.downloadfntmp);
 
-	filesize = COM_FindFile(cls.dl.extension, NULL, &pfHandle);
-	if (filesize != -1 && !cls.dl.custom)
+	if (cls.custom)
 	{
-		bDoWeHaveOnlyAPartOfTheFile = TRUE;
-		nNumChunksRead = 0;
+		strcat(cls.downloadfntmp, ".cst");
+	}
+	else
+	{
+		strcat(cls.downloadfntmp, ".tmp");
+	}
+
+	cls.downloadfinalCRC = 0;
+
+	size = COM_FindFile(cls.downloadfntmp, NULL, &pFileSegment);
+	if (size != -1 && !cls.custom)
+	{
+		hasRemainingFileSegments = TRUE;
+
 		CRC32_Init(&crc);
-		if ((filesize / 1024) > 0)
+		for (i = 0; i < size / sizeof(buffer); i++)
 		{
-			while (TRUE)
+			if (fread(buffer, sizeof(buffer), 1, pFileSegment) != 1)
 			{
-				// Let's see if we can successfully read the first 1024 bytes chunk
-				if (fread(buffer, sizeof(buffer), sizeof(byte), pfHandle) == 1)
-				{
-					// We'll try reading another 1024 bytes chunk, but the file may run out of bytes, so we need to keep an eye on that
-					nNumChunksRead++;
-					CRC32_ProcessBuffer(&crc, buffer, sizeof(buffer));
-					if (nNumChunksRead >= (filesize / 1024))
-						break;
-				}
-				else
-				{
-					bDoWeHaveOnlyAPartOfTheFile = TRUE;
-					break;
-				}
+				hasRemainingFileSegments = FALSE;
+				break;
 			}
-		}
 
-		cls.dl.crcFile = crc = CRC32_Final(crc);
-
-		if (pfHandle)
-		{
-			fclose(pfHandle);
+			CRC32_ProcessBuffer(&crc, buffer, sizeof(buffer));
 		}
+		crc = CRC32_Final(crc);
+		cls.downloadfinalCRC = crc;
+
+		if (pFileSegment)
+			fclose(pFileSegment);
 	}
 
 	MSG_WriteByte(&cls.netchan.message, clc_stringcmd);
-	if (!cls.dl.custom && bDoWeHaveOnlyAPartOfTheFile && !(filesize % 1024))
+
+	if (cls.custom)
 	{
-		MSG_WriteString(&cls.netchan.message, va("download %s %i %i", szName, (filesize / 1024), crc));
+		s = va("download \"!MD5%s\"", MD5_Print(cls.downloadresource->rgucMD5_hash));
 	}
-	else if (!cls.dl.custom)
+	else if (hasRemainingFileSegments && (size % sizeof(buffer)) == 0)
 	{
-		MSG_WriteString(&cls.netchan.message, va("download %s", szName));
+		s = va("download %s %i %i", name, size / sizeof(buffer), crc); // partial upload with CRC check
 	}
 	else
 	{
-		MSG_WriteString(&cls.netchan.message, va("download \"!MD5%s\"", MD5_Print(cls.dl.resource->rgucMD5_hash)));
+		s = va("download %s", name); // full upload required
 	}
 
-	cls.dl.downloading = TRUE;
-	cls.dl.nNumFileChunksRead++;
-
-	if (pfHandle)
-	{
-		fclose(pfHandle);
-	}
+	MSG_WriteString(&cls.netchan.message, s);
+	cls.downloadinprogress = TRUE;
+	cls.nFilesDownloaded++;
 
 	return FALSE;
 }
 
 /*
 ==================
-CL_ParseDownload
+CL_UpdateDownloadCount
+
 ==================
 */
-void CL_UpdateDownloadStats( void )
+void CL_UpdateDownloadCount( void )
 {
-	// TODO: Implement
+	downloadtime_t* pStats;
+
+	if (!cl_downloadinterval.value)
+		return;
+
+	if (cl_downloadinterval.value < 0)
+		Cvar_SetValue("cl_downloadinterval", 1);
+
+	if ((realtime - cls.fLastDownloadTime) < cl_downloadinterval.value)
+		return;
+
+	cls.fLastDownloadTime = realtime;
+
+	pStats = &cls.rgDownloads[cls.nCurDownload & (MAX_DL_STATS - 1)];
+	cls.nCurDownload++;
+
+	pStats->fTime = realtime;
+	pStats->bUsed = TRUE;
+	pStats->nBytesRemaining = cls.nRemainingToTransfer;
 }
 
 /*
 ==================
 CL_ParseDownload
+
+Handles incoming file download data from server
 ==================
 */
 void CL_ParseDownload( void )
 {
-	int read;
-	CRC32_t crc;
-	char szFileName[128];
+	int		percent;
+	int		status;
+	int		active;
+	int		size;
+	char	name[MAX_OSPATH];
+	char	newPath[MAX_OSPATH];
+	char	fullPath[MAX_OSPATH];
+	char	finalPath[MAX_OSPATH];
 
-	memset(szFileName, 0, sizeof(szFileName));
+	memset(name, 0, sizeof(name));
 
-	read = MSG_ReadShort();
-	crc = MSG_ReadShort();
+	size = MSG_ReadShort();
+	active = MSG_ReadShort();
+	status = MSG_ReadLong();
+	percent = MSG_ReadByte();
 
-	// TODO: Implement
+	cls.downloadcount = percent;
+
+	if (cls.demoplayback)
+	{
+		if (!cls.downloadfn[0])
+			sprintf(cls.downloadfn, "playback");
+
+		cls.downloadresource = NULL;
+	}
+
+	COM_FileBase(cls.downloadfn, name);
+
+	if (size == -1)
+	{
+		if (status == -1)
+			Con_Printf("Server refused download %s.\n", name);
+		else
+			Con_Printf("File %s not on server.\n", name);
+
+		// Clean up if download was unexpectedly active
+		if (cls.download)
+		{
+			Con_Printf("Error:  cls.download shouldn't have been set.\n");
+			fclose(cls.download);
+			cls.download = NULL;
+		}
+
+		cls.downloadinprogress = FALSE;
+
+		if (cls.downloadresource)
+		{
+			if (!(cls.downloadresource->ucFlags & RES_FATALIFMISSING))
+			{
+				cls.downloadresource->ucFlags |= RES_WASMISSING;
+				CL_MoveToOnHandList(cls.downloadresource);
+				return;
+			}
+			CL_Disconnect();
+		}
+		else
+		{
+			if (cls.demoplayback)
+			{
+				Con_Printf("Resources must have been present before recording the demo for demo playback to function correctly.\n");
+				CL_Disconnect_f();
+			}
+			else
+			{
+				CL_Disconnect();
+			}
+		}
+		return;
+	}
+
+	if (!cls.download && !g_bSkipDownload)
+	{
+		sprintf(fullPath, "%s/%s", com_gamedir, cls.downloadfntmp);
+
+		COM_CreatePath(fullPath);
+
+		if (active)
+		{
+			// Append mode for active transfers
+			cls.download = fopen(fullPath, "a+b");
+			cls.downloadcurrentCRC = cls.downloadfinalCRC;
+		}
+		else
+		{
+			// New file
+			cls.download = fopen(fullPath, "wb");
+			CRC32_Init(&cls.downloadcurrentCRC);
+		}
+
+		if (!cls.download)
+		{
+			msg_readcount += size;
+			Con_Printf("Failed to open %s\n", cls.downloadfntmp);
+			cls.downloadinprogress = FALSE;
+			return;
+		}
+
+		Con_Printf("Downloading %s\n", name);
+	}
+
+	CRC32_ProcessBuffer(&cls.downloadcurrentCRC, &net_message.data[msg_readcount], size);
+	fwrite(&net_message.data[msg_readcount], 1, size, cls.download);
+	msg_readcount += size;
+	cls.nRemainingToTransfer -= size;
+
+	// Update upload stats
+	CL_UpdateDownloadCount();
+
+	if (percent != 100 && !g_bSkipDownload && cl_allowdownload.value)
+	{
+		// Update progress bar
+		scr_downloading.value = percent;
+		MSG_WriteByte(&cls.netchan.message, clc_stringcmd);
+		SZ_Print(&cls.netchan.message, "nextdl");
+	}
+	else if (!g_bSkipDownload && cl_allowdownload.value)
+	{
+		Con_Printf("100%%\n");
+		scr_downloading.value = -1; // Reset progress bar
+
+		if (cls.downloadresource && (cls.downloadresource->ucFlags & RES_CUSTOM))
+		{
+			if (status != cls.downloadcurrentCRC)
+			{
+				Con_Printf("Failed to download file, CRC mismatch.\n");
+				fclose(cls.download);
+			}
+			else
+			{
+				fclose(cls.download);
+
+				sprintf(finalPath, "%s/%s", com_gamedir, cls.downloadfntmp);
+
+				// Verify and add to HPAK
+				cls.download = fopen(finalPath, "rb");
+				setvbuf(cls.download, NULL, _IOFBF, 4096); // 4K buffer
+				if (cls.download)
+				{
+					// Add to HPAK
+					HPAK_AddLump(HASHPAK_FILENAME, cls.downloadresource, NULL, cls.download);
+					if (cls.download)
+					{
+						customization_t* pCust, * pList;
+						qboolean bFound = FALSE;
+
+						fseek(cls.download, 0, SEEK_SET);
+						cls.downloadresource->ucFlags &= ~RES_WASMISSING;
+
+						pCust = (customization_t*)malloc(sizeof(customization_t));
+						memset(pCust, 0, sizeof(customization_t));
+						pCust->bInUse = TRUE;
+						memcpy(&pCust->resource, cls.downloadresource, sizeof(pCust->resource));
+
+						if (cls.downloadresource->nDownloadSize <= 0)
+							Host_EndGame("Error:  customization with download size <= 0\n");
+
+						pCust->pBuffer = malloc(cls.downloadresource->nDownloadSize);
+						fread(pCust->pBuffer, cls.downloadresource->nDownloadSize, 1, cls.download);
+
+						// Search if this resource is already in customizations list
+						pList = cl.players[cls.downloadresource->playernum].customdata.pNext;
+						while (pList)
+						{
+							if (memcmp(pList->resource.rgucMD5_hash, pCust->resource.rgucMD5_hash, sizeof(pList->resource.rgucMD5_hash)) == 0)
+							{
+								bFound = TRUE;
+								break;
+							}
+
+							pList = pList->pNext;
+						}
+
+						if (bFound)
+						{
+							Con_DPrintf("Duplicate resource received and ignored.\n");
+							free(pCust);
+						}
+						else
+						{
+							pCust->pNext = cl.players[cls.downloadresource->playernum].customdata.pNext;
+							cl.players[cls.downloadresource->playernum].customdata.pNext = pCust;
+
+							if ((pCust->resource.ucFlags & RES_CUSTOM) && pCust->resource.type == t_decal)
+							{
+								cachewad_t* pWad;
+
+								pWad = (cachewad_t*)malloc(sizeof(cachewad_t));
+								pCust->pInfo = pWad;
+								memset(pWad, 0, sizeof(cachewad_t));
+								CustomDecal_Init(pWad, pCust->pBuffer, pCust->resource.nDownloadSize);
+
+								pCust->bTranslated = TRUE;
+								pCust->nUserData1 = 0;
+								pCust->nUserData2 = pWad->lumpCount;
+							}
+						}
+					}
+				}
+
+				if (cls.download)
+					fclose(cls.download);
+			}
+
+			// Clean up temp file
+			sprintf(finalPath, "%s/%s", com_gamedir, cls.downloadfntmp);
+			_unlink(finalPath);
+		}
+		else
+		{
+			fclose(cls.download);
+
+			sprintf(finalPath, "%s/%s", com_gamedir, cls.downloadfntmp);
+			sprintf(newPath, "%s/%s", com_gamedir, cls.downloadfn);
+
+			if (status != cls.downloadcurrentCRC)
+			{
+				Con_Printf("Failed to download file, CRC mismatch.\n");
+			}
+			else if (rename(finalPath, newPath) != 0)
+			{
+				Con_Printf("Download:  failed to rename.\n");
+			}
+		}
+
+		// Reset download state
+		cls.download = NULL;
+		cls.downloadcount = 0;
+		cls.downloadcurrentCRC = 0;
+		cls.downloadinprogress = FALSE;
+	}
+	else
+	{
+		g_bSkipDownload = FALSE;
+
+		// Reset download state
+		fclose(cls.download);
+		cls.download = NULL;
+		cls.downloadcount = 0;
+		cls.downloadcurrentCRC = 0;
+		cls.downloadinprogress = FALSE;
+
+		if (cls.downloadresource && !(cls.downloadresource->ucFlags & RES_FATALIFMISSING))
+		{
+			Con_Printf("Skipping download of %s\n", cls.downloadfn);
+			cls.downloadresource->ucFlags |= RES_WASMISSING;
+			CL_MoveToOnHandList(cls.downloadresource);
+		}
+		else
+		{
+			if (!cls.downloadresource && cls.demoplayback)
+				Con_Printf("All files must have been present when recording the demo in order to play the demo back correctly.\n");
+
+			Con_Printf("File %s not downloaded, cannot complete connection\n", cls.downloadfn);
+
+			if (cls.demoplayback)
+			{
+				CL_Disconnect_f();
+			}
+			else
+			{
+				CL_Disconnect();
+			}
+		}
+
+		// Clean up temp file
+		sprintf(finalPath, "%s/%s", com_gamedir, cls.downloadfntmp);
+		_unlink(finalPath);
+	}
 }
 
 /*
-================
-CL_PrintResourceInfo
+==================
+CL_PrintResource
 
-Prints which data the resource passed contains.
-================
+==================
 */
-void CL_PrintResourceInfo( int index, resource_t* pResource )
+void CL_PrintResource( int index, resource_t* pResource )
 {
-	// TODO: Reimplement
+	static char type[16];
+	static char fatal[4];
 
-	static char fatal[8];
-	static char type[12];
-
-	// If the resource was missing, let the player know about that
-	if (pResource->ucFlags & RES_WASMISSING)
+	if (pResource->ucFlags & RES_FATALIFMISSING)
 		sprintf(fatal, "Y");
 	else
 		sprintf(fatal, "N");
 
-	// Now let the player know which type this resource has
 	switch (pResource->type)
 	{
-		case t_sound:
-			sprintf(type, "sound");
-			break;
-		case t_skin:
-			sprintf(type, "skin");
-			break;
-		case t_model:
-			sprintf(type, "model");
-			break;
-		case t_decal:
-			sprintf(type, "decal");
-			break;
-		default:
-			sprintf(type, "unknown");
-			break;
+	case t_sound:
+		sprintf(type, "sound");
+		break;
+	case t_skin:
+		sprintf(type, "skin");
+		break;
+	case t_model:
+		sprintf(type, "model");
+		break;
+	case t_decal:
+		sprintf(type, "decal");
+		break;
+	default:
+		sprintf(type, "unknown");
+		break;
 	}
 
-	// Here we spit out the whole resource data
-	Con_Printf(
-	  "%3i %i %s:%15s %i %s\n",
-	  index,
-	  pResource->nDownloadSize,
-	  type,
-	  pResource->szFileName,
-	  pResource->nIndex,
-	  fatal);
+	Con_Printf("%3i %i %s:%15s %i %s\n", index, pResource->nDownloadSize, type, pResource->szFileName, pResource->nIndex, fatal);
 
-	// If the resource is a custom resource uploaded by somebody, print its MD5 hash
 	if (pResource->ucFlags & RES_CUSTOM)
-	{
 		Con_Printf("MD5:  %s\n", MD5_Print(pResource->rgucMD5_hash));
-	}
 }
 
 /*
 ===============
-CL_ClearResourceLists
+CL_PrintResourceLists_f
 
 ===============
 */
-void CL_Resources_f( void )
+void CL_PrintResourceLists_f( void )
 {
-	// TODO: Implement
+	int i;
+	resource_t* pResource;
+
+	i = 1;
+
+	Con_Printf("- Needed -------------------------------------------\n");
+	Con_Printf("#   Name                  Size Type Index Fatal\n");
+
+	for (pResource = cl.resourcesneeded.pNext; pResource != &cl.resourcesneeded; pResource = pResource->pNext)
+	{
+		CL_PrintResource(i, pResource);
+		i++;
+	}
+
+	Con_Printf("- On hand ------------------------------------------\n");
+	Con_Printf("#   Name                  Size Type Index Fatal\n");
+
+	for (pResource = cl.resourcesonhand.pNext; pResource != &cl.resourcesonhand; pResource = pResource->pNext)
+	{
+		CL_PrintResource(i, pResource);
+		i++;
+	}
+
+	Con_Printf("--------------------------------------------\n\n");
 }
 
 /*
@@ -653,9 +928,9 @@ void CL_RegisterResources( void )
 {
 	double	time1, time2, time3, time4;
 
-	if (cls.dl.custom)
+	if (cls.custom)
 	{
-		cls.dl.custom = FALSE;
+		cls.custom = FALSE;
 		return;
 	}
 
@@ -986,26 +1261,26 @@ qboolean CL_RequestMissingResources( void )
 	char	szCust[MAX_OSPATH];
 	resource_t* p;
 
-	if (cls.dl.download || cls.dl.downloading)
+	if (cls.download || cls.downloadinprogress)
 		return FALSE;
 
-	if (!cls.dl.custom && cls.state != ca_uninitialized)
+	if (!cls.custom && cls.state != ca_uninitialized)
 		return FALSE;
 
-	if (cls.dl.doneregistering)
+	if (cls.doneregistering)
 		return FALSE;
 
 	p = cl.resourcesneeded.pNext;
-	cls.dl.resource = p;
+	cls.downloadresource = p;
 
 	memcpy(&custom_resource, cl.resourcesneeded.pNext, sizeof(custom_resource));
 
 	if (p == &cl.resourcesneeded)
 	{
-		cls.dl.resource = NULL;
+		cls.downloadresource = NULL;
 		Con_DPrintf("Resource propagation complete.\n");
 		CL_RegisterResources();
-		cls.dl.doneregistering = TRUE;
+		cls.doneregistering = TRUE;
 		return FALSE;
 	}
 
@@ -1069,10 +1344,10 @@ void CL_StartResourceDownloading( char* pszMessage, qboolean bCustom )
 	if (pszMessage)
 		Con_DPrintf(pszMessage);
 
-	cls.dl.nTotalSize = COM_SizeofResourceList(&cl.resourcesneeded, &worldSize, &modelsSize, &decalsSize, &soundsSize, &skinsSize);
-	cls.dl.nTotalToTransfer = CL_EstimateNeededResources();
+	cls.nTotalSize = COM_SizeofResourceList(&cl.resourcesneeded, &worldSize, &modelsSize, &decalsSize, &soundsSize, &skinsSize);
+	cls.nTotalToTransfer = CL_EstimateNeededResources();
 
-	Con_DPrintf("Resources total %iK\n", cls.dl.nTotalSize / 1024);
+	Con_DPrintf("Resources total %iK\n", cls.nTotalSize / 1024);
 
 	if (worldSize > 0)
 		Con_DPrintf("  World :  %iK\n", worldSize / 1024);
@@ -1086,28 +1361,28 @@ void CL_StartResourceDownloading( char* pszMessage, qboolean bCustom )
 		Con_DPrintf("  Skins :  %iK\n", skinsSize / 1024);
 
 	Con_DPrintf("----------------------\n");
-	Con_DPrintf("Resources to request: %iK\n", cls.dl.nTotalToTransfer / 1024);
+	Con_DPrintf("Resources to request: %iK\n", cls.nTotalToTransfer / 1024);
 
 	if (bCustom)
 	{
-		cls.dl.custom = TRUE;
+		cls.custom = TRUE;
 	}
 	else
 	{
 		cls.state = ca_uninitialized;
-		cls.dl.custom = FALSE;
+		cls.custom = FALSE;
 	}
 
-	cls.dl.doneregistering = FALSE;
-	cls.dl.downloading = FALSE;
+	cls.doneregistering = FALSE;
+	cls.downloadinprogress = FALSE;
 
-	cls.dl.fLastStatusUpdate = realtime;
-	cls.dl.fLastDownloadTime = realtime;
+	cls.fLastStatusUpdate = realtime;
+	cls.fLastDownloadTime = realtime;
 
-	cls.dl.nRemainingToTransfer = cls.dl.nTotalToTransfer;
+	cls.nRemainingToTransfer = cls.nTotalToTransfer;
 
-	memset(cls.dl.rgStats, 0, sizeof(cls.dl.rgStats));
-	cls.dl.nCurStat = 0;
+	memset(cls.rgDownloads, 0, sizeof(cls.rgDownloads));
+	cls.nCurDownload = 0;
 }
 
 /*
@@ -1276,7 +1551,7 @@ void CL_ParseCustomization( void )
 	Con_DPrintf("New resource from player %i\n", i);
 
 	if (developer.value)
-		CL_PrintResourceInfo(i, resource);
+		CL_PrintResource(i, resource);
 
 	resource->playernum = i;
 
@@ -1304,7 +1579,7 @@ void CL_ParseCustomization( void )
 	if (cl_download_max.value && resource->nDownloadSize > cl_download_max.value)
 	{
 		Con_Printf("Refusing new resource, cl_download_max is %i, resource is %i bytes\n",
-			cl_download_max.value, resource->nDownloadSize);
+			(int)cl_download_max.value, resource->nDownloadSize);
 		free(resource);
 		return;
 	}
@@ -1321,7 +1596,7 @@ void CL_ParseCustomization( void )
 		CL_AddToResourceList(resource, &cl.resourcesneeded);
 		Con_Printf("Requesting %s from server\n", resource->szFileName);
 		memcpy(&custom_resource, resource, sizeof(custom_resource));
-		cls.dl.resource = &custom_resource;
+		cls.downloadresource = &custom_resource;
 		CL_StartResourceDownloading("Custom resource propagation...\n", TRUE);
 		return;
 	}
@@ -2359,7 +2634,7 @@ void CL_ParseServerMessage( void )
 			break;
 
 		case svc_download:
-			CL_WriteDemoHeader(cls.dl.szFileName);
+			CL_WriteDemoHeader(cls.downloadfn);
 			CL_ParseDownload();
 			break;
 
@@ -2398,7 +2673,7 @@ void CL_ParseServerMessage( void )
 			break;
 
 		case svc_customization:
-			CL_WriteDemoHeader(cls.dl.szFileName);
+			CL_WriteDemoHeader(cls.downloadfn);
 			CL_ParseCustomization();
 			break;
 

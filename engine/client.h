@@ -30,46 +30,6 @@ typedef struct
 	int nBytesRemaining;
 } downloadtime_t;
 
-typedef struct
-{
-	FILE*		download;				// Handle of file being downloaded
-	resource_t* resource;
-	qboolean	doneregistering;
-
-	char		extension[MAX_QPATH];	// The extension of a file that we are downloading from the server
-										// ".cst" if it's a custom resource
-	CRC32_t		crcFile;				// For detecting that client's resource is different
-	char		szFileName[MAX_QPATH];	// Name
-
-	int			nNumFileChunksRead;		// How much chunks of the incoming transfer (the file itself) have we read?
-
-	// TODO: Implement
-
-	int			percent;
-
-	qboolean	downloading;			// TRUE if downloading is in progress
-
-	int			nTotalSize;
-	int			nTotalToTransfer;
-	int			nRemainingToTransfer;
-
-	float		fLastStatusUpdate;		// The time of the last update
-	float		fLastDownloadTime;		// The last time the file was downloaded
-
-	downloadtime_t rgStats[MAX_DL_STATS];
-	int			nCurStat;
-
-	// TODO: Implement
-
-	qboolean	custom;					// TRUE is downloading a custom resource
-	FILE*		upload;					// Handle of the file being uploaded
-
-	// TODO: Implement
-
-} incomingtransfer_t;
-
-
-
 #define	MAX_SCOREBOARDNAME		32
 typedef struct player_info_s
 {
@@ -223,7 +183,32 @@ typedef struct
 	int			td_startframe;		// host_framecount at start
 	float		td_starttime;		// realtime at second frame of timedemo
 
-	incomingtransfer_t dl;
+// download information
+	FILE* download;						// Handle of file being downloaded
+	resource_t* downloadresource;		// The resource we're trying to retrieve from server
+	qboolean	doneregistering;
+	char		downloadfntmp[MAX_QPATH];
+	CRC32_t		downloadfinalCRC;
+	char		downloadfn[MAX_QPATH];	
+	int			nFilesDownloaded;
+	int			downloadcount;
+
+	qboolean	downloadinprogress;		// TRUE if downloading is in progress
+
+	int			nTotalSize;
+	int			nTotalToTransfer;
+	int			nRemainingToTransfer;
+
+	float		fLastStatusUpdate;		// The time of the last download status
+	float		fLastDownloadTime;		// The last time the file was downloaded
+
+	downloadtime_t rgDownloads[MAX_DL_STATS];
+	int			nCurDownload;
+
+	CRC32_t		downloadcurrentCRC;
+
+	qboolean	custom;					// TRUE is downloading a custom resource
+	FILE*		upload;					// Handle of the file being uploaded
 
 	// TODO: Implement
 
@@ -521,15 +506,20 @@ extern	cvar_t	cl_pushlatency;
 extern	cvar_t	cl_dumpents;
 extern	cvar_t	cl_showpred;
 
-extern	cvar_t cl_allowdownload;
-extern	cvar_t cl_download_ingame;
-extern	cvar_t cl_download_max;
+extern	cvar_t	cl_downloadinterval;
 
-extern qboolean cl_inmovie;
+extern	cvar_t	cl_allowdownload;
+extern	cvar_t	cl_download_ingame;
+extern	cvar_t	cl_download_max;
 
-extern int	bitcounts[32 + 8];
-extern int	playerbitcounts[MAX_CLIENTS];
-extern int	custombitcounts[32];
+extern	qboolean cl_inmovie;
+
+extern	qboolean g_bSkipDownload;
+extern	qboolean g_bSkipUpload;
+
+extern	int	bitcounts[32 + 8];
+extern	int	playerbitcounts[MAX_CLIENTS];
+extern	int	custombitcounts[32];
 
 // TODO: Implement
 
@@ -574,6 +564,7 @@ void CL_CreateResourceList( void );
 void CL_ClearResourceList( resource_t* pList );
 void CL_AddToResourceList( resource_t* pResource, resource_t* pList );
 void CL_RemoveFromResourceList( resource_t* pResource );
+void CL_MoveToOnHandList( resource_t* pResource );
 void CL_SendResourceListBlock( void );
 qboolean CL_RequestMissingResources( void );
 void CL_ClearResourceLists( void );
@@ -677,7 +668,7 @@ void CL_InitCam( void );
 //
 cl_entity_t* CL_EntityNum( int num );
 void CL_UserMsgs_f( void );
-void CL_Resources_f( void );
+void CL_PrintResourceLists_f( void );
 void CL_DumpMessageLoad_f( void );
 void CL_BitCounts_f( void );
 void CL_ShowSizes( void );

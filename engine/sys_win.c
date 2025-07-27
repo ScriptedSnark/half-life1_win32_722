@@ -1446,9 +1446,9 @@ DLL_EXPORT int GetGameInfo( struct GameInfo_s* pGI, char* pszChannel )
 		sprintf(gi.szStatus, "Disconnected");
 		break;
 	case ca_uninitialized:
-		if (cls.dl.download)
+		if (cls.download)
 		{
-			sprintf(gi.szStatus, "Downloading %s, %i percent complete", cls.dl.szFileName, cls.dl.percent);
+			sprintf(gi.szStatus, "Downloading %s, %i percent complete", cls.downloadfn, cls.downloadcount);
 		}
 		else
 		{

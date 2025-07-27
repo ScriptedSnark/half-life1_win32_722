@@ -100,7 +100,7 @@ qboolean SV_CheckOrUploadFile( char* filename )
 		hasRemainingFileSegments = TRUE;
 
 		CRC32_Init(&crc);
-		for (i = 0; i < size / 1024; i++)
+		for (i = 0; i < size / sizeof(buffer); i++)
 		{
 			if (fread(buffer, sizeof(buffer), 1, pFile) != 1)
 			{
@@ -123,9 +123,9 @@ qboolean SV_CheckOrUploadFile( char* filename )
 	{
 		s = va("upload \"!MD5%s\"\n", MD5_Print(p.rgucMD5_hash));
 	}
-	else if (hasRemainingFileSegments && (size % 1024) == 0)
+	else if (hasRemainingFileSegments && (size % sizeof(buffer)) == 0)
 	{
-		s = va("upload %s %i %i\n", name, size / 1024, crc); // partial upload with CRC check
+		s = va("upload %s %i %i\n", name, size / sizeof(buffer), crc); // partial upload with CRC check
 	}
 	else
 	{
@@ -151,8 +151,8 @@ void SV_UpdateUploadCount( void )
 	if (!sv_uploadinterval.value)
 		return;
 
-	if (sv_uploadinterval.value < 0.0)
-		Cvar_SetValue("sv_uploadinterval", 1.0);
+	if (sv_uploadinterval.value < 0)
+		Cvar_SetValue("sv_uploadinterval", 1);
 
 	if ((realtime - host_client->fLastUploadTime) < sv_uploadinterval.value)
 		return;
@@ -282,7 +282,6 @@ void SV_ParseUpload( void )
 
 			pCust = (customization_t*)malloc(sizeof(customization_t));
 			memset(pCust, 0, sizeof(customization_t));
-
 			pCust->bInUse = TRUE;
 			memcpy(&pCust->resource, host_client->uploadresource, sizeof(pCust->resource));
 
