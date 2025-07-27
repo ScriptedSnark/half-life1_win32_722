@@ -677,9 +677,64 @@ void CL_RegisterResources( void )
 
 	noclip_anglehack = FALSE;		// noclip is turned off at start
 
+	// Don't verify CRC if we are running a local server (i.e., we are playing single player, or we are the server in multiplay
 	if (!sv.active)
 	{
-		// TODO: Implement
+		CRC32_t mapCRC;
+		CRC32_t clientdllCRC;
+		char szDllName[MAX_QPATH]; // client side DLL being used
+
+		CRC32_Init(&mapCRC);
+		if (!CRC_MapFile(&mapCRC, cl.worldmodel->name))
+		{
+			Con_Printf("Couldn't CRC client side map %s, disconnecting\n", cl.worldmodel->name);
+			CL_Disconnect();
+			return;
+		}
+
+		if (mapCRC != cl.serverCRC)
+		{
+			Con_Printf(
+				"Your local copy of %s failed the CRC check.\n"
+				"You must obtain an updated version of the map from the server operator before you can join this server.\n",
+				cl.worldmodel->name);
+			CL_Disconnect();
+			return;
+		}
+
+		// check to see that our copy of the client side dll matches the server's
+		// client side DLL  CRC check
+		sprintf(szDllName, "cl_dlls\\client.dll");
+
+		CRC32_Init(&clientdllCRC);
+		if (!CRC_File(&clientdllCRC, szDllName))
+		{
+			Con_Printf("Couldn't CRC client side dll %s, disconnecting\n", szDllName);
+			CL_Disconnect();
+			return;
+		}
+
+		if (clientdllCRC != cl.clientdllCRC)
+		{
+			if (cls.demoplayback)
+			{
+				Con_Printf(
+					"Your client side .dll [%s] failed the CRC check.\n"
+					"The .dll may be out of date, or the demo may have been recorded using an old version of the .dll.\n"
+					"Consider obtaining an updated version of the .dll from the server operator.\n"
+					"Demo playback proceeding.\n",
+					szDllName);
+			}
+			else
+			{
+				Con_Printf(
+					"Your client side .dll [%s] failed the CRC check.\n"
+					"You must be using the same client side .dll to join this server.\n",
+					szDllName);
+				CL_Disconnect();
+				return;
+			}
+		}
 	}
 
 	MSG_WriteByte(&cls.netchan.message, clc_stringcmd);
@@ -1413,7 +1468,7 @@ void CL_ParseServerInfo( void )
 	// The CRC of the server map must match the CRC of the client map. or else
 	//  the client is probably cheating.
 	cl.serverCRC = MSG_ReadLong();
-	cl.mapCRC = MSG_ReadLong();
+	cl.clientdllCRC = MSG_ReadLong();
 
 	cl.maxclients = MSG_ReadByte();
 

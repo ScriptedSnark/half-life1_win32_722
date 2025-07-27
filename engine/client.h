@@ -442,8 +442,7 @@ typedef struct
 	int			cdtrack, looptrack;	// cd audio
 
 	CRC32_t		serverCRC;		// To determine if client is playing hacked .map. (entities lump is skipped)
-	CRC32_t		mapCRC;			// client's map CRC value, CL_CheckCRCs() checks this with cl.serverCRC to make sure
-								// that the client and server play the same map
+	CRC32_t		clientdllCRC;
 
 	float		weaponstarttime;
 	int			weaponsequence;
