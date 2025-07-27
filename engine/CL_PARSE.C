@@ -1135,7 +1135,55 @@ Removes the specified customization for the nPlayerNum
 */
 void CL_RemoveCustomization( int nPlayerNum, customization_t* pRemove )
 {
-	// TODO: Implement
+	customization_t* pList;
+	int	i;
+	customization_t* pNext;
+
+	pList = cl.players[nPlayerNum].customdata.pNext;
+	while (pList)
+	{
+		pNext = pList->pNext;
+
+		if (pRemove == pList)
+		{
+			if (pList->bInUse && pList->pBuffer)
+				free(pList->pBuffer);
+
+			if (pList->bInUse && pList->pInfo)
+			{
+				if (pRemove->resource.type == t_decal)
+				{
+					cachewad_t* pWad;
+
+					if (cls.state == ca_active)
+						R_DecalRemoveAll(-1 - nPlayerNum);
+
+					pWad = (cachewad_t*)pRemove->pInfo;
+					free(pWad->lumps);
+
+					for (i = 0; i < pWad->cacheCount; i++)
+					{
+#if defined ( GLQUAKE )
+						cacheentry_t* pic = &pWad->cache[i];
+#else
+						cachepic_t* pic = &pWad->cache[i];
+#endif
+						if (Cache_Check(&pic->cache))
+							Cache_Free(&pic->cache);
+					}
+
+					free(pWad->cache);
+				}
+
+				free(pRemove->pInfo);
+			}
+
+			free(pRemove);
+			cl.players[nPlayerNum].customdata.pNext = pNext;
+		}
+
+		pList = pNext;
+	}
 }
 
 /*
@@ -1146,123 +1194,136 @@ CL_ParseCustomization
 */
 void CL_ParseCustomization( void )
 {
-	// TODO: Reimplement
+	resource_t* resource;
+	int	i;
+	customization_t* pExistingCustomization;
+	customization_t* pList;
+	FILE* pFile;
+	qboolean bFound;
 
-	int					nPlayerIndex;
-	resource_t*			res;
-	customization_t*	pCust;
-	qboolean			bDuplicate = FALSE;
-	FILE*				pfHandle = NULL;
-	cachewad_t*			pWad;
-
-	nPlayerIndex = MSG_ReadByte();
-	if (nPlayerIndex > MAX_CLIENTS - 1)
+	i = MSG_ReadByte();
+	if (i >= MAX_CLIENTS)
 		Host_Error("Bogus player index during customization parsing.\n");
 
-	res = (resource_t*)malloc(sizeof(resource_t));
-	memset(res, 0, sizeof(*res));
-	res->type = MSG_ReadByte();
-	strcpy(res->szFileName, MSG_ReadString());
-	res->nIndex = MSG_ReadShort();
-	res->nDownloadSize = MSG_ReadLong();
-	res->ucFlags = MSG_ReadByte() & ~RES_WASMISSING;
-	res->pNext = res->pPrev = NULL;
-	if (res->ucFlags & RES_CUSTOM)
-		MSG_ReadBuf(sizeof(res->rgucMD5_hash), res->rgucMD5_hash);
+	resource = (resource_t*)malloc(sizeof(resource_t));
+	memset(resource, 0, sizeof(resource_t));
+	resource->type = MSG_ReadByte();
+	strcpy(resource->szFileName, MSG_ReadString());
+	resource->nIndex = MSG_ReadShort();
+	resource->nDownloadSize = MSG_ReadLong();
+	resource->pNext = resource->pPrev = NULL;
+	resource->ucFlags = MSG_ReadByte();
+	resource->ucFlags &= ~RES_WASMISSING;
 
-	Con_DPrintf("New resource from player %i\n", nPlayerIndex);
+	if (resource->ucFlags & RES_CUSTOM)
+		MSG_ReadBuf(sizeof(resource->rgucMD5_hash), resource->rgucMD5_hash);
 
-	// If developer cvar is enabled, print some debug info about the resource we're downloading
+	Con_DPrintf("New resource from player %i\n", i);
+
 	if (developer.value)
-		CL_PrintResourceInfo(nPlayerIndex, res);
+		CL_PrintResourceInfo(i, resource);
 
-	res->playernum = nPlayerIndex;
+	resource->playernum = i;
+
 	if (cls.demoplayback)
 	{
 		Con_DPrintf("Custom resources do not function during demo playback.\n");
-		free(res);
+		free(resource);
+		return;
 	}
-	else if (!cl_allowdownload.value)
+
+	if (!cl_allowdownload.value)
 	{
 		Con_DPrintf("Refusing new resource, cl_allow_download set to 0\n");
-		free(res);
+		free(resource);
+		return;
 	}
-	else if (cls.state == ca_active && !cl_download_ingame.value)
+
+	if (cls.state == ca_active && !cl_download_ingame.value)
 	{
 		Con_Printf("Refusing new resource, cl_download_ingame set to 0\n");
-		free(res);
+		free(resource);
+		return;
 	}
-	else if (!cl_download_max.value || res->nDownloadSize <= cl_download_max.value)
+
+	if (cl_download_max.value && resource->nDownloadSize > cl_download_max.value)
 	{
-		pCust = CL_PlayerHasCustomization(nPlayerIndex, res->type);
-		if (pCust)
-			CL_RemoveCustomization(res->playernum, pCust);
+		Con_Printf("Refusing new resource, cl_download_max is %i, resource is %i bytes\n",
+			cl_download_max.value, resource->nDownloadSize);
+		free(resource);
+		return;
+	}
 
-		if (HPAK_GetDataPointer("custom.hpk", res, &pfHandle))
+	pExistingCustomization = CL_PlayerHasCustomization(resource->playernum, resource->type);
+	if (pExistingCustomization)
+	{
+		CL_RemoveCustomization(resource->playernum, pExistingCustomization);
+	}
+
+	if (!HPAK_GetDataPointer(HASHPAK_FILENAME, resource, &pFile))
+	{
+		resource->ucFlags |= RES_WASMISSING;
+		CL_AddToResourceList(resource, &cl.resourcesneeded);
+		Con_Printf("Requesting %s from server\n", resource->szFileName);
+		memcpy(&custom_resource, resource, sizeof(custom_resource));
+		cls.dl.resource = &custom_resource;
+		CL_StartResourceDownloading("Custom resource propagation...\n", TRUE);
+		return;
+	}
+
+	// Search if this resource is already in customizations list
+	bFound = FALSE;
+	pList = cl.players[resource->playernum].customdata.pNext;
+	while (pList)
+	{
+		if (memcmp(pList->resource.rgucMD5_hash, resource->rgucMD5_hash, sizeof(pList->resource.rgucMD5_hash)) == 0)
 		{
-			pCust = cl.players[res->playernum].customdata.pNext;
-			while (pCust)
-			{
-				if (!memcmp(pCust->resource.rgucMD5_hash, res->rgucMD5_hash, sizeof(res->rgucMD5_hash)))
-				{
-					bDuplicate = TRUE;
-					break;
-				}
-
-				pCust = pCust->pNext;
-			}
-
-			if (bDuplicate)
-			{
-				Con_DPrintf("Duplicate resource ignored for local client\n");
-			}
-			else
-			{
-				pCust = (customization_t*)malloc(sizeof(customization_t));
-				memset(pCust, 0, sizeof(*pCust));
-				pCust->bInUse = TRUE;
-				memcpy(&pCust->resource, res, sizeof(pCust->resource));
-
-				if (res->nDownloadSize <= 0)
-					Host_EndGame("Error:  Customization with download size < 0\n");
-
-				pCust->pBuffer = malloc(res->nDownloadSize);
-				fread(pCust->pBuffer, res->nDownloadSize, sizeof(byte), pfHandle);
-				fclose(pfHandle);
-
-				pCust->pNext = cl.players[res->playernum].customdata.pNext;
-				cl.players[res->playernum].customdata.pNext = pCust;
-
-				if (pCust->resource.ucFlags & RES_CUSTOM && pCust->resource.type == t_decal)
-				{
-					pWad = (cachewad_t*) malloc(sizeof(cachewad_t));
-					pCust->pInfo = pWad;
-
-					memset(pWad, 0, sizeof(cachewad_t));
-
-					CustomDecal_Init(pWad, pCust->pBuffer, pCust->resource.nDownloadSize);
-					pCust->bTranslated = TRUE;
-					pCust->nUserData1 = 0;
-					pCust->nUserData2 = pWad->lumpCount;
-				}
-			}
-			free(res);
+			bFound = TRUE;
+			break;
 		}
-		else
-		{
-			res->ucFlags |= RES_WASMISSING;
-			CL_AddToResourceList(res, &cl.resourcesneeded);
-			Con_Printf("Requesting %s from server\n", res->szFileName);
-			memcpy(&custom_resource, res, sizeof(custom_resource));
-			cls.dl.resource = &custom_resource;
-			CL_StartResourceDownloading("Custom resource propagation...\n", TRUE);
-		}
+
+		pList = pList->pNext;
+	}
+
+	if (bFound)
+	{
+		Con_DPrintf("Duplicate resource ignored for local client\n");
 	}
 	else
 	{
-		Con_Printf("Refusing new resource, cl_download_max is %i, resource is %i bytes\n", (int)cl_download_max.value, res->nDownloadSize);
-		free(res);
+		customization_t* pCust;
+		cachewad_t* pWad;
+
+		pCust = (customization_t*)malloc(sizeof(customization_t));
+		memset(pCust, 0, sizeof(customization_t));
+		pCust->bInUse = TRUE;
+
+		memcpy(&pCust->resource, resource, sizeof(pCust->resource));
+
+		if (resource->nDownloadSize <= 0)
+			Host_EndGame("Error:  Customization with download size < 0\n");
+
+		pCust->pBuffer = malloc(resource->nDownloadSize);
+		fread(pCust->pBuffer, resource->nDownloadSize, 1, pFile);
+		fclose(pFile);
+
+		pCust->pNext = cl.players[resource->playernum].customdata.pNext;
+		cl.players[resource->playernum].customdata.pNext = pCust;
+
+		if ((pCust->resource.ucFlags & RES_CUSTOM) && pCust->resource.type == t_decal)
+		{
+			pWad = (cachewad_t*)malloc(sizeof(cachewad_t));
+			pCust->pInfo = pWad;
+			memset(pWad, 0, sizeof(cachewad_t));
+			CustomDecal_Init(pWad, pCust->pBuffer, pCust->resource.nDownloadSize);
+
+			pCust->bTranslated = TRUE;
+			pCust->nUserData1 = 0;
+			pCust->nUserData2 = pWad->lumpCount;
+		}
 	}
+
+	free(resource);
 }
 
 /*

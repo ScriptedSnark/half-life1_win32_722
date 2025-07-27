@@ -474,9 +474,10 @@ void SV_CreateCustomizationList( client_t* pHost )
 	for (pResource = pHost->resourcesonhand.pNext; pResource != &pHost->resourcesonhand; pResource = pResource->pNext)
 	{
 		customization_t* pList;
-		qboolean bFound = FALSE;
+		qboolean bFound;
 
 		// Search if this resource is already in customizations list
+		bFound = FALSE;
 		pList = pHost->customdata.pNext;
 		while (pList)
 		{
@@ -513,7 +514,6 @@ void SV_CreateCustomizationList( client_t* pHost )
 						Sys_Error("SV_CreateCustomizationList with resource download size <= 0");
 
 					pCust->pBuffer = malloc(pResource->nDownloadSize);
-
 					fread(pCust->pBuffer, pResource->nDownloadSize, 1, pFile);
 					fclose(pFile);
 
