@@ -675,6 +675,7 @@ void CL_InitCam( void );
 //
 cl_entity_t* CL_EntityNum( int num );
 void CL_UserMsgs_f( void );
+void CL_PrintResource( int index, resource_t* pResource );
 void CL_PrintResourceLists_f( void );
 void CL_DumpMessageLoad_f( void );
 void CL_BitCounts_f( void );

@@ -1408,7 +1408,7 @@ void SV_ConnectionlessPacket( void )
 	}
 	else if (c[0] == M2M_MSG && (c[1] == 0 || c[1] == '\n'))
 	{
-		if (NET_CompareClassBAdr(gMasterAddress, net_from))
+		if (NET_CompareClassBAdr(master_adr, net_from))
 			SVC_MasterPrint();
 		return;
 	}

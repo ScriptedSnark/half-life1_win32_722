@@ -44,4 +44,8 @@ int		VID_Init( word* palette );
 void	VID_WriteBuffer( const char* pFilename );
 // Writes vid.buffer contents to a bmp file
 
+// Screen shot functionality
+void	VID_TakeSnapshot( const char* pFilename );
+void	VID_TakeSnapshotRect( const char* pFilename, int x, int y, int w, int h );
+
 #endif //VIDH

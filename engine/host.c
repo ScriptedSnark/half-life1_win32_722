@@ -46,7 +46,7 @@ float		gfHeartbeatWaitingTime;		// Challenge request send time
 int			gHeartbeatSequence;			// # of heartbeat sequence
 int			gHeartbeatChallenge;		// Last one is Main master
 char		gszMasterAddress[128];
-netadr_t	gMasterAddress;				// Master server address
+netadr_t	master_adr;					// Master server address
 
 char		gszDefaultRoom[64];
 
@@ -1551,7 +1551,7 @@ void Master_RequestHeartbeat( void )
 	int			numChannels;
 	svchannel_t* pChannel;
 
-	if (!NET_StringToAdr(gszMasterAddress, &gMasterAddress))
+	if (!NET_StringToAdr(gszMasterAddress, &master_adr))
 		return;
 
 	// Still waiting on challenge response?
@@ -1593,7 +1593,7 @@ void Master_RequestHeartbeat( void )
 	sprintf(string, "%c\n%i\n%i\n%i\n%i\n%s", S2M_HEARTBEAT, gHeartbeatChallenge,
 		gHeartbeatSequence, active, numChannels, szChannels);
 
-	NET_SendPacket(NS_SERVER, strlen(string), string, gMasterAddress);
+	NET_SendPacket(NS_SERVER, strlen(string), string, master_adr);
 }
 
 /*
@@ -1614,7 +1614,7 @@ void Master_Heartbeat( void )
 		(svs.maxclients <= 1))  // not a multiplayer server.
 		return;
 
-	if (!NET_StringToAdr(gszMasterAddress, &gMasterAddress))
+	if (!NET_StringToAdr(gszMasterAddress, &master_adr))
 		return;
 
 	// Should we resend challenge request?
@@ -1630,7 +1630,7 @@ void Master_Heartbeat( void )
 	c = A2A_GETCHALLENGE;
 
 	// Send to master asking for a challenge #
-	NET_SendPacket(NS_SERVER, 1, &c, gMasterAddress);
+	NET_SendPacket(NS_SERVER, 1, &c, master_adr);
 }
 
 /*
@@ -1650,12 +1650,12 @@ void Master_Shutdown( void )
 
 	sprintf(string, "%c\n", S2M_SHUTDOWN);
 
-	if (!NET_StringToAdr(gszMasterAddress, &gMasterAddress))
+	if (!NET_StringToAdr(gszMasterAddress, &master_adr))
 		return;
 
-	Con_DPrintf("Sending shutdown to %s\n", NET_AdrToString(gMasterAddress));
+	Con_DPrintf("Sending shutdown to %s\n", NET_AdrToString(master_adr));
 
-	NET_SendPacket(NS_SERVER, strlen(string), string, gMasterAddress);
+	NET_SendPacket(NS_SERVER, strlen(string), string, master_adr);
 }
 
 /*
@@ -1674,12 +1674,12 @@ void Master_RequestMOTD_f( void )
 
 	sprintf(string, "%c\n", A2M_GET_MOTD);
 
-	if (!NET_StringToAdr(gszMasterAddress, &gMasterAddress))
+	if (!NET_StringToAdr(gszMasterAddress, &master_adr))
 		return;
 
-	Con_DPrintf("Requesting MOTD from %s\n", NET_AdrToString(gMasterAddress));
+	Con_DPrintf("Requesting MOTD from %s\n", NET_AdrToString(master_adr));
 
-	NET_SendPacket(NS_CLIENT, strlen(string), string, gMasterAddress);
+	NET_SendPacket(NS_CLIENT, strlen(string), string, master_adr);
 }
 
 /*

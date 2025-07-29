@@ -42,8 +42,6 @@ cvar_t	gl_overbright = { "gl_overbright", "1", TRUE };
 cvar_t	gl_envmapsize = { "gl_envmapsize", "256" };
 cvar_t	gl_flipmatrix = { "gl_flipmatrix", "0", TRUE };
 
-void VID_TakeSnapshotRect( const char* pFilename, int x, int y, int w, int h );
-
 /*
 ====================
 R_InitTextures

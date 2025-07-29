@@ -328,6 +328,8 @@ extern int		nReliables;
 extern int		nDatagrams;
 extern qboolean bUnreliableOverflow;
 
+extern int num_servers;
+
 extern	qboolean	allow_cheats;
 
 extern	server_static_t	svs;				// persistant server info

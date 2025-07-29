@@ -3467,16 +3467,16 @@ void Master_SetMaster_f( void )
 	}
 	sprintf(szAdr, "%s:%i", Cmd_Argv(1), port);
 
-	if (!NET_StringToAdr(szAdr, &gMasterAddress))
+	if (!NET_StringToAdr(szAdr, &master_adr))
 	{
-		memset(&gMasterAddress, 0, sizeof(netadr_t));
+		memset(&master_adr, 0, sizeof(netadr_t));
 		Con_Printf("Invalid address %s\n", szAdr);
 		return;
 	}
 
 	gfNoMasterServer = FALSE;
 
-	Con_Printf("Attempting to set master server to %s\n", NET_AdrToString(gMasterAddress));
+	Con_Printf("Attempting to set master server to %s\n", NET_AdrToString(master_adr));
 	gfLastHearbeat = -99999;
 }
 

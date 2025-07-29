@@ -430,8 +430,7 @@ qboolean CL_CheckFile( char* filename )
 	sprintf(name, filename);
 
 	// Handle hashed resources
-	if (strlen(filename) == 36 &&
-		!_strnicmp(filename, "!MD5", 4))
+	if (strlen(filename) == 36 && !_strnicmp(filename, "!MD5", 4))
 	{
 		memset(&p, 0, sizeof(p));
 

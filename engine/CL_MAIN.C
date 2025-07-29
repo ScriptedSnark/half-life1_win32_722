@@ -84,8 +84,6 @@ int				cl_numvisedicts, cl_oldnumvisedicts, cl_numbeamentities;
 cl_entity_t* cl_visedicts, * cl_oldvisedicts;
 cl_entity_t	cl_visedicts_list[2][MAX_VISEDICTS];
 
-
-
 qboolean cl_inmovie;
 
 qboolean g_bSkipDownload = FALSE;
@@ -109,6 +107,7 @@ void CL_UpdateSoundFade( void )
 =================
 CL_ParseMOTD
 
+Parses MOTD from master server
 =================
 */
 void CL_ParseMOTD( void )
@@ -124,7 +123,31 @@ CL_ParseServerInfoResponse
 */
 void CL_ParseServerInfoResponse( void )
 {
-	// TODO: Implement
+	char name[80];
+	char map[16];
+	char desc[256];
+	int active;
+	int maxplayers;
+
+	MSG_ReadString();
+
+	strncpy(name, MSG_ReadString(), sizeof(name) - 1);
+	name[sizeof(name) - 1] = 0;
+
+	strncpy(map, MSG_ReadString(), sizeof(map) - 1);
+	map[sizeof(map) - 1] = 0;
+
+	MSG_ReadString();                             // gamedir
+
+	strncpy(desc, MSG_ReadString(), sizeof(desc) - 1);
+	desc[sizeof(desc) - 1] = 0;
+
+	active = MSG_ReadByte();
+	maxplayers = MSG_ReadByte();
+
+	MSG_ReadByte();
+
+	CL_AddToServerCache(net_from, name, map, desc, active, maxplayers);
 }
 
 /*
@@ -137,7 +160,21 @@ Replaces Slist command
 */
 void CL_Slist_f( void )
 {
-	// TODO: Implement
+	int i;
+	server_cache_t* p;
+
+	num_servers = 0;
+	memset(cached_servers, 0, MAX_LOCAL_SERVERS * sizeof(server_cache_t));
+
+	for (i = 0; i < MAX_LOCAL_SERVERS; i++)
+	{
+		p = &cached_servers[i];
+		strcat(p->name, "emtpy slot");
+	}
+
+	// send out info packets
+	// FIXME:  Record realtime when sent and determine ping times for responsive servers.
+	CL_PingServers_f();
 }
 
 /*
@@ -148,7 +185,19 @@ CL_ClearCachedServers_f (void)
 */
 void CL_ClearCachedServers_f( void )
 {
-	// TODO: Implement
+	int i;
+	server_cache_t* p;
+
+	num_servers = 0;
+	memset(cached_servers, 0, MAX_LOCAL_SERVERS * sizeof(server_cache_t));
+
+	for (i = 0; i < MAX_LOCAL_SERVERS; i++)
+	{
+		p = &cached_servers[i];
+		strcat(p->name, "emtpy slot");
+	}
+
+	Con_Printf("Server list cleared.\n");
 }
 
 /*
@@ -160,7 +209,28 @@ Broadcast pings to any servers that we can see on our LAN
 */
 void CL_PingServers_f( void )
 {
-	// TODO: Implement
+	netadr_t	adr;
+
+	// send a broadcast packet
+	Con_Printf("Searching for local servers...\n");
+
+	cls.slist_time = Sys_FloatTime();
+
+	if (!noip.value)
+	{
+		adr.type = NA_BROADCAST;
+		adr.port = BigShort((unsigned short)atoi(PORT_SERVER));
+		Netchan_OutOfBandPrint(NS_CLIENT, adr, "info");
+	}
+
+#ifdef _WIN32
+	if (!noipx.value)
+	{
+		adr.type = NA_BROADCAST_IPX;
+		adr.port = BigShort((unsigned short)atoi(PORT_SERVER));
+		Netchan_OutOfBandPrint(NS_CLIENT, adr, "info");
+	}
+#endif
 }
 
 /*
@@ -172,7 +242,51 @@ Adds the address, name to the server cache
 */
 void CL_AddToServerCache( netadr_t adr, char* name, char* map, char* desc, int active, int maxplayers )
 {
-	// TODO: Implement
+	int i;
+	float fCurrentTime;
+	server_cache_t* p;
+
+	// Too many servers.
+	if (num_servers >= MAX_LOCAL_SERVERS)
+	{
+		return;
+	}
+
+	if (cl_slisttimeout.value > 0)
+	{
+		fCurrentTime = Sys_FloatTime();
+		if ((fCurrentTime - cls.slist_time) >= cl_slisttimeout.value)
+		{
+			return;
+		}
+	}
+
+	// Already cached
+	for (i = 0; i < num_servers; i++)
+	{
+		p = &cached_servers[i];
+		if (!strcmp(p->name, name))
+			return;
+	}
+
+	// Display it.
+	Con_Printf("------------------\n");
+	Con_Printf("%i %s %s %i/%i:  %s\n%s\n", num_servers + 1, name, map, active, maxplayers, NET_AdrToString(adr), desc);
+
+	cached_servers[num_servers].adr = adr;
+
+	strncpy(cached_servers[num_servers].name, name, sizeof(cached_servers[num_servers].name) - 1);
+	cached_servers[num_servers].name[sizeof(cached_servers[num_servers].name) - 1] = 0;
+
+	strncpy(cached_servers[num_servers].map, map, sizeof(cached_servers[num_servers].map));
+	cached_servers[num_servers].map[sizeof(cached_servers[num_servers].map) - 1] = 0;
+
+	strncpy(cached_servers[num_servers].desc, desc, sizeof(cached_servers[num_servers].desc) - 1);
+	cached_servers[num_servers].desc[sizeof(cached_servers[num_servers].desc) - 1] = 0;
+
+	cached_servers[num_servers].inuse = active;
+	cached_servers[num_servers].maxplayers = maxplayers;
+	num_servers++;
 }
 
 /*
@@ -183,7 +297,25 @@ CL_ListCachedServers_f()
 */
 void CL_ListCachedServers_f( void )
 {
-	// TODO: Implement
+	int i;
+	server_cache_t* p;
+
+	if (num_servers == 0)
+	{
+		Con_Printf("No local servers in list.\nTry 'slist' to search again.\n");
+		return;
+	}
+
+	for (i = 0; i < num_servers; i++)
+	{
+		p = &cached_servers[i];
+		if (!_stricmp(p->name, "emtpy slot"))
+			continue;
+
+		Con_Printf("------------------\n");
+		Con_Printf("%i %s %s %i/%i:  %s\n%s\n", i + 1, p->name, p->map, p->inuse, p->maxplayers,
+			NET_AdrToString(p->adr), p->desc);
+	}
 }
 
 /*
@@ -379,7 +511,35 @@ CL_PrintCustomizations_f
 */
 void CL_PrintCustomizations_f( void )
 {
-	// TODO: Implement
+	int	i, j;
+	customization_t* pCust;
+	player_info_t* pPlayer;
+
+	if (cls.state != ca_active)
+	{
+		Con_Printf("Can't cl_print_custom, not connected\n");
+		return;
+	}
+
+	for (i = 0, pPlayer = cl.players; i < MAX_CLIENTS; i++, pPlayer++)
+	{
+		pCust = pPlayer->customdata.pNext;
+		if (pCust)
+		{
+			j = 1;
+			Con_DPrintf("CL Customizations:\nPlayer %i:%s\n", i + 1, pPlayer->name);
+			while (pCust)
+			{
+				if (pCust->bInUse)
+				{
+					CL_PrintResource(j, &pCust->resource);
+					j++;
+				}
+				pCust = pCust->pNext;
+			}
+			Con_DPrintf("-----------------\n\n");
+		}
+	}
 }
 
 /*
@@ -390,7 +550,7 @@ CL_CreateCustomizationList
 */
 void CL_CreateCustomizationList( void )
 {
-	int i;
+	int	i;
 	customization_t* pCust;
 	resource_t* pResource;
 	player_info_t* pPlayer;
@@ -790,7 +950,7 @@ void CL_Connect_f( void )
 {
 	char* server;
 	char name[128], * p;
-	int num;
+	int i, num;
 
 	cls.spectator = FALSE;
 
@@ -813,11 +973,8 @@ void CL_Connect_f( void )
 	strncpy(name, server, sizeof(name));
 
 	p = name;
-	while (*p++)
-	{
-		if (*p == ' ')
-			break;
-	}
+	while (*p && *p != ' ')
+		p++;
 
 	if (p[0] && p[1])
 		strcpy(cls.trueaddress, p + 1);
@@ -826,9 +983,22 @@ void CL_Connect_f( void )
 
 	num = atoi(server);  // In case it's an index.
 
+	// Check the cached_servers list for a text match or index match:
+	if (!strstr(server, ".") && (num > 0) && (num <= num_servers))
+	{
+		strncpy(name, NET_AdrToString(cached_servers[num - 1].adr), sizeof(name));
+	}
+	else
+	{
+		// Try to find server in cache
+		for (i = 0; i < num_servers; i++)
+		{
 
-	// TODO: Implement
 
+
+
+		}
+	}
 
 	memset(msg_buckets, 0, sizeof(msg_buckets));
 	memset(total_data, 0, sizeof(total_data));
@@ -854,7 +1024,7 @@ void CL_Spectate_f( void )
 {
 	char* server;
 	char name[128], * p;
-	int num;
+	int i, num;
 
 	cls.spectator = TRUE;
 
@@ -877,11 +1047,8 @@ void CL_Spectate_f( void )
 	strncpy(name, server, sizeof(name));
 
 	p = name;
-	while (*p++)
-	{
-		if (*p == ' ')
-			break;
-	}
+	while (*p && *p != ' ')
+		p++;
 
 	if (p[0] && p[1])
 		strcpy(cls.trueaddress, p + 1);
@@ -890,9 +1057,22 @@ void CL_Spectate_f( void )
 
 	num = atoi(server);
 
+	// Check the cached_servers list for a text match or index match:
+	if (!strstr(server, ".") && (num > 0) && (num <= num_servers))
+	{
+		strncpy(name, NET_AdrToString(cached_servers[num - 1].adr), sizeof(name));
+	}
+	else
+	{
+		// Try to find server in cache
+		for (i = 0; i < num_servers; i++)
+		{
 
-	// TODO: Implement
 
+
+
+		}
+	}
 
 	memset(msg_buckets, 0, sizeof(msg_buckets));
 	memset(total_data, 0, sizeof(total_data));
@@ -987,7 +1167,26 @@ CL_PrintEntities_f
 */
 void CL_PrintEntities_f( void )
 {
-	// TODO: Implement
+	cl_entity_t* ent;
+	int		i;
+
+	for (i = 0; i < cl.num_entities; i++)
+	{
+		Con_Printf("%3i:", i);
+
+		ent = &cl_entities[i];
+		if (!ent->model->name)
+		{
+			Con_Printf("EMPTY\n");
+			continue;
+		}
+
+		Con_Printf("%s:%2i  (%5.1f,%5.1f,%5.1f) [%5.1f %5.1f %5.1f]\n",
+			ent->model->name,
+			ent->frame,
+			ent->origin[0], ent->origin[1], ent->origin[2],
+			ent->angles[0], ent->angles[1], ent->angles[2]);
+	}
 }
 
 /*
@@ -997,9 +1196,21 @@ CL_TakeSnapshot_f
 Generates a filename and calls the vidwin.c function to write a .bmp file
 ===============
 */
+static int cl_snapshotnum;
 void CL_TakeSnapshot_f( void )
 {
-	// TODO: Implement
+	char	base[MAX_QPATH];
+	char	filename[MAX_QPATH];
+
+	if (cl.num_entities && cl_entities->model)
+		COM_FileBase(cl_entities->model->name, base);
+	else
+		strcpy(base, "Snapshot");
+
+	sprintf(filename, "%s%04d.bmp", base, cl_snapshotnum);
+	cl_snapshotnum++;
+
+	VID_TakeSnapshot(filename);
 }
 
 /*
@@ -1011,7 +1222,18 @@ Sets the engine up to dump frames
 */
 void CL_StartMovie_f( void )
 {
-	// TODO: Implement
+	if (cmd_source != src_command)
+		return;
+
+	if (Cmd_Argc() != 2)
+	{
+		Con_Printf("startmovie <filename>\n");
+		return;
+	}
+
+	cl_inmovie = TRUE;
+	VID_WriteBuffer(Cmd_Argv(1));
+	Con_Printf("Started recording movie...\n");
 }
 
 
@@ -1025,7 +1247,15 @@ Ends frame dumping
 
 void CL_EndMovie_f( void )
 {
-	// TODO: Implement
+	if (!cl_inmovie)
+	{
+		Con_Printf("No movie started.\n");
+	}
+	else
+	{
+		cl_inmovie = FALSE;
+		Con_Printf("Stopped recording movie...\n");
+	}
 }
 
 /*
@@ -1038,12 +1268,10 @@ CL_Rcon_f
 */
 void CL_Rcon_f( void )
 {
-	// TODO: Reimplement
-
-	int			port;
-	int			i;
+	char	message[1024];
+	int		i;
 	netadr_t	to;
-	char		message[1024];
+	unsigned short nPort;
 
 	if (!rcon_password.string)
 	{
@@ -1052,9 +1280,7 @@ void CL_Rcon_f( void )
 	}
 
 	if (cls.state >= ca_connected)
-	{
 		to = cls.netchan.remote_address;
-	}
 	else
 	{
 		if (!strlen(rcon_address.string))
@@ -1065,21 +1291,24 @@ void CL_Rcon_f( void )
 
 			return;
 		}
-
 		NET_StringToAdr(rcon_address.string, &to);
 	}
 
-	port = rcon_port.value;
-	if (port == 0) {
-		port = atoi("27015");
-	}
-	to.port = BigShort(port);
+	nPort = (unsigned short)rcon_port.value;  // ?? BigShort
+	if (!nPort)
+		nPort = atoi(PORT_SERVER); //DEFAULTnet_hostport;
 
-	// construct the message
+	to.port = BigShort(nPort);
+
 	sprintf(message, "rcon ");
+
 	strcat(message, rcon_password.string);
-	for (i = 1, message[strlen(message)] = ' '; i < Cmd_Argc(); message[strlen(message)] = ' ', i++) {
+	strcat(message, " ");
+
+	for (i = 1; i < Cmd_Argc(); i++)
+	{
 		strcat(message, Cmd_Argv(i));
+		strcat(message, " ");
 	}
 
 	Netchan_OutOfBandPrint(NS_CLIENT, to, "%s", message);
@@ -1094,7 +1323,21 @@ Debugging changes the view entity to the specified index
 */
 void CL_View_f( void )
 {
-	// TODO: Implement
+	int i;
+
+	if (Cmd_Argc() != 2)
+	{
+		Con_Printf("cl_view entity#\nCurrent %i\n", cl.viewentity);
+		return;
+	}
+
+	i = atoi(Cmd_Argv(1));
+	if (i == 0 || i >= cl.num_entities)
+		return;
+
+	cl.viewentity = i;
+	vid.recalc_refdef = TRUE;
+	Con_Printf("View entity set to %i\n", i);
 }
 
 /*

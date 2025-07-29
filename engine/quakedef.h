@@ -242,7 +242,7 @@ extern	float		gfHeartbeatWaitingTime;
 extern	int			gHeartbeatSequence;
 extern	int			gHeartbeatChallenge;
 extern	char		gszMasterAddress[128];
-extern	netadr_t	gMasterAddress;
+extern	netadr_t	master_adr;
 
 void Master_Heartbeat( void );
 void Master_Shutdown( void );
