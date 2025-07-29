@@ -27,8 +27,8 @@ static cvar_t ipx_hostport = { "ipx_hostport", "0" };
 static cvar_t ipx_clientport = { "ipx_clientport", "0" };
 #endif
 
-static cvar_t fakelag = { "fakelag", "0.0" };  // Lag all incoming network data (including loopback) by xxx ms.
-static cvar_t fakeloss = { "fakeloss", "0.0" }; // Act like we dropped the packet this % of the time.
+cvar_t fakelag = { "fakelag", "0.0" };  // Lag all incoming network data (including loopback) by xxx ms.
+cvar_t fakeloss = { "fakeloss", "0.0" }; // Act like we dropped the packet this % of the time.
 
 cvar_t noip = { "noip", "0" };    // Disable IP Support
 

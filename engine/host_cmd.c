@@ -3720,10 +3720,9 @@ Packets contain: file data (1024b chunks), progress %, and CRC checksum.
 */
 void SV_NextDownload_f( void )
 {
-	byte* pDownloadData;
-	int nCurrentOffset;
-	int nChunkSize;
-	int downloadsize;
+	int		r;
+	int		percent;
+	int		size;
 
 	if (cmd_source == src_command)
 	{
@@ -3731,42 +3730,33 @@ void SV_NextDownload_f( void )
 		return;
 	}
 
-	pDownloadData = host_client->download;
-	if (!pDownloadData)
+	if (!host_client->download)
 		return;
 
-	nCurrentOffset = host_client->downloadcount;
-
-	// Determine chunk size (max 1024 bytes)
-	nChunkSize = host_client->downloadsize - nCurrentOffset;
-	if (nChunkSize > 1024)
-		nChunkSize = 1024;
-
-	CRC32_ProcessBuffer(&host_client->downloadCRC, &pDownloadData[nCurrentOffset], nChunkSize);
+	r = host_client->downloadsize - host_client->downloadpos;
+	if (r > 1024)
+		r = 1024;
+	CRC32_ProcessBuffer(&host_client->downloadCRC, host_client->download + host_client->downloadpos, r);
 
 	// Send download info packet
 	MSG_WriteByte(&host_client->netchan.message, svc_download);
-	MSG_WriteShort(&host_client->netchan.message, nChunkSize);
-	MSG_WriteShort(&host_client->netchan.message, nCurrentOffset / 1024);
+	MSG_WriteShort(&host_client->netchan.message, r);
+	MSG_WriteShort(&host_client->netchan.message, host_client->downloadpos / 1024);
 	MSG_WriteLong(&host_client->netchan.message, host_client->downloadCRC);
 
-	downloadsize = host_client->downloadsize;
-	host_client->downloadcount += nChunkSize;
+	host_client->downloadpos += r;
+	size = host_client->downloadsize;
+	if (!size)
+		size = 1;
+	percent = host_client->downloadpos * 100 / size;
+	MSG_WriteByte(&host_client->netchan.message, percent);
+	SZ_Write(&host_client->netchan.message, &host_client->download[host_client->downloadpos - r], r);
 
-	if (downloadsize == 0)
-		downloadsize = 1;
+	if (host_client->downloadpos != host_client->downloadsize)
+		return;
 
-	// Send progress percentage
-	MSG_WriteByte(&host_client->netchan.message, host_client->downloadcount / downloadsize * 100);
-
-	// Send the actual data chunk
-	SZ_Write(&host_client->netchan.message, &host_client->download[host_client->downloadcount - nChunkSize], nChunkSize);
-
-	if (host_client->downloadcount == host_client->downloadsize)
-	{
-		COM_FreeFile(host_client->download);
-		host_client->download = NULL;
-	}
+	COM_FreeFile(host_client->download);
+	host_client->download = NULL;
 }
 
 /*
@@ -3775,23 +3765,23 @@ SV_SetupResume
 
 ==================
 */
-void SV_SetupResume( int nSize, CRC32_t crc )
+void SV_SetupResume( int size, CRC32_t crc )
 {
 	CRC32_t crcFile;
 
-	if (nSize < 0)
+	if (size < 0)
 		return;
 
-	nSize *= 1024;
-	if (host_client->downloadsize < nSize)
+	size *= 1024;
+	if (host_client->downloadsize < size)
 		return;
 
 	CRC32_Init(&crcFile);
-	CRC32_ProcessBuffer(&crcFile, host_client->download, nSize);
+	CRC32_ProcessBuffer(&crcFile, host_client->download, size);
 	crcFile = CRC32_Final(crcFile);
 	if (crcFile == crc)
 	{
-		host_client->downloadcount = nSize;
+		host_client->downloadpos = size;
 		host_client->downloadCRC = crc;
 		host_client->downloading = TRUE;
 	}
@@ -3896,7 +3886,6 @@ void SV_BeginDownload_f( void )
 
 	if (strstr(name, "..") || !sv_allow_download.value)
 	{
-		// Some evil file or we're not allowed to download	the files via netchan
 		MSG_WriteByte(&host_client->netchan.message, svc_download);
 		MSG_WriteShort(&host_client->netchan.message, -1);
 		MSG_WriteShort(&host_client->netchan.message, -1);
@@ -3923,12 +3912,14 @@ void SV_BeginDownload_f( void )
 
 		COM_HexConvert(name + 4, 32, rgucMD5_hash);
 
-		if (HPAK_ResourceForHash("custom.hpk", rgucMD5_hash, &resource) && HPAK_GetDataPointer("custom.hpk", &resource, &file))
+		if (HPAK_ResourceForHash(HASHPAK_FILENAME, rgucMD5_hash, &resource) &&
+			HPAK_GetDataPointer(HASHPAK_FILENAME, &resource, &file))
 		{
 			host_client->downloadsize = resource.nDownloadSize;
-			host_client->download = malloc(resource.nDownloadSize + 1);
+			host_client->download = (byte*)malloc(resource.nDownloadSize + 1);
 			fread(host_client->download, resource.nDownloadSize, 1, file);
 			host_client->download[resource.nDownloadSize] = 0;
+
 			fclose(file);
 			file = NULL;
 		}
@@ -3944,11 +3935,10 @@ void SV_BeginDownload_f( void )
 		}
 	}
 
-	host_client->downloadcount = 0;
+	host_client->downloadpos = 0;
 
 	if (host_client->downloadsize == -1 || !host_client->download)
 	{
-		// No more files to download
 		MSG_WriteByte(&host_client->netchan.message, svc_download);
 		MSG_WriteShort(&host_client->netchan.message, -1);
 		MSG_WriteShort(&host_client->netchan.message, -1);

@@ -134,6 +134,8 @@ typedef struct netchan_s
 extern	int	net_drop;		// packets dropped before this one
 extern	cvar_t	r_netgraph;
 
+extern	cvar_t	fakelag;
+
 extern	cvar_t	noip;    // Disable IP Support
 
 #ifdef _WIN32

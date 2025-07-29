@@ -1319,16 +1319,24 @@ should be put at.
 */
 float CL_LerpPoint( void )
 {
-	// TODO: Reimplement
-
 	float	f, frac;
 
 	f = cl.mtime[0] - cl.mtime[1];
 
-	if (!f || cl_nolerp.value || cls.timedemo || sv.active)
+	if (!f || cl_nolerp.value || cls.timedemo || sv.active && !fakelag.value)
 	{
+		float fgap;
+
+		fgap = cl.time - cl.oldtime;
+
 		cl.time = cl.mtime[0];
-		return 1;
+		if (cls.demoplayback)
+		{
+			cl.oldtime = cl.time - fgap;
+			return 1;
+		}
+		else
+			return 1;
 	}
 
 	if (f > 0.1)
@@ -1337,14 +1345,14 @@ float CL_LerpPoint( void )
 		f = 0.1;
 	}
 	frac = (cl.time - cl.mtime[1]) / f;
-//Con_Printf ("frac: %f\n",frac);
+//Con_Printf("frac: %f\n", frac);
 	if (frac < 0)
 	{
 		if (frac < -0.01)
 		{
 			SetPal(1);
 			cl.time = cl.mtime[1];
-//				Con_Printf ("low frac\n");
+//				Con_Printf("low frac\n");
 		}
 		frac = 0;
 	}
@@ -1354,7 +1362,7 @@ float CL_LerpPoint( void )
 		{
 			SetPal(2);
 			cl.time = cl.mtime[0];
-//				Con_Printf ("high frac\n");
+//				Con_Printf("high frac\n");
 		}
 		frac = 1;
 	}
@@ -1371,17 +1379,16 @@ CL_SendCmd
 */
 void CL_SendCmd( void )
 {
-	// TODO: Reimplement
-
 	sizebuf_t	buf;
 	byte		data[128];
 	int			i;
-	usercmd_t* cmd, * oldcmd;
+	usercmd_t* cmd, * oldcmd, nullcmd;
 	int			checksumIndex;
 	int			seq_hash;
-	usercmd_t nullcmd; // guarenteed to be zero
 
-	if (cls.state < ca_connected)
+	if (cls.state == ca_dedicated ||
+		cls.state == ca_disconnected ||
+		cls.state == ca_connecting)
 		return;
 
 	// save this command off for prediction
@@ -1398,6 +1405,7 @@ void CL_SendCmd( void )
 	// get basic movement from keyboard
 	if (!cls.demoplayback && cls.signon == SIGNONS)
 	{
+		// get basic movement from keyboard
 		CL_BaseMove(cmd);
 
 		// allow mice or other external controllers to add to the move
@@ -1416,19 +1424,20 @@ void CL_SendCmd( void )
 	checksumIndex = buf.cursize;
 	MSG_WriteByte(&buf, 0);
 
-	VectorCopy(cl.viewangles, cl.frames[i].cmd.angles);
+	VectorCopy(cl.viewangles, cmd->angles);
 
-	cl.frames[i].cmd.msec = (int)(host_frametime * 1000.0);
-	if (cl.frames[i].cmd.msec > 250)
-		cl.frames[i].cmd.msec = 100;
+	cmd->msec = (int)(host_frametime * 1000.0);
+	if (cmd->msec > 250)
+		cmd->msec = 100;
 
-	cl.frames[i].cmd.buttons = CL_ButtonBits(1);
-	cl.frames[i].cmd.impulse = in_impulse;
+	cmd->buttons = CL_ButtonBits(1);
+	cmd->impulse = in_impulse;
 
+	// if we are spectator, try autocam
 	if (cl.spectator)
 	{
-		Cam_Track(&cl.frames[i].cmd);
-		Cam_FinishMove(&cl.frames[i].cmd);
+		Cam_Track(cmd);
+		Cam_FinishMove(cmd);
 	}
 
 	memset(&nullcmd, 0, sizeof(nullcmd));
@@ -1465,7 +1474,7 @@ void CL_SendCmd( void )
 	{
 		cl.frames[cls.netchan.outgoing_sequence & UPDATE_MASK].delta_sequence = cl.validsequence;
 		MSG_WriteByte(&buf, clc_delta);
-		MSG_WriteByte(&buf, cl.validsequence);
+		MSG_WriteByte(&buf, cl.validsequence & 255);
 	}
 	else
 		cl.frames[cls.netchan.outgoing_sequence & UPDATE_MASK].delta_sequence = -1;
@@ -1481,11 +1490,50 @@ void CL_SendCmd( void )
 =================
 CL_ParseNextUpload
 
+Sends next file chunk to server
 =================
 */
 void CL_ParseNextUpload( void )
 {
-	// TODO: Implement
+	int		r;
+	int		percent;
+	int		size;
+
+	if (!cls.upload)
+		return;
+
+	if (g_bSkipUpload)
+	{
+		g_bSkipUpload = FALSE;
+		COM_FreeFile(cls.upload);
+		cls.upload = NULL;
+		Con_Printf("Skipping upload...\n");
+		return;
+	}
+
+	r = cls.uploadsize - cls.uploadpos;
+	if (r > 1024)
+		r = 1024;
+	CRC32_ProcessBuffer(&cls.uploadCRC, (byte*)cls.upload + cls.uploadpos, r);
+
+	MSG_WriteByte(&cls.netchan.message, clc_upload);
+	MSG_WriteShort(&cls.netchan.message, r);
+	MSG_WriteShort(&cls.netchan.message, cls.uploadpos / 1024);
+	MSG_WriteLong(&cls.netchan.message, cls.uploadCRC);
+
+	cls.uploadpos += r;
+	size = cls.uploadsize;
+	if (!size)
+		size = 1;
+	percent = cls.uploadpos * 100 / size;
+	MSG_WriteByte(&cls.netchan.message, percent);
+	SZ_Write(&cls.netchan.message, (byte*)cls.upload + cls.uploadpos - r, r);
+
+	if (cls.uploadpos != cls.uploadsize)
+		return;
+
+	COM_FreeFile(cls.upload);
+	cls.upload = NULL;
 }
 
 /*
@@ -1494,20 +1542,116 @@ CL_SetupResume
 
 ==================
 */
-void CL_SetupResume( int nSize, CRC32_t crc )
+void CL_SetupResume( int size, CRC32_t crc )
 {
-	// TODO: Implement
+	CRC32_t crcFile;
+
+	if (size < 0)
+		return;
+
+	size *= 1024;
+	if (cls.uploadsize < size)
+		return;
+
+	CRC32_Init(&crcFile);
+	CRC32_ProcessBuffer(&crcFile, cls.upload, size);
+	crcFile = CRC32_Final(crcFile);
+	if (crcFile == crc)
+	{
+		cls.uploadpos = size;
+		cls.uploadCRC = crc;
+		cls.uploading = TRUE;
+	}
 }
 
 /*
 =================
 CL_BeginUpload_f
 
+Starts file upload to server, handles both normal files and MD5-hashed resources
 =================
 */
 void CL_BeginUpload_f( void )
 {
-	// TODO: Implement
+	char* name;
+	FILE* file;
+
+	name = Cmd_Argv(1);
+
+	if (strstr(name, "..") || !cl_allowupload.value)
+	{
+		MSG_WriteByte(&cls.netchan.message, clc_upload);
+		MSG_WriteShort(&cls.netchan.message, -1);
+		MSG_WriteShort(&cls.netchan.message, -1);
+		MSG_WriteLong(&cls.netchan.message, -1);
+		MSG_WriteByte(&cls.netchan.message, 0);
+		return;
+	}
+
+	if (cls.upload)
+	{
+		COM_FreeFile(cls.upload);
+		cls.upload = NULL;
+	}
+
+	file = NULL;
+
+	// Handle customizations
+	if (strlen(name) == 36 && !_strnicmp(name, "!MD5", 4))
+	{
+		resource_t resource;
+		unsigned char rgucMD5_hash[16];
+
+		memset(&resource, 0, sizeof(resource));
+
+		COM_HexConvert(name + 4, 32, rgucMD5_hash);
+
+		if (HPAK_ResourceForHash(HASHPAK_FILENAME, rgucMD5_hash, &resource) &&
+			HPAK_GetDataPointer(HASHPAK_FILENAME, &resource, &file))
+		{
+			cls.uploadsize = resource.nDownloadSize;
+			cls.upload = (FILE*)malloc(resource.nDownloadSize + 1);
+			fread(cls.upload, resource.nDownloadSize, 1, file);
+			*((byte*)cls.upload + resource.nDownloadSize) = 0;
+
+			fclose(file);
+			file = NULL;
+		}
+	}
+	else
+	{
+		cls.uploadsize = COM_FindFile(name, NULL, &file);
+		if (cls.uploadsize != -1 && file)
+		{
+			cls.upload = (FILE*)COM_LoadFile(name, 5, NULL);
+			fclose(file);
+			file = NULL;
+		}
+	}
+
+	cls.uploadpos = 0;
+
+	if (cls.uploadsize == -1 || !cls.upload || (cl_upload_max.value && (cls.uploadsize > cl_upload_max.value)))
+	{
+		MSG_WriteByte(&cls.netchan.message, clc_upload);
+		MSG_WriteShort(&cls.netchan.message, -1);
+		MSG_WriteShort(&cls.netchan.message, -1);
+		MSG_WriteLong(&cls.netchan.message, -2);
+		MSG_WriteByte(&cls.netchan.message, 0);
+		return;
+	}
+
+	cls.uploading = FALSE;
+
+	CRC32_Init(&cls.uploadCRC);
+
+	if (Cmd_Argc() == 4)
+	{
+		CL_SetupResume(atoi(Cmd_Argv(2)), atol(Cmd_Argv(3)));
+	}
+
+	CL_ParseNextUpload();
+	Con_DPrintf("Uploading %s\n", name);
 }
 
 /*

@@ -221,7 +221,7 @@ typedef struct client_s
 
 	byte* download;						// the download data
 	int			downloadsize;			// total bytes
-	int			downloadcount;			// bytes sent
+	int			downloadpos;
 	qboolean	downloading;			// true = client is downloading a file
 	CRC32_t		downloadCRC;			// CRC32 of the file we are downloading
 

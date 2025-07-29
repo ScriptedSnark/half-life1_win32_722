@@ -716,7 +716,7 @@ int SV_EstimateNeededResources( void )
 		if (p->type == t_decal)
 		{
 			size = -1;
-			if (HPAK_ResourceForHash("custom.hpk", p->rgucMD5_hash, NULL))
+			if (HPAK_ResourceForHash(HASHPAK_FILENAME, p->rgucMD5_hash, NULL))
 				size = p->nDownloadSize;
 		}
 
