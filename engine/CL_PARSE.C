@@ -445,11 +445,11 @@ qboolean CL_CheckFile( char* filename )
 			return TRUE;
 		}
 
-		sprintf(cls.downloadfn, "cust.dat");
+		sprintf(cls.downloadname, "cust.dat");
 	}
 	else
 	{
-		// Non custom upload
+		// Non custom download
 		size = COM_FindFile(name, NULL, &pFile);
 		if (size != -1)
 		{
@@ -459,25 +459,28 @@ qboolean CL_CheckFile( char* filename )
 			return TRUE;
 		}
 
-		strcpy(cls.downloadfn, name);
+		strcpy(cls.downloadname, name);
 	}
 
-	CL_WriteDemoHeader(cls.downloadfn);
+	CL_WriteDemoHeader(cls.downloadname);
 
-	COM_StripExtension(cls.downloadfn, cls.downloadfntmp);
+	// download to a temp name, and only rename
+	// to the real name when done, so if interrupted
+	// a runt file wont be left
+	COM_StripExtension(cls.downloadname, cls.downloadtempname);
 
 	if (cls.custom)
 	{
-		strcat(cls.downloadfntmp, ".cst");
+		strcat(cls.downloadtempname, ".cst");
 	}
 	else
 	{
-		strcat(cls.downloadfntmp, ".tmp");
+		strcat(cls.downloadtempname, ".tmp");
 	}
 
 	cls.downloadfinalCRC = 0;
 
-	size = COM_FindFile(cls.downloadfntmp, NULL, &pFileSegment);
+	size = COM_FindFile(cls.downloadtempname, NULL, &pFileSegment);
 	if (size != -1 && !cls.custom)
 	{
 		hasRemainingFileSegments = TRUE;
@@ -508,11 +511,11 @@ qboolean CL_CheckFile( char* filename )
 	}
 	else if (hasRemainingFileSegments && (size % sizeof(buffer)) == 0)
 	{
-		s = va("download %s %i %i", name, size / sizeof(buffer), crc); // partial upload with CRC check
+		s = va("download %s %i %i", name, size / sizeof(buffer), crc); // partial download with CRC check
 	}
 	else
 	{
-		s = va("download %s", name); // full upload required
+		s = va("download %s", name); // full download required
 	}
 
 	MSG_WriteString(&cls.netchan.message, s);
@@ -543,8 +546,8 @@ void CL_UpdateDownloadCount( void )
 
 	cls.fLastDownloadTime = realtime;
 
-	pStats = &cls.rgDownloads[cls.nCurDownload & (MAX_DL_STATS - 1)];
-	cls.nCurDownload++;
+	pStats = &cls.rgDownloads[cls.downloadnumber & (MAX_DL_STATS - 1)];
+	cls.downloadnumber++;
 
 	pStats->fTime = realtime;
 	pStats->bUsed = TRUE;
@@ -552,18 +555,17 @@ void CL_UpdateDownloadCount( void )
 }
 
 /*
-==================
+=====================
 CL_ParseDownload
 
-Handles incoming file download data from server
-==================
+A download message has been received from the server
+=====================
 */
 void CL_ParseDownload( void )
 {
-	int		percent;
 	int		status;
 	int		active;
-	int		size;
+	int		size, percent;
 	char	name[MAX_OSPATH];
 	char	newPath[MAX_OSPATH];
 	char	fullPath[MAX_OSPATH];
@@ -571,22 +573,23 @@ void CL_ParseDownload( void )
 
 	memset(name, 0, sizeof(name));
 
+	// read the data
 	size = MSG_ReadShort();
 	active = MSG_ReadShort();
 	status = MSG_ReadLong();
 	percent = MSG_ReadByte();
 
-	cls.downloadcount = percent;
+	cls.downloadpercent = percent;
 
 	if (cls.demoplayback)
 	{
-		if (!cls.downloadfn[0])
-			sprintf(cls.downloadfn, "playback");
+		if (!cls.downloadname[0])
+			sprintf(cls.downloadname, "playback");
 
 		cls.downloadresource = NULL;
 	}
 
-	COM_FileBase(cls.downloadfn, name);
+	COM_FileBase(cls.downloadname, name);
 
 	if (size == -1)
 	{
@@ -630,9 +633,10 @@ void CL_ParseDownload( void )
 		return;
 	}
 
+	// open the file if not opened yet
 	if (!cls.download && !g_bSkipDownload)
 	{
-		sprintf(fullPath, "%s/%s", com_gamedir, cls.downloadfntmp);
+		sprintf(fullPath, "%s/%s", com_gamedir, cls.downloadtempname);
 
 		COM_CreatePath(fullPath);
 
@@ -652,7 +656,7 @@ void CL_ParseDownload( void )
 		if (!cls.download)
 		{
 			msg_readcount += size;
-			Con_Printf("Failed to open %s\n", cls.downloadfntmp);
+			Con_Printf("Failed to open %s\n", cls.downloadtempname);
 			cls.downloadinprogress = FALSE;
 			return;
 		}
@@ -665,7 +669,7 @@ void CL_ParseDownload( void )
 	msg_readcount += size;
 	cls.nRemainingToTransfer -= size;
 
-	// Update upload stats
+	// Update download stats
 	CL_UpdateDownloadCount();
 
 	if (percent != 100 && !g_bSkipDownload && cl_allowdownload.value)
@@ -691,7 +695,7 @@ void CL_ParseDownload( void )
 			{
 				fclose(cls.download);
 
-				sprintf(finalPath, "%s/%s", com_gamedir, cls.downloadfntmp);
+				sprintf(finalPath, "%s/%s", com_gamedir, cls.downloadtempname);
 
 				// Verify and add to HPAK
 				cls.download = fopen(finalPath, "rb");
@@ -764,15 +768,15 @@ void CL_ParseDownload( void )
 			}
 
 			// Clean up temp file
-			sprintf(finalPath, "%s/%s", com_gamedir, cls.downloadfntmp);
+			sprintf(finalPath, "%s/%s", com_gamedir, cls.downloadtempname);
 			_unlink(finalPath);
 		}
 		else
 		{
 			fclose(cls.download);
 
-			sprintf(finalPath, "%s/%s", com_gamedir, cls.downloadfntmp);
-			sprintf(newPath, "%s/%s", com_gamedir, cls.downloadfn);
+			sprintf(finalPath, "%s/%s", com_gamedir, cls.downloadtempname);
+			sprintf(newPath, "%s/%s", com_gamedir, cls.downloadname);
 
 			if (status != cls.downloadcurrentCRC)
 			{
@@ -786,7 +790,7 @@ void CL_ParseDownload( void )
 
 		// Reset download state
 		cls.download = NULL;
-		cls.downloadcount = 0;
+		cls.downloadpercent = 0;
 		cls.downloadcurrentCRC = 0;
 		cls.downloadinprogress = FALSE;
 	}
@@ -797,13 +801,13 @@ void CL_ParseDownload( void )
 		// Reset download state
 		fclose(cls.download);
 		cls.download = NULL;
-		cls.downloadcount = 0;
+		cls.downloadpercent = 0;
 		cls.downloadcurrentCRC = 0;
 		cls.downloadinprogress = FALSE;
 
 		if (cls.downloadresource && !(cls.downloadresource->ucFlags & RES_FATALIFMISSING))
 		{
-			Con_Printf("Skipping download of %s\n", cls.downloadfn);
+			Con_Printf("Skipping download of %s\n", cls.downloadname);
 			cls.downloadresource->ucFlags |= RES_WASMISSING;
 			CL_MoveToOnHandList(cls.downloadresource);
 		}
@@ -812,7 +816,7 @@ void CL_ParseDownload( void )
 			if (!cls.downloadresource && cls.demoplayback)
 				Con_Printf("All files must have been present when recording the demo in order to play the demo back correctly.\n");
 
-			Con_Printf("File %s not downloaded, cannot complete connection\n", cls.downloadfn);
+			Con_Printf("File %s not downloaded, cannot complete connection\n", cls.downloadname);
 
 			if (cls.demoplayback)
 			{
@@ -825,7 +829,7 @@ void CL_ParseDownload( void )
 		}
 
 		// Clean up temp file
-		sprintf(finalPath, "%s/%s", com_gamedir, cls.downloadfntmp);
+		sprintf(finalPath, "%s/%s", com_gamedir, cls.downloadtempname);
 		_unlink(finalPath);
 	}
 }
@@ -1382,7 +1386,7 @@ void CL_StartResourceDownloading( char* pszMessage, qboolean bCustom )
 	cls.nRemainingToTransfer = cls.nTotalToTransfer;
 
 	memset(cls.rgDownloads, 0, sizeof(cls.rgDownloads));
-	cls.nCurDownload = 0;
+	cls.downloadnumber = 0;
 }
 
 /*
@@ -1532,7 +1536,7 @@ void CL_ParseCustomization( void )
 	qboolean bFound;
 
 	i = MSG_ReadByte();
-	if (i >= MAX_CLIENTS)
+	if (i < 0 || i >= MAX_CLIENTS)
 		Host_Error("Bogus player index during customization parsing.\n");
 
 	resource = (resource_t*)malloc(sizeof(resource_t));
@@ -2634,7 +2638,7 @@ void CL_ParseServerMessage( void )
 			break;
 
 		case svc_download:
-			CL_WriteDemoHeader(cls.downloadfn);
+			CL_WriteDemoHeader(cls.downloadname);
 			CL_ParseDownload();
 			break;
 
@@ -2673,7 +2677,7 @@ void CL_ParseServerMessage( void )
 			break;
 
 		case svc_customization:
-			CL_WriteDemoHeader(cls.downloadfn);
+			CL_WriteDemoHeader(cls.downloadname);
 			CL_ParseCustomization();
 			break;
 

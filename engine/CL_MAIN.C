@@ -3,6 +3,7 @@
 #include "quakedef.h"
 #include "winquake.h"
 #include "crc.h"
+#include "clientid.h"
 #include "pmove.h"
 #include "decal.h"
 #include "hashpak.h"
@@ -11,11 +12,8 @@
 #include "cl_servercache.h"
 #include "tmessage.h"
 
-
 // Only send this many requests before timing out.
 #define CL_CONNECTION_RETRIES		4
-
-
 
 // these two are not intended to be set directly
 cvar_t	cl_name = { "_cl_name", "player", TRUE };
@@ -24,7 +22,7 @@ cvar_t	cl_color = { "_cl_color", "0", TRUE };
 cvar_t	cl_timeout = { "cl_timeout", "305", TRUE };
 cvar_t	cl_shownet = { "cl_shownet", "0" };	// can be 0, 1, or 2
 cvar_t	cl_showsizes = { "cl_showsizes", "0" };
-cvar_t	cl_nolerp = { "cl_nolerp","0" };
+cvar_t	cl_nolerp = { "cl_nolerp", "0" };
 cvar_t	cl_stats = { "cl_stats", "0" };
 cvar_t	cl_spectator_password = { "cl_spectator_password", "0" };
 
@@ -50,27 +48,21 @@ cvar_t	m_yaw = { "m_yaw", "0.022", TRUE };
 cvar_t	m_forward = { "m_forward", "1", TRUE };
 cvar_t	m_side = { "m_side", "0.8", TRUE };
 
+cvar_t	cl_pitchup = { "cl_pitchup", "89" };
+cvar_t	cl_pitchdown = { "cl_pitchdown", "89" };
 
-
-
-
-cvar_t	cl_resend = { "cl_resend", "3.0" };
-
-
-
-
-cvar_t	cl_downloadinterval = { "cl_downloadinterval", "1.0" };
-
-cvar_t	cl_allowdownload = { "cl_allowdownload", "1" };
-cvar_t	cl_download_ingame = { "cl_download_ingame", "1" };
-cvar_t	cl_download_max = { "cl_download_max", "0" };
-
+cvar_t	rcon_password = { "rcon_password", "" };
 cvar_t	rcon_address = { "rcon_address", "" };
 cvar_t	rcon_port = { "rcon_port", "0" };
 
-cvar_t		cl_pitchup = { "cl_pitchup", "89" };
-cvar_t		cl_pitchdown = { "cl_pitchdown", "89" };
-cvar_t		rcon_password = { "rcon_password", "" };
+cvar_t	cl_resend = { "cl_resend", "3.0" };
+cvar_t	cl_downloadinterval = { "cl_downloadinterval", "1.0" };
+cvar_t	cl_slisttimeout = { "cl_slist", "10.0" };
+cvar_t	cl_allowdownload = { "cl_allowdownload", "1" };
+cvar_t	cl_allowupload = { "cl_allowupload", "1" };
+cvar_t	cl_upload_max = { "cl_upload_max", "0" };
+cvar_t	cl_download_max = { "cl_download_max", "0" };
+cvar_t	cl_download_ingame = { "cl_download_ingame", "1" };
 
 client_static_t	cls;
 client_state_t cl;
@@ -84,6 +76,13 @@ cl_entity_t		cl_static_entities[MAX_STATIC_ENTITIES];
 lightstyle_t	cl_lightstyle[MAX_LIGHTSTYLES];
 dlight_t		cl_dlights[MAX_DLIGHTS];
 dlight_t		cl_elights[MAX_ELIGHTS];
+
+// refresh list
+// this is double buffered so the last frame
+// can be scanned for oldorigins of trailing objects
+int				cl_numvisedicts, cl_oldnumvisedicts, cl_numbeamentities;
+cl_entity_t* cl_visedicts, * cl_oldvisedicts;
+cl_entity_t	cl_visedicts_list[2][MAX_VISEDICTS];
 
 
 
@@ -128,9 +127,64 @@ void CL_ParseServerInfoResponse( void )
 	// TODO: Implement
 }
 
+/*
+=================
+CL_Slist_f (void)
 
-// TODO: Implement
+Populates the client's server_cache_t structrue
+Replaces Slist command
+=================
+*/
+void CL_Slist_f( void )
+{
+	// TODO: Implement
+}
 
+/*
+=================
+CL_ClearCachedServers_f (void)
+
+=================
+*/
+void CL_ClearCachedServers_f( void )
+{
+	// TODO: Implement
+}
+
+/*
+=================
+CL_PingServers_f
+
+Broadcast pings to any servers that we can see on our LAN
+=================
+*/
+void CL_PingServers_f( void )
+{
+	// TODO: Implement
+}
+
+/*
+=================
+CL_AddToServerCache
+
+Adds the address, name to the server cache
+=================
+*/
+void CL_AddToServerCache( netadr_t adr, char* name, char* map, char* desc, int active, int maxplayers )
+{
+	// TODO: Implement
+}
+
+/*
+===================
+CL_ListCachedServers_f()
+
+===================
+*/
+void CL_ListCachedServers_f( void )
+{
+	// TODO: Implement
+}
 
 /*
 =================
@@ -317,10 +371,16 @@ void CL_ReadPackets( void )
 		Con_Printf("\n");
 }
 
+/*
+================
+CL_PrintCustomizations_f
 
-// TODO: Implement
-
-
+================
+*/
+void CL_PrintCustomizations_f( void )
+{
+	// TODO: Implement
+}
 
 /*
 ================
@@ -358,9 +418,9 @@ void CL_CreateCustomizationList( void )
 
 				pWad = (cachewad_t*)malloc(sizeof(cachewad_t));
 				pCust->pInfo = pWad;
-
 				memset(pWad, 0, sizeof(cachewad_t));
 				CustomDecal_Init(pWad, pCust->pBuffer, pResource->nDownloadSize);
+
 				pCust->bTranslated = TRUE;
 				pCust->nUserData1 = 0;
 				pCust->nUserData2 = pWad->lumpCount;
@@ -847,9 +907,6 @@ void CL_Spectate_f( void )
 	cls.connect_retry = 0;
 }
 
-// TODO: Implement
-
-
 /*
 =================
 CL_SignonReply
@@ -908,14 +965,14 @@ void CL_NextDemo( void )
 	if (!cls.demos[cls.demonum][0] || cls.demonum == MAX_DEMOS)
 	{
 		cls.demonum = 0;
-
 		if (!cls.demos[cls.demonum][0])
 		{
 			scr_disabled_for_loading = FALSE;
+
 			Con_Printf("No demos listed with startdemos\n");
 			cls.demonum = -1;
-		}
-		return;
+			return;
+		}	
 	}
 
 	sprintf(str, "playdemo %s\n", cls.demos[cls.demonum]);
@@ -923,7 +980,53 @@ void CL_NextDemo( void )
 	cls.demonum++;
 }
 
-// TODO: Implement
+/*
+==============
+CL_PrintEntities_f
+==============
+*/
+void CL_PrintEntities_f( void )
+{
+	// TODO: Implement
+}
+
+/*
+===============
+CL_TakeSnapshot_f
+
+Generates a filename and calls the vidwin.c function to write a .bmp file
+===============
+*/
+void CL_TakeSnapshot_f( void )
+{
+	// TODO: Implement
+}
+
+/*
+===============
+CL_StartMovie_f
+
+Sets the engine up to dump frames
+===============
+*/
+void CL_StartMovie_f( void )
+{
+	// TODO: Implement
+}
+
+
+/*
+===============
+CL_EndMovie_f
+
+Ends frame dumping
+===============
+*/
+
+void CL_EndMovie_f( void )
+{
+	// TODO: Implement
+}
 
 /*
 =====================
@@ -935,6 +1038,8 @@ CL_Rcon_f
 */
 void CL_Rcon_f( void )
 {
+	// TODO: Reimplement
+
 	int			port;
 	int			i;
 	netadr_t	to;
@@ -980,27 +1085,59 @@ void CL_Rcon_f( void )
 	Netchan_OutOfBandPrint(NS_CLIENT, to, "%s", message);
 }
 
+/*
+==============
+CL_View_f
 
-// TODO: Implement
-
-// TODO: Implement
-void VID_TakeSnapshot(const char* pFilename); // TODO: Move it to header or somewhere else - ScriptedSnark
-void CL_TakeSnapshot_f(void)
+Debugging changes the view entity to the specified index
+===============
+*/
+void CL_View_f( void )
 {
-	static int filenumber;
-	char base[64];
-	char filename[64];
-	model_t* in;
+	// TODO: Implement
+}
 
-	if (cl.num_entities && (in = cl_entities->model) != 0)
-		COM_FileBase(in->name, base);
+/*
+===============
+SetPal
+
+Debugging tool, just flashes the screen
+===============
+*/
+void SetPal( int i )
+{
+#if 0
+	static int old;
+	byte	pal[768];
+	int		c;
+
+	if (i == old)
+		return;
+	old = i;
+
+	if (i == 0)
+		VID_SetPalette(host_basepal);
+	else if (i == 1)
+	{
+		for (c = 0; c < 768; c += 3)
+		{
+			pal[c] = 0;
+			pal[c + 1] = 255;
+			pal[c + 2] = 0;
+		}
+		VID_SetPalette(pal);
+	}
 	else
-		strcpy(base, "Snapshot");
-
-	sprintf(filename, "%s%04d.bmp", base, filenumber);
-	filenumber++;
-
-	VID_TakeSnapshot(filename);
+	{
+		for (c = 0; c < 768; c += 3)
+		{
+			pal[c] = 0;
+			pal[c + 1] = 0;
+			pal[c + 2] = 255;
+		}
+		VID_SetPalette(pal);
+	}
+#endif
 }
 
 /*
@@ -1172,55 +1309,6 @@ void CL_TouchLight( dlight_t* dl )
 		r_dlightchanged |= 1 << i;
 }
 
-void CL_BaseMove( usercmd_t *cmd );
-int CL_ButtonBits( int bResetState );
-byte COM_BlockSequenceCRCByte( byte* base, int length, int sequence );
-
-/*
-===============
-SetPal
-
-Debugging tool, just flashes the screen
-===============
-*/
-void SetPal(int i)
-{
-#if 0
-	static int old;
-	byte	pal[768];
-	int		c;
-
-	if (i == old)
-		return;
-	old = i;
-
-	if (i == 0)
-		VID_SetPalette(host_basepal);
-	else if (i == 1)
-	{
-		for (c = 0; c < 768; c += 3)
-		{
-			pal[c] = 0;
-			pal[c + 1] = 255;
-			pal[c + 2] = 0;
-		}
-		VID_SetPalette(pal);
-	}
-	else
-	{
-		for (c = 0; c < 768; c += 3)
-		{
-			pal[c] = 0;
-			pal[c + 1] = 0;
-			pal[c + 2] = 255;
-		}
-		VID_SetPalette(pal);
-	}
-#endif
-}
-
-// TODO: Implement
-
 /*
 ===============
 CL_LerpPoint
@@ -1229,8 +1317,10 @@ Determines the fraction between the last two messages that the objects
 should be put at.
 ===============
 */
-float	CL_LerpPoint(void)
+float CL_LerpPoint( void )
 {
+	// TODO: Reimplement
+
 	float	f, frac;
 
 	f = cl.mtime[0] - cl.mtime[1];
@@ -1281,6 +1371,8 @@ CL_SendCmd
 */
 void CL_SendCmd( void )
 {
+	// TODO: Reimplement
+
 	sizebuf_t	buf;
 	byte		data[128];
 	int			i;
@@ -1396,7 +1488,27 @@ void CL_ParseNextUpload( void )
 	// TODO: Implement
 }
 
-// TODO: Implement
+/*
+==================
+CL_SetupResume
+
+==================
+*/
+void CL_SetupResume( int nSize, CRC32_t crc )
+{
+	// TODO: Implement
+}
+
+/*
+=================
+CL_BeginUpload_f
+
+=================
+*/
+void CL_BeginUpload_f( void )
+{
+	// TODO: Implement
+}
 
 /*
 =================
@@ -1536,11 +1648,148 @@ void CL_CreateResourceList( void )
 		fclose(fp);
 }
 
+/*
+==================
+CL_SkipDownload_f
 
+Skip current download
+==================
+*/
+void CL_SkipDownload_f( void )
+{
+	if (!cls.download)
+		return;
 
+	g_bSkipDownload = TRUE;
+}
 
-// TODO: Implement
+/*
+==================
+CL_SkipUpload_f
 
+Skip current upload
+==================
+*/
+void CL_SkipUpload_f( void )
+{
+	if (!cls.upload)
+		return;
+
+	g_bSkipUpload = TRUE;
+}
+
+/*
+==================
+CL_AllowDownload_f
+
+==================
+*/
+void CL_AllowDownload_f( void )
+{
+	cl_allowdownload.value = !cl_allowdownload.value;
+
+	if (!cl_allowdownload.value)
+		Con_Printf("Client downloading disabled.\n");
+	else
+		Con_Printf("Client downloading enabled.\n");
+}
+
+/*
+==================
+CL_AllowUpload_f
+
+==================
+*/
+void CL_AllowUpload_f( void )
+{
+	cl_allowupload.value = !cl_allowupload.value;
+
+	if (!cl_allowupload.value)
+		Con_Printf("Client uploading disabled.\n");
+	else
+		Con_Printf("Client uploading enabled.\nMax. upload size is %i", (unsigned int)(__int64)cl_upload_max.value);
+}
+
+char* CL_HashedClientID( unsigned char* hash, int size )
+{
+	static char szReturn[128];
+	unsigned char c;
+	char szChunk[10];
+	int i;
+
+	memset(szReturn, 0, sizeof(szReturn));
+
+	for (i = 0; i < size; i++)
+	{
+		c = (unsigned char)hash[i];
+		sprintf(szChunk, "%2x", c);
+		strcat(szReturn, szChunk);
+	}
+
+	return szReturn;
+}
+
+/*
+=================
+CL_PrintCDKey_f
+
+Print the CD key to the console
+=================
+*/
+void CL_PrintCDKey_f( void )
+{
+	char szKeyBuffer[256]; // Keys are about 13 chars long.	
+	char szHashedKeyBuffer[256];
+	char szHashedClientID[2048];
+	int nKeyLength = GUID_LEN;
+	int bDedicated = 0;
+	MD5Context_t ctx;
+	clientid_t clientid;
+	unsigned char digest[16]; // The MD5 Hash
+
+	// Get the cd key.
+	Launcher_GetCDKey(szKeyBuffer, &nKeyLength, &bDedicated);
+
+	// A dedicated server
+	if (bDedicated)
+	{
+		Con_Printf("Key has no meaning on dedicated server...\n");
+		return;
+	}
+
+	if (nKeyLength <= 0 ||
+		nKeyLength >= 256)
+	{
+		Con_Printf("Bogus key length on CD Key...\n");
+		return;
+	}
+
+	szKeyBuffer[nKeyLength] = 0;
+
+	// Now get the md5 hash of the key
+	memset(&ctx, 0, sizeof(ctx));
+	memset(digest, 0, sizeof(digest));
+
+	MD5Init(&ctx);
+	MD5Update(&ctx, (unsigned char*)szKeyBuffer, nKeyLength);
+	MD5Final(digest, &ctx);
+	memset(szHashedKeyBuffer, 0, sizeof(szHashedKeyBuffer));
+	strcpy(szHashedKeyBuffer, MD5_Print(digest));
+
+	memset(szHashedClientID, 0, sizeof(szHashedClientID));
+
+	// Get the client ID
+	if (Launcher_GetClientID(&clientid))
+	{
+		sprintf(szHashedClientID, "%s", CL_HashedClientID(clientid.hash, clientid.size));
+	}
+	else
+	{
+		strcpy(szHashedClientID, "Unset");
+	}
+
+	Con_Printf("CD Key:  %s\nMD5 Hash:  %s\nClient ID:  %s\n\n", szKeyBuffer, szHashedKeyBuffer, szHashedClientID);
+}
 
 /*
 =================
@@ -1551,28 +1800,26 @@ void CL_Init( void )
 {
 	CL_InitInput();
 	CL_InitTEnts();
+
 	TextMessageInit();
+
 	ClientDLL_HudInit();
 	ClientDLL_HudVidInit();
 
+//
+// register our commands
+//
 	Cvar_RegisterVariable(&cl_name);
 	Cvar_RegisterVariable(&cl_color);
-
-	// TODO: Implement
-	
+	Cvar_RegisterVariable(&cl_upspeed);
 	Cvar_RegisterVariable(&cl_forwardspeed);
 	Cvar_RegisterVariable(&cl_backspeed);
 	Cvar_RegisterVariable(&cl_sidespeed);
 	Cvar_RegisterVariable(&cl_movespeedkey);
-
-	// TODO: Implement
-
+	Cvar_RegisterVariable(&cl_yawspeed);
 	Cvar_RegisterVariable(&cl_pitchspeed);
-
-	// TODO: Implement
-
+	Cvar_RegisterVariable(&cl_anglespeedkey);
 	Cvar_RegisterVariable(&cl_nolerp);
-
 	Cvar_RegisterVariable(&cl_skyname);
 	Cvar_RegisterVariable(&cl_skycolor_r);
 	Cvar_RegisterVariable(&cl_skycolor_g);
@@ -1580,17 +1827,16 @@ void CL_Init( void )
 	Cvar_RegisterVariable(&cl_skyvec_x);
 	Cvar_RegisterVariable(&cl_skyvec_y);
 	Cvar_RegisterVariable(&cl_skyvec_z);
-
 	Cvar_RegisterVariable(&lookspring);
 	Cvar_RegisterVariable(&lookstrafe);
 	Cvar_RegisterVariable(&sensitivity);
-
-	// TODO: Implement
+	Cvar_RegisterVariable(&cl_stats);
 
 	Cvar_RegisterVariable(&m_pitch);
 	Cvar_RegisterVariable(&m_yaw);
 	Cvar_RegisterVariable(&m_forward);
 	Cvar_RegisterVariable(&m_side);
+
 	Cvar_RegisterVariable(&cl_pitchup);
 	Cvar_RegisterVariable(&cl_pitchdown);
 	Cvar_RegisterVariable(&cl_appendmixed);
@@ -1598,9 +1844,6 @@ void CL_Init( void )
 	Cvar_RegisterVariable(&cl_timeout);
 	Cvar_RegisterVariable(&cl_shownet);
 	Cvar_RegisterVariable(&cl_showsizes);
-
-	// TODO: Implement
-
 	Cvar_RegisterVariable(&rcon_address);
 	Cvar_RegisterVariable(&rcon_port);
 	Cvar_RegisterVariable(&cl_spectator_password);
@@ -1608,31 +1851,46 @@ void CL_Init( void )
 	Cvar_RegisterVariable(&cl_solid_players);
 	Cvar_RegisterVariable(&cl_nodelta);
 	Cvar_RegisterVariable(&cl_printplayers);
+	Cvar_RegisterVariable(&cl_slisttimeout);
+	Cvar_RegisterVariable(&cl_downloadinterval);
+	Cvar_RegisterVariable(&cl_upload_max);
+	Cvar_RegisterVariable(&cl_download_max);
+	Cvar_RegisterVariable(&cl_download_ingame);
+	Cvar_RegisterVariable(&cl_allowdownload);
+	Cvar_RegisterVariable(&cl_allowupload);
 
-	// TODO: Implement
-
+	Cmd_AddCommand("cdkey", CL_PrintCDKey_f);
 	Cmd_AddCommand("disconnect", CL_Disconnect_f);
-
 	Cmd_AddCommand("record", CL_Record_f);
 	Cmd_AddCommand("stop", CL_Stop_f);
 	Cmd_AddCommand("playdemo", CL_PlayDemo_f);
 	Cmd_AddCommand("timedemo", CL_TimeDemo_f);
 	Cmd_AddCommand("listdemo", CL_ListDemo_f);
 	Cmd_AddCommand("appenddemo", CL_AppendDemo_f);
-	Cmd_AddCommand("removedemo", CL_RemoveDemo_f);	
+	Cmd_AddCommand("removedemo", CL_RemoveDemo_f);
 	Cmd_AddCommand("swapdemo", CL_SwapDemo_f);
 	Cmd_AddCommand("setdemoinfo", CL_SetDemoInfo_f);
 	Cmd_AddCommand("snapshot", CL_TakeSnapshot_f);
-
-	// TODO: Implement
-
+	Cmd_AddCommand("startmovie", CL_StartMovie_f);
+	Cmd_AddCommand("endmovie", CL_EndMovie_f);
+	Cmd_AddCommand("entities", CL_PrintEntities_f);
 	Cmd_AddCommand("rcon", CL_Rcon_f);
-
-	// TODO: Implement
-	
+	Cmd_AddCommand("cl_view", CL_View_f);
+	Cmd_AddCommand("cl_messages", CL_DumpMessageLoad_f);
+	Cmd_AddCommand("cl_bitcounts", CL_BitCounts_f);
 	Cmd_AddCommand("cl_usr", CL_UserMsgs_f);
-
-	// TODO: Implement
+	Cmd_AddCommand("pingservers", CL_PingServers_f);
+	Cmd_AddCommand("slist", CL_Slist_f);
+	Cmd_AddCommand("list", CL_ListCachedServers_f);
+	Cmd_AddCommand("clearlist", CL_ClearCachedServers_f);
+	Cmd_AddCommand("resources", CL_PrintResourceLists_f);
+	Cmd_AddCommand("cl_allow_upload", CL_AllowUpload_f);
+	Cmd_AddCommand("cl_allow_download", CL_AllowDownload_f);
+	Cmd_AddCommand("upload", CL_BeginUpload_f);
+	Cmd_AddCommand("allowupload", CL_AllowUpload_f);
+	Cmd_AddCommand("skipdl", CL_SkipDownload_f);
+	Cmd_AddCommand("skipul", CL_SkipUpload_f);
+	Cmd_AddCommand("cl_print_custom", CL_PrintCustomizations_f);
 	
 	CL_InitPrediction();
 
@@ -1646,8 +1904,6 @@ void CL_Init( void )
 
 	memset(&cl, 0, sizeof(client_state_t));
 
-	cl.resourcesneeded.pPrev = &cl.resourcesneeded;
-	cl.resourcesneeded.pNext = &cl.resourcesneeded;
-	cl.resourcesonhand.pPrev = &cl.resourcesonhand;
-	cl.resourcesonhand.pNext = &cl.resourcesonhand;
+	cl.resourcesneeded.pNext = cl.resourcesneeded.pPrev = &cl.resourcesneeded;
+	cl.resourcesonhand.pNext = cl.resourcesonhand.pPrev = &cl.resourcesonhand;
 }

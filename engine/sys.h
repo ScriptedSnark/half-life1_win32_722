@@ -102,4 +102,5 @@ extern void	(*CDAudio_Update)( void );
 
 extern void	(*Launcher_InitCmds)( void );
 extern void	(*Launcher_GetCDKey)( char* pszCDKey, int* nLength, int* bDedicated );
-extern	char* (*Launcher_VerifyMessage)( int nLength, byte* pKey, int nMsgLength, char* pMsg, int nSignLength, byte* pSign );
+extern int	(*Launcher_GetClientID)( struct clientid_s* pID );
+extern char* (*Launcher_VerifyMessage)( int nLength, byte* pKey, int nMsgLength, char* pMsg, int nSignLength, byte* pSign );

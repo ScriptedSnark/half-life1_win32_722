@@ -47,7 +47,7 @@ typedef struct exefuncs_s
 
 	// Retrieves the user's raw cd key
 	void		(*Launcher_GetCDKey)( char* pszCDKey, int* nLength, int* bDedicated );
-	void		(*Launcher_GetClientID)( void* pID );
+	int			(*Launcher_GetClientID)( struct clientid_s* pID );
 	void		(*Launcher_GetUUID)( void* pUUID, int* nLength, int* bDedicated );
 	char*		(*Launcher_VerifyMessage)( int nLength, byte* pKey, int nMsgLength, char* pMsg, int nSignLength, byte* pSign );
 	// Retrieves the user's raw auth certificate

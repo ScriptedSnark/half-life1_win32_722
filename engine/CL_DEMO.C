@@ -1617,9 +1617,9 @@ qboolean CL_ReadDemoMessage( void )
 			break;
 		case dem_header:
 			{
-				char szFileName[128];
+				char szFileName[MAX_OSPATH];
 				fread(szFileName, sizeof(szFileName), 1, cls.demofile);
-				strcpy(cls.downloadfn, szFileName);
+				strcpy(cls.downloadname, szFileName);
 			}
 			break;
 		}

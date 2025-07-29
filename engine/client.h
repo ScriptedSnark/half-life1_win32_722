@@ -112,14 +112,15 @@ typedef struct soundfade_s
 //
 typedef struct
 {
+// connection information
 	cactive_t	state;
 
 
 	// TODO: Implement
 
 
-// Our sequenced channel to the remote server.
-	netchan_t   netchan;
+// network stuff
+	netchan_t	netchan;
 
 // Connection to server.
 	double		connect_time;		// If gap of connect_time to realtime > 3000, then resend connect packet
@@ -137,7 +138,7 @@ typedef struct
 // connection information
 	int			signon;			// 0 to SIGNONS
 
-	char		servername[128];	// name of server from original connect
+	char		servername[MAX_OSPATH];	// name of server from original connect
 	char		mapstring[MAX_QPATH];
 
 	char		spawnparms[MAX_MAPSTRING];
@@ -183,16 +184,14 @@ typedef struct
 	int			td_startframe;		// host_framecount at start
 	float		td_starttime;		// realtime at second frame of timedemo
 
-// download information
-	FILE* download;						// Handle of file being downloaded
-	resource_t* downloadresource;		// The resource we're trying to retrieve from server
+	FILE* download;						// file transfer from server
+	resource_t* downloadresource;		// the resource we're trying to retrieve from server
 	qboolean	doneregistering;
-	char		downloadfntmp[MAX_QPATH];
+	char		downloadtempname[MAX_QPATH];
 	CRC32_t		downloadfinalCRC;
-	char		downloadfn[MAX_QPATH];	
+	char		downloadname[MAX_QPATH];
 	int			nFilesDownloaded;
-	int			downloadcount;
-
+	int			downloadpercent;
 	qboolean	downloadinprogress;		// TRUE if downloading is in progress
 
 	int			nTotalSize;
@@ -203,19 +202,21 @@ typedef struct
 	float		fLastDownloadTime;		// The last time the file was downloaded
 
 	downloadtime_t rgDownloads[MAX_DL_STATS];
-	int			nCurDownload;
+	int			downloadnumber;
 
 	CRC32_t		downloadcurrentCRC;
 
 	qboolean	custom;					// TRUE is downloading a custom resource
-	FILE*		upload;					// Handle of the file being uploaded
 
-	// TODO: Implement
+	FILE*		upload;					// Handle of the file being uploaded
+	int			uploadsize;
+	int			uploadpos;
+	qboolean	uploading;
+	CRC32_t		uploadCRC;
 
 	float		latency;		// rolling average
 
 	soundfade_t soundfade;			// Client sound fading object
-
 } client_static_t;
 
 extern client_static_t	cls;
@@ -492,6 +493,8 @@ extern	cvar_t	cl_movespeedkey;
 extern	cvar_t	cl_yawspeed;
 extern	cvar_t	cl_pitchspeed;
 
+extern	cvar_t	cl_anglespeedkey;
+
 
 
 
@@ -599,6 +602,10 @@ extern	int			in_impulse;
 void CL_InitInput( void );
 float CL_LerpPoint( void );
 void CL_SendCmd( void );
+void CL_BaseMove( usercmd_t* cmd );
+
+int CL_ButtonBits( int bResetState );
+void CL_ResetButtonBits( int bits );
 
 void CAM_Init( void );
 void CAM_Think( void );

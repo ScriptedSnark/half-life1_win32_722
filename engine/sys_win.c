@@ -68,7 +68,7 @@ void	(*ErrorMessage)( int nLevel, const char* pszErrorMessage );
 void	(*Console_Printf)( char* fmt, ... );
 void	(*Launcher_InitCmds)( void );
 void	(*Launcher_GetCDKey)( char* pszCDKey, int* nLength, int* bDedicated );
-void	(*Launcher_GetClientID)( void* pID );
+int		(*Launcher_GetClientID)( struct clientid_s* pID );
 void	(*Launcher_GetUUID)( void* pUUID, int* nLength, int* bDedicated );
 char*	(*Launcher_VerifyMessage)( int nLength, byte* pKey, int nMsgLength, char* pMsg, int nSignLength, byte* pSign );
 int		(*Launcher_GetCertificate)( void* pBuffer, int* nLength );
@@ -1448,7 +1448,7 @@ DLL_EXPORT int GetGameInfo( struct GameInfo_s* pGI, char* pszChannel )
 	case ca_uninitialized:
 		if (cls.download)
 		{
-			sprintf(gi.szStatus, "Downloading %s, %i percent complete", cls.downloadfn, cls.downloadcount);
+			sprintf(gi.szStatus, "Downloading %s, %i percent complete", cls.downloadname, cls.downloadpercent);
 		}
 		else
 		{

@@ -18,9 +18,6 @@
 
 client_sprite_t* SPR_GetList( char* psz, int* piCount );
 
-void CL_ResetButtonBits( int bits );
-int CL_ButtonBits( int );
-
 // Global table of exported engine functions to client dll
 cl_enginefunc_t cl_enginefuncs =
 {

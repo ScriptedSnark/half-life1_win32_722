@@ -299,7 +299,7 @@ CL_BaseMove
 Send the intended movement message to the server
 ================
 */
-void CL_BaseMove( usercmd_t *cmd )
+void CL_BaseMove( usercmd_t* cmd )
 {
 	if (cls.signon != SIGNONS)
 		return;
