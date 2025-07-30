@@ -100,7 +100,44 @@ Modulates sound volume on the client.
 */
 void CL_UpdateSoundFade( void )
 {
-	// TODO: Implement
+	int		nTotal;
+	float	fGap;
+	float	f;
+	// Determine current fade value.
+
+	// Assume no fading remains
+	cls.soundfade.nClientSoundFadePercent = 0;
+
+	nTotal = cls.soundfade.soundFadeOutTime + cls.soundfade.soundFadeInTime + cls.soundfade.soundFadeHoldTime;
+
+	fGap = realtime - cls.soundfade.soundFadeStartTime;
+
+	// Clock wrapped or reset (BUG) or we've gone far enough
+	if (fGap >= nTotal)
+	{
+		return;
+	}
+
+	// We are in the fade time, so determine amount of fade.
+	if (cls.soundfade.soundFadeOutTime && (fGap < cls.soundfade.soundFadeOutTime))
+	{
+		// Ramp up
+		f = fGap / cls.soundfade.soundFadeOutTime;
+	}
+	else if (fGap < (cls.soundfade.soundFadeOutTime + cls.soundfade.soundFadeHoldTime))
+	{
+		// Stay
+		f = 1.0f;
+	}
+	else
+	{
+		// Ramp down
+		f = (fGap - (cls.soundfade.soundFadeOutTime + cls.soundfade.soundFadeHoldTime)) / cls.soundfade.soundFadeOutTime;
+		// backward interpolated...
+		f = 1.0f - f;
+	}
+
+	cls.soundfade.nClientSoundFadePercent = cls.soundfade.nStartPercent * f;
 }
 
 /*
@@ -112,7 +149,43 @@ Parses MOTD from master server
 */
 void CL_ParseMOTD( void )
 {
-	// TODO: Implement
+	char line[40];
+	char* p, * string;
+	qboolean isMasterServer = FALSE;
+
+	if (NET_StringToAdr(gszMasterAddress, &master_adr))
+		isMasterServer = NET_CompareClassBAdr(net_from, master_adr) != FALSE;
+
+	if (!isMasterServer)
+		return;
+
+	Con_Printf("---- MOTD -----\n");
+	while (1)
+	{
+		string = MSG_ReadString();
+		p = line;
+		while (*string)
+		{
+			if (*string != '\r' || string >= (string - 1) || *(string - 1) == '\n')
+			{
+				*p++ = *string++;
+			}
+			else
+			{
+				// convert to CRLF
+				*p++ = '\n';
+				*p++ = '\r';
+				string++;
+			}
+		}
+		*p = 0; // null-terminate the line
+
+		if (line[0] == '\0')
+			break; // stop if we got empty line
+
+		Con_Printf(line);
+	}
+	Con_Printf("\n---------------\n");
 }
 
 /*
@@ -129,7 +202,7 @@ void CL_ParseServerInfoResponse( void )
 	int active;
 	int maxplayers;
 
-	MSG_ReadString();
+	MSG_ReadString(); // address string
 
 	strncpy(name, MSG_ReadString(), sizeof(name) - 1);
 	name[sizeof(name) - 1] = 0;
@@ -137,7 +210,7 @@ void CL_ParseServerInfoResponse( void )
 	strncpy(map, MSG_ReadString(), sizeof(map) - 1);
 	map[sizeof(map) - 1] = 0;
 
-	MSG_ReadString();                             // gamedir
+	MSG_ReadString(); // gamedir
 
 	strncpy(desc, MSG_ReadString(), sizeof(desc) - 1);
 	desc[sizeof(desc) - 1] = 0;
@@ -993,10 +1066,11 @@ void CL_Connect_f( void )
 		// Try to find server in cache
 		for (i = 0; i < num_servers; i++)
 		{
-
-
-
-
+			if (!_strnicmp(server, cached_servers[i].name, strlen(cached_servers[i].name)))
+			{
+				strncpy(name, NET_AdrToString(cached_servers[i].adr), sizeof(name));
+				break;
+			}
 		}
 	}
 
@@ -1067,10 +1141,11 @@ void CL_Spectate_f( void )
 		// Try to find server in cache
 		for (i = 0; i < num_servers; i++)
 		{
-
-
-
-
+			if (!_strnicmp(server, cached_servers[i].name, strlen(cached_servers[i].name)))
+			{
+				strncpy(name, NET_AdrToString(cached_servers[i].adr), sizeof(name));
+				break;
+			}
 		}
 	}
 

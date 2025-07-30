@@ -622,6 +622,8 @@ void CL_ReadPackets( void );        // Read packets from server and other source
 void CL_SendConnectPacket( void );  // Send the actual connection packet, after server supplies us a challenge value.
 void CL_CheckForResend( void );     // If we are in ca_connecting state and it has been cl_resend.value seconds, 
 									// request a challenge value again if we aren't yet connected. 
+void CL_PingServers_f( void );
+void CL_AddToServerCache( netadr_t adr, char* name, char* map, char* desc, int active, int maxplayers );
 void CL_Connect_f( void );
 void CL_Spectate_f( void );
 void CL_Disconnect_f( void );
