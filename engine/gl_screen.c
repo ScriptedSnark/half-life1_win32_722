@@ -486,7 +486,53 @@ SCR_ScreenShot_f
 */
 void SCR_ScreenShot_f( void )
 {
-	// TODO: Implement
+	byte* buffer;
+	char	tganame[80];
+	char	checkname[MAX_OSPATH];
+	int		i, c, temp;
+
+// 
+// find a file name to save it to 
+// 
+	strcpy(tganame, "HalfLife.tga");
+
+	for (i = 0; i <= 99; i++)
+	{
+		tganame[5] = i / 10 + '0';
+		tganame[6] = i % 10 + '0';
+		sprintf(checkname, "%s/%s", com_gamedir, tganame);
+		if (Sys_FileTime(checkname) == -1)
+			break;	// file doesn't exist
+	}
+	if (i == 100)
+	{
+		Con_Printf("SCR_ScreenShot_f: Couldn't create a PCX file\n");
+		return;
+	}
+
+	buffer = (byte*)malloc(glwidth * glheight * 3 + 18);
+	memset(buffer, 0, 18);
+	buffer[2] = 2;          // uncompressed type
+	buffer[12] = glwidth & 255;
+	buffer[13] = glwidth >> 8;
+	buffer[14] = glheight & 255;
+	buffer[15] = glheight >> 8;
+	buffer[16] = 24;        // pixel size
+
+	qglReadPixels(glx, gly, glwidth, glheight, GL_RGB, GL_UNSIGNED_BYTE, buffer + 18);
+
+	// swap rgb to bgr
+	c = 18 + glwidth * glheight * 3;
+	for (i = 18; i < c; i += 3)
+	{
+		temp = buffer[i];
+		buffer[i] = buffer[i + 2];
+		buffer[i + 2] = temp;
+	}
+	COM_WriteFile(tganame, buffer, glwidth * glheight * 3 + 18);
+
+	free(buffer);
+	Con_Printf("Wrote %s\n", tganame);
 }
 
 
@@ -763,7 +809,8 @@ void SCR_UpdateScreen( void )
 
 	CL_ShowSizes();
 
-	// TODO: Implement
+	SCR_DrawDownloadInfo();
+	SCR_DrawDownloadProgress();
 
 	GLFinishHud();
 
@@ -799,4 +846,203 @@ void D_FillRect( vrect_t* r, byte* color )
 
 	qglEnable(GL_TEXTURE_2D);
 	qglDisable(GL_BLEND);
+}
+
+/*
+=================
+SCR_DrawDownloadText
+
+=================
+*/
+void SCR_DrawDownloadText( void )
+{
+	char	szStatusText[128];
+	int		i;
+	int		w, h, x, y;
+	int		recieved;
+	int		bytes = 0;
+	float	speed = 0.0;
+	float	time = 0.0;
+	float	remaining;
+	vrect_t rcFill;
+	byte	color[3];
+	downloadtime_t* dt1;
+	downloadtime_t* dt2;
+
+	recieved = cls.nTotalToTransfer - cls.nRemainingToTransfer;
+
+	for (i = 0; i < MAX_DL_STATS; i++)
+	{
+		dt1 = &cls.rgDownloads[(cls.downloadnumber - i - 2) & (MAX_DL_STATS - 1)];
+		dt2 = &cls.rgDownloads[(cls.downloadnumber - i - 1) & (MAX_DL_STATS - 1)];
+
+		if (dt1->bUsed && dt2->bUsed && dt2->fTime >= dt1->fTime)
+		{
+			bytes += dt1->nBytesRemaining - dt2->nBytesRemaining;
+			time += dt2->fTime - dt1->fTime;
+		}
+	}
+
+	if (time != 0)
+		speed = bytes / time;
+
+	if (speed != 0)
+	{
+		w = min(scr_vrect.width - 2, 250);
+		h = min(scr_vrect.height - 2, 10);
+
+		x = scr_vrect.x + (scr_vrect.width - w) / 2 + 1;
+		y = scr_vrect.y + scr_vrect.height - 12;
+		if (cls.state != ca_active)
+			y = scr_vrect.y + scr_vrect.height - 92;
+		y = max(y, 22);
+
+		rcFill.x = x;
+		rcFill.y = y;
+		rcFill.width = w;
+		rcFill.height = h;
+
+		color[0] = color[1] = color[2] = 0;
+		D_FillRect(&rcFill, color);
+
+		remaining = cls.nRemainingToTransfer / speed;
+		sprintf(szStatusText, "%iK received, %i seconds remaining...\n", recieved / 1024, (int)remaining);
+		Draw_String(x, y, szStatusText);
+	}
+}
+
+/*
+=================
+SCR_DrawDownloadInfo
+
+=================
+*/
+void SCR_DrawDownloadInfo( void )
+{
+	int		percent;
+	int		w, h, x, y;
+	float	progress;
+	vrect_t rcFill;
+	byte	color[3];
+
+	if (scr_downloading.value < 0)
+		return;
+
+	if (!cls.download)
+	{
+		scr_downloading.value = -1;
+		return;
+	}
+
+	percent = (int)scr_downloading.value;
+	percent = min(100, max(0, percent));
+
+	w = min(scr_vrect.width - 2, 250);
+	h = min(scr_vrect.height - 2, 10);
+
+	x = scr_vrect.x + (scr_vrect.width - w) / 2 + 1;
+	y = scr_vrect.y + (scr_vrect.height - 22);
+	if (cls.state != ca_active)
+		y = scr_vrect.y + scr_vrect.height - 102;
+	y = max(y, 2);
+
+	// Background
+	rcFill.x = x;
+	rcFill.y = y;
+	rcFill.width = w;
+	rcFill.height = h;
+
+	color[0] = 63;
+	color[1] = 63;
+	color[2] = 63;
+	D_FillRect(&rcFill, color); 
+
+	// Progress bar
+	progress = percent / 100.0;
+	rcFill.x += 2;
+	rcFill.y += 2;
+	rcFill.width = progress * (w - 4) + 0.5;
+	rcFill.height -= 4;
+
+	color[0] = 127;
+	color[1] = 63;
+	color[2] = 0;
+	D_FillRect(&rcFill, color);
+
+	// Remaining space
+	rcFill.x += rcFill.width;
+	rcFill.width = w - rcFill.width - 4;
+
+	color[0] = 0;
+	color[1] = 0;
+	color[2] = 0;
+	D_FillRect(&rcFill, color);
+
+	// Draw text info
+	SCR_DrawDownloadText();
+}
+
+/*
+=================
+SCR_DrawDownloadProgress
+
+=================
+*/
+void SCR_DrawDownloadProgress( void )
+{
+	int		percent;
+	int		offset;
+	int		w, h, x, y;
+	float	scale;
+	float	progress;
+	vrect_t rcFill;
+	byte	color[3];
+
+	static float downloading = -1;
+
+	if (scr_disabled_for_loading || downloading < 0)
+		return;
+
+	if (cls.state != ca_connected && cls.state != ca_uninitialized)
+	{
+		downloading = -1;
+		return;
+	}
+
+	percent = (int)downloading;
+	percent = min(100, max(0, percent));
+
+	scale = scr_vrect.height / 240.0;
+	if (scale < 1.0)
+		scale = 1.0;
+
+	w = scr_vrect.width / 2;
+	h = scale * 8;
+
+	offset = h / 4;
+	offset = max(offset, 2);
+
+	x = scr_vrect.x + w / 2;
+	y = scr_vrect.height * 0.6;
+
+	// Background
+	rcFill.x = x;
+	rcFill.y = y;
+	rcFill.width = w;
+	rcFill.height = h;
+
+	color[0] = color[1] = color[2] = 0;
+	D_FillRect(&rcFill, color);
+
+	// Progress bar
+	progress = percent / 100.0;
+	rcFill.x += offset;
+	rcFill.y += offset;
+	rcFill.height -= 2 * offset;
+	rcFill.width = progress * (w - 2 * offset) + 0.5;
+
+	color[0] = 255;
+	color[1] = 180;
+	color[2] = 56;
+	D_FillRect(&rcFill, color);
 }

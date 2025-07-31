@@ -18,6 +18,9 @@ void SCR_EndLoadingPlaque( void );
 
 int SCR_ModalMessage( char* text );
 
+void SCR_DrawDownloadInfo( void );
+void SCR_DrawDownloadProgress( void );
+
 void Draw_CenterPic( qpic_t* pPic );
 
 void D_FillRect( vrect_t* r, byte* color );
