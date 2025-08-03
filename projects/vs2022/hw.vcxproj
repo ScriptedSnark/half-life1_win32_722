@@ -122,7 +122,6 @@
     <ClInclude Include="..\..\engine\customentity.h" />
     <ClInclude Include="..\..\engine\cvar.h" />
     <ClInclude Include="..\..\engine\cvardef.h" />
-    <ClInclude Include="..\..\engine\dummyfile.h" />
     <ClInclude Include="..\..\engine\decal.h" />
     <ClInclude Include="..\..\engine\draw.h" />
     <ClInclude Include="..\..\engine\eiface.h" />

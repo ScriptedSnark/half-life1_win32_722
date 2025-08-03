@@ -3,7 +3,6 @@
 #define VMODES_H
 #pragma once
 
-
 typedef enum
 {
 	VT_None = 0,
@@ -21,6 +20,4 @@ typedef struct vrect_s
 	struct vrect_s* pnext;
 } vrect_t;
 
-
-
-#endif //VMODES_H
+#endif // VMODES_H

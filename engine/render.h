@@ -170,8 +170,6 @@ extern float r_blend; // Global blending factor for the current entity
 extern int r_blend;
 #endif
 
-
-
 //
 // refresh
 //
@@ -263,9 +261,6 @@ void R_PushDlights( void );
 int ScreenTransform( vec_t* point, vec_t* screen );
 
 extern qboolean r_intentities;
-
-
-
 
 //
 // surface cache related

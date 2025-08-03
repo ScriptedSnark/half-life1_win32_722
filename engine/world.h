@@ -23,7 +23,6 @@ typedef struct areanode_s
 
 extern	areanode_t	sv_areanodes[AREA_NODES];
 
-
 void SV_ClearWorld( void );
 // called after the world model has been loaded, before linking any entities
 
@@ -62,6 +61,5 @@ trace_t SV_Move( const vec_t* start, const vec_t* mins, const vec_t* maxs, const
 // shouldn't be considered solid objects
 
 // passedict is explicitly excluded from clipping checks (normally NULL)
-
 
 #endif // WORLD_H

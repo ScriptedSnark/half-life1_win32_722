@@ -159,17 +159,18 @@
 #define	SU_VIEWHEIGHT	(1<<0)
 #define	SU_IDEALPITCH	(1<<1)
 #define	SU_PUNCH1		(1<<2)
-
-
+#define	SU_PUNCH2		(1<<3)
+#define	SU_PUNCH3		(1<<4)
 #define	SU_VELOCITY1	(1<<5)
-
-
+#define	SU_VELOCITY2	(1<<6)
+#define	SU_VELOCITY3	(1<<7)
 #define	SU_WEAPONS		(1<<8)
 #define	SU_ITEMS		(1<<9)
 #define	SU_ONGROUND		(1<<10)		// no data follows, the bit is it
 #define	SU_INWATER		(1<<11)		// no data follows, the bit is it
-
-
+#define	SU_WEAPONFRAME	(1<<12)
+#define	SU_ARMOR		(1<<13)
+#define	SU_WEAPON		(1<<14)
 #define	SU_FULLYINWATER	(1<<15)
 
 // defaults for clientinfo messages
@@ -217,7 +218,7 @@
 #define	PF_FRICTION		(1<<24)
 #define	PF_PING			(1<<25)
 
-#define PN_SPECTATOR	(1<<7)		// extra playernum flag to determine if we joined as spectator
+#define PN_SPECTATOR	128		// extra playernum flag to determine if we joined as spectator
 
 //==============================================
 

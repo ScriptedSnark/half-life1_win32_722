@@ -73,11 +73,8 @@
 #define MAX_DATAGRAM	4000		// max length of unreliable message
 #define MAX_MULTICAST	1024		// max length of a message sent to all clients
 
-
 #define MAX_LIGHTSTYLE_INDEX_BITS	6
 #define MAX_LIGHTSTYLES				(1<<MAX_LIGHTSTYLE_INDEX_BITS)
-
-
 
 // Resource counts
 #define MAX_MODEL_INDEX_BITS		9	// sent as a short
@@ -85,18 +82,12 @@
 #define MAX_SOUND_INDEX_BITS		9
 #define MAX_SOUNDS					(1<<MAX_SOUND_INDEX_BITS)
 
-
-
-
-
 #define MAX_BASE_DECALS_INDEX_BITS	9
 #define MAX_BASE_DECALS				(1<<MAX_BASE_DECALS_INDEX_BITS)
 
-
 #define	MAX_SFX				512
 
-#define MAX_RESOURCES		1280 // TODO: (MAX_MODELS + MAX_SOUNDS + MAX_EVENTS)
-
+#define MAX_RESOURCES		MAX_MODELS + MAX_SOUNDS + 256
 
 #define MAX_USERMSGS		128
 
@@ -137,7 +128,6 @@ typedef struct _UserMsg
 #define	STAT_WEAPON			2
 
 
-
 #include "platform.h"
 #include "bothdefs.h"
 #include "mathlib.h"
@@ -153,12 +143,6 @@ typedef struct _UserMsg
 #include "vid.h"
 #include "sys.h"
 #include "zone.h"
-
-
-
-
-
-
 #include "wad.h"
 #include "draw.h"
 #include "cvar.h"
@@ -177,8 +161,8 @@ typedef struct _UserMsg
 #ifdef GLQUAKE
 #include "gl_model.h"
 #else
-//#include "model.h"
-//#include "d_iface.h"
+#include "model.h"
+#include "d_iface.h"
 #endif
 
 #include "input.h"

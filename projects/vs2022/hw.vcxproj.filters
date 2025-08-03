@@ -350,9 +350,6 @@
     <ClInclude Include="..\..\engine\render.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\engine\dummyfile.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\common\qfont.h">
       <Filter>Header Files\common</Filter>
     </ClInclude>

@@ -44,10 +44,7 @@ void GL_Upload32( unsigned int* data, int width, int height, qboolean mipmap, in
 void GL_Upload16( unsigned char* data, int width, int height, qboolean mipmap, int iType, unsigned char* pPal );
 int GL_LoadTexture( char* identifier, GL_TEXTURETYPE textureType, int width, int height, unsigned char* data, int mipmap, int iType, unsigned char* pPal );
 int GL_LoadPicTexture( qpic_t* pic, char* pszName );
-
 void GL_UnloadTextures( void );
-
-
 void GL_SelectTexture( GLenum target );
 
 void GL_PaletteClearSky( void );
@@ -56,8 +53,6 @@ short GL_PaletteAdd( unsigned char* pPal, qboolean isSky );
 void GLBeginHud( void );
 void GLFinishHud( void );
 void DrawWedge( float centerx, float centery, float angle1, float angle2, float radius );
-
-
 
 extern	int glx, gly, glwidth, glheight;
 
@@ -166,9 +161,6 @@ extern	cvar_t	gl_palette_tex;
 
 extern	int		gl_lightmap_format;
 
-
-
-
 extern	int		mirrortexturenum;	// quake texturenum, not gltexturenum
 extern	qboolean mirror;
 extern	mplane_t* mirror_plane;
@@ -185,22 +177,17 @@ extern	const char* gl_renderer;
 extern	const char* gl_version;
 extern	const char* gl_extensions;
 
-
-
 void GL_Bind( int texnum );
 
 // Multitexture
 #define    TEXTURE0_SGIS				0x835E
 #define    TEXTURE1_SGIS				0x835F
 
-
 extern qboolean gl_mtexable;
 
 extern int r_dlightframecount;
 extern int r_dlightchanged;
 extern int r_dlightactive;
-
-
 
 void GL_DisableMultitexture( void );
 void GL_EnableMultitexture( void );
