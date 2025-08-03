@@ -62,6 +62,7 @@
     <ClCompile Include="..\..\engine\net_ws.c" />
     <ClCompile Include="..\..\engine\opengl2d3d.cpp" />
     <ClCompile Include="..\..\engine\pe_export.c" />
+    <ClCompile Include="..\..\engine\physics.c" />
     <ClCompile Include="..\..\engine\pmove.c" />
     <ClCompile Include="..\..\engine\pmovetst.c" />
     <ClCompile Include="..\..\engine\pr_cmds.c" />
