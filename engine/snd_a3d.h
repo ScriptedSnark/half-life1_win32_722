@@ -36,10 +36,14 @@ extern int bA3dReloadSettings;
 
 float hA3D_CalcNormalizedSum( int a, int b );
 
+void hA3D_AssignSourceToChannel( int sourceID, int channel );
+int hA3D_LookupSourceID( int channel );
 void* hA3D_GetDynamicSource3D( int channel );
-
+int hA3D_SetSourcePlayPosition( int sourceID, int pos );
 int hA3D_GetSourceStatus( int sourceID );
 int hA3D_SetSourceStatus( int sourceID, int status );
+
+void hA3D_SetDistMult( int channel, float scale );
 
 void hA3D_SetMixBufferSize( int dwSize );
 

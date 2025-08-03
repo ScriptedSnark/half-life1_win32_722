@@ -640,14 +640,14 @@ channel_t* SND_PickDynamicChannel( int entnum, int entchannel,
 #if defined (__USEA3D)
 	if (snd_isa3d && ch_first_3d >= 0)
 	{
-		void* pA3DSource;
+		void* pA3D;
 
 		first_to_die = ch_first_3d;
 		
-		pA3DSource = hA3D_GetDynamicSource3D(ch_first_3d);
-		if (pA3DSource)
+		pA3D = hA3D_GetDynamicSource3D(ch_first_3d);
+		if (pA3D)
 		{
-			A3D_EnableSourceReflection(pA3DSource, cl_entities[entnum].movetype == MOVETYPE_NONE);
+			A3D_EnableSourceReflection(pA3D, cl_entities[entnum].movetype == MOVETYPE_NONE);
 
 			switch (hA3D_GetSourceStatus(ch_first_3d))
 			{

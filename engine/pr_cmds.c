@@ -1444,7 +1444,7 @@ int PF_DecalIndex( const char* name )
 
 	for (i = 0; i < sv_decalnamecount; i++)
 	{
-		if (!_strcmpi(sv_decalnames[i].name, name))
+		if (!_stricmp(sv_decalnames[i].name, name))
 			return i;
 	}
 

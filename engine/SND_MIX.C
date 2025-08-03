@@ -393,7 +393,7 @@ qboolean S_CheckWavEnd( channel_t* ch, sfxcache_t** psc, int ltime, int ichan )
 #if defined (__USEA3D)
 		if (snd_isa3d)
 		{
-			// TODO: Implement
+			S_A3DFinishChannel(ichan);
 		}
 #endif
 		return TRUE;
@@ -420,7 +420,38 @@ qboolean S_CheckWavEnd( channel_t* ch, sfxcache_t** psc, int ltime, int ichan )
 #if defined (__USEA3D)
 				if (snd_isa3d)
 				{
-					// TODO: Implement
+					int status;
+					void* pA3D;
+
+					status = hA3D_GetSourceStatus(ichan);
+
+					pA3D = hA3D_GetDynamicSource3D(ichan);
+					if (pA3D)
+					{
+						float attenuation;
+
+						A3D_EnableSourceReflection(pA3D, cl_entities[ch->entnum].movetype == MOVETYPE_NONE);
+
+						///////////////////
+						// DISTANCE MODEL
+						///////////////////
+						attenuation = sound_nominal_clip_dist * ch->dist_mult;
+						hA3D_SetDistMult(ichan, attenuation);
+
+						switch (status)
+						{
+						case A3D_STATUS_LOOPED:
+						case A3D_STATUS_PROCESSING_LOOPED:
+							hA3D_SetSourceStatus(ichan, A3D_STATUS_PROCESSING_LOOPED);
+							break;
+						case A3D_STATUS_START:
+							hA3D_SetSourceStatus(ichan, A3D_STATUS_PROCESSING_START);
+							break;
+						default:
+							hA3D_SetSourceStatus(ichan, A3D_STATUS_PROCESSING_NORMAL);
+							break;
+						}
+					}
 				}
 #endif
 				ch->pos = 0;
@@ -3099,9 +3130,378 @@ void VOX_TrimStartEndTimes( channel_t* ch, sfxcache_t* sc )
 #if defined (__USEA3D)
 int PaintToA3D( int iChannel, channel_t* ch, sfxcache_t* sc, int count, int feedStart, float flPitch )
 {
-	// TODO: Implement
-	return FALSE;
+	void* pA3D;
+	int bytesWritten;
+	float fVolume;
+	float attenuation;
+	vec3_t origin;
+
+	pA3D = hA3D_GetDynamicSource3D(iChannel);
+
+	// This call fails if we have no 3d hardware sources for this channel.
+	if (!pA3D)
+	{
+		return FALSE;
+	}
+
+	if (ch->entchannel == CHAN_STREAM)
+	{
+		return FALSE;
+	}
+
+	// DEBUGGING
+	debugSetName(ch->sfx->name);
+
+	// Transfer the data to the buffer, converting to 16-bit if necessary.
+	bytesWritten = hA3D_FeedBuffer(pA3D, iChannel, ch, sc, count, feedStart, flPitch);
+	if (!bytesWritten)
+		return FALSE;
+
+	/////////////////
+	// 3-D POSITION
+	/////////////////
+	if (ch->entnum == cl.viewentity)
+	{
+		// Move all player sounds to the min distance in front of the player.
+		// Since player sounds are not occluded, this is safe.
+		float fMult = 0.1 * s_distance.value;
+
+		origin[0] = listener_origin[0] + fMult * listener_forward[0];
+		origin[1] = listener_origin[1] + fMult * listener_forward[1];
+		origin[2] = listener_origin[2] + fMult * listener_forward[2];
+
+		A3D_EnableSourceOcclusion(pA3D, FALSE);
+	}
+	else
+	{
+		VectorCopy(ch->origin, origin);
+	}
+
+	A3D_SetSourceListenerPosition3fv(pA3D, origin);
+
+	///////////
+	// VOLUME
+	///////////
+	fVolume = (float)(ch->master_vol / 255.0);
+	A3D_SetSourceVolume(pA3D, fVolume);
+
+	///////////////////
+	// DISTANCE MODEL
+	///////////////////
+	attenuation = sound_nominal_clip_dist * ch->dist_mult;
+	hA3D_SetDistMult(iChannel, attenuation);
+
+	// DEBUGGING
+	debugSetName(NULL);
+
+	return TRUE;
 }
 #endif
 
-// TODO: Implement
+int hA3D_FeedBuffer( void* pA3D, int iChannel, channel_t* ch, sfxcache_t* sc, int count, int feedStart, float flPitch )
+{
+	int		isOverflowed = FALSE;
+	int		looping = FALSE;
+	int		pos = 0, length = 0;
+	int		status;
+	int		sourceID;
+	int		sourcePos;
+	int		samplebytes = 0;
+	int		ret = 0;
+	int		i;
+	short	data;
+	byte* sfx = NULL;
+
+	status = hA3D_GetSourceStatus(iChannel);
+
+	if (ch->sfx && strstr(ch->sfx->name, "tride/"))
+		ch = ch;
+
+	A3D_RegisterSourceAbsolutePosUpdate(pA3D);
+
+	if (ch->sfx && sc && (ch->leftvol || ch->rightvol))
+	{
+		looping = sc->loopstart >= 0;
+
+		pos = A3D_GetSourcePosition(pA3D);
+		length = sc->length;
+
+	// Feed the buffer
+	A3D_FEEDING:
+		// Only 8bit and 16bit wide samples
+		if (sc->width != 1 && sc->width != 2)
+			return 0;
+
+		if ((status == A3D_STATUS_LOOPED || status == A3D_STATUS_PROCESSING_LOOPED) && !looping)
+		{
+			status = A3D_STATUS_NORMAL;
+			A3D_InitializeSource(pA3D);
+		}
+
+		// Process the start of playback
+		switch (status)
+		{
+		case A3D_STATUS_OFF:
+			ch->pos += count;
+			break;
+		case A3D_STATUS_NORMAL:
+		case A3D_STATUS_LOOPED:
+		case A3D_STATUS_PROCESSING_NORMAL:
+		case A3D_STATUS_PROCESSING_LOOPED:
+		case A3D_STATUS_PROCESSING_START:
+			if (status == A3D_STATUS_PROCESSING_NORMAL || status == A3D_STATUS_PROCESSING_START)
+			{
+				A3D_InitializeSource(pA3D);
+				pos = 0;
+			}
+
+			samplebytes = A3D_GetSourceSampleBytes(pA3D);
+			if (length - pos < samplebytes)
+				samplebytes = length - pos;
+
+			// Write to the audio buffer
+			if (samplebytes > 0)
+			{
+				// 8bit routines
+				if (sc->width == 1)
+				{
+					sfx = &sc->data[pos];
+
+					// Lock the buffer so we can write data to it
+					WORD* lpAudio1, dwBytes1;
+					WORD* lpAudio2, dwBytes2;
+					if (FAILED(A3D_SetSourceCursorPositionEx(pA3D, samplebytes * 2,
+						(void**)&lpAudio1, &dwBytes1,
+						(void**)&lpAudio2, &dwBytes2, 0)))
+					{
+						return 0;
+					}
+
+					// Mix 8bit samples and write the data
+					i = 0;
+					if (dwBytes1 & ~1)
+					{
+						do
+						{
+							data = 0;
+							data |= (*sfx++ & 0xFF) << 8;
+							*lpAudio1++ = data ^ 0x80;
+						} while (++i < dwBytes1 >> 1);
+					}
+
+					i = 0;
+					if (dwBytes2 & ~1)
+					{
+						do
+						{
+							data = 0;
+							data |= (*sfx++ & 0xFF) << 8;
+							*lpAudio2++ = data ^ 0x80;
+						} while (++i < dwBytes2 >> 1);
+					}
+
+					// Now unlock it
+					if (FAILED(A3D_UnlockSource(pA3D, lpAudio1, dwBytes1, lpAudio2, dwBytes2)) &&
+						FAILED(A3D_UnlockSource(pA3D, lpAudio1, dwBytes1, lpAudio2, dwBytes2)))
+					{
+						A3D_StopPlayingSource(pA3D);
+						return -1;
+					}
+				}
+				// 16bit routines
+				else if (sc->width == 2)
+				{
+					sfx = &sc->data[pos * 2];
+
+					if (FAILED(A3D_FeedSourceData(pA3D, sfx, samplebytes * 2, feedStart)))
+					{
+						OutputDebugString("PaintToA3D: Error feeding A3DSource data!\n");
+						return 0;
+					}
+				}
+			}
+
+			sourcePos = pos + samplebytes;
+			isOverflowed = 0;
+
+			ch->pos += count;
+
+			if (sourcePos >= length)
+			{
+				if (looping)
+					sourcePos = sc->loopstart;
+				else
+					isOverflowed = 1;
+			}
+
+			hA3D_SetSourcePlayPosition(iChannel, ch->pos);
+			A3D_SetSourcePosition(pA3D, sourcePos);
+
+			//////////
+			// PITCH
+			//////////
+			// Set the pitch, adjusting for the different speeds of each source.
+			if (flPitch >= 0.0)
+			{
+				float fPitch = flPitch;
+
+				fPitch *= (float)sc->speed / shm->dmaspeed; // Scale pitch for different sample rates.
+				A3D_SetSourcePitch(pA3D, fPitch);
+			}
+
+			if (looping)
+				hA3D_SetSourceStatus(iChannel, A3D_STATUS_PROCESSING_LOOPED);
+			else
+				hA3D_SetSourceStatus(iChannel, A3D_STATUS_NORMAL);
+
+			if (isOverflowed)
+			{
+				S_A3DFinishChannel(iChannel);
+			}
+			else
+			{
+				if (!A3D_IsSourcePlaying(pA3D))
+				{
+					A3D_PlayLoopedSourceAt(pA3D, -1);
+				}
+			}
+			break;
+		case A3D_STATUS_START:
+			A3D_CheckForSourceCumulativeCounterOverflow(pA3D, &isOverflowed);
+			if (isOverflowed)
+			{
+				// Reset
+				A3D_InitializeSource(pA3D);
+				hA3D_SetSourceStatus(iChannel, A3D_STATUS_OFF);
+				hA3D_SetSourcePlayPosition(iChannel, 0);
+				A3D_SetSourcePosition(pA3D, 0);
+				sourceID = hA3D_LookupSourceID(iChannel);
+				hA3D_AssignSourceToChannel(sourceID, -1);
+			}
+			ch->pos += count;
+			break;
+		case A3D_STATUS_STOP:
+			if (SUCCEEDED(A3D_StartSourcePlayback(pA3D)))
+			{
+				hA3D_SetSourceStatus(iChannel, A3D_STATUS_START);
+				A3D_CheckForSourceCumulativeCounterOverflow(pA3D, &isOverflowed);
+				if (isOverflowed)
+				{
+					// Reset
+					A3D_InitializeSource(pA3D);
+					hA3D_SetSourceStatus(iChannel, A3D_STATUS_OFF);
+					hA3D_SetSourcePlayPosition(iChannel, 0);
+					A3D_SetSourcePosition(pA3D, 0);
+					sourceID = hA3D_LookupSourceID(iChannel);
+					hA3D_AssignSourceToChannel(sourceID, -1);
+				}
+			}
+			ch->pos += count;
+			break;
+		default:
+			OutputDebugString("hA3D_FeedBuffer - unhandled status.\n");
+			ret = 0;
+			return ret;
+		}
+
+		ret = 1;
+		return ret;
+	}
+
+	if (ch->sfx && sc)
+	{
+		if (!ch->leftvol && !ch->rightvol)
+		{
+			A3D_StopPlayingSource(pA3D);
+			return 0;
+		}
+		// Still audible, feed the buffer again
+		goto A3D_FEEDING;
+	}
+
+	// Process the end of playback
+	switch (status)
+	{
+	case A3D_STATUS_OFF:
+		ret = 0;
+		break;
+	case A3D_STATUS_NORMAL:
+	case A3D_STATUS_LOOPED:
+	case A3D_STATUS_PROCESSING_NORMAL:
+	case A3D_STATUS_PROCESSING_LOOPED:
+	case A3D_STATUS_PROCESSING_START:
+		A3D_InitializeSource(pA3D);
+		hA3D_SetSourceStatus(iChannel, A3D_STATUS_OFF);
+		sourceID = hA3D_LookupSourceID(iChannel);
+		hA3D_AssignSourceToChannel(sourceID, -1);
+		ret = 0;
+		break;
+	case A3D_STATUS_START:
+		A3D_CheckForSourceCumulativeCounterOverflow(pA3D, &isOverflowed);
+		if (isOverflowed)
+		{
+			// Reset
+			A3D_InitializeSource(pA3D);
+			hA3D_SetSourceStatus(iChannel, A3D_STATUS_OFF);
+			hA3D_SetSourcePlayPosition(iChannel, 0);
+			A3D_SetSourcePosition(pA3D, 0);
+			sourceID = hA3D_LookupSourceID(iChannel);
+			hA3D_AssignSourceToChannel(sourceID, -1);
+		}
+		ret = 1;
+		break;
+	case A3D_STATUS_STOP:
+		S_A3DFinishChannel(iChannel);
+		ret = 1;
+		break;
+	// Unhandled status, consider to be audible
+	default:
+		// Feed again
+		goto A3D_FEEDING;
+	}
+
+	return ret;
+}
+
+void S_A3DFinishChannel( int iChannel )
+{
+	channel_t* ch;
+	void* pA3D;
+	int status;
+
+	ch = &channels[iChannel];
+	if (ch->sfx)
+	{
+		if (strstr(ch->sfx->name, "tride/"))
+			ch = ch;
+
+		if (ch->sfx)
+		{
+			if (strstr(ch->sfx->name, "ttrain1"))
+				ch = ch;
+		}
+	}
+
+	pA3D = hA3D_GetDynamicSource3D(iChannel);
+	if (snd_isa3d)
+	{
+		if (pA3D)
+		{
+			status = hA3D_GetSourceStatus(iChannel);
+			if (status == A3D_STATUS_STOP || (status != A3D_STATUS_START && status != A3D_STATUS_OFF))
+			{
+				HRESULT	hresult;
+
+				hresult = A3D_StartSourcePlayback(pA3D);
+				if (FAILED(hresult))
+				{
+					hA3D_SetSourceStatus(iChannel, A3D_STATUS_STOP);
+				}
+				else
+				{
+					hA3D_SetSourceStatus(iChannel, A3D_STATUS_START);
+				}
+			}
+		}
+	}
+}

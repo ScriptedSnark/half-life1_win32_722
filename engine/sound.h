@@ -162,9 +162,6 @@ typedef struct
 
 #define CVOXWORDMAX		32
 
-extern char* rgpparseword[CVOXWORDMAX];
-extern voxword_t rgrgvoxword[CBSENTENCENAME_MAX][CVOXWORDMAX];
-
 void S_Init( void );
 void S_Startup( void );
 void S_Shutdown( void );
@@ -288,6 +285,8 @@ void		Wavstream_GetNextChunk( channel_t* ch, sfx_t* s );
 
 extern char* rgpszrawsentence[CVOXFILESENTENCEMAX];
 extern int cszrawsentences;
+
+extern voxword_t rgrgvoxword[CBSENTENCENAME_MAX][CVOXWORDMAX];
 
 extern void				VOX_Init( void );
 extern char*			VOX_GetDirectory( char* szpath, char* psz );
