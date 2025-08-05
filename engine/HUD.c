@@ -12,17 +12,15 @@ void DrawCrosshair( int x, int y );
 
 void HudSizeUp( void )
 {
-	if (scr_viewsize.value < 120.0)
+	if (scr_viewsize.value < 120)
 	{
-		Cvar_SetValue("viewsize", scr_viewsize.value + 10.0);
+		Cvar_SetValue("viewsize", scr_viewsize.value + 10);
 		return;
 	}
 
 	giHudLevel--;
 	if (giHudLevel < 0)
-	{
 		giHudLevel = 0;
-	}
 }
 
 void HudSizeDown( void )
@@ -31,7 +29,7 @@ void HudSizeDown( void )
 	if (giHudLevel > 3)
 	{
 		giHudLevel = 3;
-		Cvar_SetValue("viewsize", scr_viewsize.value - 10.0);
+		Cvar_SetValue("viewsize", scr_viewsize.value - 10);
 	}
 }
 
@@ -58,8 +56,8 @@ void Sbar_Draw( void )
 
 	if (crosshair.value)
 	{
-		x = (float)(scr_vrect.x + scr_vrect.width / 2);
-		y = (float)(scr_vrect.y + scr_vrect.height / 2);
+		x = scr_vrect.x + (scr_vrect.width / 2);
+		y = scr_vrect.y + (scr_vrect.height / 2);
 
 		VectorAdd(r_refdef.viewangles, cl.crosshairangle, angles);
 		AngleVectors(angles, forward, NULL, NULL);
