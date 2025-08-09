@@ -5,7 +5,6 @@
 #include "view.h"
 #include "CL_TENT.H"
 #include "customentity.h"
-#include "r_local.h"
 #include "r_triangle.h"
 #include "r_studio.h"
 
@@ -1587,9 +1586,9 @@ void R_StudioDrawHulls( void )
 
 		j = (pbbox[i].group % (MAXSTUDIOGROUPS / 2));
 
-		qglBegin(GL_QUADS);
-		tri_GL_Color4f(hullcolor[j][0], hullcolor[j][1], hullcolor[j][2], 1.0);
-		qglTexCoord2f(0, 0);
+		tri_Begin(TRI_QUADS);
+		tri_Color4f(hullcolor[j][0], hullcolor[j][1], hullcolor[j][2], 1.0);
+		tri_TexCoord2f(0, 0);
 
 		for (j = 0; j < 6; j++)
 		{
@@ -1597,14 +1596,14 @@ void R_StudioDrawHulls( void )
 			tmp[j % 3] = (j < 3) ? 1.0 : -1.0;
 			R_StudioLighting(&lv, pbbox[i].bone, 0, tmp);
 
-			tri_GL_Brightness(lv);
-			qglVertex3fv(p[boxpnt[j][0]]);
-			qglVertex3fv(p[boxpnt[j][1]]);
-			qglVertex3fv(p[boxpnt[j][2]]);
-			qglVertex3fv(p[boxpnt[j][3]]);
+			tri_Brightness(lv);
+			tri_Vertex3fv(p[boxpnt[j][0]]);
+			tri_Vertex3fv(p[boxpnt[j][1]]);
+			tri_Vertex3fv(p[boxpnt[j][2]]);
+			tri_Vertex3fv(p[boxpnt[j][3]]);
 		}
 
-		qglEnd();
+		tri_End();
 	}
 }
 
@@ -1618,7 +1617,7 @@ void R_StudioAbsBB( void )
 
 	pseqdesc = (mstudioseqdesc_t*)((byte*)pstudiohdr + pstudiohdr->seqindex) + currententity->sequence;
 
-	tri_GL_RenderMode(kRenderTransAdd);
+	tri_RenderMode(kRenderTransAdd);
 
 	R_TriangleSpriteTexture(cl_sprite_white, 0);
 
@@ -1631,8 +1630,8 @@ void R_StudioAbsBB( void )
 		VectorAdd(p[j], currententity->origin, p[j]);
 	}
 
-	qglBegin(GL_QUADS);
-	tri_GL_Color4f(0.5, 0.5, 1, 1);
+	tri_Begin(TRI_QUADS);
+	tri_Color4f(0.5, 0.5, 1, 1);
 
 	for (j = 0; j < 6; j++)
 	{
@@ -1640,15 +1639,15 @@ void R_StudioAbsBB( void )
 		tmp[j % 3] = (j < 3) ? 1.0 : -1.0;
 		R_StudioLighting(&lv, -1, 0, tmp);
 
-		tri_GL_Brightness(lv);
-		qglVertex3fv(p[boxpnt[j][0]]);
-		qglVertex3fv(p[boxpnt[j][1]]);
-		qglVertex3fv(p[boxpnt[j][2]]);
-		qglVertex3fv(p[boxpnt[j][3]]);
+		tri_Brightness(lv);
+		tri_Vertex3fv(p[boxpnt[j][0]]);
+		tri_Vertex3fv(p[boxpnt[j][1]]);
+		tri_Vertex3fv(p[boxpnt[j][2]]);
+		tri_Vertex3fv(p[boxpnt[j][3]]);
 	}
 
-	qglEnd();
-	tri_GL_RenderMode(kRenderNormal);
+	tri_End();
+	tri_RenderMode(kRenderNormal);
 }
 
 void R_StudioDrawBones( void )
@@ -1735,9 +1734,9 @@ void R_StudioDrawBones( void )
 		VectorNormalize(right);
 		VectorNormalize(forward);
 
-		qglBegin(GL_QUADS);
-		tri_GL_Color4f(1, 1, 1, 1);
-		qglTexCoord2f(0, 0);
+		tri_Begin(TRI_QUADS);
+		tri_Color4f(1, 1, 1, 1);
+		tri_TexCoord2f(0, 0);
 
 		for (j = 0; j < 6; j++)
 		{
@@ -1753,14 +1752,14 @@ void R_StudioDrawBones( void )
 
 			R_StudioLighting(&lv, -1, 0, tmp);
 
-			tri_GL_Brightness(lv);
-			qglVertex3fv(p[boxpnt[j][0]]);
-			qglVertex3fv(p[boxpnt[j][1]]);
-			qglVertex3fv(p[boxpnt[j][2]]);
-			qglVertex3fv(p[boxpnt[j][3]]);
+			tri_Brightness(lv);
+			tri_Vertex3fv(p[boxpnt[j][0]]);
+			tri_Vertex3fv(p[boxpnt[j][1]]);
+			tri_Vertex3fv(p[boxpnt[j][2]]);
+			tri_Vertex3fv(p[boxpnt[j][3]]);
 		}
 
-		qglEnd();
+		tri_End();
 	}
 }
 

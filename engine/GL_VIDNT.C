@@ -16,6 +16,8 @@ const char* gl_renderer;
 const char* gl_version;
 const char* gl_extensions;
 
+static HANDLE	hMovieFile = INVALID_HANDLE_VALUE;
+
 cvar_t	gl_ztrick = { "gl_ztrick", "1" };
 
 viddef_t	vid;				// global video state
@@ -255,7 +257,7 @@ void GL_EndRendering( void )
 
 /*
 =================
-VID_DescribeCurrentMode_f
+VID_DescribeMode_f
 =================
 */
 void VID_DescribeMode_f( void )
@@ -508,7 +510,7 @@ void VID_TakeSnapshot( const char* pFilename )
 void VID_TakeSnapshotRect( const char* pFilename, int x, int y, int w, int h )
 {
 	int				i;
-	HANDLE			fp;
+	HANDLE			file;
 	BITMAPFILEHEADER hdr;
 	BITMAPINFOHEADER bi;
 	int				imageSize;
@@ -519,8 +521,8 @@ void VID_TakeSnapshotRect( const char* pFilename, int x, int y, int w, int h )
 
 	imageSize = w * h * 3;
 
-	fp = CreateFile(pFilename, GENERIC_READ | GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
-	if (fp == INVALID_HANDLE_VALUE)
+	file = CreateFile(pFilename, GENERIC_READ | GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+	if (file == INVALID_HANDLE_VALUE)
 		Sys_Error("Couldn't create file for snapshot.\n");
 
 	// file header
@@ -530,7 +532,7 @@ void VID_TakeSnapshotRect( const char* pFilename, int x, int y, int w, int h )
 	hdr.bfReserved2 = 0;
 	hdr.bfOffBits = sizeof(hdr) + sizeof(bi);
 
-	if (!WriteFile(fp, &hdr, sizeof(hdr), &dwSize, 0))
+	if (!WriteFile(file, &hdr, sizeof(hdr), &dwSize, 0))
 		Sys_Error("Couldn't write file header to snapshot.\n");
 
 	bi.biWidth = w;
@@ -545,7 +547,7 @@ void VID_TakeSnapshotRect( const char* pFilename, int x, int y, int w, int h )
 	bi.biClrUsed = 0;
 	bi.biClrImportant = 0;
 
-	if (!WriteFile(fp, &bi, sizeof(bi), &dwSize, 0))
+	if (!WriteFile(file, &bi, sizeof(bi), &dwSize, 0))
 		Sys_Error("Couldn't write bitmap header to snapshot.\n");
 
 	hp = (unsigned char*)malloc(imageSize);
@@ -564,13 +566,13 @@ void VID_TakeSnapshotRect( const char* pFilename, int x, int y, int w, int h )
 	}
 
 	// write to the file
-	if (!WriteFile(fp, hp, imageSize, &dwSize, 0))
+	if (!WriteFile(file, hp, imageSize, &dwSize, 0))
 		Sys_Error("Couldn't write bitmap data snapshot.\n");
 
 	free(hp);
 
 	// close the file
-	if (!CloseHandle(fp))
+	if (!CloseHandle(file))
 		Sys_Error("Couldn't close file for snapshot.\n");
 }
 
@@ -582,7 +584,6 @@ void VID_WriteBuffer( const char* pFilename )
 	WORD			frameHeader[3];
 	int				blockHeader[2];
 	static char		basefilename[256];
-	static HANDLE	file;
 
 	unsigned char* hp = NULL;
 
@@ -593,18 +594,18 @@ void VID_WriteBuffer( const char* pFilename )
 	if (pFilename)
 	{
 		strcpy(basefilename, pFilename);
-		if (file != INVALID_HANDLE_VALUE)
-			CloseHandle(file);
+		if (hMovieFile != INVALID_HANDLE_VALUE)
+			CloseHandle(hMovieFile);
 
 		createType = CREATE_ALWAYS;
 	}
 
-	file = CreateFile(basefilename, GENERIC_WRITE, 0, NULL, createType, FILE_ATTRIBUTE_NORMAL, NULL);
-	if (file == INVALID_HANDLE_VALUE)
+	hMovieFile = CreateFile(basefilename, GENERIC_WRITE, 0, NULL, createType, FILE_ATTRIBUTE_NORMAL, NULL);
+	if (hMovieFile == INVALID_HANDLE_VALUE)
 		Sys_Error("Couldn't open movie file.\n");
 
 	dwSize = 0;
-	SetFilePointer(file, 0, &dwSize, FILE_END);
+	SetFilePointer(hMovieFile, 0, &dwSize, FILE_END);
 
 	frameHeader[0] = vid.width;
 	frameHeader[1] = vid.height;
@@ -620,23 +621,23 @@ void VID_WriteBuffer( const char* pFilename )
 	if (gGLHardwareType != GL_HW_3Dfx || !GlideReadPixels(0, 0, vid.width, vid.height, (word*)hp))
 		qglReadPixels(0, 0, vid.width, vid.height, GL_RGB, GL_UNSIGNED_BYTE, hp);
 
-	if (!WriteFile(file, blockHeader, sizeof(blockHeader), &dwSize, 0))
+	if (!WriteFile(hMovieFile, blockHeader, sizeof(blockHeader), &dwSize, 0))
 		Sys_Error("Couldn't write block header.\n");
 
-	if (!WriteFile(file, frameHeader, sizeof(frameHeader), &dwSize, 0))
+	if (!WriteFile(hMovieFile, frameHeader, sizeof(frameHeader), &dwSize, 0))
 		Sys_Error("Couldn't write frame header.\n");
 
 	// write to the file
-	if (!WriteFile(file, hp, imageSize, &dwSize, 0))
+	if (!WriteFile(hMovieFile, hp, imageSize, &dwSize, 0))
 		Sys_Error("Couldn't write frame data.\n");
 
 	free(hp);
 
 	// close the file
-	if (!CloseHandle(file))
+	if (!CloseHandle(hMovieFile))
 		Sys_Error("Couldn't close file for movie.\n");
 
-	file = INVALID_HANDLE_VALUE;
+	hMovieFile = INVALID_HANDLE_VALUE;
 }
 
 DLL_EXPORT void VID_UpdateWindowVars( void* prc, int x, int y )

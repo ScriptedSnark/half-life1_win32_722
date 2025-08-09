@@ -158,7 +158,6 @@ qpic_t* Draw_CachePic( char* path )
 
 	idx = Draw_CacheIndex(&menu_wad, path);
 	ret = (qpic_t*)Draw_CacheGet(&menu_wad, idx);
-
 	return ret;
 }
 
@@ -167,7 +166,7 @@ qpic_t* Draw_CachePic( char* path )
 Draw_StringLen
 ===============
 */
-int Draw_StringLen( char *psz )
+int Draw_StringLen( char* psz )
 {
 	int totalWidth = 0;
 
@@ -2121,11 +2120,9 @@ int Draw_CacheIndex( cachewad_t* wad, char* path )
 	{
 		if (wad->cacheCount == wad->cacheMax)
 			Sys_Error("Cache wad (%s) out of %d entries", wad->name, wad->cacheMax);
-		
 		wad->cacheCount++;
 		strcpy(pic->name, path);
 	}
-
 	return i;
 }
 
@@ -2157,9 +2154,7 @@ texture_t* Draw_DecalTexture( int index )
 
 	// Just a regular decal
 	if (index >= 0)
-	{
 		return (texture_t*)Draw_CacheGet(&decal_wad, index);
-	}
 
 	// Player decal
 	playernum = ~index;
@@ -2167,9 +2162,7 @@ texture_t* Draw_DecalTexture( int index )
 	if (pCust && pCust->bInUse)
 	{
 		if (pCust->pInfo && pCust->pBuffer)
-		{
 			return (texture_t*)Draw_CustomCacheGet((cachewad_t*)pCust->pInfo, pCust->pBuffer, pCust->nUserData1);
-		}
 	}
 
 	Sys_Error("Failed to load custom decal for player #%i:%s using default decal 0.\n", playernum, cl.players[playernum].name);

@@ -50,6 +50,7 @@
     <ClInclude Include="..\..\engine\decal.h" />
     <ClInclude Include="..\..\engine\draw.h" />
     <ClInclude Include="..\..\engine\d_iface.h" />
+    <ClInclude Include="..\..\engine\d_local.h" />
     <ClInclude Include="..\..\engine\eiface.h" />
     <ClInclude Include="..\..\engine\hashpak.h" />
     <ClInclude Include="..\..\engine\host_cmd.h" />
@@ -118,26 +119,34 @@
     <ClCompile Include="..\..\engine\CONSOLE.C" />
     <ClCompile Include="..\..\engine\crc.c" />
     <ClCompile Include="..\..\engine\cvar.c" />
+    <ClCompile Include="..\..\engine\draw.c" />
+    <ClCompile Include="..\..\engine\D_FILL.C" />
+    <ClCompile Include="..\..\engine\D_PART.C" />
+    <ClCompile Include="..\..\engine\D_SURF.C" />
     <ClCompile Include="..\..\engine\ha3d.cpp" />
     <ClCompile Include="..\..\engine\ha3dg.cpp" />
     <ClCompile Include="..\..\engine\hashpak.c" />
     <ClCompile Include="..\..\engine\host.c" />
     <ClCompile Include="..\..\engine\host_cmd.c" />
     <ClCompile Include="..\..\engine\HUD.c" />
-    <ClCompile Include="..\..\engine\in_camera.c" />
     <ClCompile Include="..\..\engine\in_win.c" />
     <ClCompile Include="..\..\engine\KEYS.C" />
     <ClCompile Include="..\..\engine\l_studio.c" />
     <ClCompile Include="..\..\engine\mathlib.c" />
+    <ClCompile Include="..\..\engine\model.c" />
     <ClCompile Include="..\..\engine\net_chan.c" />
     <ClCompile Include="..\..\engine\net_ws.c" />
     <ClCompile Include="..\..\engine\pe_export.c" />
     <ClCompile Include="..\..\engine\physics.c" />
     <ClCompile Include="..\..\engine\pmove.c" />
     <ClCompile Include="..\..\engine\pmovetst.c" />
-    <ClCompile Include="..\..\engine\profile.c" />
     <ClCompile Include="..\..\engine\pr_cmds.c" />
     <ClCompile Include="..\..\engine\pr_edict.c" />
+    <ClCompile Include="..\..\engine\r_alias.c" />
+    <ClCompile Include="..\..\engine\R_BSP.C" />
+    <ClCompile Include="..\..\engine\R_EFRAG.C" />
+    <ClCompile Include="..\..\engine\R_LIGHT.C" />
+    <ClCompile Include="..\..\engine\R_MAIN.C" />
     <ClCompile Include="..\..\engine\R_PART.C" />
     <ClCompile Include="..\..\engine\r_studio.c" />
     <ClCompile Include="..\..\engine\R_SURF.C" />
@@ -156,13 +165,14 @@
     <ClCompile Include="..\..\engine\sys_win.c" />
     <ClCompile Include="..\..\engine\textures.c" />
     <ClCompile Include="..\..\engine\tmessage.c" />
-    <ClCompile Include="..\..\engine\vid_win.c" />
+    <ClCompile Include="..\..\engine\VID_WIN.C" />
     <ClCompile Include="..\..\engine\VIEW.C" />
     <ClCompile Include="..\..\engine\wad.c" />
     <ClCompile Include="..\..\engine\world.c" />
     <ClCompile Include="..\..\engine\zone.c" />
   </ItemGroup>
   <ItemGroup>
+    <MASM Include="..\..\engine\d_varsa.asm" />
     <MASM Include="..\..\engine\math.asm" />
     <MASM Include="..\..\engine\snd_mixa.asm" />
     <MASM Include="..\..\engine\sys_wina.asm">
@@ -232,7 +242,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>WIN32;_USE_32BIT_TIME_T;__STDC__;_DEBUG;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;__USEA3D;__A3D_GEOM;_USE_32BIT_TIME_T;__STDC__;_DEBUG;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>..\..\common;..\..\engine;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
@@ -240,7 +250,7 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
-      <AdditionalDependencies>winmm.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>winmm.lib;ws2_32.lib;..\..\engine\a3d\a3dwrapper.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>IF EXIST "$(ProjectDir)..\..\PostBuild.bat" (CALL "$(ProjectDir)..\..\PostBuild.bat" engine "$(OutDir)" "$(TargetName)$(TargetExt)")</Command>
@@ -253,7 +263,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>WIN32;_USE_32BIT_TIME_T;__STDC__;_DEBUG;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;__USEA3D;__A3D_GEOM;_USE_32BIT_TIME_T;__STDC__;_DEBUG;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>..\..\common;..\..\engine;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
@@ -261,7 +271,7 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
-      <AdditionalDependencies>winmm.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>winmm.lib;ws2_32.lib;..\..\engine\a3d\a3dwrapper.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>IF EXIST "$(ProjectDir)..\..\PostBuild.bat" (CALL "$(ProjectDir)..\..\PostBuild.bat" engine "$(OutDir)" "$(TargetName)$(TargetExt)")</Command>
@@ -276,7 +286,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>WIN32;_USE_32BIT_TIME_T;__STDC__;NDEBUG;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;__USEA3D;__A3D_GEOM;_USE_32BIT_TIME_T;__STDC__;NDEBUG;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>..\..\common;..\..\engine;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
@@ -286,7 +296,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
-      <AdditionalDependencies>winmm.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>winmm.lib;ws2_32.lib;..\..\engine\a3d\a3dwrapper.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>IF EXIST "$(ProjectDir)..\..\PostBuild.bat" (CALL "$(ProjectDir)..\..\PostBuild.bat" engine "$(OutDir)" "$(TargetName)$(TargetExt)")</Command>

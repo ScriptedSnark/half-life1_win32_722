@@ -25,8 +25,8 @@ int		R_StudioBodyVariations( struct model_s* model );
 
 int		R_StudioDrawModel( int flags );
 int		R_StudioDrawPlayer( int flags, player_state_t* pplayer );
-void	R_StudioDynamicLight( cl_entity_t* ent, alight_t* plight );
-void	R_StudioEntityLight( alight_t* plight );
+void	R_StudioDynamicLight( cl_entity_t* ent, struct alight_s* plight );
+void	R_StudioEntityLight( struct alight_s* plight );
 void	R_StudioClientEvents( void );
 void	R_StudioRenderFinal( void );
 void	GLR_StudioDrawShadow( void );

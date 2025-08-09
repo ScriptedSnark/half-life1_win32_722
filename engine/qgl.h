@@ -4,18 +4,7 @@
 #pragma once
 #endif
 
-#if !defined ( GLQUAKE )
-#error This should not be called by sw/swds.
-#endif
-
 #include "quakedef.h"
-
-#ifdef WIN32
-#include <Windows.h>
-#else
-typedef void* HDC;
-typedef void* HGLRC;
-#endif
 
 #include <GL/gl.h>
 

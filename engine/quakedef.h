@@ -154,7 +154,6 @@ typedef struct _UserMsg
 #include "sound.h"
 #include "render.h"
 #include "client.h"
-#include "progs.h"
 #include "server.h"
 #include "host_cmd.h"
 
@@ -173,6 +172,14 @@ typedef struct _UserMsg
 #include "view.h"
 #include "crc.h"
 #include "beamdef.h"
+#include "r_local.h"
+
+#ifdef WIN32
+#include <Windows.h>
+#else
+typedef void* HDC;
+typedef void* HGLRC;
+#endif
 
 #ifdef GLQUAKE
 #include "qgl.h"

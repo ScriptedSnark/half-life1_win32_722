@@ -1580,8 +1580,8 @@ void R_TracerDraw( void )
 		if (scale < 0.0)
 			scale = 0.0;
 
-		tri_GL_RenderMode(kRenderTransAdd);
-		tri_GL_CullFace(TRI_NONE);
+		tri_RenderMode(kRenderTransAdd);
+		tri_CullFace(TRI_NONE);
 
 		for (p = gpActiveTracers; p; p = p->next)
 		{
@@ -1658,25 +1658,25 @@ void R_TracerDraw( void )
 				VectorScale(vup, tmp[0] * gTracerSize[p->type], normal);
 				VectorMA(normal, -tmp[1] * gTracerSize[p->type], vright, normal);
 
-				qglBegin(GL_QUADS);
+				tri_Begin(TRI_QUADS);
 
-				tri_GL_Color4ub(pColor->r, pColor->g, pColor->b, p->packedColor);
+				tri_Color4ub(pColor->r, pColor->g, pColor->b, p->packedColor);
 
-				tri_GL_Brightness(0);
-				qglTexCoord2f(0, 0);
-				qglVertex3f(start[0] + normal[0], start[1] + normal[1], start[2] + normal[2]);
+				tri_Brightness(0);
+				tri_TexCoord2f(0, 0);
+				tri_Vertex3f(start[0] + normal[0], start[1] + normal[1], start[2] + normal[2]);
 
-				tri_GL_Brightness(1);
-				qglTexCoord2f(0, 1);
-				qglVertex3f(end[0] + normal[0], end[1] + normal[1], end[2] + normal[2]);
+				tri_Brightness(1);
+				tri_TexCoord2f(0, 1);
+				tri_Vertex3f(end[0] + normal[0], end[1] + normal[1], end[2] + normal[2]);
 
-				tri_GL_Brightness(1);
-				qglTexCoord2f(1, 1);
-				qglVertex3f(end[0] - normal[0], end[1] - normal[1], end[2] - normal[2]);
+				tri_Brightness(1);
+				tri_TexCoord2f(1, 1);
+				tri_Vertex3f(end[0] - normal[0], end[1] - normal[1], end[2] - normal[2]);
 
-				tri_GL_Brightness(0);
-				qglTexCoord2f(1, 0);
-				qglVertex3f(start[0] - normal[0], start[1] - normal[1], start[2] - normal[2]);
+				tri_Brightness(0);
+				tri_TexCoord2f(1, 0);
+				tri_Vertex3f(start[0] - normal[0], start[1] - normal[1], start[2] - normal[2]);
 
 				p->org[0] = frametime * p->vel[0] + p->org[0];
 				p->org[1] = frametime * p->vel[1] + p->org[1];
@@ -1689,7 +1689,6 @@ void R_TracerDraw( void )
 					p->vel[2] -= gravity;
 
 					p->packedColor = 255 * (p->die - cl.time) * 2;
-
 					if (p->packedColor > 255)
 						p->packedColor = 255;
 				}
@@ -1698,12 +1697,12 @@ void R_TracerDraw( void )
 					p->vel[2] = gravity * 0.05;
 				}
 
-				qglEnd();
+				tri_End();
 			}
 		}
 
-		tri_GL_CullFace(TRI_FRONT);
-		tri_GL_RenderMode(kRenderNormal);
+		tri_CullFace(TRI_FRONT);
+		tri_RenderMode(kRenderNormal);
 	}
 }
 
@@ -2266,12 +2265,12 @@ void R_DrawSegs( vec_t* source, vec_t* delta, float width, float scale, float fr
 	{
 		fraction = i * div;
 
-		tri_GL_Brightness(brightness);
-		qglTexCoord2f(0, vLast);
-		qglVertex3fv(last1);
-		tri_GL_Brightness(brightness);
-		qglTexCoord2f(1, vLast);
-		qglVertex3fv(last2);
+		tri_Brightness(brightness);
+		tri_TexCoord2f(0, vLast);
+		tri_Vertex3fv(last1);
+		tri_Brightness(brightness);
+		tri_TexCoord2f(1, vLast);
+		tri_Vertex3fv(last2);
 
 		if (flags & FBEAM_SHADEIN)
 		{
@@ -2319,12 +2318,12 @@ void R_DrawSegs( vec_t* source, vec_t* delta, float width, float scale, float fr
 		VectorMA(point, -width, normal, last2);
 
 		vLast += vStep; // advance texture scroll (v axis only)
-		tri_GL_Brightness(brightness);
-		qglTexCoord2f(1, vLast);
-		qglVertex3fv(last2);
-		tri_GL_Brightness(brightness);
-		qglTexCoord2f(0, vLast);
-		qglVertex3fv(last1);
+		tri_Brightness(brightness);
+		tri_TexCoord2f(1, vLast);
+		tri_Vertex3fv(last2);
+		tri_Brightness(brightness);
+		tri_TexCoord2f(0, vLast);
+		tri_Vertex3fv(last1);
 
 		VectorCopy(screen, screenLast);
 
@@ -2401,10 +2400,10 @@ void R_DrawTorus( vec_t* source, vec_t* delta, float width, float scale, float f
 			VectorMA(point, -width, normal, last2);
 
 			vLast += vStep; // advance texture scroll (v axis only)
-			qglTexCoord2f(1, vLast);
-			qglVertex3fv(last2);
-			qglTexCoord2f(0, vLast);
-			qglVertex3fv(last1);
+			tri_TexCoord2f(1, vLast);
+			tri_Vertex3fv(last2);
+			tri_TexCoord2f(0, vLast);
+			tri_Vertex3fv(last1);
 		}
 
 		VectorCopy(screen, screenLast);
@@ -2450,17 +2449,17 @@ void R_DrawDisk( vec_t* source, vec_t* delta, float width, float scale, float fr
 
 		fraction = i * div;
 
-		tri_GL_Brightness(1);
-		qglTexCoord2f(1, vLast);
-		qglVertex3fv(point);
+		tri_Brightness(1);
+		tri_TexCoord2f(1, vLast);
+		tri_Vertex3fv(point);
 
 		point[0] = source[0] + sin(fraction * 2 * M_PI) * w;
 		point[1] = source[1] + cos(fraction * 2 * M_PI) * w;
 		point[2] = source[2];
 
-		tri_GL_Brightness(1);
-		qglTexCoord2f(0, vLast);
-		qglVertex3fv(point);
+		tri_Brightness(1);
+		tri_TexCoord2f(0, vLast);
+		tri_Vertex3fv(point);
 
 		vLast += vStep; // advance texture scroll (v axis only)
 
@@ -2503,17 +2502,17 @@ void R_DrawCylinder( vec_t* source, vec_t* delta, float width, float scale, floa
 		point[1] = source[1] + cos(fraction * 2 * M_PI) * freq * delta[2];
 		point[2] = source[2] + width;
 
-		tri_GL_Brightness(0);
-		qglTexCoord2f(1, vLast);
-		qglVertex3fv(point);
+		tri_Brightness(0);
+		tri_TexCoord2f(1, vLast);
+		tri_Vertex3fv(point);
 
 		point[0] = source[0] + sin(fraction * 2 * M_PI) * freq * (delta[2] + width);
 		point[1] = source[1] + cos(fraction * 2 * M_PI) * freq * (delta[2] + width);
 		point[2] = source[2] - width;
 
-		tri_GL_Brightness(1);
-		qglTexCoord2f(0, vLast);
-		qglVertex3fv(point);
+		tri_Brightness(1);
+		tri_TexCoord2f(0, vLast);
+		tri_Vertex3fv(point);
 
 		vLast += vStep; // advance texture scroll (v axis only)
 
@@ -2609,13 +2608,13 @@ void R_DrawBeamFollow( BEAM* pbeam )
 
 	for (; pHead; pHead = pHead->next)
 	{
-		tri_GL_Brightness(fraction);
-		qglTexCoord2f(0, 0);
-		qglVertex3fv(last1);
+		tri_Brightness(fraction);
+		tri_TexCoord2f(0, 0);
+		tri_Vertex3fv(last1);
 
-		tri_GL_Brightness(fraction);
-		qglTexCoord2f(1, 0);
-		qglVertex3fv(last2);
+		tri_Brightness(fraction);
+		tri_TexCoord2f(1, 0);
+		tri_Vertex3fv(last2);
 
 		// Transform start into screen space
 		ScreenTransform(pHead->org, screen);
@@ -2642,13 +2641,13 @@ void R_DrawBeamFollow( BEAM* pbeam )
 			fraction = 0.0;
 		}
 
-		tri_GL_Brightness(fraction);
-		qglTexCoord2f(1, 1);
-		qglVertex3fv(last2);
+		tri_Brightness(fraction);
+		tri_TexCoord2f(1, 1);
+		tri_Vertex3fv(last2);
 
-		tri_GL_Brightness(fraction);
-		qglTexCoord2f(0, 1);
-		qglVertex3fv(last1);
+		tri_Brightness(fraction);
+		tri_TexCoord2f(0, 1);
+		tri_Vertex3fv(last1);
 
 		VectorCopy(screen, screenLast);
 
@@ -2767,10 +2766,10 @@ void R_DrawRing( vec_t* source, vec_t* delta, float width, float amplitude, floa
 			VectorMA(point, -width, normal, last2);
 
 			vLast += vStep;	// Advance texture scroll (v axis only)
-			qglTexCoord2f(1, vLast);
-			qglVertex3fv(last2);
-			qglTexCoord2f(0, vLast);
-			qglVertex3fv(last1);
+			tri_TexCoord2f(1, vLast);
+			tri_Vertex3fv(last2);
+			tri_TexCoord2f(0, vLast);
+			tri_Vertex3fv(last1);
 		}
 
 		VectorCopy(screen, screenLast);
@@ -2816,7 +2815,7 @@ void ParticleBox( vec_t* mins, vec_t* maxs )
 	ParticleLine(maxs[0], mins[1], mins[2], maxs[0], mins[1], maxs[2]);
 }
 
-#if !defined ( GLQUAKE )
+#if !defined( GLQUAKE )
 /*
 ===============
 R_TriangleFakeTexture
@@ -2824,7 +2823,14 @@ R_TriangleFakeTexture
 */
 int R_TriangleFakeTexture( float r, float g, float b, float a )
 {
-	// TODO: Implement
+	static byte fakeTex[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
+	static word fakePal[4] = { 128, 128, 128, 128 };
+
+	fakePal[0] = ((int)(b * a * 255.0)) & 0xFF;
+	fakePal[1] = ((int)(g * a * 255.0)) & 0xFF;
+	fakePal[2] = ((int)(r * a * 255.0)) & 0xFF;
+	fakePal[3] = 0;
+	R_TriangleSetTexture(fakeTex, 1, 1, fakePal);
 	return TRUE;
 }
 #endif
@@ -2889,9 +2895,9 @@ void R_BeamDraw( BEAM* pbeam, float frametime )
 		return;
 
 	if (pbeam->flags & FBEAM_SOLID)
-		tri_GL_RenderMode(kRenderNormal);
+		tri_RenderMode(kRenderNormal);
 	else
-		tri_GL_RenderMode(kRenderTransAdd);
+		tri_RenderMode(kRenderTransAdd);
 
 	// Update frequency
 	pbeam->freq += frametime;
@@ -3006,56 +3012,56 @@ void R_BeamDraw( BEAM* pbeam, float frametime )
 			pbeam->t = 1.0 - (pbeam->freq / pbeam->t);
 
 		if (pbeam->flags & FBEAM_FADEIN)
-			tri_GL_Color4f(pbeam->r, pbeam->g, pbeam->b, pbeam->t * pbeam->brightness);
+			tri_Color4f(pbeam->r, pbeam->g, pbeam->b, pbeam->t * pbeam->brightness);
 		else if (pbeam->flags & FBEAM_FADEOUT)
-			tri_GL_Color4f(pbeam->r, pbeam->g, pbeam->b, (1.0 - pbeam->t) * pbeam->brightness);
+			tri_Color4f(pbeam->r, pbeam->g, pbeam->b, (1.0 - pbeam->t) * pbeam->brightness);
 		else
-			tri_GL_Color4f(pbeam->r, pbeam->g, pbeam->b, pbeam->brightness);
+			tri_Color4f(pbeam->r, pbeam->g, pbeam->b, pbeam->brightness);
 
 		// Now draw the beam by type
 		switch (pbeam->type)
 		{
 		// Beam between 2 selected points
 		case TE_BEAMPOINTS:
-			qglBegin(GL_QUADS);
+			tri_Begin(TRI_QUADS);
 			R_DrawSegs(pbeam->source, pbeam->delta, pbeam->width, pbeam->amplitude, pbeam->freq, pbeam->speed, pbeam->segments, pbeam->flags);
-			qglEnd();
+			tri_End();
 			break;
 
 		// Screen-aligned beam ring, expands to max radius over lifetime
 		case TE_BEAMTORUS:
-			qglBegin(GL_QUAD_STRIP);
+			tri_Begin(TRI_QUAD_STRIP);
 			R_DrawTorus(pbeam->source, pbeam->delta, pbeam->width, pbeam->amplitude, pbeam->freq, pbeam->speed, pbeam->segments);
-			qglEnd();
+			tri_End();
 			break;
 
 		// Disk that expands to max radius over lifetime
 		case TE_BEAMDISK:
-			qglBegin(GL_QUAD_STRIP);
+			tri_Begin(TRI_QUAD_STRIP);
 			R_DrawDisk(pbeam->source, pbeam->delta, pbeam->width, pbeam->amplitude, pbeam->freq, pbeam->speed, pbeam->segments);
-			qglEnd();
+			tri_End();
 			break;
 
 		// Cylinder that expands to max radius over lifetime
 		// Houndeye shockwave effect uses this to create blast circles
 		case TE_BEAMCYLINDER:
-			qglBegin(GL_QUAD_STRIP);
+			tri_Begin(TRI_QUAD_STRIP);
 			R_DrawCylinder(pbeam->source, pbeam->delta, pbeam->width, pbeam->amplitude, pbeam->freq, pbeam->speed, pbeam->segments);
-			qglEnd();
+			tri_End();
 			break;
 
 		// Create a line of decaying beam segments until entity stops moving
 		case TE_BEAMFOLLOW:
-			qglBegin(GL_QUADS);
+			tri_Begin(TRI_QUADS);
 			R_DrawBeamFollow(pbeam);
-			qglEnd();
+			tri_End();
 			break;
 
 		// Connect a beam ring to two entities
 		case TE_BEAMRING:
-			qglBegin(GL_QUAD_STRIP);
+			tri_Begin(TRI_QUAD_STRIP);
 			R_DrawRing(pbeam->source, pbeam->delta, pbeam->width, pbeam->amplitude, pbeam->freq, pbeam->speed, pbeam->segments);
-			qglEnd();
+			tri_End();
 			break;
 		}
 	}
@@ -3075,7 +3081,7 @@ void R_BeamDrawList( void )
 	qglDisable(GL_ALPHA_TEST);
 	qglDepthMask(GL_FALSE);
 #endif
-	tri_GL_CullFace(TRI_NONE);
+	tri_CullFace(TRI_NONE);
 
 	for (;;)
 	{
@@ -3113,8 +3119,6 @@ void R_BeamDrawList( void )
 #if defined ( GLQUAKE )
 	qglDepthMask(GL_TRUE);
 #endif
-	tri_GL_CullFace(TRI_FRONT);
-	tri_GL_RenderMode(kRenderNormal);
+	tri_CullFace(TRI_FRONT);
+	tri_RenderMode(kRenderNormal);
 }
-
-// TODO: Implement (check if there's sw code in the memory)

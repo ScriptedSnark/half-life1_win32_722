@@ -86,7 +86,82 @@ int R_TriangleSpriteTexture( model_t* pSpriteModel, int frame )
 	return TRUE;
 }
 #else
+void tri_Soft_Begin( int primitiveCode )
+{
+	// TODO: Implement
+}
 
-// TODO: Implement
+void tri_Soft_CullFace( int style )
+{
+	// TODO: Implement
+}
+
+// Set RGBA color (range is [0..1])
+void tri_Soft_Color4f( float r, float g, float b, float a )
+{
+	// TODO: Implement
+}
+
+void tri_Soft_Color4ub( byte r, byte g, byte b, byte a )
+{
+	// TODO: Implement
+}
+
+// Set the rendering mode
+void tri_Soft_RenderMode( int mode )
+{
+	// TODO: Implement
+}
+
+void tri_Soft_TexCoord2f( float u, float v )
+{
+	// TODO: Implement
+}
+
+void tri_Soft_Brightness( float brightness )
+{
+	// TODO: Implement
+}
+
+void tri_Soft_Vertex3f( float x, float y, float z )
+{
+	// TODO: Implement
+}
+
+void tri_Soft_Vertex3fv( float* worldPnt )
+{
+	// TODO: Implement
+}
+
+void tri_Soft_End( void )
+{
+	// TODO: Implement
+}
+
+void R_TriangleSetTexture( byte* pTexture, short width, short height, word* pPalette )
+{
+	// TODO: Implement
+}
+
+int R_TriangleSpriteTexture( struct model_s* pSpriteModel, int frame )
+{
+	// TODO: Implement
+	return 0;
+}
+
+/*
+================
+R_TriangleProjectFinalVert
+================
+*/
+void R_TriangleProjectFinalVert( finalvert_t* fv, vec_t* av )
+{
+	// TODO: Implement
+}
+
+void R_TriangleDraw( int i0, int i1, int i2 )
+{
+	// TODO: Implement
+}
 
 #endif

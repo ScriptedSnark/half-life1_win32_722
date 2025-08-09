@@ -4,7 +4,6 @@
 #include "winquake.h"
 #include "pr_cmds.h"
 #include "decal.h"
-#include "r_local.h"
 
 #define NUM_SAFE_ARGVS  7
 

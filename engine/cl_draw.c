@@ -4,9 +4,6 @@
 
 #include "quakedef.h"
 #include "cl_draw.h"
-#if !defined ( GLQUAKE )
-#include "r_local.h"
-#endif
 
 typedef struct spritelist_s
 {

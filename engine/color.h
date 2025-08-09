@@ -34,7 +34,8 @@
 #define RGB_GREEN555( c )		( ((c) & 0x03E0) >> 5 )
 #define RGB_BLUE555( c )		( ((c) & 0x001F) )
 
-#define RGBPAL(p,i)		( ( ( (short) *(((p)+((i)*4)) + 2) << 8 ) & 0xf800 ) | ( ( (short) *(((p)+((i)*4)) + 1) << 3 ) & 0x07e0 ) | ( (short) *(((p)+((i)*4)) + 0) >> 3 ) )
+#define RGBPAL565(p,i)			( ( ( (short) *(((p)+((i)*4)) + 2) << 8 ) & 0xf800 ) | ( ( (short) *(((p)+((i)*4)) + 1) << 3 ) & 0x07e0 ) | ( (short) *(((p)+((i)*4)) + 0) >> 3 ) )
+#define RGBPAL555(p,i)			( ( ( (short) *(((p)+((i)*4)) + 2) << 7 ) & 0x7c00 ) | ( ( (short) *(((p)+((i)*4)) + 1) << 2 ) & 0x03e0 ) | ( (short) *(((p)+((i)*4)) + 0) >> 3 ) )
 
 extern qboolean is15bit;
 extern word* r_palette;
@@ -44,5 +45,9 @@ extern word red_64klut[65536];
 extern word green_64klut[65536];
 extern word blue_64klut[65536];
 
+extern short hlRGB( word* p, int i );
+extern short PackedRGB( byte* p, int i );
+extern short PutRGB( colorVec* pcv );
+extern void GetRGB( short s, colorVec* pcv );
 
 #endif	// COLOR_H

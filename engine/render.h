@@ -1,5 +1,8 @@
-// refresh.h -- public interface to refresh functions
+// render.h -- public interface to refresh functions
 
+#ifndef RENDER_H
+#define RENDER_H
+#pragma once
 
 
 // TODO: Implement
@@ -268,8 +271,13 @@ extern qboolean r_intentities;
 
 extern qboolean	r_cache_thrash;	// set if thrashing the surface cache
 
+extern int	(*D_SurfaceCacheForRes)( int width, int height );
 void D_FlushCaches( void );
+void D_InitCaches( void );
 
 void R_SetStackBase( void );
 
 // TODO: Implement
+
+
+#endif // RENDER_H

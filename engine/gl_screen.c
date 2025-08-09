@@ -75,6 +75,7 @@ cvar_t		scr_graphmedian = { "graphmedian", "128.0" };
 cvar_t		scr_graphhigh = { "graphhigh", "512.0" };
 cvar_t		scr_graphmean = { "graphmean", "1" };
 cvar_t		scr_downloading = { "scr_downloading", "-1.0" };
+float		downloading = -1.0;
 
 qboolean	scr_initialized;		// ready to draw
 
@@ -141,7 +142,7 @@ void SCR_CenterPrint( char* str )
 
 void SCR_DrawCenterString( void )
 {
-	char	*start;
+	char* start;
 	int		l;
 	int		j;
 	int		x, y;
@@ -998,14 +999,12 @@ void SCR_DrawDownloadProgress( void )
 	vrect_t rcFill;
 	byte	color[3];
 
-	static float downloading = -1;
-
 	if (scr_disabled_for_loading || downloading < 0)
 		return;
 
 	if (cls.state != ca_connected && cls.state != ca_uninitialized)
 	{
-		downloading = -1;
+		downloading = -1.0;
 		return;
 	}
 

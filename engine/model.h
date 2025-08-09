@@ -268,13 +268,191 @@ Alias models are position independent, so the cache manager can move them.
 ==============================================================================
 */
 
+typedef struct maliasframedesc_s
+{
+	aliasframetype_t	type;
+	trivertx_t			bboxmin;
+	trivertx_t			bboxmax;
+	int					frame;
+	char				name[16];
+} maliasframedesc_t;
 
+typedef struct maliasskindesc_s
+{
+	aliasskintype_t		type;
+	void*				pcachespot;
+	int					skin;
+} maliasskindesc_t;
 
+typedef struct maliasgroupframedesc_s
+{
+	trivertx_t			bboxmin;
+	trivertx_t			bboxmax;
+	int					frame;
+} maliasgroupframedesc_t;
 
+typedef struct maliasgroup_s
+{
+	int						numframes;
+	int						intervals;
+	maliasgroupframedesc_t	frames[1];
+} maliasgroup_t;
 
+typedef struct maliasskingroup_s
+{
+	int					numskins;
+	int					intervals;
+	maliasskindesc_t	skindescs[1];
+} maliasskingroup_t;
 
+// !!! if this is changed, it must be changed in asm_draw.h too !!!
+typedef struct mtriangle_s
+{
+	int					facesfront;
+	int					vertindex[3];
+} mtriangle_t;
 
+typedef struct aliashdr_s
+{
+	int					model;
+	int					stverts;
+	int					skindesc;
+	int					triangles;
+	int					palette;
+	maliasframedesc_t	frames[1];
+} aliashdr_t;
 
+//===================================================================
 
+//
+// Whole model
+//
+
+typedef enum {
+	mod_brush,
+	mod_sprite,
+	mod_alias,
+	mod_studio
+} modtype_t;
+
+#define	EF_ROCKET	1			// leave a trail
+#define	EF_GRENADE	2			// leave a trail
+#define	EF_GIB		4			// leave a trail
+#define	EF_ROTATE	8			// rotate (bonus items)
+#define	EF_TRACER	16			// green split trail
+#define	EF_ZOMGIB	32			// small blood trail
+#define	EF_TRACER2	64			// orange split trail + rotate
+#define	EF_TRACER3	128			// purple trail
+
+// values for model_t's needload
+#define NL_PRESENT		0
+#define NL_NEEDS_LOADED	1
+#define NL_UNREFERENCED	2
+
+#if !defined( CACHE_USER ) && !defined( QUAKEDEF_H )
+#define CACHE_USER
+typedef struct cache_user_s
+{
+	void* data;
+} cache_user_t;
+#endif
+
+typedef struct model_s
+{
+	char		name[MAX_MODEL_NAME];
+	qboolean	needload;		// bmodels and sprites don't cache normally
+
+	modtype_t	type;
+	int			numframes;
+	synctype_t	synctype;
+
+	int			flags;
+
+//
+// volume occupied by the model
+//		
+	vec3_t		mins, maxs;
+	float		radius;
+
+//
+// brush model
+//
+	int			firstmodelsurface, nummodelsurfaces;
+
+	int			numsubmodels;
+	dmodel_t* submodels;
+
+	int			numplanes;
+	mplane_t* planes;
+
+	int			numleafs;		// number of visible leafs, not counting 0
+	struct mleaf_s* leafs;
+
+	int			numvertexes;
+	mvertex_t* vertexes;
+
+	int			numedges;
+	medge_t* edges;
+
+	int			numnodes;
+	mnode_t* nodes;
+
+	int			numtexinfo;
+	mtexinfo_t* texinfo;
+
+	int			numsurfaces;
+	msurface_t* surfaces;
+
+	int			numsurfedges;
+	int* surfedges;
+
+	int			numclipnodes;
+	dclipnode_t* clipnodes;
+
+	int			nummarksurfaces;
+	msurface_t** marksurfaces;
+
+	hull_t		hulls[MAX_MAP_HULLS];
+
+	int			numtextures;
+	texture_t** textures;
+
+	byte*		visdata;
+	color24*	lightdata;
+	char*		entities;
+
+//
+// additional model data
+//
+	cache_user_t	cache;		// only access through Mod_Extradata
+} model_t;
+
+//============================================================================
+
+typedef struct
+{
+	char*		name;
+	short		entityIndex;
+	byte		depth;
+	byte		flags;
+	vec3_t		position;
+} DECALLIST;
+
+//============================================================================
+
+void SW_Mod_Init( void );
+
+void Mod_ClearAll( void );
+model_t* Mod_ForName( char* name, qboolean crash );
+model_t* Mod_FindName( char* name );
+void* Mod_Extradata( model_t* mod );	// handles caching
+void Mod_TouchModel( char* name );
+void Mod_MarkClient( model_t* pModel );
+
+mleaf_t* Mod_PointInLeaf( vec_t* p, model_t* model );
+
+model_t* Mod_LoadModel( model_t* mod, qboolean crash );
+
+void Mod_Print( void );
 
 #endif // MODEL_H

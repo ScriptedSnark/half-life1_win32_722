@@ -1,7 +1,6 @@
 // view.c -- player eye positioning
 
 #include "quakedef.h"
-#include "r_local.h"
 #include "pmove.h"
 #include "pr_cmds.h"
 #include "shake.h"

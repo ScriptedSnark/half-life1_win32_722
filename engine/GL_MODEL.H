@@ -476,6 +476,8 @@ typedef struct
 
 //============================================================================
 
+void SW_Mod_Init( void );
+
 void Mod_ClearAll( void );
 model_t* Mod_ForName( char* name, qboolean crash );
 model_t* Mod_FindName( char* name );

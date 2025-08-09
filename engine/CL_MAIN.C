@@ -1467,7 +1467,7 @@ CL_AllocDlight
 dlight_t* CL_AllocDlight( int key )
 {
 	int	i;
-	dlight_t* dl = NULL;
+	dlight_t* dl;
 
 // first look for an exact key match
 	if (key)
@@ -1517,7 +1517,7 @@ CL_AllocElight
 dlight_t* CL_AllocElight( int key )
 {
 	int	i;
-	dlight_t* el = NULL;
+	dlight_t* el;
 
 // first look for an exact key match
 	if (key)

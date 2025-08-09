@@ -25,8 +25,6 @@ void Mod_LoadStudioModel( model_t* mod, void* buffer )
 	int					total;
 	int					version;
 	int					mark;
-	char				name[256];
-	byte*				pal;
 	pin = (byte*)buffer;
 
 	phdr = (studiohdr_t*)pin;
@@ -46,16 +44,27 @@ void Mod_LoadStudioModel( model_t* mod, void* buffer )
 	mod->flags = phdr->flags;
 
 	block = (byte*)Hunk_AllocName(phdr->length, loadname);
+#if defined( GLQUAKE )
 	memcpy(block, phdr, phdr->length);
+#else
+	// TODO: Implement
+#endif
 
 	ptexture = (mstudiotexture_t*)((byte*)block + phdr->textureindex);
 	for (i = 0; i < phdr->numtextures; i++, ptexture++)
 	{
+#if defined( GLQUAKE )
+		char name[256];
+		byte* pal;
+
 		pal = (byte*)block + ptexture->index + (ptexture->width * ptexture->height);
 		strcpy(name, mod->name);
 		strcat(name, ptexture->name);
 		ptexture->index = GL_LoadTexture(name, GLT_STUDIO, ptexture->width, ptexture->height,
 			(byte*)block + ptexture->index, FALSE, TEX_TYPE_NONE, pal);
+#else
+		// TODO: Implement
+#endif
 	}
 
 	total = phdr->texturedataindex - phdr->length - mark + Hunk_LowMark();

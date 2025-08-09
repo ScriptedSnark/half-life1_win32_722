@@ -1721,9 +1721,7 @@ DISPATCHFUNCTION GetDispatch( char* pname )
 	{
 		pDispatch = (DISPATCHFUNCTION)GetProcAddress((HMODULE)g_rgextdll[i].lDLLHandle, pname);
 		if (pDispatch)
-		{
 			return pDispatch;
-		}
 	}
 
 	return NULL;
@@ -1765,9 +1763,7 @@ uint32 FunctionFromName( char* pName )
 	{
 		function = FindNameInTable(&g_rgextdll[i], pName);
 		if (function)
-		{
 			return function;
-		}
 	}
 
 	Con_Printf("Can't find proc: %s\n", pName);
@@ -1784,9 +1780,7 @@ char* NameForFunction( uint32 function )
 	{
 		pName = FindAddressInTable(&g_rgextdll[i], function);
 		if (pName)
-		{
 			return pName;
-		}
 	}
 
 	Con_Printf("Can't find address: %08lx\n", function);
@@ -1945,7 +1939,6 @@ void LoadThisDll( char* szDllFilename )
 	PFN_GiveFnptrsToDll pfnGiveFnptrsToDll;
 
 	hDLL = LoadLibrary(szDllFilename);
-
 	if (hDLL == NULL)
 	{
 		Con_Printf("LoadLibrary failed on %s (%d)\n", szDllFilename, GetLastError());
@@ -1953,7 +1946,6 @@ void LoadThisDll( char* szDllFilename )
 	}
 
 	pfnGiveFnptrsToDll = (PFN_GiveFnptrsToDll)GetProcAddress(hDLL, "GiveFnptrsToDll");
-
 	if (!pfnGiveFnptrsToDll)
 	{
 		Con_Printf("Couldn't get GiveFnptrsToDll in %s\n", szDllFilename);
