@@ -448,7 +448,7 @@ sndinitstat SNDDMA_InitDirect( void )
 	pDSBuf->lpVtbl->Play(pDSBuf, 0, 0, DSBPLAY_LOOPING);
 
 	if (snd_firsttime)
-		Con_SafePrintf("   %d channel(s)\n"
+		Con_DPrintf("   %d channel(s)\n"
 			"   %d bits/sample\n"
 			"   %d bytes/sec\n",
 			shm->channels, shm->samplebits, shm->speed);
