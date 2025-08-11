@@ -476,6 +476,11 @@ void V_UpdatePalette( void )
 		ramps[2][i] = texgammatable[ib];
 	}
 }
+#else
+void V_UpdatePalette( void )
+{
+	V_CheckGamma();
+}
 #endif
 
 

@@ -3,7 +3,7 @@
 #include "quakedef.h"
 #include "screen.h"
 
-int			giHudLevel = 1;
+int	giHudLevel = 1;
 
 extern cvar_t crosshair;
 extern vrect_t scr_vrect;

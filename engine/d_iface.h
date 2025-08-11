@@ -32,23 +32,35 @@ typedef struct
 
 // TODO: Implement
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+extern void (*D_BeginDirectRect)( int x, int y, byte* pbitmap, int width, int height );
+extern void (*D_EndDirectRect)( int x, int y, int width, int height );
+#ifdef __cplusplus
+}
+#endif
+void D_DisableBackBufferAccess( void );
 void D_DrawParticle( particle_t* pparticle );
+void D_EnableBackBufferAccess( void );
 void D_EndParticles( void );
 void D_StartParticles( void );
+
+void D_UpdateRects( vrect_t* prect );
+
+// !!! must be kept the same as in quakeasm.h !!!
+#define TRANSPARENT_COLOR	0xFF
 
 //=======================================================================//
 
 // callbacks to Quake
-
-void R_DrawSurface( void );
 
 
 
 int DecalListCreate( DECALLIST* pList );
 
 
-// !!! must be kept the same as in quakeasm.h !!!
-#define TRANSPARENT_COLOR	0xFF
+
 
 
 

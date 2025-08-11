@@ -2155,7 +2155,9 @@ int Host_Init( quakeparms_t* parms )
 
 		R_Init();
 
+#if defined( GLQUAKE )
 		S_Init();
+#endif
 
 		CL_Init();
 
@@ -2167,7 +2169,7 @@ int Host_Init( quakeparms_t* parms )
 	// Execute valve.rc
 	Cbuf_InsertText("exec valve.rc\n");
 
-#if defined ( GLQUAKE )
+#if defined( GLQUAKE )
 	GL_Config();
 #endif
 

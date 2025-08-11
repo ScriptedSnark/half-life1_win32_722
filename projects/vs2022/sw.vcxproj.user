@@ -3,6 +3,8 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LocalDebuggerWorkingDirectory>E:\Half-Life NetTest1</LocalDebuggerWorkingDirectory>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+    <LocalDebuggerCommand>E:\Half-Life NetTest1\hl.exe</LocalDebuggerCommand>
+    <LocalDebuggerCommandArguments>-dev -console</LocalDebuggerCommandArguments>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug - Address Sanitizer|Win32'">
     <LocalDebuggerWorkingDirectory>E:\Half-Life NetTest1</LocalDebuggerWorkingDirectory>

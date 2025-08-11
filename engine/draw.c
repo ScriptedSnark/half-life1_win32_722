@@ -6,8 +6,10 @@
 
 qfont_t* draw_creditsfont;
 qfont_t* draw_chars;
+qpic_t* draw_disc;
 
 cachewad_t	decal_wad;
+cachewad_t	custom_wad;
 cachewad_t	menu_wad;
 
 char		decal_names[MAX_BASE_DECALS][16];
@@ -59,8 +61,14 @@ Draw_StringLength
 */
 int Draw_StringLength( char* psz )
 {
-	// TODO: Implement
-	return 0;
+	int totalWidth = 0;
+
+	while (*psz)
+	{
+		totalWidth += draw_chars->fontinfo[*psz].charwidth;
+		psz++;
+	}
+	return totalWidth;
 }
 
 /*
@@ -180,8 +188,31 @@ int Draw_DecalIndexFromName( char* name )
 
 qboolean Draw_CacheReload( cachewad_t* wad, lumpinfo_t* pLump, cachepic_t* pic, char* clean, char* path )
 {
-	// TODO: Implement
-	return FALSE;
+	byte* buf;
+	int		h[3];
+
+	COM_OpenFile(wad->name, h);
+	if (h[2] == -1)
+		return FALSE;
+
+	buf = (byte*)Cache_Alloc(&pic->cache, pLump->size + wad->cacheExtra + 1, clean);
+	if (!buf)
+		Sys_Error("Draw_CacheGet: not enough space for %s in %s", path, wad->name);
+
+	buf[wad->cacheExtra + pLump->size] = 0;
+
+	Draw_BeginDisc();
+
+	COM_FileSeek(h[0], h[1], h[2], pLump->filepos);
+	Sys_FileRead(h[2], &buf[wad->cacheExtra], pLump->size);
+	COM_CloseFile(h[0], h[1], h[2]);
+
+	if (wad->pfnCacheBuild)
+		wad->pfnCacheBuild(wad, buf);
+
+	Draw_EndDisc();
+
+	return TRUE;
 }
 
 qboolean Draw_CacheLoadFromCustom( char* clean, cachewad_t* wad, void *raw, cachepic_t* pic )
@@ -192,8 +223,39 @@ qboolean Draw_CacheLoadFromCustom( char* clean, cachewad_t* wad, void *raw, cach
 
 void* Draw_CacheGet( cachewad_t* wad, int index )
 {
-	// TODO: Implement
-	return 0;
+	cachepic_t* pic;
+	int i;
+	void* dat = NULL;
+
+	if (index >= wad->cacheCount)
+		Sys_Error("Cache wad indexed before load %s: %d", wad->name, index);
+
+	pic = &wad->cache[index];
+	dat = Cache_Check(&pic->cache);
+	if (!dat)
+	{
+		char name[16];
+		char clean[16];
+		lumpinfo_t* pLump;
+
+		COM_FileBase(pic->name, name);
+		W_CleanupName(name, clean);
+
+		for (i = 0, pLump = wad->lumps; i < wad->lumpCount; i++, pLump++)
+		{
+			if (!strcmp(clean, pLump->name))
+				break;
+		}
+
+		if (!Draw_CacheReload(wad, pLump, pic, clean, pic->name))
+			return NULL;
+
+		dat = pic->cache.data;
+		if (!dat)
+			Sys_Error("Draw_CacheGet: failed to load %s", pic->name);		
+	}
+
+	return dat;
 }
 
 void* Draw_CustomCacheGet( cachewad_t* wad, void* raw, int index )
@@ -209,7 +271,45 @@ void Decal_Init( void )
 
 void Draw_CacheWadInit( char* name, int cacheMax, cachewad_t* wad )
 {
-	// TODO: Implement
+	int		h[3];
+	int		nFileSize;
+	lumpinfo_t* lump_p;
+	wadinfo_t header;
+	int		i;
+
+	nFileSize = COM_OpenFile(name, h);
+	if (h[2] == -1)
+		Sys_Error("Draw_LoadWad: Couldn't open %s\n", name);
+
+	Sys_FileRead(h[2], &header, sizeof(header));
+
+	if (header.identification[0] != 'W'
+	  || header.identification[1] != 'A'
+	  || header.identification[2] != 'D'
+	  || header.identification[3] != '3')
+	{
+		Sys_Error("Wad file %s doesn't have WAD3 id\n", name);
+	}
+
+	wad->lumps = (lumpinfo_t*)malloc(nFileSize - header.infotableofs);
+
+	COM_FileSeek(h[0], h[1], h[2], header.infotableofs);
+	Sys_FileRead(h[2], wad->lumps, nFileSize - header.infotableofs);
+	COM_CloseFile(h[0], h[1], h[2]);
+
+	for (i = 0, lump_p = wad->lumps; i < header.numlumps; i++, lump_p++)
+	{
+		W_CleanupName(lump_p->name, lump_p->name);
+	}
+
+	wad->name = name;
+	wad->lumpCount = header.numlumps;
+	wad->cacheCount = 0;
+	wad->cacheMax = cacheMax;
+	wad->cache = (cachepic_t*)malloc(sizeof(cachepic_t) * cacheMax);
+	memset(wad->cache, 0, sizeof(cachepic_t) * cacheMax);
+	wad->cacheExtra = 0;
+	wad->pfnCacheBuild = NULL;
 }
 
 void CustomDecal_Init( cachewad_t* wad, void* raw, int nFileSize )
@@ -235,7 +335,17 @@ Draw_Init
 */
 void Draw_Init( void )
 {
-	// TODO: Implement
+	Draw_CacheWadInit("cached.wad", 16, &menu_wad);
+
+	Draw_CacheWadHandler(&decal_wad, Draw_MiptexTexture, 24);
+	Draw_CacheWadHandler(&custom_wad, Draw_MiptexTexture, 24);
+
+	draw_chars = (qfont_t*)W_GetLumpName("conchars");
+	draw_creditsfont = (qfont_t*)W_GetLumpName("creditsfont");
+
+	memset(decal_names, 0, sizeof(decal_names));
+
+	draw_disc = (qpic_t*)W_GetLumpName("lambda");
 }
 
 int Draw_MessageFontInfo( short* pWidth )
@@ -253,8 +363,40 @@ Draws a single character
 */
 int Draw_Character( int x, int y, int num )
 {
-	// TODO: Implement
-	return 0;
+	word* dest;
+	byte* source;
+	byte* palette;
+	int				row, col;
+	int				rowheight, charwidth;
+
+	num &= 255;
+
+	rowheight = draw_chars->rowheight;
+	if (y <= -rowheight)
+		return 0;			// totally off screen
+
+	source = &draw_chars->data[draw_chars->fontinfo[num].startoffset];
+
+	charwidth = draw_chars->fontinfo[num].charwidth;
+	if (y < 0)
+		return charwidth;
+
+	dest = (word*)(vid.conbuffer + y * vid.conrowbytes + x * 2);
+	palette = &draw_chars->data[draw_chars->height * 256 + 2];
+
+	for (row = 0; row < rowheight; row++)
+	{
+		for (col = 0; col < charwidth; col++)
+		{
+			if (source[col] != TRANSPARENT_COLOR)
+				dest[col] = PackedRGB(palette, source[col]);
+		}
+
+		source += 256;
+		dest = (word*)((byte*)dest + vid.conrowbytes);
+	}
+
+	return charwidth;
 }
 
 int Draw_MessageCharacterAdd( int x, int y, int num, int rr, int gg, int bb )
@@ -270,8 +412,12 @@ Draw_String
 */
 int Draw_String( int x, int y, char* str )
 {
-	// TODO: Implement
-	return 0;
+	while (*str)
+	{
+		x += Draw_Character(x, y, *str);
+		str++;
+	}
+	return x;
 }
 
 /*
@@ -281,8 +427,14 @@ Draw_StringLen
 */
 int Draw_StringLen( char* psz )
 {
-	// TODO: Implement
-	return 0;
+	int totalWidth = 0;
+
+	while (psz && *psz)
+	{
+		totalWidth += draw_chars->fontinfo[*psz].charwidth;
+		psz++;
+	}
+	return totalWidth;
 }
 
 /*
@@ -514,7 +666,59 @@ Draw_ConsoleBackground
 */
 void Draw_ConsoleBackground( int lines )
 {
-	// TODO: Implement
+	int				i, x, y, v;
+	byte* src;
+	byte* palette;
+	unsigned short* pusdest;
+	int				f, fstep;
+	qpic_t* pConBack;
+	char			ver[100];
+	short			colors[256];
+
+	if (con_loading)
+		pConBack = Draw_CachePic("gfx/loading.lmp");
+	else
+		pConBack = Draw_CachePic("gfx/conback.lmp");
+
+	palette = &pConBack->data[pConBack->width * pConBack->height + 2];
+
+	for (i = 0; i < 256; i++)
+	{
+		colors[i] = PackedRGB(palette, i);
+	}
+
+	// draw the pic
+	pusdest = (unsigned short*)vid.conbuffer;
+
+	for (y = 0; y < lines; y++)
+	{
+		v = (vid.conheight + y - lines) * pConBack->height;
+		src = &pConBack->data[pConBack->width * (v / vid.conheight)];
+
+		f = 0;
+		fstep = (pConBack->width * 0x10000) / vid.conwidth;
+		for (x = 0; x < (int)vid.conwidth; x += 4)
+		{
+			pusdest[x] = colors[src[f >> 16]];
+			f += fstep;
+			pusdest[x + 1] = colors[src[f >> 16]];
+			f += fstep;
+			pusdest[x + 2] = colors[src[f >> 16]];
+			f += fstep;
+			pusdest[x + 3] = colors[src[f >> 16]];
+			f += fstep;
+		}
+
+		pusdest = (unsigned short*)((byte*)pusdest + vid.conrowbytes);
+	}
+
+	sprintf(ver, "Half-Life 1.0 (build %d)", build_number());
+
+	x = vid.conwidth - Draw_StringLen(ver);
+	if (!con_loading && !(giSubState & 4))
+	{
+		Draw_String(x, 0, ver);
+	}
 }
 
 
@@ -579,8 +783,9 @@ Call before beginning any disc IO.
 */
 void Draw_BeginDisc( void )
 {
-	// TODO: Implement
+	D_BeginDirectRect(vid.width - 24, 0, draw_disc->data, 24, 24);
 }
+
 
 /*
 ================
@@ -592,5 +797,5 @@ Call after completing any disc IO
 */
 void Draw_EndDisc( void )
 {
-	// TODO: Implement
+	D_EndDirectRect(vid.width - 24, 0, 24, 24);
 }

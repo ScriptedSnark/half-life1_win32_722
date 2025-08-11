@@ -12,8 +12,6 @@ static int	VID_highhunkmark;
 
 static HANDLE	hMovieFile = INVALID_HANDLE_VALUE;
 
-viddef_t	vid;				// global video state
-
 #define MODE_WINDOWED			0
 #define MODE_SETTABLE_WINDOW	2
 #define NO_MODE					(MODE_WINDOWED - 1)
@@ -277,5 +275,5 @@ void VID_WriteBuffer( const char* pFilename )
 	if (!CloseHandle(hMovieFile))
 		Sys_Error("Couldn't close file for movie.\n");
 
-	hMovieFile = (HANDLE)-1;
+	hMovieFile = INVALID_HANDLE_VALUE;
 }

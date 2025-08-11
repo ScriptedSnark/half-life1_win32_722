@@ -15,6 +15,8 @@ extern int			screengammatable[1024];
 
 extern float v_blend[4];
 
+extern cvar_t lcd_x;
+
 void V_Init( void );
 void V_InitLevel( void );
 void V_RenderView( void );

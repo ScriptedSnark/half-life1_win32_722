@@ -121,6 +121,7 @@
     <ClCompile Include="..\..\engine\cvar.c" />
     <ClCompile Include="..\..\engine\draw.c" />
     <ClCompile Include="..\..\engine\D_FILL.C" />
+    <ClCompile Include="..\..\engine\D_INIT.C" />
     <ClCompile Include="..\..\engine\D_PART.C" />
     <ClCompile Include="..\..\engine\D_SURF.C" />
     <ClCompile Include="..\..\engine\ha3d.cpp" />

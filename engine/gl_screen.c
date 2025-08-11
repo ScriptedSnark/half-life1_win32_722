@@ -75,7 +75,7 @@ cvar_t		scr_graphmedian = { "graphmedian", "128.0" };
 cvar_t		scr_graphhigh = { "graphhigh", "512.0" };
 cvar_t		scr_graphmean = { "graphmean", "1" };
 cvar_t		scr_downloading = { "scr_downloading", "-1.0" };
-float		downloading = -1.0;
+float		downloadpercent = -1.0;
 
 qboolean	scr_initialized;		// ready to draw
 
@@ -95,6 +95,9 @@ viddef_t	vid;				// global video state
 vrect_t		scr_vrect;
 
 qboolean	scr_disabled_for_loading;
+
+qboolean	scr_skipupdate;
+
 qboolean	scr_drawloading;
 float		scr_disabled_time;
 
@@ -729,16 +732,17 @@ void SCR_UpdateScreen( void )
 
 	if (scr_disabled_for_loading)
 	{
-		if (realtime - scr_disabled_time <= 60)
+		if (realtime - scr_disabled_time > 60)
+		{
+			scr_disabled_for_loading = FALSE;
+			Con_Printf("load failed.\n");
+		}
+		else
 			return;
-
-		scr_disabled_for_loading = FALSE;
-		Con_Printf("load failed.\n");
 	}
 
-	// No screen refresh on dedicated servers
 	if (cls.state == ca_dedicated)
-		return;
+		return;				// stdout only
 
 	if (!scr_initialized || !con_initialized)
 		return;				// not initialized yet
@@ -790,18 +794,18 @@ void SCR_UpdateScreen( void )
 	{
 		GL_Bind(r_notexture_mip->gl_texturenum);
 
-		if (vid.height > scr_con_current)
+		if ((float)vid.height > scr_con_current)
 			Sbar_Draw();
 
 		SCR_DrawNet();
 		SCR_DrawPause();
 		SCR_CheckDrawCenterString();
-		Con_DrawNotify();
+		SCR_DrawConsole();
 	}
 
 	if (scr_netusage.value)
 	{
-		if (vid.height > scr_con_current)
+		if ((float)vid.height > scr_con_current)
 			SCR_NetUsage();
 	}
 	
@@ -931,7 +935,7 @@ void SCR_DrawDownloadInfo( void )
 
 	if (!cls.download)
 	{
-		scr_downloading.value = -1;
+		scr_downloading.value = -1.0;
 		return;
 	}
 
@@ -999,16 +1003,16 @@ void SCR_DrawDownloadProgress( void )
 	vrect_t rcFill;
 	byte	color[3];
 
-	if (scr_disabled_for_loading || downloading < 0)
+	if (scr_disabled_for_loading || downloadpercent < 0)
 		return;
 
 	if (cls.state != ca_connected && cls.state != ca_uninitialized)
 	{
-		downloading = -1.0;
+		downloadpercent = -1.0;
 		return;
 	}
 
-	percent = (int)downloading;
+	percent = (int)downloadpercent;
 	percent = min(100, max(0, percent));
 
 	scale = scr_vrect.height / 240.0;

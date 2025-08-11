@@ -95,6 +95,33 @@ void R_NewMap( void )
 
 /*
 ===============
+R_SetVrect
+===============
+*/
+void R_SetVrect( vrect_t* pvrectin, vrect_t* pvrect, int lineadj )
+{
+	// TODO: Implement
+}
+
+
+/*
+===============
+R_ViewChanged
+
+Called every time the vid structure or r_refdef changes.
+Guaranteed to be called before the first refresh
+===============
+*/
+void R_ViewChanged( vrect_t* pvrect, int lineadj, float aspect )
+{
+	// TODO: Implement
+}
+
+
+
+
+/*
+===============
 R_MarkLeaves
 ===============
 */

@@ -23,8 +23,8 @@ typedef struct exefuncs_s
 	// Get viddef structure
 	void		(*VID_GetVID)( struct viddef_s* pvid );
 
-	void		(*D_BeginDirectRect)( int width, int height, byte* data, int pic_width, int pic_height );
-	void		(*D_EndDirectRect)( int width, int height, int pic_width, int pic_height );
+	void		(*D_BeginDirectRect)( int x, int y, byte* pbitmap, int width, int height );
+	void		(*D_EndDirectRect)( int x, int y, int width, int height );
 
 	// Let the launcher know when the app is being activated or deactivated
 	void		(*AppActivate)( int fActive, int minimize );

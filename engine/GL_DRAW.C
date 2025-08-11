@@ -175,7 +175,6 @@ int Draw_StringLen( char* psz )
 		totalWidth += draw_chars->fontinfo[*psz].charwidth;
 		psz++;
 	}
-
 	return totalWidth;
 }
 
@@ -433,7 +432,7 @@ int Draw_Character( int x, int y, int num )
 
 	charwidth = draw_chars->fontinfo[num].charwidth;
 	if (y < 0 || num == 32)
-		return draw_chars->fontinfo[num].charwidth;		// space
+		return charwidth;		// space
 
 	col = draw_chars->fontinfo[num].startoffset & 255;
 	fcol = col * chars_xsize;
@@ -2256,7 +2255,7 @@ void* Draw_CacheGet( cachewad_t* wad, int index )
 	int i;
 	void* dat = NULL;
 
-	if (wad->cacheCount <= index)
+	if (index >= wad->cacheCount)
 		Sys_Error("Cache wad indexed before load %s: %d", wad->name, index);
 
 	pic = &wad->cache[index];
@@ -2265,6 +2264,7 @@ void* Draw_CacheGet( cachewad_t* wad, int index )
 		char name[16];
 		char clean[16];
 		lumpinfo_t* pLump;
+
 		COM_FileBase(pic->name, name);
 		W_CleanupName(name, clean);
 
@@ -2277,17 +2277,12 @@ void* Draw_CacheGet( cachewad_t* wad, int index )
 		if (i >= wad->lumpCount)
 			return NULL;
 
-		if (Draw_CacheReload(wad, pLump, pic, clean, pic->name))
-		{
-			if (pic->cache.data == NULL)
-				Sys_Error("Draw_CacheGet: failed to load %s", pic->name);
+		if (!Draw_CacheReload(wad, pLump, pic, clean, pic->name))
+			return NULL;
 
-			dat = pic->cache.data;
-		}
-		else
-		{
-			dat = NULL;
-		}
+		dat = pic->cache.data;
+		if (!dat)
+			Sys_Error("Draw_CacheGet: failed to load %s", pic->name);
 	}
 
 	return dat;
@@ -2310,17 +2305,12 @@ void* Draw_CustomCacheGet( cachewad_t* wad, void* raw, int index )
 		COM_FileBase(pic->name, name);
 		W_CleanupName(name, clean);
 
-		if (Draw_CacheLoadFromCustom(clean, wad, raw, pic))
-		{
-			if (pic->cache.data == NULL)
-				Sys_Error("Draw_CacheGet: failed to load %s", pic->name);
+		if (!Draw_CacheLoadFromCustom(clean, wad, raw, pic))
+			return NULL;
 
-			dat = pic->cache.data;
-		}
-		else
-		{
-			dat = NULL;
-		}
+		dat = pic->cache.data;
+		if (!dat)
+			Sys_Error("Draw_CacheGet: failed to load %s", pic->name);
 	}
 
 	return dat;

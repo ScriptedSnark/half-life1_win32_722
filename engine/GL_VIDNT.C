@@ -7,8 +7,6 @@
 
 BOOL gfMiniDriver = FALSE;
 
-qboolean		scr_skipupdate;
-
 int gGLHardwareType = GL_HW_UNKNOWN;
 
 const char* gl_vendor;
