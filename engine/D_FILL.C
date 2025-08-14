@@ -47,11 +47,12 @@ void D_FillRect( vrect_t* rect, byte* color )
 	if (((rwidth & 0x03) == 0) && (((long)dest & 0x03) == 0))
 	{
 	// faster aligned dword clear
+		rwidth >>= 1;
+
 		for (ry = 0; ry < rheight; ry++)
 		{
-			for (rx = 0; rx < (rwidth >> 1); rx++)
+			for (rx = 0; rx < rwidth; rx++)
 				((int*)dest)[rx] = (int)colorVal | ((int)colorVal << 16);
-
 			dest += vid.rowbytes;
 		}
 	}
@@ -62,7 +63,6 @@ void D_FillRect( vrect_t* rect, byte* color )
 		{
 			for (rx = 0; rx < rwidth; rx++)
 				((word*)dest)[rx] = colorVal;
-
 			dest += vid.rowbytes;
 		}
 	}

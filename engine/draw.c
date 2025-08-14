@@ -350,8 +350,18 @@ void Draw_Init( void )
 
 int Draw_MessageFontInfo( short* pWidth )
 {
-	// TODO: Implement
-	return 0;
+	int i;
+
+	if (!draw_creditsfont)
+		return 0;
+
+	if (pWidth)
+	{
+		for (i = 0; i < 256; i++)
+			*pWidth++ = draw_creditsfont->fontinfo[i].charwidth;
+	}
+
+	return draw_creditsfont->rowheight;
 }
 
 /*
