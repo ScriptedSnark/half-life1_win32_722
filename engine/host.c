@@ -1965,11 +1965,11 @@ void _Host_Frame( float time )
 		}
 
 		Con_DPrintf("%3i fps tot %3.0f server %3.0f gfx %3.0f snd %d ents\n",
-		  (int)fps,
-		  pass1,
-		  pass2,
-		  pass3,
-		  ent_count);
+			(int)fps,
+			pass1,
+			pass2,
+			pass3,
+			ent_count);
 	}
 
 	if ((giSubState & 4) && cls.state == ca_disconnected)

@@ -77,10 +77,10 @@ qboolean TEX_InitFromWad( char* path )
 {
 	int			i;
 	wadinfo_t	wadinfo;
-	char* szTmpPath;
+	char		szTmpPath[1024];
 	char* pszWadFile;
 
-	szTmpPath = _strdup(path);
+	strcpy(szTmpPath, path); 
 
 	// temporary kludge so we don't have to deal with no occurances of a semicolon
 	//  in the path name ..
@@ -150,8 +150,6 @@ qboolean TEX_InitFromWad( char* path )
 	}
 
 	qsort(lumpinfo, nTexLumps, sizeof(texlumpinfo_t), lump_sorter);
-
-	free(szTmpPath);
 
 	return TRUE;
 }
