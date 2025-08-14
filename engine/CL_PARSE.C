@@ -80,7 +80,7 @@ char* svc_strings[] =
 int	oldparsecountmod;
 int	parsecountmod;
 double	parsecounttime;
-resource_t custom_resource;
+resource_t currentresource;
 
 //=============================================================================
 
@@ -1275,8 +1275,7 @@ qboolean CL_RequestMissingResources( void )
 
 	p = cl.resourcesneeded.pNext;
 	cls.downloadresource = p;
-
-	memcpy(&custom_resource, cl.resourcesneeded.pNext, sizeof(custom_resource));
+	memcpy(&currentresource, p, sizeof(currentresource));
 
 	if (p == &cl.resourcesneeded)
 	{
@@ -1306,7 +1305,7 @@ qboolean CL_RequestMissingResources( void )
 		CL_MoveToOnHandList(p);
 		break;
 	case t_model:
-		if (p->szFileName[0] == '*' || CL_CheckFile(va("sound/%s", p->szFileName)))
+		if (p->szFileName[0] == '*' || CL_CheckFile(p->szFileName))
 		{
 			CL_MoveToOnHandList(p);
 			return TRUE;
@@ -1598,8 +1597,8 @@ void CL_ParseCustomization( void )
 		resource->ucFlags |= RES_WASMISSING;
 		CL_AddToResourceList(resource, &cl.resourcesneeded);
 		Con_Printf("Requesting %s from server\n", resource->szFileName);
-		memcpy(&custom_resource, resource, sizeof(custom_resource));
-		cls.downloadresource = &custom_resource;
+		memcpy(&currentresource, resource, sizeof(currentresource));
+		cls.downloadresource = &currentresource;
 		CL_StartResourceDownloading("Custom resource propagation...\n", TRUE);
 		return;
 	}
