@@ -100,7 +100,41 @@ R_SetVrect
 */
 void R_SetVrect( vrect_t* pvrectin, vrect_t* pvrect, int lineadj )
 {
-	// TODO: Implement
+	int		h;
+	float	size;
+
+	size = scr_viewsize.value > 100 ? 100 : scr_viewsize.value;
+	if (cl.intermission)
+	{
+		size = 100;
+		lineadj = 0;
+	}
+	size /= 100;
+
+	h = pvrectin->height - lineadj;
+	pvrect->width = pvrectin->width * size;
+	if (pvrect->width < 96)
+	{
+		size = 96.0 / pvrectin->width;
+		pvrect->width = 96;	// min for icons
+	}
+	pvrect->width &= ~7;
+	pvrect->height = pvrectin->height * size;
+	if (pvrect->height > pvrectin->height - lineadj)
+		pvrect->height = pvrectin->height - lineadj;
+
+	pvrect->height &= ~1;
+
+	pvrect->x = (pvrectin->width - pvrect->width) / 2;
+	pvrect->y = (h - pvrect->height) / 2;
+
+	{
+		if (lcd_x.value)
+		{
+			pvrect->y >>= 1;
+			pvrect->height >>= 1;
+		}
+	}
 }
 
 
