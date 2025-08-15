@@ -740,7 +740,50 @@ R_DrawRect16
 void R_DrawRect16( vrect_t* prect, int rowbytes, byte* psrc, byte* palette,
 	int transparent )
 {
-	// TODO: Implement
+	byte			t;
+	int				i, j, srcdelta, destdelta;
+	unsigned short* pdest;
+
+	pdest = (unsigned short*)(vid.buffer + (prect->y * (vid.rowbytes >> 1)) + prect->x * 2);
+
+	srcdelta = rowbytes - prect->width;
+	destdelta = (vid.rowbytes >> 1) - prect->width;
+
+	if (transparent)
+	{
+		for (i = 0; i < prect->height; i++)
+		{
+			for (j = 0; j < prect->width; j++)
+			{
+				t = *psrc;
+				if (t != TRANSPARENT_COLOR)
+				{
+					*pdest = PackedRGB(palette, t);
+				}
+
+				psrc++;
+				pdest++;
+			}
+
+			psrc += srcdelta;
+			pdest += destdelta;
+		}
+	}
+	else
+	{
+		for (i = 0; i < prect->height; i++)
+		{
+			for (j = 0; j < prect->width; j++)
+			{
+				*pdest = PackedRGB(palette, *psrc);
+				psrc++;
+				pdest++;
+			}
+
+			psrc += srcdelta;
+			pdest += destdelta;
+		}
+	}
 }
 
 
@@ -766,7 +809,18 @@ Fills a box of pixels with a single color
 */
 void Draw_Fill( int x, int y, int w, int h, int c )
 {
-	// TODO: Implement
+	unsigned short* pusdest;
+	unsigned short	uc;
+	int				u, v;
+
+	uc = (unsigned short)c;
+
+	pusdest = (unsigned short*)(vid.buffer + y * (vid.rowbytes >> 1) + x * 2);
+	for (v = 0; v < h; v++, pusdest = (unsigned short*)((byte*)pusdest + (vid.rowbytes >> 1)))
+	{
+		for (u = 0; u < w; u++)
+			pusdest[u] = uc;
+	}
 }
 //=============================================================================
 
@@ -778,7 +832,28 @@ Draw_FadeScreen
 */
 void Draw_FadeScreen( void )
 {
-	// TODO: Implement
+	int			x, y, w;
+
+	VID_UnlockBuffer();
+	S_ExtraUpdate();
+	VID_LockBuffer();
+
+	w = vid.width;
+
+	for (y = 0; y < (int)vid.height; y++)
+	{
+		unsigned short* sbuf = (unsigned short*)(vid.buffer + vid.rowbytes * y);
+
+		for (x = 0; x < w; x++)
+		{
+			unsigned short color = is15bit ? (*sbuf & 0xEADE) >> 1 : (*sbuf & 0xF7DE) >> 1;
+			sbuf[x] = color;
+		}
+	}
+
+	VID_UnlockBuffer();
+	S_ExtraUpdate();
+	VID_LockBuffer();
 }
 
 //=============================================================================
