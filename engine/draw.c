@@ -483,7 +483,38 @@ Draw_Pic
 */
 void Draw_Pic( int x, int y, qpic_t* pic )
 {
-	// TODO: Implement
+	byte* source;
+	byte* palette;
+	unsigned short* pusdest;
+	int				v, u;
+
+	if (!pic)
+		return;
+
+	if ((x < 0) ||
+		(unsigned)(x + pic->width > vid.width) ||
+		(y < 0) ||
+		(unsigned)(y + pic->height > vid.height))
+	{
+		Sys_Warning("Draw_Pic: bad coordinates");
+		return;
+	}
+
+	source = pic->data;
+	pusdest = (unsigned short*)(vid.buffer + y * (vid.rowbytes >> 1) + x * 2);
+
+	palette = &pic->data[pic->width * pic->height + 2];
+
+	for (v = 0; v < pic->height; v++)
+	{
+		for (u = 0; u < pic->width; u++)
+		{
+			pusdest[u] = PackedRGB(palette, source[u]);
+		}
+
+		pusdest += vid.rowbytes >> 1;
+		source += pic->width;
+	}
 }
 
 
@@ -494,7 +525,10 @@ Draw_AlphaPic
 */
 void Draw_AlphaPic( int x, int y, qpic_t* pPic, colorVec* pc, int iAlpha )
 {
-	// TODO: Implement
+	if (!pPic)
+		return;
+
+	Draw_AlphaSubPic(x, y, 0, 0, pPic->width, pPic->height, pPic, pc, iAlpha);
 }
 
 
@@ -505,7 +539,86 @@ Draw_AlphaSubPic
 */
 void Draw_AlphaSubPic( int xDest, int yDest, int xSrc, int ySrc, int iWidth, int iHeight, qpic_t* pPic, colorVec* pc, int iAlpha )
 {
-	// TODO: Implement
+	byte* source;
+	byte* palette;
+	unsigned short* pusdest;
+	int				v, u;
+	int				width, height;
+	int				iDestDelta;
+	int				r, g, b;
+
+	if (!pPic)
+		return;
+
+	if (xDest < 0 || (unsigned)(xDest + iWidth) > vid.width || yDest < 0 ||
+		(unsigned)(yDest + iHeight) > vid.height)
+	{
+		Sys_Warning("Draw_AlphaPic: bad coordinates");
+		return;
+	}
+
+	if (pc)
+	{
+		r = pc->r;
+		g = pc->g;
+		b = pc->b;
+	}
+
+	source = &pPic->data[pPic->width * ySrc];
+	pusdest = (unsigned short*)(vid.buffer + yDest * (vid.rowbytes >> 1) + xDest * 2);
+
+	palette = &pPic->data[pPic->width * pPic->height + 2];
+
+	width = min(xSrc + iWidth, pPic->width);
+	height = min(ySrc + iHeight, pPic->height);
+
+	iDestDelta = xSrc + (vid.rowbytes >> 1) - width;
+
+	if (pc)
+	{
+		for (v = ySrc; v < height; v++)
+		{
+			for (u = xSrc; u < width; u++)
+			{
+				if (source[u])
+				{
+					colorVec cv;
+					int iNewAlpha = (iAlpha * source[u]) >> 8;
+					GetRGB(*pusdest, &cv);
+					cv.r = (cv.r * (255 - iNewAlpha) + r * iNewAlpha) >> 8;
+					cv.g = (cv.g * (255 - iNewAlpha) + g * iNewAlpha) >> 8;
+					cv.b = (cv.b * (255 - iNewAlpha) + b * iNewAlpha) >> 8;
+					*pusdest = PutRGB(&cv);
+				}
+				pusdest++;
+			}
+
+			pusdest += iDestDelta;
+			source += pPic->width;
+		}
+	}
+	else
+	{
+		for (v = ySrc; v < height; v++)
+		{
+			for (u = xSrc; u < width; u++)
+			{
+				if (source[u] != 0xFF)
+				{
+					colorVec cv;
+					GetRGB(*pusdest, &cv);
+					cv.r = (cv.r * (255 - iAlpha) + palette[3 * source[u] + 0] * iAlpha) >> 8;
+					cv.g = (cv.g * (255 - iAlpha) + palette[3 * source[u] + 1] * iAlpha) >> 8;
+					cv.b = (cv.b * (255 - iAlpha) + palette[3 * source[u] + 2] * iAlpha) >> 8;
+					*pusdest = PutRGB(&cv);
+				}
+				pusdest++;
+			}
+
+			pusdest += iDestDelta;
+			source += pPic->width;
+		}
+	}
 }
 
 
