@@ -67,7 +67,7 @@ void	Draw_SpriteFrameAdditive( struct mspriteframe_s* pFrame, unsigned short* pP
 void	Draw_SpriteFrameAdd15( byte* pSource, word* pPalette, word* pScreen, int width, int height, int delta, int sourceWidth );
 void	Draw_SpriteFrameAdd16( byte* pSource, word* pPalette, word* pScreen, int width, int height, int delta, int sourceWidth );
 void	Draw_ConsoleBackground( int lines );
-void	Draw_FillRGBA( int x, int y, int w, int h, int r, int g, int b, int a );
+void	Draw_FillRGBA( int x, int y, int width, int height, int r, int g, int b, int a );
 void	Draw_TileClear( int x, int y, int w, int h );
 void	Draw_Fill( int x, int y, int w, int h, int c );
 void	Draw_FadeScreen( void );

@@ -20,6 +20,8 @@ cachewad_t	menu_wad;
 
 char		decal_names[MAX_BASE_DECALS][16];
 
+int IntersectWRect( const wrect_t* prc1, const wrect_t* prc2, wrect_t* prc );
+
 short hlRGB( word* p, int i )
 {
 	if (is15bit)
@@ -517,9 +519,78 @@ Draw_FillRGBA
 Fills the given rectangle with a given color
 ===============
 */
-void Draw_FillRGBA( int x, int y, int w, int h, int r, int g, int b, int a )
+void Draw_FillRGBA( int x, int y, int width, int height, int r, int g, int b, int a )
 {
-	// TODO: Implement
+	unsigned short* pusdest, s;
+	int				v, u;
+	wrect_t			rc, rcdest;
+
+	rc.left = x;
+	rc.right = width + x;
+	rc.top = y;
+	rc.bottom = height + y;
+
+	rcdest.left = 0;
+	rcdest.right = vid.width;
+	rcdest.top = 0;
+	rcdest.bottom = vid.width;
+
+	if (!IntersectWRect(&rc, &rcdest, &rcdest))
+		return;
+
+	pusdest = (unsigned short*)(vid.buffer + rcdest.top * (vid.rowbytes >> 1) + rcdest.left * 2);
+
+	a = (192 * (word)a) & 0xFF00;
+	s = red_64klut[r + a] | green_64klut[g + a] | blue_64klut[b + a];
+
+	if (is15bit)
+	{
+		for (v = 0; v < (rcdest.bottom - rcdest.top); v++)
+		{
+			for (u = 0; u < (rcdest.right - rcdest.left); u++)
+			{
+				r = AddColor(s, pusdest[u], 0x7C00);
+				if (r > 0x7C00)
+					r = 0x7C00;
+
+				g = AddColor(s, pusdest[u], 0x03E0);
+				if (g > 0x03E0)
+					g = 0x03E0;
+
+				b = AddColor(s, pusdest[u], 0x001F);
+				if (b > 0x001F)
+					b = 0x001F;
+
+				pusdest[u] = r | g | b;
+			}
+
+			pusdest += vid.rowbytes >> 1;
+		}
+	}
+	else
+	{
+		for (v = 0; v < (rcdest.bottom - rcdest.top); v++)
+		{
+			for (u = 0; u < (rcdest.right - rcdest.left); u++)
+			{
+				r = AddColor(s, pusdest[u], 0xF800);
+				if (r > 0xF800)
+					r = 0xF800;
+
+				g = AddColor(s, pusdest[u], 0x07E0);
+				if (g > 0x07E0)
+					g = 0x07E0;
+
+				b = AddColor(s, pusdest[u], 0x001F);
+				if (b > 0x001F)
+					b = 0x001F;
+
+				pusdest[u] = r | g | b;
+			}
+
+			pusdest += vid.rowbytes >> 1;
+		}
+	}
 }
 
 /*
