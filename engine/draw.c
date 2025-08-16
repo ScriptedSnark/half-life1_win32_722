@@ -181,7 +181,26 @@ char* Draw_DecalName( int number )
 
 texture_t* Draw_DecalTexture( int index )
 {
-	// TODO: Implement
+	int		playernum;
+	customization_t* pCust;
+
+	// Just a regular decal
+	if (index >= 0)
+		return Draw_CacheGet(&decal_wad, index);
+
+	// Player decal
+	playernum = ~index;
+	pCust = cl.players[playernum].customdata.pNext;
+	if (pCust && pCust->bInUse)
+	{
+		cachewad_t* pWad;
+
+		pWad = (cachewad_t *)pCust->pInfo;
+		if (pWad && pCust->pBuffer)
+			return Draw_CustomCacheGet(pWad, pCust->pBuffer, pCust->nUserData1);
+	}
+
+	Sys_Error("Failed to load custom decal for player #%i:%s using default decal 0.\n", playernum, cl.players[playernum].name);
 	return NULL;
 }
 
@@ -190,7 +209,20 @@ texture_t* Draw_DecalTexture( int index )
 // used for save/restore
 int Draw_DecalIndexFromName( char* name )
 {
-	// TODO: Implement
+	char tmpName[16];
+	int i;
+
+	strcpy(tmpName, name);
+
+	if (tmpName[0] == '}')
+		tmpName[0] = '{';
+
+	for (i = 0; i < MAX_BASE_DECALS; i++)
+	{
+		if (decal_names[i][0] && !strcmp(tmpName, decal_names[i]))
+			return i;
+	}
+
 	return 0;
 }
 
@@ -272,9 +304,23 @@ void* Draw_CustomCacheGet( cachewad_t* wad, void* raw, int index )
 	return NULL;
 }
 
+// This is called to reset all loaded decals
+// called from cl_parse.c and host.c
 void Decal_Init( void )
 {
-	// TODO: Implement
+	int i;
+
+	Draw_CacheWadInit("decals.wad", MAX_BASE_DECALS, &decal_wad);
+
+	sv_decalnamecount = Draw_DecalCount();
+	if (sv_decalnamecount > MAX_BASE_DECALS)
+		Sys_Error("Too many decals: %d / %d\n", sv_decalnamecount, MAX_BASE_DECALS);
+
+	for (i = 0; i < sv_decalnamecount; i++)
+	{
+		memset(&sv_decalnames[i], 0, sizeof(decalname_t));
+		strncpy(sv_decalnames[i].name, Draw_DecalName(i), sizeof(sv_decalnames[i].name) - 1);
+	}
 }
 
 void Draw_CacheWadInit( char* name, int cacheMax, cachewad_t* wad )

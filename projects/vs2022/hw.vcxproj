@@ -185,9 +185,6 @@
     </MASM>
     <MASM Include="..\..\engine\worlda.asm" />
   </ItemGroup>
-  <ItemGroup>
-    <None Include="..\..\.editorconfig" />
-  </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>

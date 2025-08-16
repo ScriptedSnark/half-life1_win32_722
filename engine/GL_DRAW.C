@@ -316,7 +316,7 @@ void Decal_Init( void )
 {
 	int i;
 
-	Draw_CacheWadInit("decals.wad", 512, &decal_wad);
+	Draw_CacheWadInit("decals.wad", MAX_BASE_DECALS, &decal_wad);
 
 	sv_decalnamecount = Draw_DecalCount();
 	if (sv_decalnamecount > MAX_BASE_DECALS)
@@ -2158,8 +2158,11 @@ texture_t* Draw_DecalTexture( int index )
 	pCust = cl.players[playernum].customdata.pNext;
 	if (pCust && pCust->bInUse)
 	{
-		if (pCust->pInfo && pCust->pBuffer)
-			return (texture_t*)Draw_CustomCacheGet((cachewad_t*)pCust->pInfo, pCust->pBuffer, pCust->nUserData1);
+		cachewad_t* pWad;
+
+		pWad = (cachewad_t*)pCust->pInfo;
+		if (pWad && pCust->pBuffer)
+			return (texture_t*)Draw_CustomCacheGet(pWad, pCust->pBuffer, pCust->nUserData1);
 	}
 
 	Sys_Error("Failed to load custom decal for player #%i:%s using default decal 0.\n", playernum, cl.players[playernum].name);
