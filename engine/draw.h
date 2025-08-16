@@ -64,6 +64,8 @@ void	Draw_TransPicTranslate( int x, int y, qpic_t* pic, unsigned char* translati
 void	Draw_SpriteFrame( struct mspriteframe_s* pFrame, unsigned short* pPalette, int x, int y, const struct wrect_s* prcSubRect );
 void	Draw_SpriteFrameHoles( struct mspriteframe_s* pFrame, unsigned short* pPalette, int x, int y, const struct wrect_s* prcSubRect );
 void	Draw_SpriteFrameAdditive( struct mspriteframe_s* pFrame, unsigned short* pPalette, int x, int y, const struct wrect_s* prcSubRect );
+void	Draw_SpriteFrameAdd15( byte* pSource, word* pPalette, word* pScreen, int width, int height, int delta, int sourceWidth );
+void	Draw_SpriteFrameAdd16( byte* pSource, word* pPalette, word* pScreen, int width, int height, int delta, int sourceWidth );
 void	Draw_ConsoleBackground( int lines );
 void	Draw_FillRGBA( int x, int y, int w, int h, int r, int g, int b, int a );
 void	Draw_TileClear( int x, int y, int w, int h );

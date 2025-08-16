@@ -2,7 +2,13 @@
 // vid buffer
 
 #include "quakedef.h"
+#include "winquake.h"
 #include "decal.h"
+
+// Scissor clipping
+int scissor_x = 0, scissor_y = 0, scissor_x2 = 0, scissor_y2 = 0;
+
+qboolean giScissorTest = FALSE;
 
 qfont_t* draw_creditsfont;
 qfont_t* draw_chars;
@@ -537,7 +543,27 @@ Set the scissor
 */
 void EnableScissorTest( int x, int y, int width, int height )
 {
-	// TODO: Implement
+	if (x > (int)vid.width)
+		scissor_x = vid.width;
+	else
+		scissor_x = max(0, x);	
+
+	if (y > (int)vid.height)
+		scissor_y = vid.height;
+	else
+		scissor_y = max(0, y);
+
+	if (x + width > (int)vid.width)
+		scissor_x2 = vid.width;
+	else
+		scissor_x2 = max(0, x + width);
+
+	if (y + height > (int)vid.height)
+		scissor_y2 = vid.height;
+	else
+		scissor_y2 = max(0, y + height);
+
+	giScissorTest = TRUE;
 }
 
 /*
@@ -547,7 +573,8 @@ DisableScissorTest
 */
 void DisableScissorTest( void )
 {
-	// TODO: Implement
+	giScissorTest = FALSE;
+	scissor_x = scissor_y = scissor_x2 = scissor_y2 = 0;
 }
 
 /*
@@ -580,7 +607,23 @@ classic interview question
 */
 int IntersectWRect( const wrect_t* prc1, const wrect_t* prc2, wrect_t* prc )
 {
-	// TODO: Implement
+	wrect_t rc;
+
+	if (!prc)
+		prc = &rc;
+
+	prc->left = max(prc1->left, prc2->left);
+	prc->right = min(prc1->right, prc2->right);
+
+	if (prc->left < prc->right)
+	{
+		prc->top = max(prc1->top, prc2->top);
+		prc->bottom = min(prc1->bottom, prc2->bottom);
+
+		if (prc->top < prc->bottom)
+			return 1;
+	}
+
 	return 0;
 }
 
@@ -591,19 +634,101 @@ AdjustSubRect
 */
 int AdjustSubRect( mspriteframe_t* pFrame, int* pw, int* ph, const wrect_t* prcSubRect )
 {
-	// TODO: Implement
-	return 0;
+	wrect_t rc;
+	int iOffset;
+
+	if (!ValidateWRect(prcSubRect))
+		return 0;
+
+	// clip sub rect to sprite
+
+	rc.top = rc.left = 0;
+	rc.right = *pw;
+	rc.bottom = *ph;
+
+	if (!IntersectWRect(prcSubRect, &rc, &rc))
+		return 0;
+
+	*pw = rc.right - rc.left;
+	*ph = rc.bottom - rc.top;
+
+	iOffset = rc.left + rc.top * pFrame->width;
+	return iOffset;
 }
 
 /*
 ===============
 SpriteFrameClip
+
+Clips a sprite frame to either a subrect or the scissor rectangle.
+Returns the offset in pixels from the top-left corner of the frame.
 ===============
 */
 int SpriteFrameClip( mspriteframe_t* pFrame, int* x, int* y, int* w, int* h, const wrect_t* prcSubRect )
 {
-	// TODO: Implement
-	return 0;
+	int offset = 0;
+	int	dx, dy;
+
+	if (!pFrame)
+		return 0;
+
+	*w = pFrame->width;
+	*h = pFrame->height;
+
+	// Clip to the specified subrect
+	if (prcSubRect)
+	{
+		offset = AdjustSubRect(pFrame, w, h, prcSubRect);
+	}
+	else if (giScissorTest) // Clip to scissor rect
+	{
+		if (*x < scissor_x)
+		{
+			dx = scissor_x - *x;
+			dx = min(dx, pFrame->width);
+			offset = scissor_x - *x;
+			*w = pFrame->width - dx;
+			*x = scissor_x;
+		}
+
+		if (*y < scissor_y)
+		{
+			dy = scissor_y - *y;
+			dy = min(dy, pFrame->height);
+			offset += (pFrame->width * (scissor_y - *y));
+			*h = pFrame->height - dy;
+			*y = scissor_y;
+		}
+
+		if (*w + *x > scissor_x2)
+			*w = (scissor_x2 - *x) & ((scissor_x2 - *x < 0) - 1);
+		if (*h + *y > scissor_y2)
+			*h = (scissor_y2 - *y) & ((scissor_y2 - *y < 0) - 1);
+	}
+
+	if (*x < 0)
+	{
+		*w += *x;
+		offset = (*x * (-1));
+		*x = 0;
+	}
+
+	if (*y < 0)
+	{
+		*h += *y;
+		offset -= (*y * pFrame->width);
+		*y = 0;
+	}
+
+	if (*w + *x > (int)vid.width)
+		*w = vid.width - *x;
+	if (*h + *y > (int)vid.height)
+		*h = vid.height - *y;
+
+	if (*h < 0) // can't be negative
+		*h = 0;
+
+	return offset;
 }
 
 /*
@@ -615,7 +740,28 @@ Draw normal sprite frame onto the screen at a specified location (x, y)
 */
 void Draw_SpriteFrame( mspriteframe_t* pFrame, word* pPalette, int x, int y, const wrect_t* prcSubRect )
 {
-	// TODO: Implement
+	byte* pSource;
+	word* pScreen;
+	int	i, j;
+	int	width, height;
+	int offset;
+	int delta;
+
+	offset = SpriteFrameClip(pFrame, &x, &y, &width, &height, prcSubRect);
+	pSource = &pFrame->pixels[offset];
+	delta = vid.rowbytes >> 1;
+	pScreen = (word*)(vid.buffer + y * delta + x * 2);
+
+	for (j = 0; j < height; j++)
+	{
+		for (i = 0; i < width; i++)
+		{
+			pScreen[i] = pPalette[pSource[i]];
+		}
+
+		pScreen += delta;
+		pSource += pFrame->width;
+	}
 }
 
 /*
@@ -628,7 +774,31 @@ skip transparent pixels.
 */
 void Draw_SpriteFrameHoles( mspriteframe_t* pFrame, word* pPalette, int x, int y, const wrect_t* prcSubRect )
 {
-	// TODO: Implement
+	byte* pSource;
+	word* pScreen;
+	int	i, j;
+	int	width, height;
+	int offset;
+	int delta;
+
+	offset = SpriteFrameClip(pFrame, &x, &y, &width, &height, prcSubRect);
+	pSource = &pFrame->pixels[offset];
+	delta = vid.rowbytes >> 1;
+	pScreen = (word*)(vid.buffer + y * delta + x * 2);
+
+	for (j = 0; j < height; j++)
+	{
+		for (i = 0; i < width; i++)
+		{
+			if (pSource[i] != TRANSPARENT_COLOR)
+			{
+				pScreen[i] = pPalette[pSource[i]];
+			}
+		}
+
+		pScreen += delta;
+		pSource += pFrame->width;
+	}
 }
 
 /*
@@ -641,7 +811,25 @@ using a specified palette.
 */
 void Draw_SpriteFrameAdditive( mspriteframe_t* pFrame, word* pPalette, int x, int y, const wrect_t* prcSubRect )
 {
-	// TODO: Implement
+	byte* pSource;
+	word* pScreen;
+	int	width, height;
+	int offset;
+	int delta;
+
+	offset = SpriteFrameClip(pFrame, &x, &y, &width, &height, prcSubRect);
+	pSource = &pFrame->pixels[offset];
+	delta = vid.rowbytes >> 1;
+	pScreen = (word*)(vid.buffer + y * delta + x * 2);
+
+	if (is15bit)
+	{
+		Draw_SpriteFrameAdd15(pSource, pPalette, pScreen, width, height, delta, pFrame->width);
+	}
+	else
+	{
+		Draw_SpriteFrameAdd16(pSource, pPalette, pScreen, width, height, delta, pFrame->width);
+	}
 }
 
 /*
@@ -653,7 +841,44 @@ Draw an additive sprite frame using a 15-bit color palette
 */
 void Draw_SpriteFrameAdd15( byte* pSource, word* pPalette, word* pScreen, int width, int height, int delta, int sourceWidth )
 {
-	// TODO: Implement
+	int			i, j;
+	unsigned int oldcolor, newcolor;
+
+	for (j = 0; j < height; j++)
+	{
+		for (i = 0; i < width; i++)
+		{
+			oldcolor = pScreen[i];
+			newcolor = pPalette[pSource[i]];
+
+			// 15bit additive blending
+			if (newcolor != 0)
+			{
+				unsigned int carrybits;
+
+				const unsigned int highbits = (0x80000000 | 0x00200000 | 0x00000800);
+				const unsigned int lowbits = (0x80000000 | 0x00200000 | 0x00000400);
+				const unsigned int redblue = (0x7C00 | 0x001F);
+				const unsigned int green = (0x03E0);
+
+				// calculate RGB components
+				oldcolor = ((oldcolor & redblue) << 16) | (oldcolor & green);
+				oldcolor = ((newcolor & redblue) << 16) | (newcolor & green) + oldcolor;
+
+				carrybits = (oldcolor & lowbits);
+				if (carrybits)
+				{
+					// adjust the color
+					oldcolor |= lowbits - (carrybits >> 5);
+				}
+
+				pScreen[i] = ((oldcolor >> 16) & redblue) | (oldcolor & green);
+			}
+		}
+
+		pScreen += delta;
+		pSource += sourceWidth;
+	}
 }
 
 /*
@@ -665,7 +890,49 @@ Draw an additive sprite frame using a 16-bit color palette
 */
 void Draw_SpriteFrameAdd16( byte* pSource, word* pPalette, word* pScreen, int width, int height, int delta, int sourceWidth )
 {
-	// TODO: Implement
+	int			i, j;
+	unsigned int oldcolor, newcolor;
+
+	for (j = 0; j < height; j++)
+	{
+		for (i = 0; i < width; i++)
+		{
+			oldcolor = pScreen[i];
+			newcolor = pPalette[pSource[i]];
+
+			// 16bit additive blending
+			if (newcolor != 0)
+			{
+				unsigned int prevcolor;
+				unsigned int carrybits;
+
+				const unsigned int highbits = (0x200000 | 0x000800);
+				const unsigned int lowbits = (0x100000 | 0x000400);
+				const unsigned int redblue = (0xF800 | 0x001F);
+				const unsigned int green = (0x07E0);
+
+				// calculate RGB components
+				prevcolor = ((oldcolor & redblue) << 16) | (oldcolor & green);
+				oldcolor = (((newcolor & redblue) << 16) | (newcolor & green)) + prevcolor;
+
+				carrybits = (oldcolor & highbits);
+				if (prevcolor > oldcolor)
+					carrybits |= 1;
+
+				if (carrybits)
+				{
+					// adjust the color
+					carrybits = (carrybits >> 1) | (carrybits << 31);
+					oldcolor |= ((carrybits | lowbits) - (carrybits >> 5)) << 1;
+				}
+
+				pScreen[i] = ((oldcolor >> 16) & redblue) | (oldcolor & green);
+			}
+		}
+
+		pScreen += delta;
+		pSource += sourceWidth;
+	}
 }
 
 /*
