@@ -529,7 +529,35 @@ Draw_TransPic
 */
 void Draw_TransPic( int x, int y, qpic_t* pic )
 {
-	// TODO: Implement
+	byte* source;
+	byte* palette;
+	unsigned short* pusdest;
+	int				v, u;
+
+	if (x < 0 || (unsigned)(x + pic->width) > vid.width || y < 0 ||
+		(unsigned)(y + pic->height) > vid.height)
+	{
+		Sys_Error("Draw_TransPic: bad coordinates");
+	}
+
+	source = pic->data;
+	pusdest = (unsigned short*)(vid.buffer + y * (vid.rowbytes >> 1) + x * 2);
+
+	palette = &pic->data[pic->width * pic->height + 2];
+
+	for (v = 0; v < pic->height; v++)
+	{
+		for (u = 0; u < pic->width; u++)
+		{
+			if (source[u] != TRANSPARENT_COLOR)
+			{
+				pusdest[u] = PackedRGB(palette, source[u]);
+			}
+		}
+
+		pusdest += vid.rowbytes >> 1;
+		source += pic->width;
+	}
 }
 
 /*
