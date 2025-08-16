@@ -417,6 +417,13 @@ int Draw_Character( int x, int y, int num )
 	return charwidth;
 }
 
+/*
+================
+Draw_MessageCharacterAdd
+
+Draws a single additive character
+================
+*/
 int Draw_MessageCharacterAdd( int x, int y, int num, int rr, int gg, int bb )
 {
 	// TODO: Implement
@@ -509,7 +516,51 @@ Draw_AlphaAddPic
 */
 void Draw_AlphaAddPic( int x, int y, qpic_t* pic, colorVec* pc, int iAlpha )
 {
-	// TODO: Implement
+	byte* source;
+	byte* palette;
+	unsigned short* pusdest;
+	int				v, u;
+
+	if (!pic)
+		return;
+
+	if (x < 0 || (unsigned)(x + pic->width) > vid.width || y < 0 ||
+		(unsigned)(y + pic->height) > vid.height)
+	{
+		Sys_Warning("Draw_AlphaPic: bad coordinates");
+		return;
+	}
+
+	source = pic->data;
+	pusdest = (unsigned short*)(vid.buffer + y * (vid.rowbytes >> 1) + x * 2);
+
+	palette = &pic->data[pic->width * pic->height + 2];
+
+	for (v = 0; v < pic->height; v++)
+	{
+		for (u = 0; u < pic->width; u++)
+		{
+			if (source[u] != TRANSPARENT_COLOR)
+			{
+				colorVec cv;
+				GetRGB(pusdest[u], &cv);
+				cv.r += (iAlpha * palette[source[u] * 3 + 0]) >> 8;
+				if (cv.r > 255)
+					cv.r = 255;
+				cv.g += (iAlpha * palette[source[u] * 3 + 1]) >> 8;
+				if (cv.g > 255)
+					cv.g = 255;
+				cv.b += (iAlpha * palette[source[u] * 3 + 2]) >> 8;
+				if (cv.b > 255)
+					cv.b = 255;
+
+				pusdest[u] = PutRGB(&cv);
+			}
+		}
+
+		pusdest += vid.rowbytes >> 1;
+		source += pic->width;
+	}
 }
 
 /*
