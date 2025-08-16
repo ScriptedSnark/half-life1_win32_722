@@ -87,7 +87,53 @@ Draw_MiptexTexture
 */
 void Draw_MiptexTexture( cachewad_t* wad, byte* data )
 {
-	// TODO: Implement
+	texture_t* tex;
+	miptex_t* mip, tmp;
+	int			i, pix, palette;
+	byte* pal;
+	unsigned short size;
+
+	if (wad->cacheExtra != MIP_EXTRASIZE)
+		Sys_Error("Draw_MiptexTexture: Bad cached wad %s\n", wad->name);
+
+	tex = (texture_t*)data;
+	mip = (miptex_t*)(data + wad->cacheExtra);
+	tmp = *mip;
+	strcpy(tex->name, tmp.name);
+
+	tex->width = LittleLong(tmp.width);
+	tex->height = LittleLong(tmp.height);
+	tex->anim_min = 0;
+	tex->anim_max = 0;
+	tex->anim_total = 0;
+	tex->alternate_anims = NULL;
+	tex->anim_next = NULL;
+
+	for (i = 0; i < MIPLEVELS; i++)
+		tex->offsets[i] = LittleLong(tmp.offsets[i]) + wad->cacheExtra;
+
+	pix = tex->width * tex->height;
+	palette = pix + (pix >> 2) + (pix >> 4) + (pix >> 6) + 2;
+	size = *(unsigned short*)((byte*)mip + palette + sizeof(miptex_t));
+	tex->paloffset = tex->offsets[0] + palette;
+	pal = (byte*)tex + tex->paloffset;
+
+	if (pal[765] != 0 || pal[766] != 0 || pal[767] != 255)
+	{
+		tex->name[0] = '}';
+	}
+	else
+	{
+		tex->name[0] = '{';
+	}
+
+	for (i = 0; i < size; i++)
+	{
+		pal[0] = texgammatable[pal[0]];
+		pal[1] = texgammatable[pal[1]];
+		pal[2] = texgammatable[pal[2]];
+		pal += 3;
+	}
 }
 
 void Draw_CacheWadHandler( cachewad_t* wad, PFNCACHE fn, int extraDataSize )
@@ -257,8 +303,27 @@ qboolean Draw_CacheReload( cachewad_t* wad, lumpinfo_t* pLump, cachepic_t* pic, 
 
 qboolean Draw_CacheLoadFromCustom( char* clean, cachewad_t* wad, void *raw, cachepic_t* pic )
 {
-	// TODO: Implement
-	return FALSE;
+	int		idx;
+	byte* buf;
+	lumpinfo_t* pLump;
+
+	idx = atoi(clean);
+	if (idx < 0 || idx >= wad->lumpCount)
+		return FALSE;
+
+	pLump = &wad->lumps[idx];
+	buf = (byte*)Cache_Alloc(&pic->cache, wad->cacheExtra + pLump->size + 1, clean);
+	if (!buf)
+		Sys_Error("Draw_CacheGet: not enough space for %s in %s", clean, wad->name);
+
+	buf[pLump->size + wad->cacheExtra] = 0;
+
+	memcpy(&buf[wad->cacheExtra], (char*)raw + pLump->filepos, pLump->size);
+
+	if (wad->pfnCacheBuild)
+		wad->pfnCacheBuild(wad, buf);
+
+	return TRUE;
 }
 
 void* Draw_CacheGet( cachewad_t* wad, int index )
@@ -272,7 +337,7 @@ void* Draw_CacheGet( cachewad_t* wad, int index )
 
 	pic = &wad->cache[index];
 	dat = Cache_Check(&pic->cache);
-	if (!dat)
+	if (dat == NULL)
 	{
 		char name[16];
 		char clean[16];
@@ -300,8 +365,30 @@ void* Draw_CacheGet( cachewad_t* wad, int index )
 
 void* Draw_CustomCacheGet( cachewad_t* wad, void* raw, int index )
 {
-	// TODO: Implement
-	return NULL;
+	cachepic_t* pic;
+	void* dat;
+
+	if (index >= wad->cacheCount)
+		Sys_Error("Cache wad indexed before load %s: %d", wad->name, index);
+
+	pic = &wad->cache[index];
+	dat = Cache_Check(&pic->cache);
+	if (dat == NULL)
+	{
+		char name[16];
+		char clean[16];
+		COM_FileBase(pic->name, name);
+		W_CleanupName(name, clean);
+
+		if (!Draw_CacheLoadFromCustom(clean, wad, raw, pic))
+			return NULL;
+
+		dat = pic->cache.data;
+		if (!dat)
+			Sys_Error("Draw_CacheGet: failed to load %s", pic->name);
+	}
+
+	return dat;
 }
 
 // This is called to reset all loaded decals
@@ -368,18 +455,72 @@ void Draw_CacheWadInit( char* name, int cacheMax, cachewad_t* wad )
 
 void CustomDecal_Init( cachewad_t* wad, void* raw, int nFileSize )
 {
-	// TODO: Implement
+	int i;
+
+	Draw_CustomCacheWadInit(16, wad, raw, nFileSize);
+	Draw_CacheWadHandler(wad, Draw_MiptexTexture, MIP_EXTRASIZE);
+
+	for (i = 0; i < wad->lumpCount; i++)
+	{
+		Draw_CacheByIndex(wad, i);
+	}
 }
 
 void Draw_CustomCacheWadInit( int cacheMax, cachewad_t* wad, void* raw, int nFileSize )
 {
-	// TODO: Implement
+	lumpinfo_t* lump_p;
+	wadinfo_t header;
+	int		i;
+
+	header = *(wadinfo_t*)raw;
+
+	if (header.identification[0] != 'W'
+	  || header.identification[1] != 'A'
+	  || header.identification[2] != 'D'
+	  || header.identification[3] != '3')
+	{
+		Sys_Error("Custom file doesn't have WAD3 id\n");
+	}
+
+	wad->lumps = (lumpinfo_t*)malloc(nFileSize - header.infotableofs);
+	memcpy(wad->lumps, (char*)raw + header.infotableofs, nFileSize - header.infotableofs);
+
+	for (i = 0, lump_p = wad->lumps; i < header.numlumps; i++, lump_p++)
+	{
+		W_CleanupName(lump_p->name, lump_p->name);
+	}
+
+	wad->name = "pldecal.wad";
+	wad->lumpCount = header.numlumps;
+	wad->cacheCount = 0;
+	wad->cacheMax = cacheMax;
+	wad->cache = (cachepic_t*)malloc(sizeof(cachepic_t) * cacheMax);
+	memset(wad->cache, 0, sizeof(cachepic_t) * cacheMax);
+	wad->pfnCacheBuild = NULL;
+	wad->cacheExtra = 0;
 }
 
 int Draw_CacheByIndex( cachewad_t* wad, int nIndex )
 {
-	// TODO: Implement
-	return 0;
+	cachepic_t* pic;
+	int i;
+
+	for (i = 0, pic = wad->cache; i < wad->cacheCount; i++, pic++)
+	{
+		if (atoi(pic->name) == nIndex)
+			break;
+	}
+
+	if (i == wad->cacheCount)
+	{
+		if (wad->cacheCount == wad->cacheMax)
+			Sys_Error("Cache wad (%s) out of %d entries", wad->name, wad->cacheMax);
+
+		wad->cacheCount++;
+		sprintf(pic->name, "%i", nIndex);
+	}
+
+	return i;
 }
 
 /*
@@ -391,8 +532,8 @@ void Draw_Init( void )
 {
 	Draw_CacheWadInit("cached.wad", 16, &menu_wad);
 
-	Draw_CacheWadHandler(&decal_wad, Draw_MiptexTexture, 24);
-	Draw_CacheWadHandler(&custom_wad, Draw_MiptexTexture, 24);
+	Draw_CacheWadHandler(&decal_wad, Draw_MiptexTexture, MIP_EXTRASIZE);
+	Draw_CacheWadHandler(&custom_wad, Draw_MiptexTexture, MIP_EXTRASIZE);
 
 	draw_chars = (qfont_t*)W_GetLumpName("conchars");
 	draw_creditsfont = (qfont_t*)W_GetLumpName("creditsfont");
@@ -427,9 +568,9 @@ Draws a single character
 */
 int Draw_Character( int x, int y, int num )
 {
-	word* dest;
 	byte* source;
 	byte* palette;
+	unsigned short* pusdest;
 	int				row, col;
 	int				rowheight, charwidth;
 
@@ -445,19 +586,19 @@ int Draw_Character( int x, int y, int num )
 	if (y < 0)
 		return charwidth;
 
-	dest = (word*)(vid.conbuffer + y * vid.conrowbytes + x * 2);
-	palette = &draw_chars->data[draw_chars->height * 256 + 2];
+	pusdest = (unsigned short*)(vid.conbuffer + y * vid.conrowbytes + x * 2);
+	palette = &draw_chars->data[256 * draw_chars->height + 2];
 
 	for (row = 0; row < rowheight; row++)
 	{
 		for (col = 0; col < charwidth; col++)
 		{
 			if (source[col] != TRANSPARENT_COLOR)
-				dest[col] = PackedRGB(palette, source[col]);
+				pusdest[col] = PackedRGB(palette, source[col]);
 		}
 
+		pusdest += (vid.conrowbytes >> 1);
 		source += 256;
-		dest = (word*)((byte*)dest + vid.conrowbytes);
 	}
 
 	return charwidth;
@@ -472,8 +613,103 @@ Draws a single additive character
 */
 int Draw_MessageCharacterAdd( int x, int y, int num, int rr, int gg, int bb )
 {
-	// TODO: Implement
-	return 0;
+	byte* source;
+	byte* palette;
+	unsigned short* pusdest;
+	int				row, col;
+	int				rowheight, charwidth;
+
+	num &= 255;
+
+	rowheight = draw_creditsfont->rowheight;
+	if (y <= -rowheight)
+		return 0;			// totally off screen
+
+	source = &draw_creditsfont->data[draw_creditsfont->fontinfo[num].startoffset];
+
+	charwidth = draw_creditsfont->fontinfo[num].charwidth;
+	if (y < 0)
+		return charwidth;
+
+	pusdest = (unsigned short*)(vid.conbuffer + y * vid.conrowbytes + x * 2);
+	palette = &draw_creditsfont->data[256 * draw_creditsfont->height + 2];
+
+	for (row = 0; row < rowheight; row++)
+	{
+		if (is15bit)
+		{
+			for (col = 0; col < charwidth; col++)
+			{
+				unsigned short newcolor, oldcolor;
+				unsigned short r, g, b;
+
+				if (source[col] != TRANSPARENT_COLOR)
+				{
+					newcolor = PackedRGB(palette, source[col]);
+					if (newcolor != 0)
+					{
+						oldcolor = pusdest[col];
+
+						r = (((newcolor & 0x7C00) * rr) >> 8);
+						r = AddColor(oldcolor, r, 0x7C00);
+						if (r > 0x7C00)
+							r = 0x7C00;
+
+						g = (((newcolor & 0x03E0) * gg) >> 8);
+						g = AddColor(oldcolor, g, 0x03E0);
+						if (g > 0x03E0)
+							g = 0x03E0;
+
+						b = (((newcolor & 0x001F) * bb) >> 8);
+						b = AddColor(oldcolor, b, 0x001F);
+						if (b > 0x001F)
+							b = 0x001F;
+
+						pusdest[col] = r | g | b;
+					}
+				}
+			}
+		}
+		else
+		{
+			for (col = 0; col < charwidth; col++)
+			{
+				unsigned short newcolor, oldcolor;
+				unsigned short r, g, b;
+
+				if (source[col] != TRANSPARENT_COLOR)
+				{
+					newcolor = PackedRGB(palette, source[col]);
+					if (newcolor != 0)
+					{
+						oldcolor = pusdest[col];
+
+						r = (((newcolor & 0xF800) * rr) >> 8);
+						r = AddColor(oldcolor, r, 0xF800);
+						if (r > 0xF800)
+							r = 0xF800;
+
+						g = (((newcolor & 0x07E0) * gg) >> 8);
+						g = AddColor(oldcolor, g, 0x07E0);
+						if (g > 0x07E0)
+							g = 0x07E0;
+
+						b = (((newcolor & 0x001F) * bb) >> 8);
+						b = AddColor(oldcolor, b, 0x001F);
+						if (b > 0x001F)
+							b = 0x001F;
+
+						pusdest[col] = r | g | b;
+					}
+				}
+			}
+		}
+
+		pusdest += (vid.conrowbytes >> 1);
+		source += 256;
+	}
+
+	return charwidth;
 }
 
 /*
@@ -519,7 +755,35 @@ of the code.
 */
 void Draw_DebugChar( char num )
 {
-	// TODO: Implement
+	byte* dest;
+	byte* source;
+	int				drawline;
+	int				row, col;
+
+	if (!vid.direct)
+		return;		// don't have direct FB access, so no debugchars...
+
+	drawline = 8;
+
+	row = num >> 4;
+	col = num & 15;
+	source = &draw_chars->data[(row << 10) + (col << 3)];
+
+	dest = vid.direct + 312;
+
+	while (drawline--)
+	{
+		dest[0] = source[0];
+		dest[1] = source[1];
+		dest[2] = source[2];
+		dest[3] = source[3];
+		dest[4] = source[4];
+		dest[5] = source[5];
+		dest[6] = source[6];
+		dest[7] = source[7];
+		source += 128;
+		dest += 320;
+	}
 }
 
 /*

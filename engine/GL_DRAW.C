@@ -1996,16 +1996,15 @@ void Draw_MiptexTexture( cachewad_t* wad, byte* data )
 	if (wad->cacheExtra != MIP_EXTRASIZE)
 		Sys_Error("Draw_MiptexTexture: Bad cached wad %s\n", wad->name);
 
+	tex = (texture_t*)data;
 	mip = (miptex_t*)(data + wad->cacheExtra);
 	tmp = *mip;
-
-	tex = (texture_t*)data;
-	memcpy(tex->name, tmp.name, sizeof(tex->name));
+	strcpy(tex->name, tmp.name);
 
 	tex->width = LittleLong(tmp.width);
 	tex->height = LittleLong(tmp.height);
-	tex->anim_max = 0;
 	tex->anim_min = 0;
+	tex->anim_max = 0;
 	tex->anim_total = 0;
 	tex->alternate_anims = NULL;
 	tex->anim_next = NULL;
@@ -2019,7 +2018,7 @@ void Draw_MiptexTexture( cachewad_t* wad, byte* data )
 	pal = (byte*)tex + paloffset;
 	bitmap = (byte*)tex + palettesize;
 
-	if (pal[765] || pal[766] || pal[767] != 255)
+	if (pal[765] != 0 || pal[766] != 0 || pal[767] != 255)
 	{
 		tex->name[0] = '}';
 		tex->gl_texturenum = GL_LoadTexture(tex->name, GLT_DECAL, tex->width, tex->height, bitmap, TRUE, TEX_TYPE_ALPHA_GRADIENT, pal);
@@ -2292,7 +2291,7 @@ void* Draw_CacheGet( cachewad_t* wad, int index )
 void* Draw_CustomCacheGet( cachewad_t* wad, void* raw, int index )
 {
 	cacheentry_t* pic;
-	void* dat = NULL;
+	void* dat;
 
 	if (index >= wad->cacheCount)
 		Sys_Error("Cache wad indexed before load %s: %d", wad->name, index);
@@ -2322,7 +2321,6 @@ void CustomDecal_Init( cachewad_t* wad, void* raw, int nFileSize )
 	int i;
 
 	Draw_CustomCacheWadInit(16, wad, raw, nFileSize);
-
 	Draw_CacheWadHandler(wad, Draw_MiptexTexture, MIP_EXTRASIZE);
 
 	for (i = 0; i < wad->lumpCount; i++)
