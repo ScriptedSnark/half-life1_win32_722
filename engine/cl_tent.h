@@ -5,6 +5,13 @@
 #pragma once
 #endif
 
+extern sfx_t* cl_sfx_geiger1;
+extern sfx_t* cl_sfx_geiger2;
+extern sfx_t* cl_sfx_geiger3;
+extern sfx_t* cl_sfx_geiger4;
+extern sfx_t* cl_sfx_geiger5;
+extern sfx_t* cl_sfx_geiger6;
+
 void CL_TempEntInit( void );
 
 TEMPENTITY* CL_TempEntAlloc( vec_t* org, model_t* model );

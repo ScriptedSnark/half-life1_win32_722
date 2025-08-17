@@ -664,6 +664,8 @@ void V_CalcRefdef( void )
 		{
 			waterDist += (cl_entities[waterEntity].scale * 16);	// Add in wave height
 		}
+#else
+		waterEntity = 0;	// Don't need this in software
 #endif
 
 		VectorCopy(r_refdef.vieworg, point);

@@ -11,4 +11,6 @@ void Sbar_Geiger( void );
 // does, the entire thing will be redrawn for the next vid.numpages frames.
 void Sbar_Draw( void );
 
+void FillBackGround( void );
+
 #endif // SBAR_H
