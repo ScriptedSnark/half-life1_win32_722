@@ -476,12 +476,12 @@ void V_UpdatePalette( void )
 		ramps[2][i] = texgammatable[ib];
 	}
 }
-#else
+#else	// !GLQUAKE
 void V_UpdatePalette( void )
 {
 	V_CheckGamma();
 }
-#endif
+#endif	// !GLQUAKE
 
 
 /*
@@ -664,8 +664,6 @@ void V_CalcRefdef( void )
 		{
 			waterDist += (cl_entities[waterEntity].scale * 16);	// Add in wave height
 		}
-#else
-		waterEntity = 0;	// Don't need this in software
 #endif
 
 		VectorCopy(r_refdef.vieworg, point);
@@ -1180,17 +1178,16 @@ void V_InitLevel( void )
 {
 	memset(&gVShake, 0, sizeof(gVShake));
 
-	cl.sf.fadeFlags = 0;
-	cl.sf.fader = 0;
-	cl.sf.fadeg = 0;
-	cl.sf.fadeb = 0;
-
 	if (v_dark.value)
 	{
 		cl.sf.fadealpha = 255;
 		cl.sf.fadeSpeed = 51.0;
 		cl.sf.fadeReset = cl.time + 5.0;
 		cl.sf.fadeEnd = cl.sf.fadeReset + 5.0;
+		cl.sf.fader = 0;
+		cl.sf.fadeg = 0;
+		cl.sf.fadeb = 0;
+		cl.sf.fadeFlags = 0;
 		v_dark.value = 0.0;
 	}
 	else
@@ -1199,5 +1196,9 @@ void V_InitLevel( void )
 		cl.sf.fadeSpeed = 0.0;
 		cl.sf.fadeReset = 0.0;
 		cl.sf.fadeEnd = 0.0;
+		cl.sf.fader = 0;
+		cl.sf.fadeg = 0;
+		cl.sf.fadeb = 0;
+		cl.sf.fadeFlags = 0;
 	}
 }

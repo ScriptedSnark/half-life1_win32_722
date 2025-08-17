@@ -105,7 +105,7 @@ Mod_FindName
 model_t* Mod_FindName( char* name )
 {
 	int		i;
-	model_t	*mod;
+	model_t* mod;
 
 	if (!name[0])
 		Sys_Error("Mod_FindName: NULL name");
