@@ -9,7 +9,6 @@ extern char loadname[32];
 
 //=============================================================================
 
-
 /*
 =================
 Mod_LoadStudioModel
@@ -18,18 +17,20 @@ Mod_LoadStudioModel
 void Mod_LoadStudioModel( model_t* mod, void* buffer )
 {
 	int					i;
-	byte				*pin, *pout;
-	studiohdr_t*		phdr;
-	mstudiotexture_t*	ptexture;
-	byte*				block;
-	int					total;
+	byte* pin, * pout;
+#if !defined( GLQUAKE )
+	byte* pindata, * poutdata;
+#endif
+	studiohdr_t* phdr;
+	mstudiotexture_t* ptexture;
+	int					start, end, total;
 	int					version;
-	int					mark;
+
 	pin = (byte*)buffer;
 
 	phdr = (studiohdr_t*)pin;
 
-	mark = Hunk_LowMark();
+	start = Hunk_LowMark();
 
 	version = LittleLong(phdr->version);
 	if (version != STUDIO_VERSION)
@@ -43,37 +44,62 @@ void Mod_LoadStudioModel( model_t* mod, void* buffer )
 	mod->type = mod_studio;
 	mod->flags = phdr->flags;
 
-	block = (byte*)Hunk_AllocName(phdr->length, loadname);
 #if defined( GLQUAKE )
-	memcpy(block, phdr, phdr->length);
+	pout = (byte*)Hunk_AllocName(phdr->length, loadname);
+	ptexture = (mstudiotexture_t*)((byte*)pout + phdr->textureindex);
+	memcpy(pout, pin, phdr->length);
 #else
-	// TODO: Implement
-#endif
+	pout = (byte*)Hunk_AllocName(1280 * phdr->numtextures + phdr->length, loadname);
+	ptexture = (mstudiotexture_t*)((byte*)pout + phdr->textureindex);
+	memcpy(pout, pin, phdr->texturedataindex);
 
-	ptexture = (mstudiotexture_t*)((byte*)block + phdr->textureindex);
+	poutdata = pout + phdr->texturedataindex;
+	pindata = pin + phdr->texturedataindex;
+#endif
+	
 	for (i = 0; i < phdr->numtextures; i++, ptexture++)
 	{
 #if defined( GLQUAKE )
 		char name[256];
 		byte* pal;
 
-		pal = (byte*)block + ptexture->index + (ptexture->width * ptexture->height);
+		pal = (byte*)pout + ptexture->index + (ptexture->width * ptexture->height);
 		strcpy(name, mod->name);
 		strcat(name, ptexture->name);
 		ptexture->index = GL_LoadTexture(name, GLT_STUDIO, ptexture->width, ptexture->height,
-			(byte*)block + ptexture->index, FALSE, TEX_TYPE_NONE, pal);
+			(byte*)pout + ptexture->index, FALSE, TEX_TYPE_NONE, pal);
 #else
-		// TODO: Implement
+		int j, size;
+
+		ptexture->index = poutdata - pout;
+		size = ptexture->width * ptexture->height;
+		memcpy(poutdata, pindata, size);
+		poutdata += size;
+		pindata += size;
+
+		for (j = 0; j < 256; j++, pindata += 3, poutdata += 8)
+		{
+			((unsigned short*)poutdata)[0] = texgammatable[pindata[0]];
+			((unsigned short*)poutdata)[1] = texgammatable[pindata[1]];
+			((unsigned short*)poutdata)[2] = texgammatable[pindata[2]];
+			((unsigned short*)poutdata)[3] = 0;
+		}
 #endif
 	}
 
-	total = phdr->texturedataindex - phdr->length - mark + Hunk_LowMark();
+//
+// move the complete, relocatable alias model to the cache
+//	
+	end = Hunk_LowMark();
+#if defined( GLQUAKE )
+	total = phdr->texturedataindex - phdr->length + end - start;
+#else
+	total = end - start;
+#endif
 	Cache_Alloc(&mod->cache, total, mod->name);
+	if (!mod->cache.data)
+		return;
+	memcpy(mod->cache.data, pout, total);
 
-	pout = (byte*)mod->cache.data;
-	if (pout)
-	{
-		memcpy(pout, block, total);
-		Hunk_FreeToLowMark(mark);
-	}
+	Hunk_FreeToLowMark(start);
 }

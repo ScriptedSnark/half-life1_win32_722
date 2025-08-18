@@ -43,8 +43,6 @@ cvar_t	v_idlescale = { "v_idlescale", "0" };
 cvar_t	v_dark = { "v_dark", "0" };
 cvar_t	crosshair = { "crosshair", "0", TRUE };
 
-
-
 byte		texgammatable[256];	// palette is sent through this to convert to screen gamma
 int			lightgammatable[1024];
 int			lineargammatable[1024];
