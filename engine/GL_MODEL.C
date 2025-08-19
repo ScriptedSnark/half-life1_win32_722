@@ -90,9 +90,7 @@ void Mod_ClearAll( void )
 	for (i = 0, mod = mod_known; i < mod_numknown; i++, mod++)
 	{
 		if (mod->type != mod_alias && mod->needload != (NL_NEEDS_LOADED | NL_UNREFERENCED))
-		{
 			mod->needload = NL_NEEDS_LOADED;
-		}
 	}
 }
 
@@ -195,7 +193,7 @@ model_t* Mod_LoadModel( model_t* mod, qboolean crash )
 		return NULL;
 	}
 
-	if (developer.value > 1.0)
+	if (developer.value > 1)
 		Con_DPrintf("loading %s\n", mod->name);
 
 //
@@ -267,8 +265,8 @@ byte* mod_base;
 
 #define MIPSCALE			(64 + 16 + 4 + 1)
 #define PIXELS_SIZE			(MIPSCALE * (512 * 512) / 64)
-#define PALETTE_SIZE		(256 * 3)
-#define TEXTUREDATA_SIZE	(PIXELS_SIZE + PALETTE_SIZE + sizeof(word))
+#define PALETTE_SIZE		(256 * 3) + 2
+#define TEXTUREDATA_SIZE	(PIXELS_SIZE + PALETTE_SIZE + MIP_EXTRASIZE + sizeof(miptex_t))
 
 /*
 ===============
@@ -283,7 +281,7 @@ void Mod_LoadTextures( lump_t* l )
 	texture_t* anims[10];
 	texture_t* altanims[10];
 	dmiptexlump_t* m;
-	byte			dtexdata[TEXTUREDATA_SIZE + MIP_EXTRASIZE + sizeof(miptex_t)];
+	byte			dtexdata[TEXTUREDATA_SIZE];
 	unsigned char* pPal;
 	qboolean		wads_parsed = FALSE;
 	double			starttime;

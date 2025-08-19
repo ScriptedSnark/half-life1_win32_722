@@ -96,7 +96,6 @@ int PM_HullPointContents( hull_t* hull, int num, vec_t* p )
 			d = p[plane->type] - plane->dist;
 		else
 			d = DotProduct(plane->normal, p) - plane->dist;
-
 		if (d < 0)
 			num = node->children[1];
 		else
