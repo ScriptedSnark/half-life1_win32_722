@@ -149,6 +149,7 @@
     <ClCompile Include="..\..\engine\R_LIGHT.C" />
     <ClCompile Include="..\..\engine\R_MAIN.C" />
     <ClCompile Include="..\..\engine\R_PART.C" />
+    <ClCompile Include="..\..\engine\R_SKY.C" />
     <ClCompile Include="..\..\engine\r_studio.c" />
     <ClCompile Include="..\..\engine\R_SURF.C" />
     <ClCompile Include="..\..\engine\r_trans.c" />

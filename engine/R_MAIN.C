@@ -56,8 +56,9 @@ cvar_t	r_ambient_b = { "r_ambient_b", "0" };
 
 
 
+cvar_t	r_mmx = { "r_mmx", "0" };
 cvar_t	r_traceglow = { "r_traceglow", "0" };
-
+cvar_t	r_wadtextures = { "r_wadtextures", "0" };
 
 
 /*

@@ -30,24 +30,25 @@ typedef struct alight_s {
 	float*		plightvec;
 } alight_t;
 
-extern cvar_t	r_cachestudio;
-extern cvar_t	r_draworder;
+extern	cvar_t	r_cachestudio;
+extern	cvar_t	r_draworder;
 
 
 
-extern cvar_t	r_fullbright;
-extern cvar_t	r_decals;
+extern	cvar_t	r_fullbright;
+extern	cvar_t	r_decals;
 
 
 
-extern cvar_t	r_ambient_r;
-extern cvar_t	r_ambient_g;
-extern cvar_t	r_ambient_b;
+extern	cvar_t	r_ambient_r;
+extern	cvar_t	r_ambient_g;
+extern	cvar_t	r_ambient_b;
 
 
 
-extern cvar_t	r_traceglow;
-
+extern	cvar_t	r_mmx;
+extern	cvar_t	r_traceglow;
+extern	cvar_t	r_wadtextures;
 
 
 

@@ -318,10 +318,7 @@ void Mod_LoadTextures( lump_t* l )
 			}
 
 			if (!TEX_LoadLump(mt->name, dtexdata))
-			{
-				m->dataofs[i] = -1;
 				continue;
-			}
 
 			mt = (miptex_t*)dtexdata;
 		}
