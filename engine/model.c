@@ -591,6 +591,203 @@ void Mod_LoadVertexes( lump_t* l )
 	}
 }
 
+/*
+=================
+Mod_LoadSubmodels
+=================
+*/
+void Mod_LoadSubmodels( lump_t* l )
+{
+	dmodel_t* in;
+	dmodel_t* out;
+	int			i, j, count;
+
+	in = (dmodel_t*)(mod_base + l->fileofs);
+	if (l->filelen % sizeof(*in))
+		Sys_Error("MOD_LoadBmodel: funny lump size in %s", loadmodel->name);
+	count = l->filelen / sizeof(*in);
+	out = (dmodel_t*)Hunk_AllocName(count * sizeof(*out), loadname);
+
+	loadmodel->submodels = out;
+	loadmodel->numsubmodels = count;
+
+	for (i = 0; i < count; i++, in++, out++)
+	{
+		for (j = 0; j < 3; j++)
+		{	// spread the mins / maxs by a pixel
+			out->mins[j] = LittleFloat(in->mins[j]) - 1;
+			out->maxs[j] = LittleFloat(in->maxs[j]) + 1;
+			out->origin[j] = LittleFloat(in->origin[j]);
+		}
+		for (j = 0; j < MAX_MAP_HULLS; j++)
+			out->headnode[j] = LittleLong(in->headnode[j]);
+		out->visleafs = LittleLong(in->visleafs);
+		out->firstface = LittleLong(in->firstface);
+		out->numfaces = LittleLong(in->numfaces);
+	}
+}
+
+/*
+=================
+Mod_LoadEdges
+=================
+*/
+void Mod_LoadEdges( lump_t* l )
+{
+	dedge_t* in;
+	medge_t* out;
+	int 	i, count;
+
+	in = (dedge_t*)(mod_base + l->fileofs);
+	if (l->filelen % sizeof(*in))
+		Sys_Error("MOD_LoadBmodel: funny lump size in %s", loadmodel->name);
+	count = l->filelen / sizeof(*in);
+	out = (medge_t*)Hunk_AllocName((count + 1) * sizeof(*out), loadname);
+
+	loadmodel->edges = out;
+	loadmodel->numedges = count;
+
+	for (i = 0; i < count; i++, in++, out++)
+	{
+		out->v[0] = (unsigned short)LittleShort(in->v[0]);
+		out->v[1] = (unsigned short)LittleShort(in->v[1]);
+	}
+}
+
+/*
+=================
+Mod_LoadTexinfo
+=================
+*/
+void Mod_LoadTexinfo( lump_t* l )
+{
+	texinfo_t* in;
+	mtexinfo_t* out;
+	int 	i, j, count;
+	int		miptex;
+	float	len1, len2;
+
+	in = (texinfo_t*)(mod_base + l->fileofs);
+	if (l->filelen % sizeof(*in))
+		Sys_Error("MOD_LoadBmodel: funny lump size in %s", loadmodel->name);
+	count = l->filelen / sizeof(*in);
+	out = (mtexinfo_t*)Hunk_AllocName(count * sizeof(*out), loadname);
+
+	loadmodel->texinfo = out;
+	loadmodel->numtexinfo = count;
+
+	for (i = 0; i < count; i++, in++, out++)
+	{
+		for (j = 0; j < 8; j++)
+			out->vecs[0][j] = LittleFloat(in->vecs[0][j]);
+		len1 = Length(out->vecs[0]);
+		len2 = Length(out->vecs[1]);
+		len1 = (len1 + len2) / 2;
+		if (len1 < 0.32)
+			out->mipadjust = 4;
+		else if (len1 < 0.49)
+			out->mipadjust = 3;
+		else if (len1 < 0.99)
+			out->mipadjust = 2;
+		else
+			out->mipadjust = 1;
+#if 0
+		if (len1 + len2 < 0.001)
+			out->mipadjust = 1;		// don't crash
+		else
+			out->mipadjust = 1 / floor((len1 + len2) / 2 + 0.1);
+#endif
+
+		miptex = LittleLong(in->miptex);
+		out->flags = LittleLong(in->flags);
+
+		if (!loadmodel->textures)
+		{
+			out->texture = r_notexture_mip;	// checkerboard texture
+			out->flags = 0;
+		}
+		else
+		{
+			if (miptex >= loadmodel->numtextures)
+				Sys_Error("miptex >= loadmodel->numtextures");
+			out->texture = loadmodel->textures[miptex];
+			if (!out->texture)
+			{
+				out->texture = r_notexture_mip; // texture not found
+				out->flags = 0;
+			}
+		}
+	}
+}
+
+/*
+================
+CalcSurfaceExtents
+
+Fills in s->texturemins[] and s->extents[]
+================
+*/
+void CalcSurfaceExtents( msurface_t* s )
+{
+	float	mins[2], maxs[2], val;
+	int		i, j, e;
+	mvertex_t* v;
+	mtexinfo_t* tex;
+	int		bmins[2], bmaxs[2];
+
+	mins[0] = mins[1] = 999999;
+	maxs[0] = maxs[1] = -99999;
+
+	tex = s->texinfo;
+
+	for (i = 0; i < s->numedges; i++)
+	{
+		e = loadmodel->surfedges[s->firstedge + i];
+		if (e >= 0)
+			v = &loadmodel->vertexes[loadmodel->edges[e].v[0]];
+		else
+			v = &loadmodel->vertexes[loadmodel->edges[-e].v[1]];
+
+		for (j = 0; j < 2; j++)
+		{
+			val = v->position[0] * (double)tex->vecs[j][0] +
+				v->position[1] * (double)tex->vecs[j][1] +
+				v->position[2] * (double)tex->vecs[j][2] +
+				(double)tex->vecs[j][3];
+			if (val < mins[j])
+				mins[j] = val;
+			if (val > maxs[j])
+				maxs[j] = val;
+		}
+	}
+
+	for (i = 0; i < 2; i++)
+	{
+		bmins[i] = floor(mins[i] / 16);
+		bmaxs[i] = ceil(maxs[i] / 16);
+
+		s->texturemins[i] = bmins[i] * 16;
+		s->extents[i] = (bmaxs[i] - bmins[i]) * 16;
+		if (!(tex->flags & TEX_SPECIAL) && s->extents[i] > 256)
+			Sys_Error("Bad surface extents %d/%d", s->extents[0], s->extents[1]);
+	}
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
