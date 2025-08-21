@@ -337,9 +337,9 @@ Draw_Init
 void Draw_Init( void )
 {
 	int				i;
-	qpic_t*			cb;
-	glpic_t*		gl;
-	unsigned char*	pPal;
+	qpic_t*	cb;
+	glpic_t* gl;
+	unsigned char* pPal;
 	float			prev;
 
 	Draw_CacheWadInit("cached.wad", 16, &menu_wad);

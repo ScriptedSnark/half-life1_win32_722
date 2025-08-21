@@ -492,6 +492,109 @@ void Mod_LoadTextures( lump_t* l )
 	Con_DPrintf("Texture load: %6.1fms\n", (Sys_FloatTime() - starttime) * 1000.0);
 }
 
+/*
+===============
+Mod_LoadLighting
+===============
+*/
+void Mod_LoadLighting( lump_t* l )
+{
+	if (!l->filelen)
+	{
+		loadmodel->lightdata = NULL;
+		return;
+	}
+	loadmodel->lightdata = (color24*)Hunk_AllocName(l->filelen, loadname);
+	memcpy(loadmodel->lightdata, mod_base + l->fileofs, l->filelen);
+}
+
+
+/*
+=================
+Mod_LoadVisibility
+=================
+*/
+void Mod_LoadVisibility( lump_t* l )
+{
+	if (!l->filelen)
+	{
+		loadmodel->visdata = NULL;
+		return;
+	}
+	loadmodel->visdata = (byte*)Hunk_AllocName(l->filelen, loadname);
+	memcpy(loadmodel->visdata, mod_base + l->fileofs, l->filelen);
+}
+
+
+/*
+=================
+Mod_LoadEntities
+=================
+*/
+void Mod_LoadEntities( lump_t* l )
+{
+	char* pszInputStream;
+
+	if (!l->filelen)
+	{
+		loadmodel->entities = NULL;
+		return;
+	}
+	loadmodel->entities = (char*)Hunk_AllocName(l->filelen, loadname);
+	memcpy(loadmodel->entities, mod_base + l->fileofs, l->filelen);
+
+	if (loadmodel->entities)
+	{
+		pszInputStream = COM_Parse(loadmodel->entities);
+		while (*pszInputStream && com_token[0] != '}')
+		{
+			if (!strcmp(com_token, "wad"))
+			{
+				COM_Parse(pszInputStream);
+
+				if (wadpath)
+					free(wadpath);
+				wadpath = _strdup(com_token);
+				break;
+			}
+			pszInputStream = COM_Parse(pszInputStream);
+		}
+	}
+}
+
+
+/*
+=================
+Mod_LoadVertexes
+=================
+*/
+void Mod_LoadVertexes( lump_t* l )
+{
+	dvertex_t* in;
+	mvertex_t* out;
+	int			i, count;
+
+	in = (dvertex_t*)(mod_base + l->fileofs);
+	if (l->filelen % sizeof(*in))
+		Sys_Error("MOD_LoadBmodel: funny lump size in %s", loadmodel->name);
+	count = l->filelen / sizeof(*in);
+	out = (mvertex_t*)Hunk_AllocName(count * sizeof(*out), loadname);
+
+	loadmodel->vertexes = out;
+	loadmodel->numvertexes = count;
+
+	for (i = 0; i < count; i++, in++, out++)
+	{
+		out->position[0] = LittleFloat(in->point[0]);
+		out->position[1] = LittleFloat(in->point[1]);
+		out->position[2] = LittleFloat(in->point[2]);
+	}
+}
+
+
+
+
+
 
 
 /*
