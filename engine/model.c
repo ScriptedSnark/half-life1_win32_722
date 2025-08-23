@@ -878,26 +878,310 @@ void Mod_SetParent( mnode_t* node, mnode_t* parent )
 	Mod_SetParent(node->children[1], node);
 }
 
+/*
+=================
+Mod_LoadNodes
+=================
+*/
+void Mod_LoadNodes( lump_t* l )
+{
+	int			i, j, count, p;
+	dnode_t* in;
+	mnode_t* out;
 
+	in = (dnode_t*)(mod_base + l->fileofs);
+	if (l->filelen % sizeof(*in))
+		Sys_Error("MOD_LoadBmodel: funny lump size in %s", loadmodel->name);
+	count = l->filelen / sizeof(*in);
+	out = (mnode_t*)Hunk_AllocName(count * sizeof(*out), loadname);
 
+	loadmodel->nodes = out;
+	loadmodel->numnodes = count;
 
+	for (i = 0; i < count; i++, in++, out++)
+	{
+		for (j = 0; j < 3; j++)
+		{
+			out->minmaxs[j] = LittleShort(in->mins[j]);
+			out->minmaxs[3 + j] = LittleShort(in->maxs[j]);
+		}
 
+		p = LittleLong(in->planenum);
+		out->plane = loadmodel->planes + p;
 
+		out->firstsurface = LittleShort(in->firstface);
+		out->numsurfaces = LittleShort(in->numfaces);
 
+		for (j = 0; j < 2; j++)
+		{
+			p = LittleShort(in->children[j]);
+			if (p >= 0)
+				out->children[j] = loadmodel->nodes + p;
+			else
+				out->children[j] = (mnode_t*)(loadmodel->leafs + (-1 - p));
+		}
+	}
 
+	Mod_SetParent(loadmodel->nodes, NULL);	// sets nodes and leafs
+}
 
+/*
+=================
+Mod_LoadLeafs
+=================
+*/
+void Mod_LoadLeafs( lump_t* l )
+{
+	dleaf_t* in;
+	mleaf_t* out;
+	int			i, j, count, p;
 
+	in = (dleaf_t*)(mod_base + l->fileofs);
+	if (l->filelen % sizeof(*in))
+		Sys_Error("MOD_LoadBmodel: funny lump size in %s", loadmodel->name);
+	count = l->filelen / sizeof(*in);
+	out = (mleaf_t*)Hunk_AllocName(count * sizeof(*out), loadname);
 
+	loadmodel->leafs = out;
+	loadmodel->numleafs = count;
 
+	for (i = 0; i < count; i++, in++, out++)
+	{
+		for (j = 0; j < 3; j++)
+		{
+			out->minmaxs[j] = LittleShort(in->mins[j]);
+			out->minmaxs[3 + j] = LittleShort(in->maxs[j]);
+		}
 
+		p = LittleLong(in->contents);
+		out->contents = p;
 
+		out->firstmarksurface = loadmodel->marksurfaces +
+			in->firstmarksurface;
+		out->nummarksurfaces = LittleShort(in->nummarksurfaces);
 
+		p = LittleLong(in->visofs);
+		if (p == -1)
+			out->compressed_vis = NULL;
+		else
+			out->compressed_vis = loadmodel->visdata + p;
+		out->efrags = NULL;
 
+		for (j = 0; j < 4; j++)
+			out->ambient_sound_level[j] = in->ambient_level[j];
+	}
+}
 
+/*
+=================
+Mod_LoadClipnodes
+=================
+*/
+void Mod_LoadClipnodes( lump_t* l )
+{
+	dclipnode_t* in, * out;
+	int			i, count;
+	hull_t* hull;
 
+	in = (dclipnode_t*)(mod_base + l->fileofs);
+	if (l->filelen % sizeof(*in))
+		Sys_Error("MOD_LoadBmodel: funny lump size in %s", loadmodel->name);
+	count = l->filelen / sizeof(*in);
+	out = (dclipnode_t*)Hunk_AllocName(count * sizeof(*out), loadname);
 
+	loadmodel->clipnodes = out;
+	loadmodel->numclipnodes = count;
 
+	hull = &loadmodel->hulls[1];
+	hull->clipnodes = out;
+	hull->firstclipnode = 0;
+	hull->lastclipnode = count - 1;
+	hull->planes = loadmodel->planes;
+	hull->clip_mins[0] = -16;
+	hull->clip_mins[1] = -16;
+	hull->clip_mins[2] = -36;
+	hull->clip_maxs[0] = 16;
+	hull->clip_maxs[1] = 16;
+	hull->clip_maxs[2] = 36;
 
+	hull = &loadmodel->hulls[2];
+	hull->clipnodes = out;
+	hull->firstclipnode = 0;
+	hull->lastclipnode = count - 1;
+	hull->planes = loadmodel->planes;
+	hull->clip_mins[0] = -32;
+	hull->clip_mins[1] = -32;
+	hull->clip_mins[2] = -32;
+	hull->clip_maxs[0] = 32;
+	hull->clip_maxs[1] = 32;
+	hull->clip_maxs[2] = 32;
+
+	hull = &loadmodel->hulls[3];
+	hull->clipnodes = out;
+	hull->firstclipnode = 0;
+	hull->lastclipnode = count - 1;
+	hull->planes = loadmodel->planes;
+	hull->clip_mins[0] = -16;
+	hull->clip_mins[1] = -16;
+	hull->clip_mins[2] = -18;
+	hull->clip_maxs[0] = 16;
+	hull->clip_maxs[1] = 16;
+	hull->clip_maxs[2] = 18;
+
+	for (i = 0; i < count; i++, out++, in++)
+	{
+		out->planenum = LittleLong(in->planenum);
+		out->children[0] = LittleShort(in->children[0]);
+		out->children[1] = LittleShort(in->children[1]);
+	}
+}
+
+/*
+=================
+Mod_MakeHull0
+
+Deplicate the drawing hull structure as a clipping hull
+=================
+*/
+void Mod_MakeHull0( void )
+{
+	mnode_t* in, * child;
+	dclipnode_t* out;
+	int			i, j, count;
+	hull_t* hull;
+
+	hull = &loadmodel->hulls[0];
+
+	in = loadmodel->nodes;
+	count = loadmodel->numnodes;
+	out = (dclipnode_t*)Hunk_AllocName(count * sizeof(*out), loadname);
+
+	hull->clipnodes = out;
+	hull->firstclipnode = 0;
+	hull->lastclipnode = count - 1;
+	hull->planes = loadmodel->planes;
+
+	for (i = 0; i < count; i++, out++, in++)
+	{
+		out->planenum = in->plane - loadmodel->planes;
+		for (j = 0; j < 2; j++)
+		{
+			child = in->children[j];
+			if (child->contents < 0)
+				out->children[j] = child->contents;
+			else
+				out->children[j] = child - loadmodel->nodes;
+		}
+	}
+}
+
+/*
+=================
+Mod_LoadMarksurfaces
+=================
+*/
+void Mod_LoadMarksurfaces( lump_t* l )
+{
+	int		i, j, count;
+	short* in;
+	msurface_t** out;
+
+	in = (short*)(mod_base + l->fileofs);
+	if (l->filelen % sizeof(*in))
+		Sys_Error("MOD_LoadBmodel: funny lump size in %s", loadmodel->name);
+	count = l->filelen / sizeof(*in);
+	out = (msurface_t**)Hunk_AllocName(count * sizeof(*out), loadname);
+
+	loadmodel->marksurfaces = out;
+	loadmodel->nummarksurfaces = count;
+
+	for (i = 0; i < count; i++)
+	{
+		j = LittleShort(in[i]);
+		if (j >= loadmodel->numsurfaces)
+			Sys_Error("Mod_ParseMarksurfaces: bad surface number");
+		out[i] = loadmodel->surfaces + j;
+	}
+}
+
+/*
+=================
+Mod_LoadSurfedges
+=================
+*/
+void Mod_LoadSurfedges( lump_t* l )
+{
+	int		i, count;
+	int* in, * out;
+
+	in = (int*)(mod_base + l->fileofs);
+	if (l->filelen % sizeof(*in))
+		Sys_Error("MOD_LoadBmodel: funny lump size in %s", loadmodel->name);
+	count = l->filelen / sizeof(*in);
+	out = (int*)Hunk_AllocName(count * sizeof(*out), loadname);
+
+	loadmodel->surfedges = out;
+	loadmodel->numsurfedges = count;
+
+	for (i = 0; i < count; i++)
+		out[i] = LittleLong(in[i]);
+}
+
+/*
+=================
+Mod_LoadPlanes
+=================
+*/
+void Mod_LoadPlanes( lump_t* l )
+{
+	int			i, j;
+	mplane_t* out;
+	dplane_t* in;
+	int			count;
+	int			bits;
+
+	in = (dplane_t*)(mod_base + l->fileofs);
+	if (l->filelen % sizeof(*in))
+		Sys_Error("MOD_LoadBmodel: funny lump size in %s", loadmodel->name);
+	count = l->filelen / sizeof(*in);
+	out = (mplane_t*)Hunk_AllocName(count * 2 * sizeof(*out), loadname);
+
+	loadmodel->planes = out;
+	loadmodel->numplanes = count;
+
+	for (i = 0; i < count; i++, in++, out++)
+	{
+		bits = 0;
+		for (j = 0; j < 3; j++)
+		{
+			out->normal[j] = LittleFloat(in->normal[j]);
+			if (out->normal[j] < 0)
+				bits |= 1 << j;
+		}
+
+		out->dist = LittleFloat(in->dist);
+		out->type = LittleLong(in->type);
+		out->signbits = bits;
+	}
+}
+
+/*
+=================
+RadiusFromBounds
+=================
+*/
+float RadiusFromBounds( vec_t* mins, vec_t* maxs )
+{
+	int		i;
+	vec3_t	corner;
+
+	for (i = 0; i < 3; i++)
+	{
+		corner[i] = fabs(mins[i]) > fabs(maxs[i]) ? fabs(mins[i]) : fabs(maxs[i]);
+	}
+
+	return Length(corner);
+}
 
 /*
 =================
@@ -906,8 +1190,230 @@ Mod_LoadBrushModel
 */
 void Mod_LoadBrushModel( model_t* mod, void* buffer )
 {
-	// TODO: Implement
+	int			i, j;
+	dheader_t* header;
+	dmodel_t* bm;
+
+	loadmodel->type = mod_brush;
+
+	header = (dheader_t*)buffer;
+
+	i = LittleLong(header->version);
+	if (i != Q1BSP_VERSION && i != BSPVERSION)
+		Sys_Error("Mod_LoadBrushModel: %s has wrong version number (%i should be %i)", mod->name, i, BSPVERSION);
+
+// swap all the lumps
+	mod_base = (byte*)header;
+
+	for (i = 0; i < sizeof(dheader_t) / 4; i++)
+		((int*)header)[i] = LittleLong(((int*)header)[i]);
+
+// load into heap
+
+	Mod_LoadVertexes(&header->lumps[LUMP_VERTEXES]);
+	Mod_LoadEdges(&header->lumps[LUMP_EDGES]);
+	Mod_LoadSurfedges(&header->lumps[LUMP_SURFEDGES]);
+	Mod_LoadEntities(&header->lumps[LUMP_ENTITIES]);
+	Mod_LoadTextures(&header->lumps[LUMP_TEXTURES]);
+	Mod_LoadLighting(&header->lumps[LUMP_LIGHTING]);
+	Mod_LoadPlanes(&header->lumps[LUMP_PLANES]);
+	Mod_LoadTexinfo(&header->lumps[LUMP_TEXINFO]);
+	Mod_LoadFaces(&header->lumps[LUMP_FACES]);
+	Mod_LoadMarksurfaces(&header->lumps[LUMP_MARKSURFACES]);
+	Mod_LoadVisibility(&header->lumps[LUMP_VISIBILITY]);
+	Mod_LoadLeafs(&header->lumps[LUMP_LEAFS]);
+	Mod_LoadNodes(&header->lumps[LUMP_NODES]);
+	Mod_LoadClipnodes(&header->lumps[LUMP_CLIPNODES]);
+	Mod_LoadSubmodels(&header->lumps[LUMP_MODELS]);
+
+	Mod_MakeHull0();
+
+	mod->numframes = 2;		// regular and alternate animation
+	mod->flags = 0;
+
+//
+// set up the submodels (FIXME: this is confusing)
+//
+	for (i = 0; i < mod->numsubmodels; i++)
+	{
+		bm = &mod->submodels[i];
+
+		mod->hulls[0].firstclipnode = bm->headnode[0];
+		for (j = 1; j < MAX_MAP_HULLS; j++)
+		{
+			mod->hulls[j].firstclipnode = bm->headnode[j];
+			mod->hulls[j].lastclipnode = mod->numclipnodes - 1;
+		}
+
+		mod->firstmodelsurface = bm->firstface;
+		mod->nummodelsurfaces = bm->numfaces;
+
+		VectorCopy(bm->maxs, mod->maxs);
+		VectorCopy(bm->mins, mod->mins);
+
+		mod->radius = RadiusFromBounds(mod->mins, mod->maxs);
+		mod->numleafs = bm->visleafs;
+
+		if (i < mod->numsubmodels - 1)
+		{	// duplicate the basic information
+			char	name[10];
+
+			sprintf(name, "*%i", i + 1);
+			loadmodel = Mod_FindName(name);
+			*loadmodel = *mod;
+			strcpy(loadmodel->name, name);
+			mod = loadmodel;
+		}
+	}
 }
+
+/*
+==============================================================================
+
+ALIAS MODELS
+
+==============================================================================
+*/
+
+/*
+=================
+Mod_LoadAliasFrame
+=================
+*/
+void* Mod_LoadAliasFrame( void* pin, int* pframeindex, int numv,
+	trivertx_t* pbboxmin, trivertx_t* pbboxmax, aliashdr_t* pheader, char* name )
+{
+	trivertx_t* pframe, * pinframe;
+	int				i, j;
+	daliasframe_t* pdaliasframe;
+
+	pdaliasframe = (daliasframe_t*)pin;
+
+	strcpy(name, pdaliasframe->name);
+
+	for (i = 0; i < 3; i++)
+	{
+	// these are byte values, so we don't have to worry about
+	// endianness
+		pbboxmin->v[i] = pdaliasframe->bboxmin.v[i];
+		pbboxmax->v[i] = pdaliasframe->bboxmax.v[i];
+	}
+
+	pinframe = (trivertx_t*)(pdaliasframe + 1);
+	pframe = (trivertx_t*)Hunk_AllocName(numv * sizeof(*pframe), loadname);
+
+	*pframeindex = (byte*)pframe - (byte*)pheader;
+
+	for (j = 0; j < numv; j++)
+	{
+		int		k;
+
+	// these are all byte values, so no need to deal with endianness
+		pframe[j].lightnormalindex = pinframe[j].lightnormalindex;
+
+		for (k = 0; k < 3; k++)
+		{
+			pframe[j].v[k] = pinframe[j].v[k];
+		}
+	}
+
+	pinframe += numv;
+
+	return (void*)pinframe;
+}
+
+
+/*
+=================
+Mod_LoadAliasGroup
+=================
+*/
+void* Mod_LoadAliasGroup( void* pin, int* pframeindex, int numv,
+	trivertx_t* pbboxmin, trivertx_t* pbboxmax, aliashdr_t* pheader, char* name )
+{
+	daliasgroup_t* pingroup;
+	maliasgroup_t* paliasgroup;
+	int					i, numframes;
+	daliasinterval_t* pin_intervals;
+	float* poutintervals;
+	void* ptemp;
+
+	pingroup = (daliasgroup_t*)pin;
+
+	numframes = LittleLong(pingroup->numframes);
+
+	paliasgroup = (maliasgroup_t*)Hunk_AllocName(sizeof(paliasgroup->frames[0]) * numframes + 8, loadname);
+
+	paliasgroup->numframes = numframes;
+
+	for (i = 0; i < 3; i++)
+	{
+	// these are byte values, so we don't have to worry about endianness
+		pbboxmin->v[i] = pingroup->bboxmin.v[i];
+		pbboxmax->v[i] = pingroup->bboxmax.v[i];
+	}
+
+	*pframeindex = (byte*)paliasgroup - (byte*)pheader;
+
+	pin_intervals = (daliasinterval_t*)(pingroup + 1);
+
+	poutintervals = (float*)Hunk_AllocName(numframes * sizeof(float), loadname);
+
+	paliasgroup->intervals = (byte*)poutintervals - (byte*)pheader;
+
+	for (i = 0; i < numframes; i++)
+	{
+		*poutintervals = LittleFloat(pin_intervals->interval);
+		if (*poutintervals <= 0.0)
+			Sys_Error("Mod_LoadAliasGroup: interval<=0");
+
+		poutintervals++;
+		pin_intervals++;
+	}
+
+	ptemp = (void*)pin_intervals;
+
+	for (i = 0; i < numframes; i++)
+	{
+		ptemp = Mod_LoadAliasFrame(ptemp,
+			&paliasgroup->frames[i].frame,
+			numv,
+			&paliasgroup->frames[i].bboxmin,
+			&paliasgroup->frames[i].bboxmax,
+			pheader, name);
+	}
+
+	return ptemp;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 /*
 =================

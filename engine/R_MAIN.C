@@ -31,6 +31,8 @@ int		r_visframecount;
 
 mleaf_t* r_viewleaf, * r_oldviewleaf;
 
+texture_t* r_notexture_mip;
+
 
 
 cvar_t	r_cachestudio = { "r_cachestudio", "1" };
