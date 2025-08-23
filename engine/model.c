@@ -774,6 +774,111 @@ void CalcSurfaceExtents( msurface_t* s )
 }
 
 
+/*
+=================
+Mod_LoadFaces
+=================
+*/
+void Mod_LoadFaces( lump_t* l )
+{
+	dface_t* in;
+	msurface_t* out;
+	int			i, count, surfnum;
+	int			planenum, side;
+
+	in = (dface_t*)(mod_base + l->fileofs);
+	if (l->filelen % sizeof(*in))
+		Sys_Error("MOD_LoadBmodel: funny lump size in %s", loadmodel->name);
+	count = l->filelen / sizeof(*in);
+	out = (msurface_t*)Hunk_AllocName(count * sizeof(*out), loadname);
+
+	loadmodel->surfaces = out;
+	loadmodel->numsurfaces = count;
+
+	for (surfnum = 0; surfnum < count; surfnum++, in++, out++)
+	{
+		out->firstedge = LittleLong(in->firstedge);
+		out->numedges = LittleShort(in->numedges);
+		out->flags = 0;
+		out->pdecals = NULL; // the surface has no decals by default
+
+		planenum = LittleShort(in->planenum);
+		side = LittleShort(in->side);
+		if (side)
+			out->flags |= SURF_PLANEBACK;
+
+		out->plane = loadmodel->planes + planenum;
+
+		out->texinfo = loadmodel->texinfo + LittleShort(in->texinfo);
+
+		CalcSurfaceExtents(out);
+
+		// lighting info
+
+		for (i = 0; i < MAXLIGHTMAPS; i++)
+			out->styles[i] = in->styles[i];
+		i = LittleLong(in->lightofs);
+		if (i == -1)
+			out->samples = NULL;
+		else
+			out->samples = (color24*)((byte*)loadmodel->lightdata + i);
+
+		// set the drawing flags flag
+
+		if (!Q_strncmp(out->texinfo->texture->name, "sky", 3))	// sky
+		{
+			out->flags |= (SURF_DRAWSKY | SURF_DRAWTILED);
+			continue;
+		}
+
+		if (!Q_strncmp(out->texinfo->texture->name, "scroll", 6))	// scroll
+		{
+			out->flags |= SURF_DRAWTILED;
+			out->extents[0] = out->texinfo->texture->width;
+			out->extents[1] = out->texinfo->texture->height;
+			continue;
+		}
+
+		if (out->texinfo->texture->name[0] == '!' ||
+			!_strnicmp(out->texinfo->texture->name, "laser", 5) ||
+			!_strnicmp(out->texinfo->texture->name, "water", 5))	// turbulent
+		{
+			out->flags |= (SURF_DRAWTURB | SURF_DRAWTILED);
+			for (i = 0; i < 2; i++)
+			{
+				out->extents[i] = 16384;
+				out->texturemins[i] = -8192;
+				out->texinfo->flags |= TEX_SPECIAL;
+			}
+			continue;
+		}
+
+		if (out->texinfo->flags & TEX_SPECIAL)
+		{
+			out->flags |= SURF_DRAWTILED;
+			out->extents[0] = out->texinfo->texture->width;
+			out->extents[1] = out->texinfo->texture->height;
+			continue;
+		}
+	}
+}
+
+
+/*
+=================
+Mod_SetParent
+=================
+*/
+void Mod_SetParent( mnode_t* node, mnode_t* parent )
+{
+	node->parent = parent;
+	if (node->contents < 0)
+		return;
+	Mod_SetParent(node->children[0], node);
+	Mod_SetParent(node->children[1], node);
+}
+
+
 
 
 
