@@ -2,6 +2,10 @@
 
 #include "quakedef.h"
 
+//define	PASSAGES
+
+int			r_pixbytes = 1;
+
 //
 // view origin
 //

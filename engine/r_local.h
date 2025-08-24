@@ -71,7 +71,13 @@ extern	int		r_visframecount;
 extern	qboolean		insubmodel;
 extern	vec3_t			r_worldmodelorg;
 
+// TODO: Implement
 
+//=========================================================
+// Alias models
+//=========================================================
+
+#define MAXALIASVERTS		2000
 
 // TODO: Implement
 

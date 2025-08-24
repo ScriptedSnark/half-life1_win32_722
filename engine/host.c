@@ -2133,13 +2133,12 @@ int Host_Init( quakeparms_t* parms )
 
 		host_basepal = Hunk_AllocName(sizeof(PackedColorVec) * 256, "palette.lmp");
 
-		// Convert from BGR to RGBA
 		for (i = 0; i < 256; i++)
 		{
 			host_basepal[i * 4 + 0] = disk_basepal[i * 3 + 2];
 			host_basepal[i * 4 + 1] = disk_basepal[i * 3 + 1];
 			host_basepal[i * 4 + 2] = disk_basepal[i * 3 + 0];
-			host_basepal[i * 4 + 3] = 0; // alpha
+			host_basepal[i * 4 + 3] = 0;
 		}
 
 		ClientDLL_Init();

@@ -9,6 +9,8 @@
 #define WARP_WIDTH		320
 #define WARP_HEIGHT		200
 
+#define MAX_LBM_HEIGHT	480
+
 // !!! if this is changed, it must be changed in d_ifacea.h too !!!
 typedef struct finalvert_s {
 	int		v[6];		// u, v, s, t, l, 1/z
@@ -29,6 +31,11 @@ typedef struct
 	int					drawtype;
 	int					seamfixupX16;
 } affinetridesc_t;
+
+// TODO: Implement
+
+extern int		r_pixbytes;
+extern qboolean	r_dowarp, r_dowarpold, r_viewchanged;
 
 // TODO: Implement
 
