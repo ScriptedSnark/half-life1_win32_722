@@ -8,6 +8,21 @@ word green_64klut[65536];
 word lut_realigner2[256];
 word blue_64klut[65536];
 
+
+/*
+===============
+R_DrawInitLut
+
+===============
+*/
+void R_DrawInitLut( void )
+{
+	// TODO: Implement
+}
+
+
+
+
 void R_DecalRemoveAll( int textureIndex )
 {
 	// TODO: Implement

@@ -185,13 +185,13 @@ int SPR_Height( HSPRITE_t hSprite, int frame )
 }
 
 #if defined( GLQUAKE )
-void UnpackPalette( word* pDest, word* pSource, int r, int g, int b )
+void UnpackPalette( unsigned short* pDest, unsigned short* pSource, int r, int g, int b )
 {
 }
 #else
-void UnpackPalette( word* pDest, word* pSource, int r, int g, int b )
+void UnpackPalette( unsigned short* pDest, unsigned short* pSource, int r, int g, int b )
 {
-	word* red, * green, * blue;
+	unsigned short* red, * green, * blue;
 	int i;
 
 	red = red_64klut + ((r * 192) & 0xFF00);
@@ -217,7 +217,7 @@ void SPR_Set( HSPRITE_t hSprite, int r, int g, int b )
 		if (gpSprite)
 		{
 #if defined ( GLQUAKE )
-			qglColor4f((GLfloat)r / 255.0, (GLfloat)g / 255.0, (GLfloat)b / 255.0, 1.0);
+			qglColor4f(r / 255.0, g / 255.0, b / 255.0, 1.0);
 #else
 			UnpackPalette(gSpritePalette, (unsigned short*)((byte*)gpSprite + gpSprite->paloffset), r, g, b);
 #endif

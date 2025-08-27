@@ -51,6 +51,7 @@ void D_DisableBackBufferAccess( void );
 void D_DrawParticle( particle_t* pparticle );
 void D_EnableBackBufferAccess( void );
 void D_EndParticles( void );
+void D_Init( void );
 void D_StartParticles( void );
 
 void D_UpdateRects( vrect_t* prect );
@@ -68,7 +69,8 @@ int DecalListCreate( DECALLIST* pList );
 
 
 
-
+// !!! if this is changed, it must be changed in d_ifacea.h too !!!
+#define	CYCLE			128		// turbulent cycle size
 
 
 

@@ -294,7 +294,7 @@ void R_ReadPointFile_f( void )
 	int		r;
 	int		c;
 	particle_t* p;
-	char	name[128];
+	char	name[MAX_OSPATH];
 
 	if (!cl.worldmodel)
 		return;

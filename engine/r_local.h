@@ -32,31 +32,59 @@ typedef struct alight_s {
 
 extern	cvar_t	r_cachestudio;
 extern	cvar_t	r_draworder;
-
-
-
+extern	cvar_t	r_speeds;
+extern	cvar_t	r_timegraph;
+extern	cvar_t	r_graphheight;
+extern	cvar_t	r_luminance;
+extern	cvar_t	r_clearcolor;
+extern	cvar_t	r_waterwarp;
 extern	cvar_t	r_fullbright;
 extern	cvar_t	r_decals;
-
-
-
+extern	cvar_t	r_lightmap;
+extern	cvar_t	r_lightstyle;
+extern	cvar_t	r_drawentities;
+extern	cvar_t	r_drawviewmodel;
+extern	cvar_t	r_aliasstats;
+extern	cvar_t	r_dspeeds;
+extern	cvar_t	r_drawflat;
 extern	cvar_t	r_ambient_r;
 extern	cvar_t	r_ambient_g;
 extern	cvar_t	r_ambient_b;
-
-
-
+extern cvar_t	r_numsurfs;
+extern cvar_t	r_numedges;
 extern	cvar_t	r_mmx;
 extern	cvar_t	r_traceglow;
 extern	cvar_t	r_wadtextures;
 
+#define XCENTERING	(1.0 / 2.0)
+#define YCENTERING	(1.0 / 2.0)
 
+#define BACKFACE_EPSILON	0.01
 
-// TODO: Implement
+//===========================================================================
 
+// !!! if this is changed, it must be changed in asm_draw.h too !!!
+typedef struct clipplane_s
+{
+	vec3_t		normal;
+	float		dist;
+	struct		clipplane_s* next;
+	byte		leftedge;
+	byte		rightedge;
+	byte		reserved[2];
+} clipplane_t;
+
+extern	clipplane_t	view_clipplanes[4];
+
+//=============================================================================
+
+void R_RenderWorld( void );
+
+//=============================================================================
+
+extern	mplane_t	screenedge[4];
 
 extern	vec3_t	r_entorigin;
-
 
 // TODO: Implement
 
@@ -73,11 +101,27 @@ extern	vec3_t			r_worldmodelorg;
 
 // TODO: Implement
 
+void R_EdgeCodeStart( void );
+void R_EdgeCodeEnd( void );
+
+// TODO: Implement
+
+void	R_InitTurb( void );
+
 //=========================================================
 // Alias models
 //=========================================================
 
 #define MAXALIASVERTS		2000
+
+// TODO: Implement
+
+//=========================================================
+// particle stuff
+
+void R_ReadPointFile_f( void );
+
+void UnpackPalette( unsigned short* pDest, unsigned short* pSource, int r, int g, int b );
 
 // TODO: Implement
 
@@ -88,6 +132,20 @@ extern int		r_amodels_drawn;
 // TODO: Implement
 
 
+extern	int	current_iv;
+
+extern  int	edge_head_u_shift20, edge_tail_u_shift20;
+
+extern	edge_t* newedges[MAXHEIGHT];
+extern	edge_t* removeedges[MAXHEIGHT];
+
+extern	edge_t	edge_head;
+extern	edge_t	edge_tail;
+extern	edge_t	edge_aftertail;
+extern  int		r_bmodelactive;
+
+extern  float	fv;
+
 extern	float		aliastransform[3][4];
 extern	float		aliasxscale, aliasyscale, aliasxcenter, aliasycenter;
 extern	int			r_ambientlight;
@@ -96,6 +154,16 @@ extern	float		r_shadelight;
 
 extern	vec3_t		r_plightvec;
 
+
+
+extern float	dp_time1, dp_time2, db_time1, db_time2, rw_time1, rw_time2;
+extern float	se_time1, se_time2, de_time1, de_time2, dv_time1, dv_time2;
+
+
+// TODO: Implement
+
+
+extern mleaf_t* r_viewleaf, * r_oldviewleaf;
 
 // TODO: Implement
 
@@ -107,14 +175,8 @@ extern int		r_dlightactive;		// which ones are active
 // TODO: Implement
 
 
-extern mleaf_t* r_viewleaf, * r_oldviewleaf;
 
-
-// TODO: Implement
-
-
-
-
+void R_TimeRefresh_f( void );
 colorVec R_LightPoint( vec_t* p );
 colorVec R_LightVec( vec_t* start, vec_t* end );
 
@@ -122,5 +184,12 @@ colorVec R_LightVec( vec_t* start, vec_t* end );
 
 
 // TODO: Implement
+
+//=========================================================
+// turbulence stuff
+
+#define	AMP		8 * 0x10000
+#define	AMP2	3
+#define	SPEED	20
 
 #endif

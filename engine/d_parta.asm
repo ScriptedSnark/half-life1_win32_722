@@ -231,132 +231,327 @@
  externdef fp_64kx64k:dword
  externdef pz:dword
  externdef spr8entryvec_table:dword
-_DATA SEGMENT
+_TEXT SEGMENT
  align 4
- public _d_sdivzstepu
- public _d_tdivzstepu
- public _d_zistepu
- public _d_sdivzstepv
- public _d_tdivzstepv
- public _d_zistepv
- public _d_sdivzorigin
- public _d_tdivzorigin
- public _d_ziorigin
-_d_sdivzstepu dd 0
-_d_tdivzstepu dd 0
-_d_zistepu dd 0
-_d_sdivzstepv dd 0
-_d_tdivzstepv dd 0
-_d_zistepv dd 0
-_d_sdivzorigin dd 0
-_d_tdivzorigin dd 0
-_d_ziorigin dd 0
- public _sadjust
- public _tadjust
- public _bbextents
- public _bbextentt
-_sadjust dd 0
-_tadjust dd 0
-_bbextents dd 0
-_bbextentt dd 0
- public _cacheblock
- public _d_viewbuffer
- public _cachewidth
- public _d_pzbuffer
- public _d_zrowbytes
- public _d_zwidth
-_cacheblock dd 0
-_cachewidth dd 0
-_d_viewbuffer dd 0
-_d_pzbuffer dd 0
-_d_zrowbytes dd 0
-_d_zwidth dd 0
- public izi
-izi dd 0
- public pbase, s, t, sfracf, tfracf, snext, tnext
- public spancountminus1, zi16stepu, sdivz16stepu, tdivz16stepu
- public zi8stepu, sdivz8stepu, tdivz8stepu, pz
-s dd 0
-t dd 0
-snext dd 0
-tnext dd 0
-sfracf dd 0
-tfracf dd 0
-pbase dd 0
-zi8stepu dd 0
-sdivz8stepu dd 0
-tdivz8stepu dd 0
-zi16stepu dd 0
-sdivz16stepu dd 0
-tdivz16stepu dd 0
-spancountminus1 dd 0
-pz dd 0
- public izistep
-izistep dd 0
- public reciprocal_table_16, entryvec_table_16
-reciprocal_table_16 dd 040000000h, 02aaaaaaah, 020000000h
- dd 019999999h, 015555555h, 012492492h
- dd 010000000h, 0e38e38eh, 0ccccccch, 0ba2e8bah
- dd 0aaaaaaah, 09d89d89h, 09249249h, 08888888h
- externdef Entry2_16:dword
- externdef Entry3_16:dword
- externdef Entry4_16:dword
- externdef Entry5_16:dword
- externdef Entry6_16:dword
- externdef Entry7_16:dword
- externdef Entry8_16:dword
- externdef Entry9_16:dword
- externdef Entry10_16:dword
- externdef Entry11_16:dword
- externdef Entry12_16:dword
- externdef Entry13_16:dword
- externdef Entry14_16:dword
- externdef Entry15_16:dword
- externdef Entry16_16:dword
-entryvec_table_16 dd 0, Entry2_16, Entry3_16, Entry4_16
- dd Entry5_16, Entry6_16, Entry7_16, Entry8_16
- dd Entry9_16, Entry10_16, Entry11_16, Entry12_16
- dd Entry13_16, Entry14_16, Entry15_16, Entry16_16
- public DP_Count, DP_u, DP_v, DP_32768, DP_Color, DP_Pix, DP_EntryTable
-DP_Count dd 0
-DP_u dd 0
-DP_v dd 0
-DP_32768 dd 32768.0
-DP_Color dd 0
-DP_Pix dd 0
- externdef DP_1x1:dword
- externdef DP_2x2:dword
- externdef DP_3x3:dword
- externdef DP_4x4:dword
-DP_EntryTable dd DP_1x1, DP_2x2, DP_3x3, DP_4x4
- public advancetable, sstep, tstep, pspantemp, counttemp, jumptemp
-advancetable dd 0, 0
-sstep dd 0
-tstep dd 0
-pspantemp dd 0
-counttemp dd 0
-jumptemp dd 0
- public reciprocal_table, entryvec_table
-reciprocal_table dd 040000000h, 02aaaaaaah, 020000000h
- dd 019999999h, 015555555h, 012492492h
- externdef Entry2_8:dword
- externdef Entry3_8:dword
- externdef Entry4_8:dword
- externdef Entry5_8:dword
- externdef Entry6_8:dword
- externdef Entry7_8:dword
- externdef Entry8_8:dword
-entryvec_table dd 0, Entry2_8, Entry3_8, Entry4_8
- dd Entry5_8, Entry6_8, Entry7_8, Entry8_8
- externdef Spr8Entry2_8:dword
- externdef Spr8Entry3_8:dword
- externdef Spr8Entry4_8:dword
- externdef Spr8Entry5_8:dword
- externdef Spr8Entry6_8:dword
- externdef Spr8Entry7_8:dword
- externdef Spr8Entry8_8:dword
- public spr8entryvec_table
-spr8entryvec_table dd 0, Spr8Entry2_8, Spr8Entry3_8, Spr8Entry4_8
- dd Spr8Entry5_8, Spr8Entry6_8, Spr8Entry7_8, Spr8Entry8_8
-_DATA ENDS
+ public __D_DrawParticle
+__D_DrawParticle:
+ push ebp
+ push edi
+ push ebx
+ mov edi,ds:dword ptr[12+4+esp]
+ fld ds:dword ptr[_r_origin]
+ fsubr ds:dword ptr[0+edi]
+ fld ds:dword ptr[0+4+edi]
+ fsub ds:dword ptr[_r_origin+4]
+ fld ds:dword ptr[0+8+edi]
+ fsub ds:dword ptr[_r_origin+8]
+ fxch st(2)
+ fld ds:dword ptr[_r_ppn]
+ fmul st(0),st(1)
+ fld ds:dword ptr[_r_ppn+4]
+ fmul st(0),st(3)
+ fld ds:dword ptr[_r_ppn+8]
+ fmul st(0),st(5)
+ fxch st(2)
+ faddp st(1),st(0)
+ faddp st(1),st(0)
+ fld st(0)
+ fdivr ds:dword ptr[float_1]
+ fxch st(1)
+ fcomp ds:dword ptr[float_particle_z_clip]
+ fxch st(3)
+ fld ds:dword ptr[_r_pup]
+ fmul st(0),st(2)
+ fld ds:dword ptr[_r_pup+4]
+ fnstsw ax
+ test ah,1
+ jnz LPop6AndDone
+ fmul st(0),st(4)
+ fld ds:dword ptr[_r_pup+8]
+ fmul st(0),st(3)
+ fxch st(2)
+ faddp st(1),st(0)
+ faddp st(1),st(0)
+ fxch st(3)
+ fmul ds:dword ptr[_r_pright+4]
+ fxch st(2)
+ fmul ds:dword ptr[_r_pright]
+ fxch st(1)
+ fmul ds:dword ptr[_r_pright+8]
+ fxch st(2)
+ faddp st(1),st(0)
+ faddp st(1),st(0)
+ fxch st(1)
+ fmul st(0),st(2)
+ fxch st(1)
+ fmul st(0),st(2)
+ fxch st(1)
+ fsubr ds:dword ptr[_ycenter]
+ fxch st(1)
+ fadd ds:dword ptr[_xcenter]
+ fxch st(1)
+ fadd ds:dword ptr[float_point5]
+ fxch st(1)
+ fadd ds:dword ptr[float_point5]
+ fxch st(2)
+ fmul ds:dword ptr[DP_32768]
+ fxch st(2)
+ fistp ds:dword ptr[DP_u]
+ fistp ds:dword ptr[DP_v]
+ mov eax,ds:dword ptr[DP_u]
+ mov edx,ds:dword ptr[DP_v]
+ mov ebx,ds:dword ptr[_d_vrectbottom_particle]
+ mov ecx,ds:dword ptr[_d_vrectright_particle]
+ cmp edx,ebx
+ jg LPop1AndDone
+ cmp eax,ecx
+ jg LPop1AndDone
+ mov ebx,ds:dword ptr[_d_vrecty]
+ mov ecx,ds:dword ptr[_d_vrectx]
+ cmp edx,ebx
+ jl LPop1AndDone
+ cmp eax,ecx
+ jl LPop1AndDone
+ fld ds:dword ptr[12+edi]
+ fistp ds:dword ptr[DP_Color]
+ mov ebx,ds:dword ptr[_d_viewbuffer]
+ add ebx,eax
+ mov edi,ds:dword ptr[_d_scantable+edx*4]
+ imul edx,ds:dword ptr[_d_zrowbytes]
+ lea edx,ds:dword ptr[edx+eax*2]
+ mov eax,ds:dword ptr[_d_pzbuffer]
+ fistp ds:dword ptr[izi]
+ add edi,ebx
+ add edx,eax
+ mov eax,ds:dword ptr[izi]
+ mov ecx,ds:dword ptr[_d_pix_shift]
+ shr eax,cl
+ mov ebp,ds:dword ptr[izi]
+ mov ebx,ds:dword ptr[_d_pix_min]
+ mov ecx,ds:dword ptr[_d_pix_max]
+ cmp eax,ebx
+ jnl LTestPixMax
+ mov eax,ebx
+ jmp LTestDone
+LTestPixMax:
+ cmp eax,ecx
+ jng LTestDone
+ mov eax,ecx
+LTestDone:
+ mov ch,ds:byte ptr[DP_Color]
+ mov ebx,ds:dword ptr[_d_y_aspect_shift]
+ test ebx,ebx
+ jnz LDefault
+ cmp eax,4
+ ja LDefault
+ jmp dword ptr[DP_EntryTable-4+eax*4]
+ public DP_1x1
+DP_1x1:
+ cmp ds:word ptr[edx],bp
+ jg LDone
+ mov ds:word ptr[edx],bp
+ mov ds:byte ptr[edi],ch
+ jmp LDone
+ public DP_2x2
+DP_2x2:
+ push esi
+ mov ebx,ds:dword ptr[_screenwidth]
+ mov esi,ds:dword ptr[_d_zrowbytes]
+ cmp ds:word ptr[edx],bp
+ jg L2x2_1
+ mov ds:word ptr[edx],bp
+ mov ds:byte ptr[edi],ch
+L2x2_1:
+ cmp ds:word ptr[2+edx],bp
+ jg L2x2_2
+ mov ds:word ptr[2+edx],bp
+ mov ds:byte ptr[1+edi],ch
+L2x2_2:
+ cmp ds:word ptr[edx+esi*1],bp
+ jg L2x2_3
+ mov ds:word ptr[edx+esi*1],bp
+ mov ds:byte ptr[edi+ebx*1],ch
+L2x2_3:
+ cmp ds:word ptr[2+edx+esi*1],bp
+ jg L2x2_4
+ mov ds:word ptr[2+edx+esi*1],bp
+ mov ds:byte ptr[1+edi+ebx*1],ch
+L2x2_4:
+ pop esi
+ jmp LDone
+ public DP_3x3
+DP_3x3:
+ push esi
+ mov ebx,ds:dword ptr[_screenwidth]
+ mov esi,ds:dword ptr[_d_zrowbytes]
+ cmp ds:word ptr[edx],bp
+ jg L3x3_1
+ mov ds:word ptr[edx],bp
+ mov ds:byte ptr[edi],ch
+L3x3_1:
+ cmp ds:word ptr[2+edx],bp
+ jg L3x3_2
+ mov ds:word ptr[2+edx],bp
+ mov ds:byte ptr[1+edi],ch
+L3x3_2:
+ cmp ds:word ptr[4+edx],bp
+ jg L3x3_3
+ mov ds:word ptr[4+edx],bp
+ mov ds:byte ptr[2+edi],ch
+L3x3_3:
+ cmp ds:word ptr[edx+esi*1],bp
+ jg L3x3_4
+ mov ds:word ptr[edx+esi*1],bp
+ mov ds:byte ptr[edi+ebx*1],ch
+L3x3_4:
+ cmp ds:word ptr[2+edx+esi*1],bp
+ jg L3x3_5
+ mov ds:word ptr[2+edx+esi*1],bp
+ mov ds:byte ptr[1+edi+ebx*1],ch
+L3x3_5:
+ cmp ds:word ptr[4+edx+esi*1],bp
+ jg L3x3_6
+ mov ds:word ptr[4+edx+esi*1],bp
+ mov ds:byte ptr[2+edi+ebx*1],ch
+L3x3_6:
+ cmp ds:word ptr[edx+esi*2],bp
+ jg L3x3_7
+ mov ds:word ptr[edx+esi*2],bp
+ mov ds:byte ptr[edi+ebx*2],ch
+L3x3_7:
+ cmp ds:word ptr[2+edx+esi*2],bp
+ jg L3x3_8
+ mov ds:word ptr[2+edx+esi*2],bp
+ mov ds:byte ptr[1+edi+ebx*2],ch
+L3x3_8:
+ cmp ds:word ptr[4+edx+esi*2],bp
+ jg L3x3_9
+ mov ds:word ptr[4+edx+esi*2],bp
+ mov ds:byte ptr[2+edi+ebx*2],ch
+L3x3_9:
+ pop esi
+ jmp LDone
+ public DP_4x4
+DP_4x4:
+ push esi
+ mov ebx,ds:dword ptr[_screenwidth]
+ mov esi,ds:dword ptr[_d_zrowbytes]
+ cmp ds:word ptr[edx],bp
+ jg L4x4_1
+ mov ds:word ptr[edx],bp
+ mov ds:byte ptr[edi],ch
+L4x4_1:
+ cmp ds:word ptr[2+edx],bp
+ jg L4x4_2
+ mov ds:word ptr[2+edx],bp
+ mov ds:byte ptr[1+edi],ch
+L4x4_2:
+ cmp ds:word ptr[4+edx],bp
+ jg L4x4_3
+ mov ds:word ptr[4+edx],bp
+ mov ds:byte ptr[2+edi],ch
+L4x4_3:
+ cmp ds:word ptr[6+edx],bp
+ jg L4x4_4
+ mov ds:word ptr[6+edx],bp
+ mov ds:byte ptr[3+edi],ch
+L4x4_4:
+ cmp ds:word ptr[edx+esi*1],bp
+ jg L4x4_5
+ mov ds:word ptr[edx+esi*1],bp
+ mov ds:byte ptr[edi+ebx*1],ch
+L4x4_5:
+ cmp ds:word ptr[2+edx+esi*1],bp
+ jg L4x4_6
+ mov ds:word ptr[2+edx+esi*1],bp
+ mov ds:byte ptr[1+edi+ebx*1],ch
+L4x4_6:
+ cmp ds:word ptr[4+edx+esi*1],bp
+ jg L4x4_7
+ mov ds:word ptr[4+edx+esi*1],bp
+ mov ds:byte ptr[2+edi+ebx*1],ch
+L4x4_7:
+ cmp ds:word ptr[6+edx+esi*1],bp
+ jg L4x4_8
+ mov ds:word ptr[6+edx+esi*1],bp
+ mov ds:byte ptr[3+edi+ebx*1],ch
+L4x4_8:
+ lea edx,ds:dword ptr[edx+esi*2]
+ lea edi,ds:dword ptr[edi+ebx*2]
+ cmp ds:word ptr[edx],bp
+ jg L4x4_9
+ mov ds:word ptr[edx],bp
+ mov ds:byte ptr[edi],ch
+L4x4_9:
+ cmp ds:word ptr[2+edx],bp
+ jg L4x4_10
+ mov ds:word ptr[2+edx],bp
+ mov ds:byte ptr[1+edi],ch
+L4x4_10:
+ cmp ds:word ptr[4+edx],bp
+ jg L4x4_11
+ mov ds:word ptr[4+edx],bp
+ mov ds:byte ptr[2+edi],ch
+L4x4_11:
+ cmp ds:word ptr[6+edx],bp
+ jg L4x4_12
+ mov ds:word ptr[6+edx],bp
+ mov ds:byte ptr[3+edi],ch
+L4x4_12:
+ cmp ds:word ptr[edx+esi*1],bp
+ jg L4x4_13
+ mov ds:word ptr[edx+esi*1],bp
+ mov ds:byte ptr[edi+ebx*1],ch
+L4x4_13:
+ cmp ds:word ptr[2+edx+esi*1],bp
+ jg L4x4_14
+ mov ds:word ptr[2+edx+esi*1],bp
+ mov ds:byte ptr[1+edi+ebx*1],ch
+L4x4_14:
+ cmp ds:word ptr[4+edx+esi*1],bp
+ jg L4x4_15
+ mov ds:word ptr[4+edx+esi*1],bp
+ mov ds:byte ptr[2+edi+ebx*1],ch
+L4x4_15:
+ cmp ds:word ptr[6+edx+esi*1],bp
+ jg L4x4_16
+ mov ds:word ptr[6+edx+esi*1],bp
+ mov ds:byte ptr[3+edi+ebx*1],ch
+L4x4_16:
+ pop esi
+ jmp LDone
+LDefault:
+ mov ebx,eax
+ mov ds:dword ptr[DP_Pix],eax
+ mov cl,ds:byte ptr[_d_y_aspect_shift]
+ shl ebx,cl
+LGenRowLoop:
+ mov eax,ds:dword ptr[DP_Pix]
+LGenColLoop:
+ cmp ds:word ptr[-2+edx+eax*2],bp
+ jg LGSkip
+ mov ds:word ptr[-2+edx+eax*2],bp
+ mov ds:byte ptr[-1+edi+eax*1],ch
+LGSkip:
+ dec eax
+ jnz LGenColLoop
+ add edx,ds:dword ptr[_d_zrowbytes]
+ add edi,ds:dword ptr[_screenwidth]
+ dec ebx
+ jnz LGenRowLoop
+LDone:
+ pop ebx
+ pop edi
+ pop ebp
+ ret
+LPop6AndDone:
+ fstp st(0)
+ fstp st(0)
+ fstp st(0)
+ fstp st(0)
+ fstp st(0)
+LPop1AndDone:
+ fstp st(0)
+ jmp LDone
+_TEXT ENDS
  END

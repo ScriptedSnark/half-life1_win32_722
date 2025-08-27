@@ -482,6 +482,24 @@
     <ClCompile Include="..\..\engine\R_SKY.C">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\engine\R_DRAW.C">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\engine\R_MISC.C">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\engine\R_VARS.C">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\engine\D_VARS.C">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\engine\R_EDGE.C">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\engine\D_MODECH.C">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <MASM Include="..\..\engine\sys_wina.asm">
@@ -497,6 +515,24 @@
       <Filter>Source Files</Filter>
     </MASM>
     <MASM Include="..\..\engine\d_varsa.asm">
+      <Filter>Source Files</Filter>
+    </MASM>
+    <MASM Include="..\..\engine\r_edgea.asm">
+      <Filter>Source Files</Filter>
+    </MASM>
+    <MASM Include="..\..\engine\r_varsa.asm">
+      <Filter>Source Files</Filter>
+    </MASM>
+    <MASM Include="..\..\engine\d_spr8.asm">
+      <Filter>Source Files</Filter>
+    </MASM>
+    <MASM Include="..\..\engine\d_draw16.asm">
+      <Filter>Source Files</Filter>
+    </MASM>
+    <MASM Include="..\..\engine\d_parta.asm">
+      <Filter>Source Files</Filter>
+    </MASM>
+    <MASM Include="..\..\engine\d_draw.asm">
       <Filter>Source Files</Filter>
     </MASM>
   </ItemGroup>

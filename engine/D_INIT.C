@@ -5,6 +5,17 @@
 
 /*
 ===============
+D_Init
+===============
+*/
+void D_Init( void )
+{
+	// TODO: Implement
+}
+
+
+/*
+===============
 D_EnableBackBufferAccess
 ===============
 */
