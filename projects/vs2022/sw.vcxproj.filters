@@ -500,6 +500,9 @@
     <ClCompile Include="..\..\engine\D_MODECH.C">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\engine\NONINTEL.C">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <MASM Include="..\..\engine\sys_wina.asm">
@@ -533,6 +536,12 @@
       <Filter>Source Files</Filter>
     </MASM>
     <MASM Include="..\..\engine\d_draw.asm">
+      <Filter>Source Files</Filter>
+    </MASM>
+    <MASM Include="..\..\engine\surf8.asm">
+      <Filter>Source Files</Filter>
+    </MASM>
+    <MASM Include="..\..\engine\surf16.asm">
       <Filter>Source Files</Filter>
     </MASM>
   </ItemGroup>

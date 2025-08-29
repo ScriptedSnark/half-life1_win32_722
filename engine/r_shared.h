@@ -74,16 +74,7 @@ typedef struct surf_s
 	int			pad[2];				// to 64 bytes
 } surf_t;
 
-
-
-
-
-
-
-
-//extern	refdef_t	r_refdef;
-
-//extern	surf_t* surfaces, * surface_p, * surf_max;
+extern	surf_t* surfaces, * surface_p, * surf_max;
 
 extern vec3_t	modelorg, base_modelorg;
 

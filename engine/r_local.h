@@ -50,8 +50,8 @@ extern	cvar_t	r_drawflat;
 extern	cvar_t	r_ambient_r;
 extern	cvar_t	r_ambient_g;
 extern	cvar_t	r_ambient_b;
-extern cvar_t	r_numsurfs;
-extern cvar_t	r_numedges;
+extern	cvar_t	r_numsurfs;
+extern	cvar_t	r_numedges;
 extern	cvar_t	r_mmx;
 extern	cvar_t	r_traceglow;
 extern	cvar_t	r_wadtextures;
@@ -101,6 +101,10 @@ extern	vec3_t			r_worldmodelorg;
 
 // TODO: Implement
 
+void R_Surf8Start( void );
+void R_Surf8End( void );
+void R_Surf16Start( void );
+void R_Surf16End( void );
 void R_EdgeCodeStart( void );
 void R_EdgeCodeEnd( void );
 
@@ -123,14 +127,17 @@ void R_ReadPointFile_f( void );
 
 void UnpackPalette( unsigned short* pDest, unsigned short* pSource, int r, int g, int b );
 
-// TODO: Implement
-
-
 extern int		r_amodels_drawn;
+extern edge_t* auxedges;
+extern int		r_numallocatededges;
 
+void R_SurfacePatch( void );
 
-// TODO: Implement
+extern edge_t* r_edges, * edge_p, * edge_max;
 
+// FIXME: make stack vars when debugging done
+
+extern	espan_t* span_p;
 
 extern	int	current_iv;
 
@@ -150,7 +157,6 @@ extern	float		aliastransform[3][4];
 extern	float		aliasxscale, aliasyscale, aliasxcenter, aliasycenter;
 extern	int			r_ambientlight;
 extern	float		r_shadelight;
-
 
 extern	vec3_t		r_plightvec;
 
@@ -181,6 +187,7 @@ colorVec R_LightPoint( vec_t* p );
 colorVec R_LightVec( vec_t* start, vec_t* end );
 
 
+void R_DecalInit( void );
 
 
 // TODO: Implement

@@ -1,4 +1,20 @@
+// r_surf.c: surface-related refresh code
+
 #include "quakedef.h"
+
+int				lightleft, sourcesstep, blocksize, sourcetstep;
+int				lightdelta, lightdeltastep;
+int				lightright, lightleftstep, lightrightstep, blockdivshift;
+unsigned		blockdivmask;
+void* prowdestbase;
+unsigned char* pbasesource;
+int				surfrowbytes;	// used by ASM files
+int				r_stepback;
+int				r_lightwidth;
+int             r_deltav, r_numhblocks, r_numvblocks;
+
+unsigned char* r_sourcemax;
+colorVec* r_lightptr;
 
 double lut_8byte_aligner;
 byte r_lut[65536];
@@ -20,7 +36,18 @@ void R_DrawInitLut( void )
 	// TODO: Implement
 }
 
+//-----------------------------------------------------------------------------
+//
+// Decal system
+//
+//-----------------------------------------------------------------------------
 
+
+// Init the decal pool
+void R_DecalInit( void )
+{
+	// TODO: Implement
+}
 
 
 void R_DecalRemoveAll( int textureIndex )

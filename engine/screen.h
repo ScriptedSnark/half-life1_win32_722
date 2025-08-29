@@ -39,6 +39,8 @@ extern	int			scr_copyeverything;
 
 extern	qboolean	scr_skipupdate;
 
+extern	int			sb_lines;
+
 extern	int			clearconsole;
 extern	int			clearnotify;
 

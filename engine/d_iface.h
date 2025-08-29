@@ -52,6 +52,7 @@ void D_DrawParticle( particle_t* pparticle );
 void D_EnableBackBufferAccess( void );
 void D_EndParticles( void );
 void D_Init( void );
+void D_ViewChanged( void );
 void D_StartParticles( void );
 
 void D_UpdateRects( vrect_t* prect );
