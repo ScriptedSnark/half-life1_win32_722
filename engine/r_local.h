@@ -99,14 +99,26 @@ extern	int		r_visframecount;
 extern	qboolean		insubmodel;
 extern	vec3_t			r_worldmodelorg;
 
+
+void R_DrawSprite( void );
+
 // TODO: Implement
 
-void R_Surf8Start( void );
-void R_Surf8End( void );
-void R_Surf16Start( void );
-void R_Surf16End( void );
-void R_EdgeCodeStart( void );
-void R_EdgeCodeEnd( void );
+void R_Surf8Patch( void );
+void R_Surf16Patch( void );
+
+// TODO: Implement
+
+void R_AliasDrawModel( alight_t* plighting );
+
+// TODO: Implement
+
+extern void R_Surf8Start( void );
+extern void R_Surf8End( void );
+extern void R_Surf16Start( void );
+extern void R_Surf16End( void );
+extern void R_EdgeCodeStart( void );
+extern void R_EdgeCodeEnd( void );
 
 // TODO: Implement
 
@@ -191,6 +203,8 @@ void R_DecalInit( void );
 
 
 // TODO: Implement
+
+qboolean R_AliasCheckBBox( void );
 
 //=========================================================
 // turbulence stuff

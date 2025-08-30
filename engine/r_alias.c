@@ -17,3 +17,26 @@ float	aliastransform[3][4];
 float r_avertexnormals[NUMVERTEXNORMALS][3] = {
 #include "anorms.h"
 };
+
+
+/*
+================
+R_AliasCheckBBox
+================
+*/
+qboolean R_AliasCheckBBox( void )
+{
+	// TODO: Implement
+	return FALSE;
+}
+
+
+/*
+================
+R_AliasDrawModel
+================
+*/
+void R_AliasDrawModel( alight_t* plighting )
+{
+	// TODO: Implement
+}

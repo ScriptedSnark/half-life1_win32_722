@@ -700,23 +700,28 @@ void R_DrawEntitiesOnList( void )
 
 		switch (currententity->model->type)
 		{
-			case mod_brush:
-				R_DrawBrushModel(currententity);
-				break;
+		case mod_brush:
+			R_DrawBrushModel(currententity);
+			break;
 
-			case mod_alias:
-				R_DrawAliasModel(currententity);
-				break;
+		case mod_alias:
+			R_DrawAliasModel(currententity);
+			break;
 
-			case mod_studio:
-				if (currententity->index > 0 && currententity->index <= cl.maxclients)
-					R_StudioDrawPlayer(STUDIO_RENDER | STUDIO_EVENTS, &cl.frames[cl.parsecount & UPDATE_MASK].playerstate[currententity->index - 1]);
-				else
-					R_StudioDrawModel(STUDIO_RENDER | STUDIO_EVENTS);
-				break;
+		case mod_studio:
+			if (currententity->index > 0 && currententity->index <= cl.maxclients)
+			{
+				R_StudioDrawPlayer(STUDIO_RENDER | STUDIO_EVENTS,
+					&cl.frames[cl.parsecount & UPDATE_MASK].playerstate[currententity->index - 1]);
+			}
+			else
+			{
+				R_StudioDrawModel(STUDIO_RENDER | STUDIO_EVENTS);
+			}
+			break;
 
-			default:
-				break;
+		default:
+			break;
 		}
 	}
 
@@ -731,24 +736,24 @@ void R_DrawEntitiesOnList( void )
 
 		switch (currententity->model->type)
 		{
-			case mod_sprite:
-				if (currententity->body)
-				{
-					float* pAttachment;
+		case mod_sprite:
+			if (currententity->body)
+			{
+				float* pAttachment;
 
-					pAttachment = R_GetAttachmentPoint(currententity->skin, currententity->body);
-					VectorCopy(pAttachment, r_entorigin);
-				}
-				else
-				{
-					VectorCopy(currententity->origin, r_entorigin);
-				}
+				pAttachment = R_GetAttachmentPoint(currententity->skin, currententity->body);
+				VectorCopy(pAttachment, r_entorigin);
+			}
+			else
+			{
+				VectorCopy(currententity->origin, r_entorigin);
+			}
 
-				R_DrawSpriteModel(currententity);
-				break;
+			R_DrawSpriteModel(currententity);
+			break;
 
-			default:
-				break;
+		default:
+			break;
 		}
 	}
 }
@@ -843,9 +848,9 @@ void R_DrawViewModel( void )
 		if (cl.weaponstarttime == 0.0)
 			cl.weaponstarttime = cl.time;
 		
+		currententity->sequence = cl.weaponsequence;
 		currententity->frame = 0.0;
 		currententity->framerate = 1.0;
-		currententity->sequence = cl.weaponsequence;
 		currententity->animtime = cl.weaponstarttime;
 
 		cl.light_level = 128;

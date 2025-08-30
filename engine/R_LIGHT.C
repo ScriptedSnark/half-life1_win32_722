@@ -17,7 +17,13 @@ void R_PushDlights( void )
 	// TODO: Implement
 }
 
-
+colorVec R_LightPoint( vec_t* p )
+{
+	// TODO: Implement
+	colorVec c;
+	c.r = c.g = c.b = c.a = 0;
+	return c;
+}
 
 colorVec R_LightVec( vec_t* start, vec_t* end )
 {

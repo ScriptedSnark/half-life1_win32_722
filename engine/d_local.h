@@ -31,6 +31,36 @@ typedef struct sspan_s
 	int				u, v, count;
 } sspan_t;
 
+extern void D_DrawSpans8( espan_t* pspans );
+extern void D_DrawSpans16( espan_t* pspans );
+extern void D_DrawZSpans( espan_t* pspans );
+extern void D_SpriteDrawSpans( sspan_t* pspan );
+
 extern short* d_pzbuffer;
+
+// !!! if this is changed, it must be changed in asm_draw.h/d_polyse.c too !!!
+typedef struct {
+	void* pdest;
+	short* pz;
+	int				count;
+	byte* ptex;
+	int				sfrac, tfrac, light, zi;
+} spanpackage_t;
+
+typedef struct {
+	int		isflattop;
+	int		numleftedges;
+	int* pleftedgevert0;
+	int* pleftedgevert1;
+	int* pleftedgevert2;
+	int		numrightedges;
+	int* prightedgevert0;
+	int* prightedgevert1;
+	int* prightedgevert2;
+} edgetable;
+
+extern void (*d_drawspans)			(espan_t* pspan);
+extern void (*spritedraw)			(sspan_t* pspan);
+extern void (*polysetdraw)			(spanpackage_t* pspanpackage);
 
 #endif // D_LOCAL_H

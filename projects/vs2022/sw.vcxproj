@@ -124,6 +124,7 @@
     <ClCompile Include="..\..\engine\D_INIT.C" />
     <ClCompile Include="..\..\engine\D_MODECH.C" />
     <ClCompile Include="..\..\engine\D_PART.C" />
+    <ClCompile Include="..\..\engine\D_SPRITE.C" />
     <ClCompile Include="..\..\engine\D_SURF.C" />
     <ClCompile Include="..\..\engine\D_VARS.C" />
     <ClCompile Include="..\..\engine\ha3d.cpp" />
@@ -156,6 +157,7 @@
     <ClCompile Include="..\..\engine\R_MISC.C" />
     <ClCompile Include="..\..\engine\R_PART.C" />
     <ClCompile Include="..\..\engine\R_SKY.C" />
+    <ClCompile Include="..\..\engine\R_SPRITE.C" />
     <ClCompile Include="..\..\engine\r_studio.c" />
     <ClCompile Include="..\..\engine\R_SURF.C" />
     <ClCompile Include="..\..\engine\r_trans.c" />

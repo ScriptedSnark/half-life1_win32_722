@@ -2,10 +2,15 @@
 
 #include "quakedef.h"
 #include "winquake.h"
+#include "d_local.h"
+#include "cmodel.h"
+#include "r_studio.h"
 
 //define	PASSAGES
 
 void* colormap;
+vec3_t		viewlightvec;
+alight_t	r_viewlighting;
 int			r_numallocatededges;
 int			r_pixbytes = 1;
 float		r_aliasuvscale = 1.0;
@@ -489,8 +494,263 @@ R_MarkLeaves
 */
 void R_MarkLeaves( void )
 {
-	// TODO: Implement
+	byte* vis;
+	mnode_t* node;
+	int		i;
+
+	if (r_oldviewleaf == r_viewleaf)
+		return;
+
+	r_visframecount++;
+	r_oldviewleaf = r_viewleaf;
+
+	vis = Mod_LeafPVS(r_viewleaf, cl.worldmodel);
+
+	for (i = 0; i < cl.worldmodel->numleafs; i++)
+	{
+		if (vis[i >> 3] & (1 << (i & 7)))
+		{
+			node = (mnode_t*)&cl.worldmodel->leafs[i + 1];
+			do
+			{
+				if (node->visframe == r_visframecount)
+					break;
+				node->visframe = r_visframecount;
+				node = node->parent;
+			} while (node);
+		}
+	}
 }
+
+
+/*
+=============
+R_DrawEntitiesOnList
+=============
+*/
+void R_DrawEntitiesOnList( void )
+{
+	int			i;
+	int			lnum;
+	alight_t	lighting;
+// FIXME: remove and do real lighting
+	float		lightvec[3] = { -1, 0, 0 };
+	vec3_t		dist;
+	float		add;
+	vec3_t		oldorigin;
+	colorVec	c;
+
+	if (!r_drawentities.value)
+		return;
+
+	VectorCopy(modelorg, oldorigin);
+
+	spritedraw = D_SpriteDrawSpans;
+
+	for (i = 0; i < cl_numvisedicts; i++)
+	{
+		currententity = &cl_visedicts[i];
+
+		if (currententity->rendermode != kRenderNormal)
+			continue;
+
+		switch (currententity->model->type)
+		{
+		case mod_sprite:
+			VectorCopy(currententity->origin, r_entorigin);
+			VectorSubtract(r_origin, r_entorigin, modelorg);
+			R_DrawSprite();
+			break;
+
+		case mod_alias:
+			VectorCopy(currententity->origin, r_entorigin);
+			VectorSubtract(r_origin, r_entorigin, modelorg);
+
+		// see if the bounding box lets us trivially reject, also sets
+		// trivial accept status
+			if (R_AliasCheckBBox())
+			{
+				c = R_LightPoint(currententity->origin);
+				currententity->cvFloorColor = c;
+
+				lighting.ambientlight = (c.r + c.g + c.b) / 3;
+				lighting.shadelight = lighting.ambientlight;
+
+				lighting.plightvec = lightvec;
+
+				for (lnum = 0; lnum < MAX_DLIGHTS; lnum++)
+				{
+					if (cl_dlights[lnum].die >= cl.time)
+					{
+						VectorSubtract(currententity->origin,
+							cl_dlights[lnum].origin,
+							dist);
+						add = cl_dlights[lnum].radius - Length(dist);
+
+						if (add > 0)
+							lighting.ambientlight += add;
+					}
+				}
+
+			// clamp lighting so it doesn't overbright as much
+				if (lighting.ambientlight > 128)
+					lighting.ambientlight = 128;
+				if (lighting.ambientlight + lighting.shadelight > 192)
+					lighting.shadelight = 192 - lighting.ambientlight;
+
+				R_AliasDrawModel(&lighting);
+			}
+
+			break;
+
+		case mod_studio:
+			VectorCopy(currententity->origin, r_entorigin);
+			VectorSubtract(r_origin, r_entorigin, modelorg);
+
+			if (currententity->index > 0 && currententity->index <= cl.maxclients)
+			{
+				R_StudioDrawPlayer(STUDIO_RENDER | STUDIO_EVENTS,
+					&cl.frames[cl.parsecount & UPDATE_MASK].playerstate[currententity->index - 1]);
+			}
+			else
+			{
+				R_StudioDrawModel(STUDIO_RENDER | STUDIO_EVENTS);
+			}
+			break;
+
+		default:
+			break;
+		}
+	}
+
+	VectorCopy(oldorigin, modelorg);
+}
+
+/*
+=============
+R_DrawViewModel
+=============
+*/
+void R_DrawViewModel( void )
+{
+// FIXME: remove and do real lighting
+	float		lightvec[3] = { -1, 0, 0 };
+	int			i, j;
+	int			lnum;
+	vec3_t		dist;
+	float		add;
+	dlight_t* dl;
+	colorVec	c;
+
+	currententity = &cl.viewent;
+
+	if (!r_drawviewmodel.value)
+	{
+		c = R_LightPoint(currententity->origin);
+		cl.light_level = (c.r + c.g + c.b) / 3;
+		for (i = 0; i < 4; i++)
+		{
+			for (j = 0; j < 3; j++)
+				cl_entities[cl.viewentity].attachment[i][j] = currententity->origin[j];
+		}
+		return;
+	}
+
+	// Don't draw if we are in a third person mode
+	if (cam_thirdperson || chase_active.value || !r_drawentities.value)
+	{
+		c = R_LightPoint(currententity->origin);
+		cl.light_level = (c.r + c.g + c.b) / 3;
+		for (i = 0; i < 4; i++)
+		{
+			for (j = 0; j < 3; j++)
+				cl_entities[cl.viewentity].attachment[i][j] = currententity->origin[j];
+		}
+		return;
+	}
+
+	if (cl.stats[STAT_HEALTH] <= 0 || !currententity->model || r_fov_greater_than_90 || cl.viewentity > cl.maxclients || cl.spectator)
+	{
+		c = R_LightPoint(currententity->origin);
+		cl.light_level = (c.r + c.g + c.b) / 3;
+		for (i = 0; i < 4; i++)
+		{
+			for (j = 0; j < 3; j++)
+				cl_entities[cl.viewentity].attachment[i][j] = currententity->origin[j];
+		}
+		return;
+	}
+
+	switch (currententity->model->type)
+	{
+	case mod_alias:
+		VectorCopy(currententity->origin, r_entorigin);
+		VectorSubtract(r_origin, r_entorigin, modelorg);
+
+		VectorCopy(vup, viewlightvec);
+		VectorInverse(viewlightvec);
+
+		c = R_LightPoint(currententity->origin);
+		currententity->cvFloorColor = c;
+
+		j = (c.r + c.g + c.b) / 3;
+		if (j < 24)
+			j = 24;		// allways give some light on gun
+		r_viewlighting.ambientlight = j;
+		r_viewlighting.shadelight = j;
+
+	// add dynamic lights		
+		for (lnum = 0; lnum < MAX_DLIGHTS; lnum++)
+		{
+			dl = &cl_dlights[lnum];
+			if (!dl->radius)
+				continue;
+			if (!dl->radius)
+				continue;
+			if (dl->die < cl.time)
+				continue;
+
+			VectorSubtract(currententity->origin, dl->origin, dist);
+			add = dl->radius - Length(dist);
+			if (add > 0)
+				r_viewlighting.ambientlight += add;
+		}
+
+	// clamp lighting so it doesn't overbright as much
+		if (r_viewlighting.ambientlight > 128)
+			r_viewlighting.ambientlight = 128;
+		if (r_viewlighting.ambientlight + r_viewlighting.shadelight > 192)
+			r_viewlighting.shadelight = 192 - r_viewlighting.ambientlight;
+
+		r_viewlighting.plightvec = lightvec;
+
+		cl.light_level = r_viewlighting.ambientlight + r_viewlighting.shadelight;
+
+		R_AliasDrawModel(&r_viewlighting);
+		break;
+
+	case mod_studio:
+		if (cl.weaponstarttime == 0.0)
+			cl.weaponstarttime = cl.time;
+
+		currententity->sequence = cl.weaponsequence;
+		currententity->frame = 0.0;
+		currententity->framerate = 1.0;
+		currententity->animtime = cl.weaponstarttime;
+
+		R_StudioDrawModel(STUDIO_RENDER);
+		break;
+
+	default:
+		break;
+	}
+}
+
+
+
+
+
+
 
 // JAY: Setup frustum
 /*
