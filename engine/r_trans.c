@@ -93,6 +93,44 @@ float GlowBlend( cl_entity_t* pEntity )
 
 /*
 =================
+RotatedBBox
+
+Calculate min/max coords of an oriented bounding box
+=================
+*/
+void RotatedBBox( vec_t* mins, vec_t* maxs, vec_t* angles, vec_t* tmins, vec_t* tmaxs )
+{
+    int     i;
+    float   v, max;
+
+    if (!angles[0] && !angles[1] && !angles[2])
+    {
+        VectorCopy(mins, tmins);
+        VectorCopy(maxs, tmaxs);
+    }
+    else
+    {
+        max = 0.0;
+        for (i = 0; i < 3; i++)
+        {
+            v = fabs(mins[i]);
+            if (v > max)
+                max = v;
+            v = fabs(maxs[i]);
+            if (v > max)
+                max = v;
+        }
+        tmaxs[0] = max;
+        tmaxs[1] = tmaxs[0];
+        tmaxs[2] = tmaxs[1];
+        tmins[0] = -max;
+        tmins[1] = tmins[0];
+        tmins[2] = tmins[1];
+    }
+}
+
+/*
+=================
 AddTEntity
 
 Add a transparent entity to a list of transparent objects

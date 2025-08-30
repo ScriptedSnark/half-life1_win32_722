@@ -13,3 +13,14 @@ void R_TimeRefresh_f( void )
 {
 	// TODO: Implement
 }
+
+
+/*
+===================
+R_TransformFrustum
+===================
+*/
+void R_TransformFrustum( void )
+{
+	// TODO: Implement
+}

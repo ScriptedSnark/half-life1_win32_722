@@ -5,6 +5,7 @@
 #include "d_local.h"
 #include "cmodel.h"
 #include "r_studio.h"
+#include "r_trans.h"
 
 //define	PASSAGES
 
@@ -12,12 +13,15 @@ void* colormap;
 vec3_t		viewlightvec;
 alight_t	r_viewlighting;
 int			r_numallocatededges;
+qboolean	r_drawpolys;
+qboolean	r_drawculledpolys;
 int			r_pixbytes = 1;
 float		r_aliasuvscale = 1.0;
 
 qboolean	r_dowarp, r_dowarpold, r_viewchanged;
 
-// TODO: Implement
+int			numbtofpolys;
+mvertex_t* r_pcurrentvertbase;
 
 int			c_surf;
 int			r_maxsurfsseen, r_maxedgesseen, r_cnumsurfs;
@@ -64,6 +68,9 @@ int		r_framecount = 1;	// so frame counts initialized to 0 don't match
 int		r_visframecount;
 
 // TODO: Implement
+
+int* pfrustum_indexes[4];
+int			r_frustum_indexes[4 * 6];
 
 mleaf_t* r_viewleaf, * r_oldviewleaf;
 
@@ -746,10 +753,101 @@ void R_DrawViewModel( void )
 	}
 }
 
+void R_PreDrawViewModel( void )
+{
+	currententity = &cl.viewent;
+
+	if (!r_drawviewmodel.value)
+		return;
+
+	if (cam_thirdperson || chase_active.value || !r_drawentities.value)
+		return;
+
+	if (cl.stats[STAT_HEALTH] <= 0 || !currententity->model || r_fov_greater_than_90 || cl.viewentity > cl.maxclients || cl.spectator)
+		return;
+
+	switch (currententity->model->type)
+	{
+	case mod_studio:
+		if (cl.weaponstarttime == 0.0)
+			cl.weaponstarttime = cl.time;
+
+		currententity->sequence = cl.weaponsequence;
+		currententity->frame = 0.0;
+		currententity->framerate = 1.0;
+		currententity->animtime = cl.weaponstarttime;
+
+		R_StudioDrawModel(STUDIO_EVENTS);
+		break;
+
+	default:
+		break;
+	}
+}
 
 
+/*
+=============
+R_BmodelCheckBBox
+=============
+*/
+int R_BmodelCheckBBox( model_t* clmodel, float* minmaxs )
+{
+	int			i, * pindex, clipflags;
+	vec3_t		acceptpt, rejectpt;
+	double		d;
 
+	clipflags = 0;
 
+	if (currententity->angles[0] || currententity->angles[1]
+		|| currententity->angles[2])
+	{
+		for (i = 0; i < 4; i++)
+		{
+			d = DotProduct(currententity->origin, view_clipplanes[i].normal);
+			d -= view_clipplanes[i].dist;
+
+			if (d <= -clmodel->radius)
+				return BMODEL_FULLY_CLIPPED;
+
+			if (d <= clmodel->radius)
+				clipflags |= (1 << i);
+		}
+	}
+	else
+	{
+		for (i = 0; i < 4; i++)
+		{
+		// generate accept and reject points
+		// FIXME: do with fast look-ups or integer tests based on the sign bit
+		// of the floating point values
+
+			pindex = pfrustum_indexes[i];
+
+			rejectpt[0] = minmaxs[pindex[0]];
+			rejectpt[1] = minmaxs[pindex[1]];
+			rejectpt[2] = minmaxs[pindex[2]];
+
+			d = DotProduct(rejectpt, view_clipplanes[i].normal);
+			d -= view_clipplanes[i].dist;
+
+			if (d <= 0)
+				return BMODEL_FULLY_CLIPPED;
+
+			acceptpt[0] = minmaxs[pindex[3 + 0]];
+			acceptpt[1] = minmaxs[pindex[3 + 1]];
+			acceptpt[2] = minmaxs[pindex[3 + 2]];
+
+			d = DotProduct(acceptpt, view_clipplanes[i].normal);
+			d -= view_clipplanes[i].dist;
+
+			if (d <= 0)
+				clipflags |= (1 << i);
+		}
+	}
+
+	return clipflags;
+}
 
 
 // JAY: Setup frustum
@@ -762,9 +860,173 @@ Returns true if the box is completely outside the frustom
 */
 qboolean R_CullBox( vec_t* mins, vec_t* maxs )
 {
-	// TODO: Implement
+	int			i, * pindex;
+	vec3_t		rejectpt;
+	double		d;
+
+	for (i = 0; i < 4; i++)
+	{
+		pindex = pfrustum_indexes[i];
+
+		rejectpt[0] = pindex[0] <= 2 ? mins[pindex[0]] : maxs[pindex[0] - 3];
+		rejectpt[1] = pindex[1] <= 2 ? mins[pindex[1]] : maxs[pindex[1] - 3];
+		rejectpt[2] = pindex[2] <= 2 ? mins[pindex[2]] : maxs[pindex[2] - 3];
+
+		d = DotProduct(rejectpt, view_clipplanes[i].normal);
+		d -= view_clipplanes[i].dist;
+
+		if (d <= 0)
+			return TRUE;
+	}
+
 	return FALSE;
 }
+
+
+/*
+=============
+R_DrawBEntitiesOnList
+=============
+*/
+void R_DrawBEntitiesOnList( void )
+{
+	int			i, j, k, clipflags;
+	vec3_t		oldorigin;
+	model_t* clmodel;
+	float		minmaxs[6];
+
+	if (!r_drawentities.value)
+		return;
+
+	VectorCopy(modelorg, oldorigin);
+	insubmodel = TRUE;
+	r_dlightframecount = r_framecount;
+
+	for (i = 0; i < cl_numvisedicts; i++)
+	{
+		currententity = &cl_visedicts[i];
+
+		if (currententity->rendermode != kRenderNormal)
+		{
+			AddTEntity(currententity);
+			continue;
+		}
+
+		switch (currententity->model->type)
+		{
+		case mod_brush:
+
+			clmodel = currententity->model;
+
+			RotatedBBox(clmodel->mins, clmodel->maxs, currententity->angles, &minmaxs[0], &minmaxs[3]);
+
+		// see if the bounding box lets us trivially reject, also sets
+		// trivial accept status
+			for (j = 0; j < 3; j++)
+			{
+				minmaxs[j] += currententity->origin[j];
+				minmaxs[3 + j] += currententity->origin[j];
+			}
+
+			clipflags = R_BmodelCheckBBox(clmodel, minmaxs);
+
+			if (clipflags != BMODEL_FULLY_CLIPPED)
+			{
+				VectorCopy(currententity->origin, r_entorigin);
+				VectorSubtract(r_origin, r_entorigin, modelorg);
+			// FIXME: is this needed?
+				VectorCopy(modelorg, r_worldmodelorg);
+
+				r_pcurrentvertbase = clmodel->vertexes;
+
+			// FIXME: stop transforming twice
+				R_RotateBmodel();
+
+			// calculate dynamic lighting for bmodel if it's not an
+			// instanced model
+				if (clmodel->firstmodelsurface != 0)
+				{
+					for (k = 0; k < MAX_DLIGHTS; k++)
+					{
+						if ((cl_dlights[k].die < cl.time) ||
+							(!cl_dlights[k].radius))
+							continue;
+
+						vec3_t saveOrigin;
+						VectorCopy(cl_dlights[k].origin, saveOrigin); // save prev
+						VectorSubtract(cl_dlights[k].origin, currententity->origin, cl_dlights[k].origin);
+						
+						R_MarkLights(&cl_dlights[k], 1 << k,
+							clmodel->nodes + clmodel->hulls[0].firstclipnode);
+
+						VectorCopy(saveOrigin, cl_dlights[k].origin);
+					}
+				}
+
+			// if the driver wants polygons, deliver those. Z-buffering is on
+			// at this point, so no clipping to the world tree is needed, just
+			// frustum clipping
+				if (r_drawpolys | r_drawculledpolys)
+				{
+					R_ZDrawSubmodelPolys(clmodel);
+				}
+				else
+				{
+					r_pefragtopnode = NULL;
+
+					for (j = 0; j < 3; j++)
+					{
+						r_emins[j] = minmaxs[j];
+						r_emaxs[j] = minmaxs[3 + j];
+					}
+
+					R_SplitEntityOnNode2(cl.worldmodel->nodes);
+
+					if (r_pefragtopnode)
+					{
+						currententity->topnode = r_pefragtopnode;
+
+						if (r_pefragtopnode->contents >= 0)
+						{
+						// not a leaf; has to be clipped to the world BSP
+							r_clipflags = clipflags;
+							R_DrawSolidClippedSubmodelPolygons(clmodel);
+						}
+						else
+						{
+						// falls entirely in one leaf, so we just put all the
+						// edges in the edge list and let 1/z sorting handle
+						// drawing order
+							R_DrawSubmodelPolygons(clmodel, clipflags);
+						}
+
+						currententity->topnode = NULL;
+					}
+				}
+
+			// put back world rotation and frustum clipping		
+			// FIXME: R_RotateBmodel should just work off base_vxx
+				VectorCopy(base_vpn, vpn);
+				VectorCopy(base_vup, vup);
+				VectorCopy(base_vright, vright);
+				VectorCopy(oldorigin, modelorg);
+				R_TransformFrustum();
+			}
+
+			break;
+
+		default:
+			break;
+		}
+	}
+
+	insubmodel = FALSE;
+}
+
+
+
+
+
 
 void R_SetStackBase( void )
 {

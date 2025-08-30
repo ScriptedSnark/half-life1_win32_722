@@ -101,11 +101,18 @@ extern	vec3_t			r_worldmodelorg;
 
 
 void R_DrawSprite( void );
+void R_TransformFrustum( void );
 
 // TODO: Implement
 
 void R_Surf8Patch( void );
 void R_Surf16Patch( void );
+void R_DrawSubmodelPolygons( model_t* pmodel, int clipflags );
+void R_DrawSolidClippedSubmodelPolygons( model_t* pmodel );
+
+// TODO: Implement
+
+void R_ScanEdges( void );
 
 // TODO: Implement
 
@@ -120,9 +127,22 @@ extern void R_Surf16End( void );
 extern void R_EdgeCodeStart( void );
 extern void R_EdgeCodeEnd( void );
 
+extern void R_RotateBmodel( void );
+
 // TODO: Implement
 
+typedef struct btofpoly_s {
+	int			clipflags;
+	msurface_t* psurf;
+} btofpoly_t;
+
+#define MAX_BTOFPOLYS	5000	// FIXME: tune this
+
+extern int			numbtofpolys;
+extern btofpoly_t* pbtofpolys;
+
 void	R_InitTurb( void );
+void	R_ZDrawSubmodelPolys( model_t* clmodel );
 
 //=========================================================
 // Alias models
@@ -131,13 +151,6 @@ void	R_InitTurb( void );
 #define MAXALIASVERTS		2000
 
 // TODO: Implement
-
-//=========================================================
-// particle stuff
-
-void R_ReadPointFile_f( void );
-
-void UnpackPalette( unsigned short* pDest, unsigned short* pSource, int r, int g, int b );
 
 extern int		r_amodels_drawn;
 extern edge_t* auxedges;
@@ -183,15 +196,16 @@ extern float	se_time1, se_time2, de_time1, de_time2, dv_time1, dv_time2;
 
 extern mleaf_t* r_viewleaf, * r_oldviewleaf;
 
-// TODO: Implement
-
+extern vec3_t	r_emins, r_emaxs;
+extern mnode_t* r_pefragtopnode;
+extern int		r_clipflags;
+extern int		r_dlightframecount;
 extern int		r_dlightchanged;	// which ones changed
 extern int		r_dlightactive;		// which ones are active
-
+extern qboolean	r_fov_greater_than_90;
 
 
 // TODO: Implement
-
 
 
 void R_TimeRefresh_f( void );
@@ -212,5 +226,15 @@ qboolean R_AliasCheckBBox( void );
 #define	AMP		8 * 0x10000
 #define	AMP2	3
 #define	SPEED	20
+
+//=========================================================
+// particle stuff
+
+void R_ReadPointFile_f( void );
+
+void UnpackPalette( unsigned short* pDest, unsigned short* pSource, int r, int g, int b );
+
+void R_SplitEntityOnNode2( mnode_t* node );
+void R_MarkLights( dlight_t* light, int bit, mnode_t* node );
 
 #endif
