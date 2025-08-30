@@ -110,6 +110,9 @@ void R_Surf16Patch( void );
 void R_DrawSubmodelPolygons( model_t* pmodel, int clipflags );
 void R_DrawSolidClippedSubmodelPolygons( model_t* pmodel );
 
+void R_BeginEdgeFrame( void );
+void R_ScanEdges( void );
+
 // TODO: Implement
 
 void R_ScanEdges( void );
@@ -209,11 +212,14 @@ extern qboolean	r_fov_greater_than_90;
 
 
 void R_TimeRefresh_f( void );
+void R_TimeGraph( void );
+void R_PrintAliasStats( void );
+void R_PrintTimes( void );
+void R_PrintDSpeeds( void );
+void R_ScreenLuminance( void );
 colorVec R_LightPoint( vec_t* p );
 colorVec R_LightVec( vec_t* start, vec_t* end );
-
-
-void R_DecalInit( void );
+void R_SetupFrame( void );
 
 
 // TODO: Implement
@@ -236,5 +242,6 @@ void UnpackPalette( unsigned short* pDest, unsigned short* pSource, int r, int g
 
 void R_SplitEntityOnNode2( mnode_t* node );
 void R_MarkLights( dlight_t* light, int bit, mnode_t* node );
+void R_DecalInit( void );
 
 #endif

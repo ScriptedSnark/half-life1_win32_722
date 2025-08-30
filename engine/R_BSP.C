@@ -52,3 +52,15 @@ void R_DrawSubmodelPolygons( model_t* pmodel, int clipflags )
 {
 	// TODO: Implement
 }
+
+
+
+/*
+================
+R_RenderWorld
+================
+*/
+void R_RenderWorld( void )
+{
+	// TODO: Implement
+}

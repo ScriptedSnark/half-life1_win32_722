@@ -12,15 +12,21 @@
 void* colormap;
 vec3_t		viewlightvec;
 alight_t	r_viewlighting;
+float		r_time1;
 int			r_numallocatededges;
 qboolean	r_drawpolys;
 qboolean	r_drawculledpolys;
+qboolean	r_worldpolysbacktofront;
+qboolean	r_recursiveaffinetriangles = TRUE;
 int			r_pixbytes = 1;
 float		r_aliasuvscale = 1.0;
+int			r_outofsurfaces;
+int			r_outofedges;
 
 qboolean	r_dowarp, r_dowarpold, r_viewchanged;
 
 int			numbtofpolys;
+btofpoly_t* pbtofpolys;
 mvertex_t* r_pcurrentvertbase;
 
 int			c_surf;
@@ -66,8 +72,14 @@ mplane_t	screenedge[4];
 //
 int		r_framecount = 1;	// so frame counts initialized to 0 don't match
 int		r_visframecount;
+int		d_spanpixcount;
+int		r_polycount;
+int		r_drawnpolycount;
+int		r_wholepolycount;
 
-// TODO: Implement
+#define		VIEWMODNAME_LENGTH	256
+char		viewmodname[VIEWMODNAME_LENGTH + 1];
+int			modcount;
 
 int* pfrustum_indexes[4];
 int			r_frustum_indexes[4 * 6];
@@ -122,8 +134,6 @@ cvar_t	r_wadtextures = { "r_wadtextures", "0" };
 
 void CreatePassages( void );
 void SetVisibilityByPassages( void );
-
-void R_DrawInitLut( void );
 
 /*
 ==================
@@ -1024,9 +1034,189 @@ void R_DrawBEntitiesOnList( void )
 }
 
 
+/*
+================
+R_EdgeDrawing
+================
+*/
+void R_EdgeDrawing( void )
+{
+	edge_t	ledges[NUMSTACKEDGES +
+		((CACHE_SIZE - 1) / sizeof(edge_t)) + 1];
+	surf_t	lsurfs[NUMSTACKSURFACES +
+		((CACHE_SIZE - 1) / sizeof(surf_t)) + 1];
 
+	if (auxedges)
+	{
+		r_edges = auxedges;
+	}
+	else
+	{
+		r_edges = (edge_t*)
+			(((long)&ledges[0] + CACHE_SIZE - 1) & ~(CACHE_SIZE - 1));
+	}
 
+	if (r_surfsonstack)
+	{
+		surfaces = (surf_t*)
+			(((long)&lsurfs[0] + CACHE_SIZE - 1) & ~(CACHE_SIZE - 1));
+		surf_max = &surfaces[r_cnumsurfs];
+	// surface 0 doesn't really exist; it's just a dummy because index 0
+	// is used to indicate no edge attached to surface
+		surfaces--;
+		R_SurfacePatch();
+	}
 
+	R_BeginEdgeFrame();
+
+	if (r_dspeeds.value)
+	{
+		rw_time1 = Sys_FloatTime();
+	}
+
+	R_RenderWorld();
+
+	if (r_drawculledpolys)
+		R_ScanEdges();
+
+// only the world can be drawn back to front with no z reads or compares, just
+// z writes, so have the driver turn z compares on now
+	D_TurnZOn();
+
+	if (r_dspeeds.value)
+	{
+		rw_time2 = Sys_FloatTime();
+		db_time1 = rw_time2;
+	}
+
+	R_DrawBEntitiesOnList();
+
+	if (r_dspeeds.value)
+	{
+		db_time2 = Sys_FloatTime();
+		se_time1 = db_time2;
+	}
+
+	if (!r_dspeeds.value)
+	{
+		VID_UnlockBuffer();
+		S_ExtraUpdate();	// don't let sound get messed up if going slow
+		VID_LockBuffer();
+	}
+
+	if (!(r_drawpolys | r_drawculledpolys))
+		R_ScanEdges();
+}
+
+/*
+================
+R_RenderView
+
+r_refdef must be set before the first call
+================
+*/
+void R_RenderView_( void )
+{
+	byte	warpbuffer[WARP_WIDTH * WARP_HEIGHT * 2];
+
+	r_warpbuffer = warpbuffer;
+
+	if (r_timegraph.value || r_speeds.value || r_dspeeds.value)
+		r_time1 = Sys_FloatTime();
+
+	R_SetupFrame();
+
+#ifdef PASSAGES
+	SetVisibilityByPassages();
+#else
+	R_MarkLeaves();	// done here so we know if we're in water
+#endif
+
+// make FDIV fast. This reduces timing precision after we've been running for a
+// while, so we don't do it globally.  This also sets chop mode, and we do it
+// here so that setup stuff like the refresh area calculations match what's
+// done in screen.c
+	Sys_LowFPPrecision();
+
+	if (!cl_entities->model || !cl.worldmodel)
+		Sys_Error("R_RenderView: NULL worldmodel");
+
+	if (!r_dspeeds.value)
+	{
+		VID_UnlockBuffer();
+		S_ExtraUpdate();	// don't let sound get messed up if going slow
+		VID_LockBuffer();
+	}
+
+	R_EdgeDrawing();
+
+	if (!r_dspeeds.value)
+	{
+		VID_UnlockBuffer();
+		S_ExtraUpdate();	// don't let sound get messed up if going slow
+		VID_LockBuffer();
+	}
+
+	if (r_dspeeds.value)
+	{
+		se_time2 = Sys_FloatTime();
+		de_time1 = se_time2;
+	}
+
+	R_PreDrawViewModel();
+
+	R_DrawEntitiesOnList();
+	R_DrawTEntitiesOnList();
+
+	if (r_dspeeds.value)
+	{
+		de_time2 = Sys_FloatTime();
+		dv_time1 = de_time2;
+	}
+
+	R_DrawViewModel();
+
+	if (r_dspeeds.value)
+	{
+		dv_time2 = Sys_FloatTime();
+		dp_time1 = Sys_FloatTime();
+	}
+
+	R_DrawParticles();
+
+	if (r_dspeeds.value)
+		dp_time2 = Sys_FloatTime();
+
+	if (r_dowarp)
+		D_WarpScreen();
+
+	if (r_timegraph.value)
+		R_TimeGraph();
+
+	if (r_aliasstats.value)
+		R_PrintAliasStats();
+
+	if (r_speeds.value)
+		R_PrintTimes();
+
+	if (r_dspeeds.value)
+		R_PrintDSpeeds();
+
+	if (r_luminance.value)
+		R_ScreenLuminance();
+
+	if (r_reportsurfout.value && r_outofsurfaces)
+		Con_DPrintf("Short %d surfaces\n", r_outofsurfaces);
+
+	if (r_reportedgeout.value && r_outofedges)
+		Con_DPrintf("Short roughly %d edges\n", r_outofedges * 2 / 3);
+
+// back to high floating-point precision
+	Sys_HighFPPrecision();
+
+	currententity = NULL;
+	r_warpbuffer = NULL;
+}
 
 void R_SetStackBase( void )
 {
@@ -1036,10 +1226,25 @@ void R_SetStackBase( void )
 	r_stack_start = (byte*)&dummy;
 }
 
-
 void R_RenderView( void )
 {
-	// TODO: Implement
+	int		dummy;
+	int		delta;
+
+	delta = (byte*)&dummy - r_stack_start;
+	if (delta < -10000 || delta > 10000)
+		Sys_Error("R_RenderView: called without enough stack");
+
+	if (Hunk_LowMark() & 3)
+		Sys_Error("Hunk is missaligned");
+
+	if ((long)(&dummy) & 3)
+		Sys_Error("Stack is missaligned");
+
+	if ((long)(&r_warpbuffer) & 3)
+		Sys_Error("Globals are missaligned");
+
+	R_RenderView_();
 }
 
 /*

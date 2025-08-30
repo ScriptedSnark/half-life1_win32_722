@@ -54,6 +54,8 @@ void D_EndParticles( void );
 void D_Init( void );
 void D_ViewChanged( void );
 void D_StartParticles( void );
+void D_TurnZOn( void );
+void D_WarpScreen( void );
 
 void D_UpdateRects( vrect_t* prect );
 

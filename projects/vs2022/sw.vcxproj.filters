@@ -509,6 +509,9 @@
     <ClCompile Include="..\..\engine\R_SPRITE.C">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\engine\D_SCAN.C">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <MASM Include="..\..\engine\sys_wina.asm">

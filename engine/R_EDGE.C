@@ -44,3 +44,32 @@ edge_t	edge_aftertail;
 edge_t	edge_sentinel;
 
 float	fv;
+
+
+/*
+==============
+R_BeginEdgeFrame
+==============
+*/
+void R_BeginEdgeFrame( void )
+{
+	// TODO: Implement
+}
+
+
+/*
+==============
+R_ScanEdges
+
+Input:
+newedges[] array
+	this has links to edges, which have links to surfaces
+
+Output:
+Each surface has a linked list of its visible spans
+==============
+*/
+void R_ScanEdges( void )
+{
+	// TODO: Implement
+}
