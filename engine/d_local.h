@@ -31,12 +31,19 @@ typedef struct sspan_s
 	int				u, v, count;
 } sspan_t;
 
+extern surfcache_t* sc_rover;
+extern surfcache_t* d_initial_rover;
+
 extern void D_DrawSpans8( espan_t* pspans );
 extern void D_DrawSpans16( espan_t* pspans );
 extern void D_DrawZSpans( espan_t* pspans );
 extern void D_SpriteDrawSpans( sspan_t* pspan );
 
 extern short* d_pzbuffer;
+
+extern pixel_t* d_viewbuffer;
+
+extern short* zspantable[MAXHEIGHT];
 
 // !!! if this is changed, it must be changed in asm_draw.h/d_polyse.c too !!!
 typedef struct {

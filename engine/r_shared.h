@@ -35,6 +35,10 @@ typedef struct
 extern int	sintable[];
 extern int	intsintable[];
 
+extern int		cachewidth;
+extern pixel_t*	cacheblock;
+extern int		screenwidth;
+
 extern	float	pixelAspect;
 
 extern int		r_drawnpolycount;

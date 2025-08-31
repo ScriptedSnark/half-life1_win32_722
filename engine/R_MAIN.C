@@ -34,7 +34,7 @@ int			r_maxsurfsseen, r_maxedgesseen, r_cnumsurfs;
 qboolean	r_surfsonstack;
 int			r_clipflags;
 
-byte* r_warpbuffer;
+byte* r_warpbuffer = NULL;
 
 byte* r_stack_start;
 

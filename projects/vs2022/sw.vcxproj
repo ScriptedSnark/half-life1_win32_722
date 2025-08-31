@@ -125,6 +125,7 @@
     <ClCompile Include="..\..\engine\D_INIT.C" />
     <ClCompile Include="..\..\engine\D_MODECH.C" />
     <ClCompile Include="..\..\engine\D_PART.C" />
+    <ClCompile Include="..\..\engine\D_POLYSE.C" />
     <ClCompile Include="..\..\engine\D_SCAN.C" />
     <ClCompile Include="..\..\engine\D_SPRITE.C" />
     <ClCompile Include="..\..\engine\D_SURF.C" />
