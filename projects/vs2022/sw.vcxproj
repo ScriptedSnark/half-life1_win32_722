@@ -93,6 +93,7 @@
     <ClInclude Include="..\..\engine\view.h" />
     <ClInclude Include="..\..\engine\vmodes.h" />
     <ClInclude Include="..\..\engine\wad.h" />
+    <ClInclude Include="..\..\engine\water.h" />
     <ClInclude Include="..\..\engine\winquake.h" />
     <ClInclude Include="..\..\engine\world.h" />
     <ClInclude Include="..\..\engine\wrect.h" />

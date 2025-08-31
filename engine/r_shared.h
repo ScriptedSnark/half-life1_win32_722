@@ -35,8 +35,13 @@ typedef struct
 extern int	sintable[];
 extern int	intsintable[];
 
+extern	float	pixelAspect;
 
+extern int		r_drawnpolycount;
 
+extern	vec3_t	vup, base_vup;
+extern	vec3_t	vpn, base_vpn;
+extern	vec3_t	vright, base_vright;
 extern	struct cl_entity_s* currententity;
 
 #define NUMSTACKEDGES		2400
@@ -92,7 +97,9 @@ extern void TransformVector( vec_t* in, vec_t* out );
 
 
 
+extern	int d_lightstylevalue[256]; // 8.8 frac of base light value
 
+extern int* pfrustum_indexes[4];
 
 qboolean R_CullBox( vec_t* mins, vec_t* maxs );
 

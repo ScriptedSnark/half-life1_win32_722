@@ -38,6 +38,17 @@ void D_TurnZOn( void )
 
 /*
 ===============
+D_SetupFrame
+===============
+*/
+void D_SetupFrame( void )
+{
+	// TODO: Implement
+}
+
+
+/*
+===============
 D_DisableBackBufferAccess
 ===============
 */

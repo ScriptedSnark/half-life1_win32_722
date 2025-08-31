@@ -101,6 +101,7 @@ extern	vec3_t			r_worldmodelorg;
 
 
 void R_DrawSprite( void );
+void R_TransformPlane( mplane_t* p, float* normal, float* dist );
 void R_TransformFrustum( void );
 
 // TODO: Implement
@@ -132,7 +133,14 @@ extern void R_EdgeCodeEnd( void );
 
 extern void R_RotateBmodel( void );
 
+extern int	c_faceclip;
+extern int	r_polycount;
+extern int	r_wholepolycount;
+
 // TODO: Implement
+
+extern int		r_currentkey;
+extern int		r_currentbkey;
 
 typedef struct btofpoly_s {
 	int			clipflags;
@@ -188,14 +196,21 @@ extern	float		r_shadelight;
 
 extern	vec3_t		r_plightvec;
 
-
-
-extern float	dp_time1, dp_time2, db_time1, db_time2, rw_time1, rw_time2;
-extern float	se_time1, se_time2, de_time1, de_time2, dv_time1, dv_time2;
-
-
 // TODO: Implement
 
+extern int		r_outofsurfaces;
+extern int		r_outofedges;
+
+extern mvertex_t* r_pcurrentvertbase;
+
+void R_AliasClipTriangle( mtriangle_t* ptri );
+
+extern float	r_time1;
+extern float	dp_time1, dp_time2, db_time1, db_time2, rw_time1, rw_time2;
+extern float	se_time1, se_time2, de_time1, de_time2, dv_time1, dv_time2;
+extern int		r_frustum_indexes[4 * 6];
+extern int		r_maxsurfsseen, r_maxedgesseen, r_cnumsurfs;
+extern qboolean	r_surfsonstack;
 
 extern mleaf_t* r_viewleaf, * r_oldviewleaf;
 
@@ -217,6 +232,7 @@ void R_PrintAliasStats( void );
 void R_PrintTimes( void );
 void R_PrintDSpeeds( void );
 void R_ScreenLuminance( void );
+void R_AnimateLight( void );
 colorVec R_LightPoint( vec_t* p );
 colorVec R_LightVec( vec_t* start, vec_t* end );
 void R_SetupFrame( void );

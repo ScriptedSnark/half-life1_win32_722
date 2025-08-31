@@ -2,6 +2,8 @@
 
 #include "quakedef.h"
 
+qboolean        r_cache_thrash;         // set if surface cache is thrashing
+
 /*
 ================
 D_InitCaches

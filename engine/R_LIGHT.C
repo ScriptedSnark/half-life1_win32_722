@@ -8,6 +8,17 @@ int r_dlightactive;
 
 
 /*
+==================
+R_AnimateLight
+==================
+*/
+void R_AnimateLight( void )
+{
+	// TODO: Implement
+}
+
+
+/*
 =============================================================================
 
 DYNAMIC LIGHTS

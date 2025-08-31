@@ -5,6 +5,9 @@
 #pragma once
 #endif
 
+extern cvar_t		v_gamma;		// monitor gamma
+extern cvar_t		v_texgamma;		// source gamma of textures
+extern cvar_t		v_brightness;	// low level light adjustment
 extern cvar_t		v_lambert;
 extern cvar_t		v_direct;
 
