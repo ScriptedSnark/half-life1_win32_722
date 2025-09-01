@@ -23,6 +23,7 @@
     <ClInclude Include="..\..\common\r_efx.h" />
     <ClInclude Include="..\..\common\winsani_in.h" />
     <ClInclude Include="..\..\common\winsani_out.h" />
+    <ClInclude Include="..\..\engine\adivtab.h" />
     <ClInclude Include="..\..\engine\anorms.h" />
     <ClInclude Include="..\..\engine\anorm_dots.h" />
     <ClInclude Include="..\..\engine\beamdef.h" />
@@ -121,6 +122,7 @@
     <ClCompile Include="..\..\engine\crc.c" />
     <ClCompile Include="..\..\engine\cvar.c" />
     <ClCompile Include="..\..\engine\draw.c" />
+    <ClCompile Include="..\..\engine\D_EDGE.C" />
     <ClCompile Include="..\..\engine\D_FILL.C" />
     <ClCompile Include="..\..\engine\D_INIT.C" />
     <ClCompile Include="..\..\engine\D_MODECH.C" />
@@ -189,6 +191,7 @@
     <MASM Include="..\..\engine\d_draw.asm" />
     <MASM Include="..\..\engine\d_draw16.asm" />
     <MASM Include="..\..\engine\d_parta.asm" />
+    <MASM Include="..\..\engine\d_polysa.asm" />
     <MASM Include="..\..\engine\d_spr8.asm" />
     <MASM Include="..\..\engine\d_varsa.asm" />
     <MASM Include="..\..\engine\math.asm" />

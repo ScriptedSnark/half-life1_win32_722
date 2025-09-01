@@ -31,6 +31,11 @@ typedef struct sspan_s
 	int				u, v, count;
 } sspan_t;
 
+extern cvar_t	d_subdiv16;
+
+extern float	scale_for_mip;
+
+extern qboolean		d_roverwrapped;
 extern surfcache_t* sc_rover;
 extern surfcache_t* d_initial_rover;
 
@@ -39,11 +44,31 @@ extern void D_DrawSpans16( espan_t* pspans );
 extern void D_DrawZSpans( espan_t* pspans );
 extern void D_SpriteDrawSpans( sspan_t* pspan );
 
+extern int D_MipLevelForScale( float scale );
+
+#if id386
+extern void D_PolysetAff8Start( void );
+extern void D_PolysetAff8End( void );
+#endif
+
 extern short* d_pzbuffer;
+extern unsigned int d_zrowbytes, d_zwidth;
+
+extern int* d_pscantable;
+extern int	d_scantable[MAXHEIGHT];
+
+extern int	d_vrectx, d_vrecty, d_vrectright_particle, d_vrectbottom_particle;
+
+extern int	d_vox_min, d_vox_max, d_vrectright_vox, d_vrectbottom_vox;
+
+extern int	d_y_aspect_shift, d_pix_min, d_pix_max, d_pix_shift;
 
 extern pixel_t* d_viewbuffer;
 
 extern short* zspantable[MAXHEIGHT];
+
+extern int		d_minmip;
+extern float	d_scalemip[3];
 
 // !!! if this is changed, it must be changed in asm_draw.h/d_polyse.c too !!!
 typedef struct {

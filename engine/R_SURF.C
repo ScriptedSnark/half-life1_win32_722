@@ -15,6 +15,7 @@ int             r_deltav, r_numhblocks, r_numvblocks;
 
 unsigned char* r_sourcemax;
 colorVec* r_lightptr;
+word* r_palette;
 
 double lut_8byte_aligner;
 byte r_lut[65536];
