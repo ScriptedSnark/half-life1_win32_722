@@ -113,9 +113,9 @@ void Draw_MiptexTexture( cachewad_t* wad, byte* data )
 		tex->offsets[i] = LittleLong(tmp.offsets[i]) + wad->cacheExtra;
 
 	pix = tex->width * tex->height;
-	palette = pix + (pix >> 2) + (pix >> 4) + (pix >> 6) + 2;
+	palette = pix + (pix >> 2) + (pix >> 4) + (pix >> 6);
 	size = *(unsigned short*)((byte*)mip + palette + sizeof(miptex_t));
-	tex->paloffset = tex->offsets[0] + palette;
+	tex->paloffset = tex->offsets[0] + palette + 2;
 	pal = (byte*)tex + tex->paloffset;
 
 	if (pal[765] != 0 || pal[766] != 0 || pal[767] != 255)
@@ -811,7 +811,7 @@ void Draw_Pic( int x, int y, qpic_t* pic )
 	}
 
 	source = pic->data;
-	pusdest = (unsigned short*)(vid.buffer + y * (vid.rowbytes >> 1) + x * 2);
+	pusdest = (unsigned short*)(vid.buffer + y * vid.rowbytes + x * 2);
 
 	palette = &pic->data[pic->width * pic->height + 2];
 
@@ -875,7 +875,7 @@ void Draw_AlphaSubPic( int xDest, int yDest, int xSrc, int ySrc, int iWidth, int
 	}
 
 	source = &pPic->data[pPic->width * ySrc];
-	pusdest = (unsigned short*)(vid.buffer + yDest * (vid.rowbytes >> 1) + xDest * 2);
+	pusdest = (unsigned short*)(vid.buffer + yDest * vid.rowbytes + xDest * 2);
 
 	palette = &pPic->data[pPic->width * pPic->height + 2];
 
@@ -955,7 +955,7 @@ void Draw_AlphaAddPic( int x, int y, qpic_t* pic, colorVec* pc, int iAlpha )
 	}
 
 	source = pic->data;
-	pusdest = (unsigned short*)(vid.buffer + y * (vid.rowbytes >> 1) + x * 2);
+	pusdest = (unsigned short*)(vid.buffer + y * vid.rowbytes + x * 2);
 
 	palette = &pic->data[pic->width * pic->height + 2];
 
@@ -1012,7 +1012,7 @@ void Draw_FillRGBA( int x, int y, int width, int height, int r, int g, int b, in
 	if (!IntersectWRect(&rc, &rcdest, &rcdest))
 		return;
 
-	pusdest = (unsigned short*)(vid.buffer + rcdest.top * (vid.rowbytes >> 1) + rcdest.left * 2);
+	pusdest = (unsigned short*)(vid.buffer + rcdest.top * vid.rowbytes + rcdest.left * 2);
 
 	a = (192 * (word)a) & 0xFF00;
 	s = red_64klut[r + a] | green_64klut[g + a] | blue_64klut[b + a];
@@ -1086,7 +1086,7 @@ void Draw_TransPic( int x, int y, qpic_t* pic )
 	}
 
 	source = pic->data;
-	pusdest = (unsigned short*)(vid.buffer + y * (vid.rowbytes >> 1) + x * 2);
+	pusdest = (unsigned short*)(vid.buffer + y * vid.rowbytes + x * 2);
 
 	palette = &pic->data[pic->width * pic->height + 2];
 
@@ -1323,7 +1323,7 @@ void Draw_SpriteFrame( mspriteframe_t* pFrame, word* pPalette, int x, int y, con
 	offset = SpriteFrameClip(pFrame, &x, &y, &width, &height, prcSubRect);
 	pSource = &pFrame->pixels[offset];
 	delta = vid.rowbytes >> 1;
-	pScreen = (word*)(vid.buffer + y * delta + x * 2);
+	pScreen = (word*)(vid.buffer + y * delta * 2 + x * 2);
 
 	for (j = 0; j < height; j++)
 	{
@@ -1357,7 +1357,7 @@ void Draw_SpriteFrameHoles( mspriteframe_t* pFrame, word* pPalette, int x, int y
 	offset = SpriteFrameClip(pFrame, &x, &y, &width, &height, prcSubRect);
 	pSource = &pFrame->pixels[offset];
 	delta = vid.rowbytes >> 1;
-	pScreen = (word*)(vid.buffer + y * delta + x * 2);
+	pScreen = (word*)(vid.buffer + y * delta * 2 + x * 2);
 
 	for (j = 0; j < height; j++)
 	{
@@ -1393,7 +1393,7 @@ void Draw_SpriteFrameAdditive( mspriteframe_t* pFrame, word* pPalette, int x, in
 	offset = SpriteFrameClip(pFrame, &x, &y, &width, &height, prcSubRect);
 	pSource = &pFrame->pixels[offset];
 	delta = vid.rowbytes >> 1;
-	pScreen = (word*)(vid.buffer + y * delta + x * 2);
+	pScreen = (word*)(vid.buffer + y * delta * 2 + x * 2);
 
 	if (is15bit)
 	{
@@ -1584,7 +1584,7 @@ void R_DrawRect16( vrect_t* prect, int rowbytes, byte* psrc, byte* palette,
 	int				i, j, srcdelta, destdelta;
 	unsigned short* pdest;
 
-	pdest = (unsigned short*)(vid.buffer + (prect->y * (vid.rowbytes >> 1)) + prect->x * 2);
+	pdest = (unsigned short*)(vid.buffer + (prect->y * vid.rowbytes) + prect->x * 2);
 
 	srcdelta = rowbytes - prect->width;
 	destdelta = (vid.rowbytes >> 1) - prect->width;
@@ -1655,7 +1655,7 @@ void Draw_Fill( int x, int y, int w, int h, int c )
 
 	uc = (unsigned short)c;
 
-	pusdest = (unsigned short*)(vid.buffer + y * (vid.rowbytes >> 1) + x * 2);
+	pusdest = (unsigned short*)(vid.buffer + y * vid.rowbytes + x * 2);
 	for (v = 0; v < h; v++, pusdest = (unsigned short*)((byte*)pusdest + (vid.rowbytes >> 1)))
 	{
 		for (u = 0; u < w; u++)
