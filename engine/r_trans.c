@@ -290,5 +290,6 @@ R_DrawTEntitiesOnList
 void R_DrawTEntitiesOnList( void )
 {
 	// TODO: Implement
+	numTransObjs = 0;
 }
 #endif

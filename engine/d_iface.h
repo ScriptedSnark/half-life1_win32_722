@@ -95,6 +95,8 @@ extern float	r_aliasuvscale;		// scale-up factor for screen u and v
 extern int		r_pixbytes;
 extern qboolean	r_dowarp, r_dowarpold, r_viewchanged;
 
+extern vec3_t	r_pright, r_pup, r_ppn;
+
 // TODO: Implement
 
 #ifdef __cplusplus
