@@ -95,7 +95,16 @@ extern float	r_aliasuvscale;		// scale-up factor for screen u and v
 extern int		r_pixbytes;
 extern qboolean	r_dowarp, r_dowarpold, r_viewchanged;
 
+extern affinetridesc_t	r_affinetridesc;
+extern spritedesc_t		r_spritedesc;
+extern zpointdesc_t		r_zpointdesc;
+extern polydesc_t		r_polydesc;
+
+extern  byte* skintable[MAX_LBM_HEIGHT];
+
 extern vec3_t	r_pright, r_pup, r_ppn;
+
+extern int		r_anumverts;
 
 // TODO: Implement
 
@@ -109,6 +118,7 @@ extern void (*D_EndDirectRect)( int x, int y, int width, int height );
 #endif
 void D_DisableBackBufferAccess( void );
 void D_DrawParticle( particle_t* pparticle );
+void D_DrawPoly( void );
 void D_EnableBackBufferAccess( void );
 void D_EndParticles( void );
 void D_Init( void );

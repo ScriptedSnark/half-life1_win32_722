@@ -8,6 +8,16 @@ void R_LoadSkys( void )
 }
 
 /*
+=================
+R_DrawSkyChain
+=================
+*/
+void R_DrawSkyChain( msurface_t* psurf )
+{
+	// TODO: Implement
+}
+
+/*
 ==================
 R_InitSky
 ==================

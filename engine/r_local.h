@@ -161,27 +161,40 @@ void	R_ZDrawSubmodelPolys( model_t* clmodel );
 
 #define MAXALIASVERTS		2000
 
-// TODO: Implement
+qboolean R_AliasCheckBBox( void );
+
+//=========================================================
+// turbulence stuff
+
+#define	AMP		8 * 0x10000
+#define	AMP2	3
+#define	SPEED	20
+
+//=========================================================
+// particle stuff
+
+void R_DrawParticles( void );
+void R_InitParticles( void );
+void R_ClearParticles( void );
+void R_ReadPointFile_f( void );
+void R_SurfacePatch( void );
 
 extern int		r_amodels_drawn;
 extern edge_t* auxedges;
 extern int		r_numallocatededges;
-
-void R_SurfacePatch( void );
-
 extern edge_t* r_edges, * edge_p, * edge_max;
-
-// FIXME: make stack vars when debugging done
-
-extern	espan_t* span_p;
-
-extern	int	current_iv;
-
-extern  int	edge_head_u_shift20, edge_tail_u_shift20;
 
 extern	edge_t* newedges[MAXHEIGHT];
 extern	edge_t* removeedges[MAXHEIGHT];
 
+extern	int	screenwidth;
+
+extern	espan_t* span_p;
+
+extern	int	current_iv;
+extern  int	edge_head_u_shift20, edge_tail_u_shift20;
+
+// FIXME: make stack vars when debugging done
 extern	edge_t	edge_head;
 extern	edge_t	edge_tail;
 extern	edge_t	edge_aftertail;
@@ -196,8 +209,6 @@ extern	float		r_shadelight;
 
 extern	vec3_t		r_plightvec;
 
-// TODO: Implement
-
 extern int		r_outofsurfaces;
 extern int		r_outofedges;
 
@@ -211,6 +222,7 @@ extern float	se_time1, se_time2, de_time1, de_time2, dv_time1, dv_time2;
 extern int		r_frustum_indexes[4 * 6];
 extern int		r_maxsurfsseen, r_maxedgesseen, r_cnumsurfs;
 extern qboolean	r_surfsonstack;
+extern qboolean	r_dowarpold, r_viewchanged;
 
 extern mleaf_t* r_viewleaf, * r_oldviewleaf;
 
@@ -222,10 +234,6 @@ extern int		r_dlightchanged;	// which ones changed
 extern int		r_dlightactive;		// which ones are active
 extern qboolean	r_fov_greater_than_90;
 
-
-// TODO: Implement
-
-
 void R_TimeRefresh_f( void );
 void R_TimeGraph( void );
 void R_PrintAliasStats( void );
@@ -236,28 +244,11 @@ void R_AnimateLight( void );
 colorVec R_LightPoint( vec_t* p );
 colorVec R_LightVec( vec_t* start, vec_t* end );
 void R_SetupFrame( void );
-
-
-// TODO: Implement
-
-qboolean R_AliasCheckBBox( void );
-
-//=========================================================
-// turbulence stuff
-
-#define	AMP		8 * 0x10000
-#define	AMP2	3
-#define	SPEED	20
-
-//=========================================================
-// particle stuff
-
-void R_ReadPointFile_f( void );
-
-void UnpackPalette( unsigned short* pDest, unsigned short* pSource, int r, int g, int b );
-
+void R_EmitEdge( mvertex_t* pv0, mvertex_t* pv1 );
+void R_ClipEdge( mvertex_t* pv0, mvertex_t* pv1, clipplane_t* clip );
 void R_SplitEntityOnNode2( mnode_t* node );
 void R_MarkLights( dlight_t* light, int bit, mnode_t* node );
 void R_DecalInit( void );
+void UnpackPalette( unsigned short* pDest, unsigned short* pSource, int r, int g, int b );
 
 #endif

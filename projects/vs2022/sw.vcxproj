@@ -132,6 +132,7 @@
     <ClCompile Include="..\..\engine\D_SPRITE.C" />
     <ClCompile Include="..\..\engine\D_SURF.C" />
     <ClCompile Include="..\..\engine\D_VARS.C" />
+    <ClCompile Include="..\..\engine\D_ZPOINT.C" />
     <ClCompile Include="..\..\engine\ha3d.cpp" />
     <ClCompile Include="..\..\engine\ha3dg.cpp" />
     <ClCompile Include="..\..\engine\hashpak.c" />
@@ -195,6 +196,7 @@
     <MASM Include="..\..\engine\d_spr8.asm" />
     <MASM Include="..\..\engine\d_varsa.asm" />
     <MASM Include="..\..\engine\math.asm" />
+    <MASM Include="..\..\engine\r_drawa.asm" />
     <MASM Include="..\..\engine\r_edgea.asm" />
     <MASM Include="..\..\engine\r_varsa.asm" />
     <MASM Include="..\..\engine\snd_mixa.asm" />
