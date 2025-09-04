@@ -106,8 +106,7 @@ extern vec3_t	r_pright, r_pup, r_ppn;
 
 extern int		r_anumverts;
 
-// TODO: Implement
-
+void D_PolysetDraw( void );
 #ifdef __cplusplus
 extern "C" {
 #endif

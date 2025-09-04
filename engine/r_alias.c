@@ -16,6 +16,11 @@ mdl_t* pmdl;
 vec3_t				r_plightvec;
 int					r_ambientlight;
 float				r_shadelight;
+aliashdr_t* paliashdr;
+finalvert_t* pfinalverts;
+auxvert_t* pauxverts;
+float		ziscale;
+float		zishift;
 
 int				r_amodels_drawn;
 
@@ -39,6 +44,15 @@ qboolean R_AliasCheckBBox( void )
 	return FALSE;
 }
 
+/*
+================
+R_AliasProjectFinalVert
+================
+*/
+void R_AliasProjectFinalVert( finalvert_t* fv, auxvert_t* av )
+{
+	// TODO: Implement
+}
 
 /*
 ================

@@ -527,6 +527,9 @@
     <ClCompile Include="..\..\engine\D_ZPOINT.C">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\engine\R_ACLIP.C">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <MASM Include="..\..\engine\sys_wina.asm">
@@ -572,6 +575,9 @@
       <Filter>Source Files</Filter>
     </MASM>
     <MASM Include="..\..\engine\r_drawa.asm">
+      <Filter>Source Files</Filter>
+    </MASM>
+    <MASM Include="..\..\engine\r_aclipa.asm">
       <Filter>Source Files</Filter>
     </MASM>
   </ItemGroup>

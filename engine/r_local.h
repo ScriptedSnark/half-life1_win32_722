@@ -160,8 +160,17 @@ void	R_ZDrawSubmodelPolys( model_t* clmodel );
 //=========================================================
 
 #define MAXALIASVERTS		2000
+#define ALIAS_Z_CLIP_PLANE	5
 
 qboolean R_AliasCheckBBox( void );
+
+extern finalvert_t* pfinalverts;
+extern float		ziscale;
+extern float		zishift;
+
+extern auxvert_t* pauxverts;
+
+void R_AliasProjectFinalVert( finalvert_t* fv, auxvert_t* av );
 
 //=========================================================
 // turbulence stuff

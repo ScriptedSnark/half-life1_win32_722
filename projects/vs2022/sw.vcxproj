@@ -153,6 +153,7 @@
     <ClCompile Include="..\..\engine\pmovetst.c" />
     <ClCompile Include="..\..\engine\pr_cmds.c" />
     <ClCompile Include="..\..\engine\pr_edict.c" />
+    <ClCompile Include="..\..\engine\R_ACLIP.C" />
     <ClCompile Include="..\..\engine\r_alias.c" />
     <ClCompile Include="..\..\engine\R_BSP.C" />
     <ClCompile Include="..\..\engine\R_DRAW.C" />
@@ -196,6 +197,7 @@
     <MASM Include="..\..\engine\d_spr8.asm" />
     <MASM Include="..\..\engine\d_varsa.asm" />
     <MASM Include="..\..\engine\math.asm" />
+    <MASM Include="..\..\engine\r_aclipa.asm" />
     <MASM Include="..\..\engine\r_drawa.asm" />
     <MASM Include="..\..\engine\r_edgea.asm" />
     <MASM Include="..\..\engine\r_varsa.asm" />
