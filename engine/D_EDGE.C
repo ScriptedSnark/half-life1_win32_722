@@ -26,3 +26,13 @@ void D_DrawPoly( void )
 {
 // this driver takes spans, not polygons
 }
+
+/*
+==============
+D_DrawSurfaces
+==============
+*/
+void D_DrawSurfaces( void )
+{
+	// TODO: Implement
+}

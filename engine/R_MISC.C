@@ -428,11 +428,11 @@ void R_SetupFrame( void )
 
 	if (r_numsurfs.value)
 	{
-		if ((surfaces - surface_p) > r_maxsurfsseen)
-			r_maxsurfsseen = surfaces - surface_p;
+		if ((surface_p - surfaces) > r_maxsurfsseen)
+			r_maxsurfsseen = surface_p - surfaces;
 
-		Con_Printf("Used %d of %d surfs; %d max\n", surfaces - surface_p,
-			surf_max - surface_p, r_maxsurfsseen);
+		Con_Printf("Used %d of %d surfs; %d max\n", surface_p - surfaces,
+			surf_max - surfaces, r_maxsurfsseen);
 	}
 
 	if (r_numedges.value)
