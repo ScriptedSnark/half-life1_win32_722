@@ -101,6 +101,9 @@ extern	vec3_t			r_worldmodelorg;
 
 
 void R_DrawSprite( void );
+void R_RenderFace( msurface_t* fa, int clipflags );
+void R_RenderPoly( msurface_t* fa, int clipflags );
+void R_RenderBmodelFace( bedge_t* pedges, msurface_t* psurf );
 void R_TransformPlane( mplane_t* p, float* normal, float* dist );
 void R_TransformFrustum( void );
 
@@ -111,18 +114,13 @@ void R_Surf16Patch( void );
 void R_DrawSubmodelPolygons( model_t* pmodel, int clipflags );
 void R_DrawSolidClippedSubmodelPolygons( model_t* pmodel );
 
+void R_AliasDrawModel( alight_t* plighting );
 void R_BeginEdgeFrame( void );
 void R_ScanEdges( void );
-
-// TODO: Implement
-
-void R_ScanEdges( void );
-
-// TODO: Implement
-
-void R_AliasDrawModel( alight_t* plighting );
-
-// TODO: Implement
+void D_DrawSurfaces( void );
+void R_InsertNewEdges( edge_t* edgestoadd, edge_t* edgelist );
+void R_StepActiveU( edge_t* pedge );
+void R_RemoveEdges( edge_t* pedge );
 
 extern void R_Surf8Start( void );
 extern void R_Surf8End( void );
@@ -243,6 +241,7 @@ extern int		r_dlightchanged;	// which ones changed
 extern int		r_dlightactive;		// which ones are active
 extern qboolean	r_fov_greater_than_90;
 
+void R_StoreEfrags( efrag_t** ppefrag );
 void R_TimeRefresh_f( void );
 void R_TimeGraph( void );
 void R_PrintAliasStats( void );

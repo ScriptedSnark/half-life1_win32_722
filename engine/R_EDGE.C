@@ -1,6 +1,7 @@
 // r_edge.c
 
 #include "quakedef.h"
+#include "winquake.h"
 
 #if 0
 // FIXME
