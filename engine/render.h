@@ -209,9 +209,9 @@ void R_ViewChanged( vrect_t* pvrect, int lineadj, float aspect );
 								// called whenever r_refdef or vid change
 void R_InitSky( void );	// called at level load
 void R_LoadSkys( void );
-void R_DrawSkyBox( int sortKey );
 void R_DrawSkyChain( struct msurface_s* psurf );
 void R_ClearSkyBox( void );
+void R_DrawSkyBox( int sortKey );
 
 void R_AddEfrags( cl_entity_t* ent );
 void R_RemoveEfrags( cl_entity_t* ent );

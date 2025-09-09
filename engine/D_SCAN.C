@@ -48,3 +48,36 @@ void D_WarpScreen( void )
 {
 	// TODO: Implement
 }
+
+// Main routine for updating the water texture with new values to generate
+// the ripple effect
+void WaterTextureUpdate( word* pPalette, float dropTime, texture_t* texture )
+{
+	// TODO: Implement
+}
+
+// Set s/t masks and the texture shifting for water surfaces and scrolling textures
+void TilingSetup( int sMask, int tMask, int tShift )
+{
+	// TODO: Implement
+}
+
+/*
+=============
+D_DrawTiled8
+=============
+*/
+void D_DrawTiled8( espan_t* pspan )
+{
+	// TODO: Implement
+}
+
+/*
+=============
+D_DrawTiled8Trans
+=============
+*/
+void D_DrawTiled8Trans( espan_t* pspan )
+{
+	// TODO: Implement
+}

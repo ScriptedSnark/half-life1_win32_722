@@ -39,10 +39,23 @@ extern qboolean		d_roverwrapped;
 extern surfcache_t* sc_rover;
 extern surfcache_t* d_initial_rover;
 
+extern float	d_sdivzstepu, d_tdivzstepu, d_zistepu;
+extern float	d_sdivzstepv, d_tdivzstepv, d_zistepv;
+extern float	d_sdivzorigin, d_tdivzorigin, d_ziorigin;
+
+extern fixed16_t	sadjust, tadjust;
+extern fixed16_t	bbextents, bbextentt;
+
 extern void D_DrawSpans8( espan_t* pspans );
 extern void D_DrawSpans16( espan_t* pspans );
 extern void D_DrawZSpans( espan_t* pspans );
+extern void D_DrawTiled8( espan_t* pspan );
+extern void D_DrawTiled8Trans( espan_t* pspan );
 extern void D_SpriteDrawSpans( sspan_t* pspan );
+
+void TilingSetup( int sMask, int tMask, int tShift );
+
+surfcache_t* D_CacheSurface( msurface_t* surface, int miplevel );
 
 extern int D_MipLevelForScale( float scale );
 
