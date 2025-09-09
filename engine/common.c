@@ -24,6 +24,8 @@ qboolean		proghack;
 
 int             static_registered = 1;  // only for startup check, then set
 
+qboolean		msg_suppress_1 = 0;
+
 void COM_InitFilesystem( void );
 
 // if a packfile directory differs from this, it is assumed to be hacked

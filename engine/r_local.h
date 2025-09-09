@@ -106,8 +106,7 @@ void R_RenderPoly( msurface_t* fa, int clipflags );
 void R_RenderBmodelFace( bedge_t* pedges, msurface_t* psurf );
 void R_TransformPlane( mplane_t* p, float* normal, float* dist );
 void R_TransformFrustum( void );
-
-// TODO: Implement
+texture_t* R_TextureAnimation( texture_t* base );
 
 void R_Surf8Patch( void );
 void R_Surf16Patch( void );

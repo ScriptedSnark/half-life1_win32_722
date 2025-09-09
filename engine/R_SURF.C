@@ -2,6 +2,8 @@
 
 #include "quakedef.h"
 
+drawsurf_t	r_drawsurf;
+
 int				lightleft, sourcesstep, blocksize, sourcetstep;
 int				lightdelta, lightdeltastep;
 int				lightright, lightleftstep, lightrightstep, blockdivshift;
@@ -25,6 +27,29 @@ word green_64klut[65536];
 word lut_realigner2[256];
 word blue_64klut[65536];
 
+
+/*
+===============
+R_TextureAnimation
+
+Returns the proper texture for a given time and base texture
+===============
+*/
+texture_t* R_TextureAnimation( texture_t* base )
+{
+	// TODO: Implement
+	return NULL;
+}
+
+/*
+===============
+R_DrawSurface
+===============
+*/
+void R_DrawSurface( void )
+{
+	// TODO: Implement
+}
 
 /*
 ===============

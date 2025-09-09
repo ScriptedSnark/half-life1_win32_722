@@ -5,7 +5,6 @@
 #pragma once
 #endif
 
-extern int	current_skill;
 extern int  gHostSpawnCount;
 
 void		Host_LoadProfile( void );

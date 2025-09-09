@@ -140,11 +140,23 @@ void D_UpdateRects( vrect_t* prect );
 
 // callbacks to Quake
 
+typedef struct
+{
+	pixel_t* surfdat;	// destination for generated surface
+	int			rowbytes;	// destination logical width in bytes
+	msurface_t* surf;		// description for surface to generate
+	fixed8_t	lightadj[MAXLIGHTMAPS];
+	// adjust for lightmap levels for dynamic lighting
+	texture_t* texture;	// corrected for animating textures
+	int			surfmip;	// mipmapped ratio of surface texels / world pixels
+	int			surfwidth;	// in mipmapped texels
+	int			surfheight;	// in mipmapped texels
+} drawsurf_t;
 
+extern drawsurf_t	r_drawsurf;
 
+void R_DrawSurface( void );
 int DecalListCreate( DECALLIST* pList );
-
-
 
 // !!! if this is changed, it must be changed in d_ifacea.h too !!!
 #define	CYCLE			128		// turbulent cycle size

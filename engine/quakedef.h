@@ -268,6 +268,11 @@ void Host_ReallocateDynamicData( void );
 
 void Master_Init( void );
 
+extern qboolean		msg_suppress_1;		// suppresses resolution and cache size console output
+										//  an fullscreen DIB focus gain/loss
+extern int			current_skill;		// skill level for currently loaded level (in case
+										//  the user changes the cvar while the level is
+										//  running, this reflects the level actually in use)
 
 extern qboolean		isDedicated;
 

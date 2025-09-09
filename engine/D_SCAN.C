@@ -7,6 +7,8 @@
 int     d_depth, d_fader, d_fadeg, d_fadeb, d_fadelevel;
 float   d_fadestart, d_fadetime;
 
+word* gWaterLastPalette = NULL;
+
 /*
 ================
 D_BuildFogTable
