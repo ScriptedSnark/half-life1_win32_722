@@ -1,6 +1,7 @@
 // r_surf.c: surface-related refresh code
 
 #include "quakedef.h"
+#include "decal.h"
 
 drawsurf_t	r_drawsurf;
 
@@ -27,6 +28,16 @@ word green_64klut[65536];
 word lut_realigner2[256];
 word blue_64klut[65536];
 
+//-----------------------------------------------------------------------------
+//
+// Decal system
+//
+//-----------------------------------------------------------------------------
+
+// UNDONE: Compress this???
+static decal_t			gDecalPool[MAX_DECALS];
+
+void R_DrawInitLut( void );
 
 /*
 ===============
@@ -49,6 +60,10 @@ R_DrawSurface
 void R_DrawSurface( void )
 {
 	// TODO: Implement
+	
+	R_DrawInitLut();
+
+	// TODO: Implement
 }
 
 /*
@@ -59,7 +74,32 @@ R_DrawInitLut
 */
 void R_DrawInitLut( void )
 {
-	// TODO: Implement
+	int i, j, k;
+
+	if (r_lut[0xFFFF])
+		return; // already initialized
+
+	for (i = 0; i < 256; i++)
+	{
+		for (j = 0; j < 256; j++)
+		{
+			k = i + j * 256;
+			r_lut[k] = min((i * j) / 192, 255);
+
+			if (is15bit)
+			{
+				red_64klut[k] = (r_lut[k] << 7) & 0x7C00;
+				green_64klut[k] = (r_lut[k] << 2) & 0x03E0;
+			}
+			else
+			{
+				red_64klut[k] = (r_lut[k] << 8) & 0xF800;
+				green_64klut[k] = (r_lut[k] << 3) & 0x07E0;
+			}
+
+			blue_64klut[k] = (r_lut[k] >> 3) & 0x001F;
+		}
+	}
 }
 
 //-----------------------------------------------------------------------------
