@@ -275,7 +275,7 @@ void R_ScreenLuminance( void )
 							bSum += lumcolors[pix & 0x001F];
 						}
 
-						// Draw screen rectangle
+						// Draw a white border around the sampled area
 						if (i == 0 || j == 0 || i == (vid.height >> 1) - 1 || j == (vid.width >> 1) - 1)
 							*pDest = ~pix;
 

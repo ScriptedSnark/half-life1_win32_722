@@ -49,7 +49,7 @@ void tri_Soft_CullFace( int style );
 void tri_Soft_End( void );
 
 void R_TriangleSetTexture( byte* pTexture, short width, short height, word* pPalette );
-int R_TriangleSpriteTexture( struct model_s* pSpriteModel, int frame );
+int R_TriangleSpriteTexture( model_t* pSpriteModel, int frame );
 
 #if defined( GLQUAKE )
 #define tri_Begin(mode)				qglBegin(mode)

@@ -107,14 +107,8 @@ extern vec3_t	r_pright, r_pup, r_ppn;
 extern int		r_anumverts;
 
 void D_PolysetDraw( void );
-#ifdef __cplusplus
-extern "C" {
-#endif
 extern void (*D_BeginDirectRect)( int x, int y, byte* pbitmap, int width, int height );
 extern void (*D_EndDirectRect)( int x, int y, int width, int height );
-#ifdef __cplusplus
-}
-#endif
 void D_DisableBackBufferAccess( void );
 void D_DrawParticle( particle_t* pparticle );
 void D_DrawPoly( void );
@@ -132,6 +126,11 @@ void D_WarpScreen( void );
 void D_InitFade( qboolean blend );
 
 void D_UpdateRects( vrect_t* prect );
+
+// currently for internal use only, and should be a do-nothing function in
+// hardware drivers
+// FIXME: this should go away
+void D_PolysetUpdateTables( void );
 
 // !!! must be kept the same as in quakeasm.h !!!
 #define TRANSPARENT_COLOR	0xFF

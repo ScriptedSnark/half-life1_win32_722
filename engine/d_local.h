@@ -108,4 +108,8 @@ extern void (*d_drawspans)			(espan_t* pspan);
 extern void (*spritedraw)			(sspan_t* pspan);
 extern void (*polysetdraw)			(spanpackage_t* pspanpackage);
 
+void D_PolysetDrawSpans8( spanpackage_t* pspanpackage );
+void D_PolysetDrawSpansTrans( spanpackage_t* pspanpackage );
+void D_PolysetDrawSpansTransAdd( spanpackage_t* pspanpackage );
+
 #endif // D_LOCAL_H

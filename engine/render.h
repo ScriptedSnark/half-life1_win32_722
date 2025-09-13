@@ -191,6 +191,8 @@ extern float r_blend; // Global blending factor for the current entity
 extern int r_blend;
 #endif
 
+extern colorVec r_icolormix;
+
 //
 // refresh
 //

@@ -22,7 +22,15 @@ auxvert_t* pauxverts;
 float		ziscale;
 float		zishift;
 
+//static model_t* pmodel;
+
+//static vec3_t		alias_forward, alias_right, alias_up;
+
+//static maliasskindesc_t* pskindesc;
+
 int				r_amodels_drawn;
+int				a_skinwidth;
+int				r_anumverts;
 
 float	aliastransform[3][4];
 

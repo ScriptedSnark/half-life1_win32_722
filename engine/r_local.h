@@ -160,6 +160,7 @@ void	R_ZDrawSubmodelPolys( model_t* clmodel );
 #define ALIAS_Z_CLIP_PLANE	5
 
 qboolean R_AliasCheckBBox( void );
+void R_StudioVertBuffer( void );
 
 extern finalvert_t* pfinalverts;
 extern float		ziscale;

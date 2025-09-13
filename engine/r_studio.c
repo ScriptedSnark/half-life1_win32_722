@@ -1004,7 +1004,7 @@ void MatrixCopy( float(*in)[4], float(*out)[4] )
 
 /*
 ====================
-R_StudioDrawPlayer
+R_StudioMergeBones
 
 Merge bones of a child model with current one
 ====================
@@ -2579,7 +2579,31 @@ void R_StudioClientEvents( void )
 }
 
 #if !defined( GLQUAKE )
-// TODO: Implement
+/*
+====================
+R_StudioVertBuffer
+
+====================
+*/
+void R_StudioVertBuffer( void )
+{
+	// TODO: Implement
+}
+
+int SignbitsForPlane( mplane_t* out )
+{
+	int	bits, j;
+
+	// for fast box on planeside test
+
+	bits = 0;
+	for (j = 0; j < 3; j++)
+	{
+		if (out->normal[j] < 0)
+			bits |= 1 << j;
+	}
+	return bits;
+}
 
 /*
 ================

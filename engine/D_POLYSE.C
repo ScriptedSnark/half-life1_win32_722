@@ -65,6 +65,8 @@ byte* skintable[MAX_LBM_HEIGHT];
 int		skinwidth;
 byte* skinstart;
 
+void (*polysetdraw)(spanpackage_t* pspanpackage) = D_PolysetDrawSpans8;
+
 #if	!id386
 
 /*
@@ -365,6 +367,132 @@ nodraw:
 }
 
 #endif	// !id386
+
+/*
+================
+D_PolysetUpdateTables
+================
+*/
+void D_PolysetUpdateTables( void )
+{
+	int		i;
+	byte* s;
+	
+	if (r_affinetridesc.skinwidth != skinwidth ||
+		r_affinetridesc.pskin != skinstart)
+	{
+		skinwidth = r_affinetridesc.skinwidth;
+		skinstart = (byte*)r_affinetridesc.pskin;
+		s = skinstart;
+		for (i = 0; i < MAX_LBM_HEIGHT; i++, s += skinwidth)
+			skintable[i] = s;
+	}
+}
+
+
+#if	!id386
+
+/*
+===================
+D_PolysetScanLeftEdge
+====================
+*/
+void D_PolysetScanLeftEdge( int height )
+{
+
+	do
+	{
+		d_pedgespanpackage->pdest = d_pdest;
+		d_pedgespanpackage->pz = d_pz;
+		d_pedgespanpackage->count = d_aspancount;
+		d_pedgespanpackage->ptex = d_ptex;
+
+		d_pedgespanpackage->sfrac = d_sfrac;
+		d_pedgespanpackage->tfrac = d_tfrac;
+
+	// FIXME: need to clamp l, s, t, at both ends?
+		d_pedgespanpackage->light = d_light;
+		d_pedgespanpackage->zi = d_zi;
+
+		d_pedgespanpackage++;
+
+		errorterm += erroradjustup;
+		if (errorterm >= 0)
+		{
+			d_pdest += d_pdestextrastep;
+			d_pz += d_pzextrastep;
+			d_aspancount += d_countextrastep;
+			d_ptex += d_ptexextrastep;
+			d_sfrac += d_sfracextrastep;
+			d_ptex += d_sfrac >> 16;
+
+			d_sfrac &= 0xFFFF;
+			d_tfrac += d_tfracextrastep;
+			if (d_tfrac & 0x10000)
+			{
+				d_ptex += r_affinetridesc.skinwidth;
+				d_tfrac &= 0xFFFF;
+			}
+			d_light += d_lightextrastep;
+			d_zi += d_ziextrastep;
+			errorterm -= erroradjustdown;
+		}
+		else
+		{
+			d_pdest += d_pdestbasestep;
+			d_pz += d_pzbasestep;
+			d_aspancount += ubasestep;
+			d_ptex += d_ptexbasestep;
+			d_sfrac += d_sfracbasestep;
+			d_ptex += d_sfrac >> 16;
+			d_sfrac &= 0xFFFF;
+			d_tfrac += d_tfracbasestep;
+			if (d_tfrac & 0x10000)
+			{
+				d_ptex += r_affinetridesc.skinwidth;
+				d_tfrac &= 0xFFFF;
+			}
+			d_light += d_lightbasestep;
+			d_zi += d_zibasestep;
+		}
+	} while (--height);
+}
+
+#endif	// !id386
+
+
+/*
+================
+D_PolysetDrawSpans8
+================
+*/
+void D_PolysetDrawSpans8( spanpackage_t* pspanpackage )
+{
+	// TODO: Implement
+}
+
+
+/*
+================
+D_PolysetDrawSpansTrans
+================
+*/
+void D_PolysetDrawSpansTrans( spanpackage_t* pspanpackage )
+{
+	// TODO: Implement
+}
+
+
+/*
+================
+D_PolysetDrawSpansTransAdd
+================
+*/
+void D_PolysetDrawSpansTransAdd( spanpackage_t* pspanpackage )
+{
+	// TODO: Implement
+}
+
 
 /*
 ================

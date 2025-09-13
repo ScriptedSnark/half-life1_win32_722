@@ -88,6 +88,7 @@ void D_FlushCaches( void )
 /*
 =================
 D_SCAlloc
+
 =================
 */
 surfcache_t* D_SCAlloc( int width, int size )

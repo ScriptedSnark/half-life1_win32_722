@@ -96,7 +96,7 @@ void D_DrawSolidSurface( surf_t* surf, int color )
 D_CalcGradients
 ==============
 */
-void D_CalcGradients(msurface_t* pface)
+void D_CalcGradients( msurface_t* pface )
 {
 	float		mipscale;
 	vec3_t		p_temp1;
