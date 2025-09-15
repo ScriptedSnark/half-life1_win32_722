@@ -1233,8 +1233,8 @@ int AdjustSubRect( mspriteframe_t* pFrame, int* pw, int* ph, const wrect_t* prcS
 ===============
 SpriteFrameClip
 
-Clips a sprite frame to either a subrect or the scissor rectangle.
-Returns the offset in pixels from the top-left corner of the frame.
+Clips a sprite frame to either a subrect or the scissor rectangle
+Returns the offset in pixels from the top-left corner of the frame
 ===============
 */
 int SpriteFrameClip( mspriteframe_t* pFrame, int* x, int* y, int* w, int* h, const wrect_t* prcSubRect )
@@ -1342,7 +1342,7 @@ void Draw_SpriteFrame( mspriteframe_t* pFrame, word* pPalette, int x, int y, con
 Draw_SpriteFrameHoles
 
 Draw normal sprite frame onto the screen at a specified location (x, y)
-skip transparent pixels.
+skip transparent pixels
 ===============
 */
 void Draw_SpriteFrameHoles( mspriteframe_t* pFrame, word* pPalette, int x, int y, const wrect_t* prcSubRect )
@@ -1379,7 +1379,6 @@ void Draw_SpriteFrameHoles( mspriteframe_t* pFrame, word* pPalette, int x, int y
 Draw_SpriteFrameAdditive
 
 Draw additive sprite frame onto the screen at a specified location (x, y)
-using a specified palette.
 ===============
 */
 void Draw_SpriteFrameAdditive( mspriteframe_t* pFrame, word* pPalette, int x, int y, const wrect_t* prcSubRect )
@@ -1409,7 +1408,7 @@ void Draw_SpriteFrameAdditive( mspriteframe_t* pFrame, word* pPalette, int x, in
 ===============
 Draw_SpriteFrameAdd15
 
-Draw an additive sprite frame using a 15-bit color palette
+Draw additive sprite frame using a 15-bit color palette
 ===============
 */
 void Draw_SpriteFrameAdd15( byte* pSource, word* pPalette, word* pScreen, int width, int height, int delta, int sourceWidth )
