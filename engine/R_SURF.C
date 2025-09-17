@@ -639,12 +639,11 @@ void R_DrawSurfaceBlock16( void )
 			corners[0] += cornerdeltas[0];
 			corners[1] += cornerdeltas[1];
 
-			prowdest = (unsigned short*)((byte*)prowdest + surfrowbytes);
+			prowdest += (surfrowbytes / 2);
 			psource += sourcetstep;
 		}
 
 		r_offset += sourcevstep;
-
 		if (r_offset >= r_stepback)
 			r_offset -= r_stepback;
 	}
@@ -986,37 +985,416 @@ END:
 
 void R_DrawSurfaceBlock16Holes( void )
 {
-	// TODO: Implement
+    colorVec        clightleft, clightright, clightleftstep, clightrightstep;
+    colorVec        clight, clightstep;
+    int				v, i, j;
+    unsigned char   pix, * psource;
+    unsigned short* prowdest, * ppalette, * pColor;
+    uint32          r, g, b;
+    texture_t** pTexture;
+
+    prowdest = (unsigned short*)prowdestbase;
+
+    for (v = 0; v < r_numvblocks; v++)
+    {
+        pTexture = &r_basetexture[r_deltav + v];
+
+        ColorCopy(r_lightptr[0], clightleft);
+        ColorCopy(r_lightptr[1], clightright);
+
+        r_lightptr = (colorVec*)((byte*)r_lightptr + (r_lightwidth << 4));
+
+        ColorSubtract(r_lightptr[0], clightleft, clightleftstep);
+        ColorShift(clightleftstep, blockdivshift);
+        ColorSubtract(r_lightptr[1], clightright, clightrightstep);
+        ColorShift(clightrightstep, blockdivshift);
+
+        ppalette = (unsigned short*)((byte*)(*pTexture) + (*pTexture)->paloffset);
+        psource = (unsigned char*)((byte*)(*pTexture) + (*pTexture)->offsets[r_drawsurf.surfmip] + r_offset);
+
+        for (i = 0; i < blocksize; i++)
+        {
+            ColorCopy(clightleft, clight);
+
+            for (j = 0; j < blocksize; j++)
+            {
+                pix = psource[j];
+                if (pix == TRANSPARENT_COLOR)
+                {
+                    prowdest[j] = 0x001F;
+                }
+                else
+                {
+                    pColor = &ppalette[pix * 4];
+                    r = r_lut[(clight.r & 0xFF00) + pColor[2]];
+                    g = r_lut[(clight.g & 0xFF00) + pColor[1]];
+                    b = r_lut[(clight.b & 0xFF00) + pColor[0]];
+
+                    if (is15bit)
+                    {
+                        prowdest[j] = PACKEDRGB555(r, g, b);
+                    }
+                    else
+                    {
+                        prowdest[j] = PACKEDRGB565(r, g, b);
+                    }
+                }
+
+                ColorSubtract(clightright, clightleft, clightstep);
+                ColorShift(clightstep, blockdivshift);
+                ColorAdd(clight, clightstep, clight);
+            }
+
+            ColorAdd(clightleft, clightleftstep, clightleft);
+            ColorAdd(clightright, clightrightstep, clightright);
+
+			prowdest += (surfrowbytes / 2);
+			psource += sourcetstep;
+        }
+
+        r_offset += sourcevstep;
+        if (r_offset >= r_stepback)
+            r_offset -= r_stepback;
+    }
 }
 
 
 void R_DrawSurfaceBlock16Fullbright1( void )
 {
-	// TODO: Implement
+	int             v, i, j;
+	unsigned char   pix, * psource;
+	unsigned short* prowdest, * ppalette, * pColor;
+	uint32          r, g, b;
+	texture_t** pTexture;
+
+	prowdest = (unsigned short*)prowdestbase;
+
+	for (v = 0; v < r_numvblocks; v++)
+	{
+		pTexture = &r_basetexture[r_deltav + v];
+
+		ppalette = (unsigned short*)((byte*)(*pTexture) + (*pTexture)->paloffset);
+		psource = (unsigned char*)((byte*)(*pTexture) + (*pTexture)->offsets[r_drawsurf.surfmip] + r_offset);
+
+		for (i = 0; i < blocksize; i++)
+		{
+			for (j = 0; j < blocksize; j++)
+			{
+				pix = psource[j];
+				pColor = &ppalette[pix * 4];
+				r = pColor[2];
+				g = pColor[1];
+				b = pColor[0];
+
+				if (is15bit)
+				{
+					prowdest[j] = PACKEDRGB555(r, g, b);
+				}
+				else
+				{
+					prowdest[j] = PACKEDRGB565(r, g, b);
+				}
+			}
+
+			prowdest += (surfrowbytes / 2);
+			psource += sourcetstep;
+		}
+
+		r_offset += sourcevstep;
+		if (r_offset >= r_stepback)
+			r_offset -= r_stepback;
+	}
 }
 
 
 void R_DrawSurfaceBlock16Fullbright2( void )
 {
-	// TODO: Implement
+    colorVec        clightleft, clightright, clightleftstep, clightrightstep;
+    colorVec        clight, clightstep;
+    int             v, i, j;
+    unsigned short* prowdest;
+    uint32          r, g, b;
+
+    prowdest = (unsigned short*)prowdestbase;
+
+    for (v = 0; v < r_numvblocks; v++)
+    {
+        ColorCopy(r_lightptr[0], clightleft);
+        ColorCopy(r_lightptr[1], clightright);
+        
+        r_lightptr = (colorVec*)((byte*)r_lightptr + (r_lightwidth << 4));
+        
+        ColorSubtract(r_lightptr[0], clightleft, clightleftstep);
+		ColorShift(clightleftstep, blockdivshift);
+        ColorSubtract(r_lightptr[1], clightright, clightrightstep);
+		ColorShift(clightrightstep, blockdivshift);
+
+        for (i = 0; i < blocksize; i++)
+        {
+            ColorCopy(clightleft, clight);
+            
+            for (j = 0; j < blocksize; j++)
+            {
+                if (is15bit)
+                {
+					r = ((clight.r >> 1) & 0x7C00);
+					g = ((clight.g >> 6) & 0x03E0);
+					b = ((clight.b >> 11) & 0x001F);
+                }
+                else
+                {
+					r = (clight.r & 0xF800);
+					g = ((clight.g >> 5) & 0x07E0);
+					b = ((clight.b >> 11) & 0x001F);
+                }
+
+				prowdest[j] = r | g | b;
+
+                ColorSubtract(clightright, clightleft, clightstep);
+                ColorShift(clightstep, blockdivshift);
+                ColorAdd(clight, clightstep, clight);
+            }
+            
+            ColorAdd(clightleft, clightleftstep, clightleft);
+            ColorAdd(clightright, clightrightstep, clightright);
+            
+            prowdest += (surfrowbytes / 2);
+        }
+        
+        r_offset += sourcevstep;
+        if (r_offset >= r_stepback)
+            r_offset -= r_stepback;
+    }
 }
 
 
 void R_DrawSurfaceBlock16Fullbright3( void )
 {
-	// TODO: Implement
+	colorVec        clightleft, clightright, clightleftstep, clightrightstep;
+	colorVec        clight, clightstep;
+	int             v, i, j;
+	unsigned short* prowdest;
+	uint32          r, g, b;
+
+	prowdest = (unsigned short*)prowdestbase;
+
+	for (v = 0; v < r_numvblocks; v++)
+	{
+		ColorCopy(r_lightptr[0], clightleft);
+		ColorCopy(r_lightptr[1], clightright);
+
+		r_lightptr = (colorVec*)((byte*)r_lightptr + (r_lightwidth << 4));
+
+		ColorSubtract(r_lightptr[0], clightleft, clightleftstep);
+		ColorShift(clightleftstep, blockdivshift);
+		ColorSubtract(r_lightptr[1], clightright, clightrightstep);
+		ColorShift(clightrightstep, blockdivshift);
+
+		for (i = 0; i < blocksize; i++)
+		{
+			ColorSubtract(clightright, clightleft, clightstep);
+			ColorShift(clightstep, blockdivshift);
+			ColorCopy(clightleft, clight);
+
+			for (j = 0; j < blocksize; j++)
+			{
+				if (is15bit)
+				{
+					r = ((clight.r >> 1) & 0x7C00);
+					g = ((clight.g >> 6) & 0x03E0);
+					b = ((clight.b >> 11) & 0x001F);
+
+					prowdest[j] = r | g | b;
+
+					if (i == 0 || j == 0)
+					{
+						prowdest[j] =
+							((prowdest[j] & 0x7C00) + ((255 * (1 - (prowdest[j] & 0x7C00))) >> r_drawsurf.surfmip >> 8)) & 0x7C00 |
+							((prowdest[j] & 0x03E0) + ((255 * (1 - (prowdest[j] & 0x03E0))) >> r_drawsurf.surfmip >> 8)) & 0x03E0 |
+							(prowdest[j] & 0x001F);
+					}
+				}
+				else
+				{
+					r = (clight.r & 0xF800);
+					g = ((clight.g >> 5) & 0x07E0);
+					b = ((clight.b >> 11) & 0x001F);
+
+					prowdest[j] = r | g | b;
+
+					if (i == 0 || j == 0)
+					{
+						prowdest[j] =
+							((prowdest[j] & 0xF800) + ((255 * (1 - (prowdest[j] & 0xF800))) >> r_drawsurf.surfmip >> 8)) & 0xF800 |
+							((prowdest[j] & 0x07E0) + ((255 * (1 - (prowdest[j] & 0x07E0))) >> r_drawsurf.surfmip >> 8)) & 0x07E0 |
+							(prowdest[j] & 0x001F);
+					}
+				}
+
+				ColorAdd(clight, clightstep, clight);
+			}
+
+			ColorAdd(clightleft, clightleftstep, clightleft);
+			ColorAdd(clightright, clightrightstep, clightright);
+
+			prowdest += (surfrowbytes / 2);
+		}
+
+		r_offset += sourcevstep;
+		if (r_offset >= r_stepback)
+			r_offset -= r_stepback;
+	}
 }
 
 
-void R_DrawSurfaceBlock16Fullbright4( void )
+void R_DrawSurfaceBlock16Fullbright4( void ) 
 {
-	// TODO: Implement
+	colorVec        clightleft, clightright, clightleftstep, clightrightstep;
+	colorVec        clight, clightstep;
+	int             v, i, j;
+	unsigned short* prowdest;
+	uint32          r, g, b;
+
+	prowdest = (unsigned short*)prowdestbase;
+
+	for (v = 0; v < r_numvblocks; v++)
+	{
+		ColorCopy(r_lightptr[0], clightleft);
+		ColorCopy(r_lightptr[1], clightright);
+
+		r_lightptr = (colorVec*)((byte*)r_lightptr + (r_lightwidth << 4));
+
+		ColorSubtract(r_lightptr[0], clightleft, clightleftstep);
+		ColorShift(clightleftstep, blockdivshift);
+		ColorSubtract(r_lightptr[1], clightright, clightrightstep);
+		ColorShift(clightrightstep, blockdivshift);
+
+		for (i = 0; i < blocksize; i++)
+		{
+			ColorSubtract(clightright, clightleft, clightstep);
+			ColorShift(clightstep, blockdivshift);
+			ColorCopy(clightleft, clight);
+
+			for (j = 0; j < blocksize; j++)
+			{
+				r = r_lut[(clight.r & 0xFF00) + 255];
+				g = r_lut[(clight.g & 0xFF00) + 255];
+				b = r_lut[(clight.b & 0xFF00) + 255];
+
+				if (is15bit)
+				{
+					prowdest[j] = PACKEDRGB555(r, g, b);
+
+					if (i == 0 || j == 0)
+					{
+						prowdest[j] =
+							((prowdest[j] & 0x7C00) + ((255 * (1 - (prowdest[j] & 0x7C00))) >> r_drawsurf.surfmip >> 8)) & 0x7C00 |
+							((prowdest[j] & 0x03E0) + ((255 * (1 - (prowdest[j] & 0x03E0))) >> r_drawsurf.surfmip >> 8)) & 0x03E0 |
+							(prowdest[j] & 0x001F);
+					}
+				}
+				else
+				{
+					prowdest[j] = PACKEDRGB565(r, g, b);
+
+					if (i == 0 || j == 0)
+					{
+						prowdest[j] =
+							((prowdest[j] & 0xF800) + ((255 * (1 - (prowdest[j] & 0xF800))) >> r_drawsurf.surfmip >> 8)) & 0xF800 |
+							((prowdest[j] & 0x07E0) + ((255 * (1 - (prowdest[j] & 0x07E0))) >> r_drawsurf.surfmip >> 8)) & 0x07E0 |
+							(prowdest[j] & 0x001F);
+					}
+				}
+
+				ColorAdd(clight, clightstep, clight);
+			}
+
+			ColorAdd(clightleft, clightleftstep, clightleft);
+			ColorAdd(clightright, clightrightstep, clightright);
+
+			prowdest += (surfrowbytes / 2);
+		}
+
+		r_offset += sourcevstep;
+		if (r_offset >= r_stepback)
+			r_offset -= r_stepback;
+	}
 }
 
 
 void R_DrawSurfaceBlock16Fullbright5( void )
 {
-	// TODO: Implement
+	colorVec        clightleft, clightright, clightleftstep, clightrightstep;
+	colorVec        clight, clightstep;
+	colorVec        mipcolors[MIPLEVELS] = { { 255, 0, 0, 0 }, { 255, 255, 0, 0 }, { 0, 255, 0, 0 }, { 0, 255, 255, 0 } };
+	int             v, i, j;
+	unsigned short* prowdest;
+	uint32          r, g, b;
+
+	prowdest = (unsigned short*)prowdestbase;
+
+	for (v = 0; v < r_numvblocks; v++)
+	{
+		ColorCopy(r_lightptr[0], clightleft);
+		ColorCopy(r_lightptr[1], clightright);
+
+		r_lightptr = (colorVec*)((byte*)r_lightptr + (r_lightwidth << 4));
+
+		ColorSubtract(r_lightptr[0], clightleft, clightleftstep);
+		ColorShift(clightleftstep, blockdivshift);
+		ColorSubtract(r_lightptr[1], clightright, clightrightstep);
+		ColorShift(clightrightstep, blockdivshift);
+
+		for (i = 0; i < blocksize; i++)
+		{
+			ColorSubtract(clightright, clightleft, clightstep);
+			ColorShift(clightstep, blockdivshift);
+			ColorCopy(clightleft, clight);
+
+			for (j = 0; j < blocksize; j++)
+			{
+				r = r_lut[(clight.r & 0xFF00) + mipcolors[r_drawsurf.surfmip].r];
+				g = r_lut[(clight.g & 0xFF00) + mipcolors[r_drawsurf.surfmip].g];
+				b = r_lut[(clight.b & 0xFF00) + mipcolors[r_drawsurf.surfmip].b];
+
+				if (is15bit)
+				{
+					prowdest[j] = PACKEDRGB555(r, g, b);
+
+					if (i == 0 || j == 0)
+					{
+						prowdest[j] =
+							((prowdest[j] & 0xFC00) + ((255 * (1 - (prowdest[j] & 0x7C00))) >> r_drawsurf.surfmip >> 8)) & 0x7C00 |
+							((prowdest[j] & 0x03E0) + ((255 * (1 - (prowdest[j] & 0x03E0))) >> r_drawsurf.surfmip >> 8)) & 0x03E0 |
+							((prowdest[j] & 0x001F) + ((255 * (31 - (prowdest[j] & 0x001F))) >> r_drawsurf.surfmip >> 8)) & 0x001F;
+					}
+				}
+				else
+				{
+					prowdest[j] = PACKEDRGB565(r, g, b);
+
+					if (i == 0 || j == 0)
+					{
+						prowdest[j] =
+							((prowdest[j] & 0xF800) + ((255 * (1 - (prowdest[j] & 0xF800))) >> r_drawsurf.surfmip >> 8)) & 0xF800 |
+							((prowdest[j] & 0x07E0) + ((255 * (1 - (prowdest[j] & 0x07E0))) >> r_drawsurf.surfmip >> 8)) & 0x07E0 |
+							((prowdest[j] & 0x001F) + ((255 * (31 - (prowdest[j] & 0x001F))) >> r_drawsurf.surfmip >> 8)) & 0x001F;
+					}
+				}
+
+				ColorAdd(clight, clightstep, clight);
+			}
+
+			ColorAdd(clightleft, clightleftstep, clightleft);
+			ColorAdd(clightright, clightrightstep, clightright);
+
+			prowdest += (surfrowbytes / 2);
+		}
+
+		r_offset += sourcevstep;
+		if (r_offset >= r_stepback)
+			r_offset -= r_stepback;
+	}
 }
 
 // Initializes the lookup tables
