@@ -19,6 +19,9 @@ typedef struct
 
 // FIXME: clean up and move into d_iface.h
 
+#define	MAXVERTS	16					// max points in a surface polygon
+#define MAXWORKINGVERTS	(MAXVERTS+4)	// max points in an intermediate
+
 // !!! if this is changed, it must be changed in d_ifacea.h too !!!
 #define	MAXHEIGHT		1024
 #define	MAXWIDTH		1280

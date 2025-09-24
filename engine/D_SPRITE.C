@@ -15,3 +15,14 @@ void D_SpriteDrawSpans( sspan_t* pspan )
 {
 	// TODO: Implement
 }
+
+
+/*
+=====================
+D_DrawSprite
+=====================
+*/
+void D_DrawSprite( void )
+{
+	// TODO: Implement
+}
