@@ -16,6 +16,47 @@ void D_SpriteDrawSpans( sspan_t* pspan )
 	// TODO: Implement
 }
 
+/*
+=====================
+D_SpriteDrawSpansTrans
+=====================
+*/
+void D_SpriteDrawSpansTrans( sspan_t* pspan )
+{
+	// TODO: Implement
+}
+
+/*
+=====================
+D_SpriteDrawSpansAdd
+=====================
+*/
+void D_SpriteDrawSpansAdd( sspan_t* pspan )
+{
+	// TODO: Implement
+}
+
+/*
+=====================
+D_SpriteDrawSpansGlow
+=====================
+*/
+void D_SpriteDrawSpansGlow( sspan_t* pspan )
+{
+	// TODO: Implement
+}
+
+/*
+=====================
+D_SpriteDrawSpansAlpha
+=====================
+*/
+void D_SpriteDrawSpansAlpha( sspan_t* pspan )
+{
+	// TODO: Implement
+}
+
+// TODO: Implement
 
 /*
 =====================

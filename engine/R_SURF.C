@@ -683,9 +683,6 @@ void R_DrawSurfaceBlock16MMX( void )
     int             v;
     byte* texture;
 
-    if (!gHasMMXTechnology)
-        return;
-
     static unsigned long long mm_mul = 0x555555555555;          // 0.33333 in 16.16 fixed point
 
     static unsigned long long mm1_and1 = 0x0F800F800F800F8;     // mm1 reg 1-st pand
@@ -695,6 +692,9 @@ void R_DrawSurfaceBlock16MMX( void )
     static unsigned long long mm1_and3 = 0x2000000820000008;    // mm1 reg 3-rd pand
     static unsigned long long mm6_last = 0ull, mm7_last = 0ull; // mm6 prev & mm7 prev
     
+	if (!gHasMMXTechnology)
+		return;
+
 	__asm
 	{
         xor         eax, eax

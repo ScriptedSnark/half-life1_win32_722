@@ -6,6 +6,7 @@
 
 int     d_depth, d_fader, d_fadeg, d_fadeb, d_fadelevel;
 float   d_fadestart, d_fadetime;
+int     d_zidist;
 
 word* gWaterLastPalette = NULL;
 
