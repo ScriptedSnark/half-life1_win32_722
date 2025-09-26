@@ -147,7 +147,7 @@
     <ClCompile Include="..\..\engine\net_chan.c" />
     <ClCompile Include="..\..\engine\net_ws.c" />
     <ClCompile Include="..\..\engine\NONINTEL.C" />
-    <ClCompile Include="..\..\engine\pe_export.c" />
+    <ClCompile Include="..\..\engine\pe_win32.c" />
     <ClCompile Include="..\..\engine\physics.c" />
     <ClCompile Include="..\..\engine\pmove.c" />
     <ClCompile Include="..\..\engine\pmovetst.c" />

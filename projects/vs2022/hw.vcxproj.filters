@@ -39,9 +39,6 @@
     <ClCompile Include="..\..\engine\CONSOLE.C">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\engine\pe_export.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\engine\zone.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -235,6 +232,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\engine\physics.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\engine\pe_win32.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

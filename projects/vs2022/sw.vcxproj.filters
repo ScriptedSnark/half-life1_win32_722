@@ -296,9 +296,6 @@
     <ClCompile Include="..\..\engine\SCREEN.C">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\engine\pe_export.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\engine\cvar.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -528,6 +525,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\engine\R_ACLIP.C">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\engine\pe_win32.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

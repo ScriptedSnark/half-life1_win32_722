@@ -685,16 +685,16 @@ void R_DrawSurfaceBlock16MMX( void )
 
     static unsigned long long mm_mul = 0x555555555555;          // 0.33333 in 16.16 fixed point
 
-    static unsigned long long mm1_and1 = 0x0F800F800F800F8;     // mm1 reg 1-st pand
-    static unsigned long long mm3_and1 = 0x0FC000000FC00;       // mm3 reg 1-st pand 
-    static unsigned long long mm3_and2 = 0x0F8000000F800;       // mm3 reg 2-nd pand 
-    static unsigned long long mm1_and2 = 0x2000000420000004;    // mm1 reg 2-nd pand
-    static unsigned long long mm1_and3 = 0x2000000820000008;    // mm1 reg 3-rd pand
-    static unsigned long long mm6_last = 0ull, mm7_last = 0ull; // mm6 prev & mm7 prev
+	static unsigned long long mm1_and1 = 0x0F800F800F800F8;     // red and blue (low byte)
+	static unsigned long long mm3_and1 = 0x0FC000000FC00;       // green (high byte)
+	static unsigned long long mm3_and2 = 0x0F8000000F800;       // red and blue (high byte)
+	static unsigned long long mm1_and2 = 0x2000000420000004;    // mask to check for overflow (red and blue)
+	static unsigned long long mm1_and3 = 0x2000000820000008;    // mask to check for overflow (green)
+	static unsigned long long mm6_last = 0ull, mm7_last = 0ull;	// last light values (left/right)
     
 	if (!gHasMMXTechnology)
 		return;
-
+	
 	__asm
 	{
         xor         eax, eax
