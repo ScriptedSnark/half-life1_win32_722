@@ -235,17 +235,17 @@ void R_BuildLightMap( void )
 		if (blocklights[i].r > 0xFF00)
 			blocklights[i].r = 0xFF00;
 		else
-			blocklights[i].r = (lightgammatable[blocklights[i].r >> 6] & 1020) << 6;
+			blocklights[i].r = (lightgammatable[blocklights[i].r >> VID_CBITS] & (0xFF00 >> VID_CBITS)) << VID_CBITS;
 
 		if (blocklights[i].g > 0xFF00)
 			blocklights[i].g = 0xFF00;
 		else
-			blocklights[i].g = (lightgammatable[blocklights[i].g >> 6] & 1020) << 6;
+			blocklights[i].g = (lightgammatable[blocklights[i].g >> VID_CBITS] & (0xFF00 >> VID_CBITS)) << VID_CBITS;
 
 		if (blocklights[i].b > 0xFF00)
 			blocklights[i].b = 0xFF00;
 		else
-			blocklights[i].b = (lightgammatable[blocklights[i].b >> 6] & 1020) << 6;
+			blocklights[i].b = (lightgammatable[blocklights[i].b >> VID_CBITS] & (0xFF00 >> VID_CBITS)) << VID_CBITS;
 	}
 }
 

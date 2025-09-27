@@ -127,9 +127,9 @@ void tri_Soft_Color4f( float r, float g, float b, float a )
 
 void tri_Soft_Color4ub( byte r, byte g, byte b, byte a )
 {
-	r_icolormix.r = (r * 0xC0) & 0xFF00;
-	r_icolormix.g = (g * 0xC0) & 0xFF00;
-	r_icolormix.b = (b * 0xC0) & 0xFF00;
+	r_icolormix.r = (r * 192) & 0xFF00;
+	r_icolormix.g = (g * 192) & 0xFF00;
+	r_icolormix.b = (b * 192) & 0xFF00;
 
 	r_blend = a;
 }

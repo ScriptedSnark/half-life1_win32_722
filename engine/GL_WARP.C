@@ -481,7 +481,7 @@ void LoadTGA( FILE* fin, byte* buffer )
 
 	targa_rgba = buffer;
 
-	if (targa_header.id_length)
+	if (targa_header.id_length != 0)
 		fseek(fin, targa_header.id_length, SEEK_CUR);  // skip TARGA image comment
 
 	if (targa_header.image_type == 2)
@@ -494,26 +494,25 @@ void LoadTGA( FILE* fin, byte* buffer )
 				unsigned char red, green, blue, alphabyte;
 				switch (targa_header.pixel_size)
 				{
-					case 24:
-
-						blue = getc(fin);
-						green = getc(fin);
-						red = getc(fin);
-						*pixbuf++ = red;
-						*pixbuf++ = green;
-						*pixbuf++ = blue;
-						*pixbuf++ = 255;
-						break;
-					case 32:
-						blue = getc(fin);
-						green = getc(fin);
-						red = getc(fin);
-						alphabyte = getc(fin);
-						*pixbuf++ = red;
-						*pixbuf++ = green;
-						*pixbuf++ = blue;
-						*pixbuf++ = alphabyte;
-						break;
+				case 24:
+					blue = getc(fin);
+					green = getc(fin);
+					red = getc(fin);
+					*pixbuf++ = red;
+					*pixbuf++ = green;
+					*pixbuf++ = blue;
+					*pixbuf++ = 255;
+					break;
+				case 32:
+					blue = getc(fin);
+					green = getc(fin);
+					red = getc(fin);
+					alphabyte = getc(fin);
+					*pixbuf++ = red;
+					*pixbuf++ = green;
+					*pixbuf++ = blue;
+					*pixbuf++ = alphabyte;
+					break;
 				}
 			}
 		}
@@ -532,18 +531,18 @@ void LoadTGA( FILE* fin, byte* buffer )
 				{	// run-length packet
 					switch (targa_header.pixel_size)
 					{
-						case 24:
-							blue = getc(fin);
-							green = getc(fin);
-							red = getc(fin);
-							alphabyte = 255;
-							break;
-						case 32:
-							blue = getc(fin);
-							green = getc(fin);
-							red = getc(fin);
-							alphabyte = getc(fin);
-							break;
+					case 24:
+						blue = getc(fin);
+						green = getc(fin);
+						red = getc(fin);
+						alphabyte = 255;
+						break;
+					case 32:
+						blue = getc(fin);
+						green = getc(fin);
+						red = getc(fin);
+						alphabyte = getc(fin);
+						break;
 					}
 
 					for (j = 0; j < packetSize; j++)
@@ -570,25 +569,25 @@ void LoadTGA( FILE* fin, byte* buffer )
 					{
 						switch (targa_header.pixel_size)
 						{
-							case 24:
-								blue = getc(fin);
-								green = getc(fin);
-								red = getc(fin);
-								*pixbuf++ = red;
-								*pixbuf++ = green;
-								*pixbuf++ = blue;
-								*pixbuf++ = 255;
-								break;
-							case 32:
-								blue = getc(fin);
-								green = getc(fin);
-								red = getc(fin);
-								alphabyte = getc(fin);
-								*pixbuf++ = red;
-								*pixbuf++ = green;
-								*pixbuf++ = blue;
-								*pixbuf++ = alphabyte;
-								break;
+						case 24:
+							blue = getc(fin);
+							green = getc(fin);
+							red = getc(fin);
+							*pixbuf++ = red;
+							*pixbuf++ = green;
+							*pixbuf++ = blue;
+							*pixbuf++ = 255;
+							break;
+						case 32:
+							blue = getc(fin);
+							green = getc(fin);
+							red = getc(fin);
+							alphabyte = getc(fin);
+							*pixbuf++ = red;
+							*pixbuf++ = green;
+							*pixbuf++ = blue;
+							*pixbuf++ = alphabyte;
+							break;
 						}
 						column++;
 						if (column == columns)
@@ -915,20 +914,20 @@ void ClipSkyPolygon( int nump, vec_t* vecs, int stage )
 	{
 		switch (sides[i])
 		{
-			case SIDE_FRONT:
-				VectorCopy(v, newv[0][newc[0]]);
-				newc[0]++;
-				break;
-			case SIDE_BACK:
-				VectorCopy(v, newv[1][newc[1]]);
-				newc[1]++;
-				break;
-			case SIDE_ON:
-				VectorCopy(v, newv[0][newc[0]]);
-				newc[0]++;
-				VectorCopy(v, newv[1][newc[1]]);
-				newc[1]++;
-				break;
+		case SIDE_FRONT:
+			VectorCopy(v, newv[0][newc[0]]);
+			newc[0]++;
+			break;
+		case SIDE_BACK:
+			VectorCopy(v, newv[1][newc[1]]);
+			newc[1]++;
+			break;
+		case SIDE_ON:
+			VectorCopy(v, newv[0][newc[0]]);
+			newc[0]++;
+			VectorCopy(v, newv[1][newc[1]]);
+			newc[1]++;
+			break;
 		}
 
 		if (sides[i] == SIDE_ON || sides[i + 1] == SIDE_ON || sides[i + 1] == sides[i])

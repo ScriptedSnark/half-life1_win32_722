@@ -1014,7 +1014,7 @@ void Draw_FillRGBA( int x, int y, int width, int height, int r, int g, int b, in
 
 	pusdest = (unsigned short*)(vid.buffer + rcdest.top * vid.rowbytes + rcdest.left * 2);
 
-	a = (192 * (word)a) & 0xFF00;
+	a = ((word)a * 192) & 0xFF00;
 	s = red_64klut[r + a] | green_64klut[g + a] | blue_64klut[b + a];
 
 	if (is15bit)
