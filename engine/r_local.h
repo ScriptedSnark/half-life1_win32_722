@@ -163,7 +163,6 @@ qboolean R_AliasCheckBBox( void );
 void R_StudioVertBuffer( void );
 
 extern finalvert_t* pfinalverts;
-extern float		ziscale;
 extern float		zishift;
 
 extern auxvert_t* pauxverts;
@@ -211,6 +210,8 @@ extern  float	fv;
 
 extern	float		aliastransform[3][4];
 extern	float		aliasxscale, aliasyscale, aliasxcenter, aliasycenter;
+extern	float		r_aliastransition, r_resfudge;
+
 extern	int			r_ambientlight;
 extern	float		r_shadelight;
 

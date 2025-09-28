@@ -106,10 +106,12 @@ extern vec3_t	r_pright, r_pup, r_ppn;
 
 extern int		r_anumverts;
 
-void D_PolysetDraw( void );
+void D_Aff8Patch( void* pcolormap );
 extern void (*D_BeginDirectRect)( int x, int y, byte* pbitmap, int width, int height );
 extern void (*D_EndDirectRect)( int x, int y, int width, int height );
 void D_DisableBackBufferAccess( void );
+void D_PolysetDraw( void );
+void D_PolysetDrawFinalVerts( finalvert_t* fv, int numverts );
 void D_DrawParticle( particle_t* pparticle );
 void D_DrawPoly( void );
 void D_DrawSprite( void );

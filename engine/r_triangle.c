@@ -342,7 +342,7 @@ void tri_Soft_End( void )
 	r_anumverts = 0;
 }
 
-void R_TriangleSetTexture( byte* pTexture, short width, short height, word* pPalette )
+void R_TriangleSetTexture( byte* pTexture, short width, short height, unsigned short* pPalette )
 {
 	r_affinetridesc.pskindesc = NULL;
 	r_affinetridesc.pskin = (void*)pTexture;
@@ -363,7 +363,7 @@ int R_TriangleSpriteTexture( model_t* pSpriteModel, int frame )
 	if (!pSpriteFrame)
 		return FALSE;
 
-	R_TriangleSetTexture(pSpriteFrame->pixels, pSpriteFrame->width, pSpriteFrame->height, (word*)((byte*)pSprite + pSprite->paloffset));
+	R_TriangleSetTexture(pSpriteFrame->pixels, pSpriteFrame->width, pSpriteFrame->height, (unsigned short*)((byte*)pSprite + pSprite->paloffset));
 	return TRUE;
 }
 
@@ -391,6 +391,9 @@ void R_TriangleDraw( int i0, int i1, int i2 )
 	if (!(pfinalverts[i0].flags & pfinalverts[i1].flags & pfinalverts[i2].flags & (ALIAS_XY_CLIP_MASK | ALIAS_Z_CLIP)) &&
 		!((pfinalverts[i0].flags | pfinalverts[i1].flags | pfinalverts[i2].flags) & ALIAS_Z_CLIP))
 	{
+	//
+	// clip and draw all triangles
+	//
 		r_affinetridesc.numtriangles = 1;
 
 		tri.facesfront = 1;

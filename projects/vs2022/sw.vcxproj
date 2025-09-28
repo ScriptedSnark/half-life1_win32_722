@@ -198,6 +198,7 @@
     <MASM Include="..\..\engine\d_varsa.asm" />
     <MASM Include="..\..\engine\math.asm" />
     <MASM Include="..\..\engine\r_aclipa.asm" />
+    <MASM Include="..\..\engine\r_aliasa.asm" />
     <MASM Include="..\..\engine\r_drawa.asm" />
     <MASM Include="..\..\engine\r_edgea.asm" />
     <MASM Include="..\..\engine\r_varsa.asm" />

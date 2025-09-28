@@ -1433,7 +1433,6 @@ void Draw_SpriteFrameAdd15( byte* pSource, word* pPalette, word* pScreen, int wi
 				const unsigned int redblue = (0x7C00 | 0x001F);
 				const unsigned int green = (0x03E0);
 
-				// calculate RGB components
 				oldcolor = ((oldcolor & redblue) << 16) | (oldcolor & green);
 				oldcolor = ((newcolor & redblue) << 16) | (newcolor & green) + oldcolor;
 
@@ -1472,7 +1471,6 @@ void Draw_SpriteFrameAdd16( byte* pSource, word* pPalette, word* pScreen, int wi
 			oldcolor = pScreen[i];
 			newcolor = pPalette[pSource[i]];
 
-			// 16bit additive blending
 			if (newcolor != 0)
 			{
 				unsigned int prevcolor;
@@ -1483,7 +1481,6 @@ void Draw_SpriteFrameAdd16( byte* pSource, word* pPalette, word* pScreen, int wi
 				const unsigned int redblue = (0xF800 | 0x001F);
 				const unsigned int green = (0x07E0);
 
-				// calculate RGB components
 				prevcolor = ((oldcolor & redblue) << 16) | (oldcolor & green);
 				oldcolor = (((newcolor & redblue) << 16) | (newcolor & green)) + prevcolor;
 
@@ -1558,7 +1555,7 @@ void Draw_ConsoleBackground( int lines )
 			f += fstep;
 		}
 
-		pusdest = (unsigned short*)((byte*)pusdest + vid.conrowbytes);
+		pusdest += (vid.conrowbytes / 2);
 	}
 
 	sprintf(ver, "Half-Life 1.0 (build %d)", build_number());

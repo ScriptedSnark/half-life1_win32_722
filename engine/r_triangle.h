@@ -48,7 +48,7 @@ void tri_Soft_RenderMode( int mode );
 void tri_Soft_CullFace( int style );
 void tri_Soft_End( void );
 
-void R_TriangleSetTexture( byte* pTexture, short width, short height, word* pPalette );
+void R_TriangleSetTexture( byte* pTexture, short width, short height, unsigned short* pPalette );
 int R_TriangleSpriteTexture( model_t* pSpriteModel, int frame );
 
 #if defined( GLQUAKE )

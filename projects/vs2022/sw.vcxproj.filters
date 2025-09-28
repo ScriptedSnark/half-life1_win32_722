@@ -580,5 +580,8 @@
     <MASM Include="..\..\engine\r_aclipa.asm">
       <Filter>Source Files</Filter>
     </MASM>
+    <MASM Include="..\..\engine\r_aliasa.asm">
+      <Filter>Source Files</Filter>
+    </MASM>
   </ItemGroup>
 </Project>
