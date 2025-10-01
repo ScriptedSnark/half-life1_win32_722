@@ -14,8 +14,8 @@ int     d_zidist;
 short   gWaterPalette[MAX_WATER_PALETTE];
 word* gWaterLastPalette = NULL;
 
-#define MAX_FOG_ZSPANS 64
-colorVec d_fogtable[MAX_FOG_ZSPANS][64];
+#define MAX_FOG_LEVELS	64
+colorVec d_fogtable[MAX_FOG_LEVELS][64];
 
 struct
 {
@@ -24,9 +24,122 @@ struct
 	int tShift; // texture offset to adjust the positioning
 } gTilemap;
 
+/*
+=============
+D_BuildFogTable
+=============
+*/
 void D_BuildFogTable( qboolean blend )
 {
-	// TODO: Implement
+	int     i, level, fade, levelCount, minFog, startFog, blendFog;
+	float   time;
+	colorVec* color;
+
+	if (d_fadelevel == 0)
+		return;
+
+	// Calculate the fade time
+	if (d_fadetime > 0.0)
+		time = 1.0 - (cl.time - d_fadestart) / d_fadetime;
+	else
+		time = 1.0;
+
+	if (time < 0)
+		time = 0;
+
+	level = d_fadelevel * time;
+	if (level == 0)
+		d_fadelevel = 0;
+
+	if (d_depth)
+	{
+		levelCount = MAX_FOG_LEVELS;
+		startFog = ((d_depth >> 1) & 0xFF);
+		minFog = 32;
+		blendFog = (d_depth * (512 - startFog)) >> 8;
+	}
+	else
+	{
+		levelCount = 1;
+		startFog = level;
+		minFog = 0;
+		blendFog = 0;
+	}
+
+	fade = blendFog * 64;
+
+	// Build the fog table
+	color = d_fogtable[0];
+	while (levelCount--)
+	{
+		if (d_depth != 0)
+		{
+			level = startFog + (fade / 64);
+			if (level > 255)
+				level = 255;
+			else if (level < minFog)
+				level = minFog;
+		}
+
+		if (blend)
+		{
+			if (is15bit)
+			{
+				for (i = 0; i < 32; i++)
+				{
+					color[i].r = ((i * 8 + ((d_fader * level - i * 8 * level) >> 8)) >> 3) << 10;
+					color[i].g = ((i * 8 + ((d_fadeg * level - i * 8 * level) >> 8)) >> 3) << 5;
+					color[i].b = ((i * 8 + ((d_fadeb * level - i * 8 * level) >> 8)) >> 3);
+				}
+			}
+			else
+			{
+				for (i = 0; i < 32; i++)
+				{
+					color[i].r = ((i * 8 + ((d_fader * level - i * 8 * level) >> 8)) >> 3) << 11;
+					color[i].b = ((i * 8 + ((d_fadeb * level - i * 8 * level) >> 8)) >> 3);
+				}
+				for (i = 0; i < 64; i++)
+				{
+					color[i].g = ((i * 4 + ((d_fadeg * level - i * 4 * level) >> 8)) >> 2) << 5;
+				}
+			}
+		}
+		else
+		{
+			d_fader = ((d_fader - 255) * level + (255 * 255)) >> 8;
+			d_fadeg = ((d_fadeg - 255) * level + (255 * 255)) >> 8;
+			d_fadeb = ((d_fadeb - 255) * level + (255 * 255)) >> 8;
+
+			if (is15bit)
+			{
+				for (i = 0; i < 32; i++)
+				{
+					color[i].r = ((i * 8 * d_fader) >> 11) << 10;
+					color[i].g = ((i * 8 * d_fadeg) >> 11) << 5;
+					color[i].b = ((i * 8 * d_fadeb) >> 11);
+				}
+			}
+			else
+			{
+				for (i = 0; i < 32; i++)
+				{
+					color[i].r = ((i * 8 * d_fader) >> 11) << 11;
+					color[i].b = ((i * 8 * d_fadeb) >> 11);
+				}
+				for (i = 0; i < 64; i++)
+				{
+					color[i].g = ((i * 4 * d_fadeg) >> 10) << 5;
+				}
+			}
+		}
+
+		fade -= blendFog;
+		color += 64;
+	}
+
+	if (d_fadetime <= 0)
+		d_fadelevel = 0;
 }
 
 void D_SetFlash( void )
@@ -108,12 +221,147 @@ D_WarpScreen
 */
 void D_WarpScreen( void )
 {
-	// TODO: Implement
+	int		w, h;
+	unsigned int z;
+	int		u, v;
+	unsigned short* dest;
+	int* col;
+	unsigned short* zbuf;
+	colorVec* color;
+	float	wratio, hratio;
+	unsigned short pix;
+	unsigned short* row;
+	static unsigned short* rowptr[MAXHEIGHT];
+	static unsigned short* zrowptr[MAXHEIGHT];
+	static int column[MAXWIDTH];
+	static int cached_width = -1;
+	static int cached_height = -1;
+	static int cache = FALSE;
+	
+	w = r_refdef.vrect.width;
+	h = r_refdef.vrect.height;
+
+	wratio = w / (float)scr_vrect.width;
+	hratio = h / (float)scr_vrect.height;
+
+	// Check the cache
+	if (cached_width != scr_vrect.width || cached_height != scr_vrect.height)
+	{
+		if (cache)
+		{
+			cache = FALSE;
+			return;
+		}
+
+		cache = TRUE;
+		cached_width = scr_vrect.width;
+		cached_height = scr_vrect.height;
+
+		for (v = 0; v < scr_vrect.height; v++)
+		{
+			h = min(r_refdef.vrect.height - 1, v * hratio + 0.5);
+			rowptr[v] = (unsigned short*)(d_viewbuffer + (r_refdef.vrect.y + h) * WARP_WIDTH * 2);
+			zrowptr[v] = (unsigned short*)zspantable[r_refdef.vrect.y + h];
+		}
+
+		for (u = 0; u < scr_vrect.width; u++)
+		{
+			w = min(r_refdef.vrect.width - 1, u * wratio + 0.5);
+			column[u] = r_refdef.vrect.x + w;
+		}
+	}
+
+	dest = (unsigned short*)(vid.buffer + scr_vrect.y * vid.rowbytes + scr_vrect.x * 2);
+
+	if (d_depth)
+	{
+		if (is15bit)
+		{
+			for (v = 0; v < scr_vrect.height; v++, dest += (vid.rowbytes / 2))
+			{
+				row = rowptr[v];
+				zbuf = zrowptr[v];
+
+				for (u = 0; u < scr_vrect.width; u++)
+				{
+					z = zbuf[column[u]];
+					if (z > (MAX_FOG_LEVELS - 1))
+						z = (MAX_FOG_LEVELS - 1);
+
+					color = d_fogtable[z];
+					pix = row[column[u]];
+					dest[u] = color[RGB_RED555(pix)].r | color[RGB_GREEN555(pix)].g | color[RGB_BLUE555(pix)].b;
+				}
+			}
+		}
+		else
+		{
+			for (v = 0; v < scr_vrect.height; v++, dest += (vid.rowbytes / 2))
+			{
+				row = rowptr[v];
+				zbuf = zrowptr[v];
+
+				for (u = 0; u < scr_vrect.width; u++)
+				{
+					z = zbuf[column[u]];
+					if (z > (MAX_FOG_LEVELS - 1))
+						z = (MAX_FOG_LEVELS - 1);
+
+					color = d_fogtable[z];
+					pix = row[column[u]];
+					dest[u] = color[RGB_RED565(pix)].r | color[RGB_GREEN565(pix)].g | color[RGB_BLUE565(pix)].b;
+				}
+			}
+		}
+	}
+	else
+	{
+		if (is15bit)
+		{
+			for (v = 0; v < scr_vrect.height; v++, dest += (vid.rowbytes / 2))
+			{
+				col = column;
+				row = rowptr[v];
+				color = d_fogtable[0];
+
+				for (u = 0; u < scr_vrect.width; u += 4)
+				{
+					pix = row[col[u + 0]];
+					dest[u + 0] = color[RGB_RED555(pix)].r | color[RGB_GREEN555(pix)].g | color[RGB_BLUE555(pix)].b;
+					pix = row[col[u + 1]];
+					dest[u + 1] = color[RGB_RED555(pix)].r | color[RGB_GREEN555(pix)].g | color[RGB_BLUE555(pix)].b;
+					pix = row[col[u + 2]];
+					dest[u + 2] = color[RGB_RED555(pix)].r | color[RGB_GREEN555(pix)].g | color[RGB_BLUE555(pix)].b;
+					pix = row[col[u + 3]];
+					dest[u + 3] = color[RGB_RED555(pix)].r | color[RGB_GREEN555(pix)].g | color[RGB_BLUE555(pix)].b;
+				}
+			}
+		}
+		else
+		{
+			for (v = 0; v < scr_vrect.height; v++, dest += (vid.rowbytes / 2))
+			{
+				col = column;
+				row = rowptr[v];
+				color = d_fogtable[0];
+
+				for (u = 0; u < scr_vrect.width; u += 4)
+				{
+					pix = row[col[u + 0]];
+					dest[u + 0] = color[RGB_RED565(pix)].r | color[RGB_GREEN565(pix)].g | color[RGB_BLUE565(pix)].b;
+					pix = row[col[u + 1]];
+					dest[u + 1] = color[RGB_RED565(pix)].r | color[RGB_GREEN565(pix)].g | color[RGB_BLUE565(pix)].b;
+					pix = row[col[u + 2]];
+					dest[u + 2] = color[RGB_RED565(pix)].r | color[RGB_GREEN565(pix)].g | color[RGB_BLUE565(pix)].b;
+					pix = row[col[u + 3]];
+					dest[u + 3] = color[RGB_RED565(pix)].r | color[RGB_GREEN565(pix)].g | color[RGB_BLUE565(pix)].b;
+				}
+			}
+		}
+	}
 }
 
-//-----------------------------------------------------------------------------
-// Water texture
-//-----------------------------------------------------------------------------
+// Water texture code. This is a 128x128 texture that is dynamically updated.
 short watertex[CYCLE * CYCLE];
 short watertex2[CYCLE * CYCLE];
 short gWaterTextureBuffer[CYCLE * CYCLE];
