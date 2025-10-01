@@ -1870,8 +1870,8 @@ void Mod_LoadSpriteModel( model_t* mod, void* buffer )
 	psprite->paloffset = sizeof(msprite_t) + (numframes - 1) * sizeof(psprite->frames) + 2;
 
 	palsrc = (byte*)(pin + 1) + 2;
-	paldest = (word*)((byte*)(psprite + 1) + sizeof(psprite->frames) * (numframes - 1));
-	*paldest = palsize;
+	paldest = (unsigned short*)((byte*)(psprite + 1) + sizeof(psprite->frames) * (numframes - 1));
+	*(paldest++) = palsize;
 
 	for (i = 0; i < palsize; i++, paldest += 4, palsrc += 3)
 	{
