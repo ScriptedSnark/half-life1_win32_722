@@ -1,17 +1,3 @@
-/***
-*
-*	Copyright (c) 1999, Valve LLC. All rights reserved.
-*	
-*	This product contains software technology licensed from Id 
-*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
-*	All Rights Reserved.
-*
-*   This source code contains proprietary and confidential information of
-*   Valve LLC and its suppliers.  Access to this code is restricted to
-*   persons who have executed a written SDK license with Valve.  Any access,
-*   use or distribution of this code by or to any unlicensed person is illegal.
-*
-****/
 //=========================================================
 //=========================================================
 #include	"extdll.h"
@@ -111,8 +97,6 @@ LINK_ENTITY_TO_CLASS( monster_flyer_flock, CFlockingFlyerFlock );
 
 TYPEDESCRIPTION	CFlockingFlyer::m_SaveData[] = 
 {
-	DEFINE_FIELD( CFlockingFlyer, m_pSquadLeader, FIELD_CLASSPTR ),
-	DEFINE_FIELD( CFlockingFlyer, m_pSquadNext, FIELD_CLASSPTR ),
 	DEFINE_FIELD( CFlockingFlyer, m_fTurning, FIELD_BOOLEAN ),
 	DEFINE_FIELD( CFlockingFlyer, m_fCourseAdjust, FIELD_BOOLEAN ),
 	DEFINE_FIELD( CFlockingFlyer, m_fPathBlocked, FIELD_BOOLEAN ),
