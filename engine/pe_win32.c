@@ -1,4 +1,4 @@
-// pe_export.c
+// pe_win32.c
 
 #include "quakedef.h"
 #include "winquake.h"

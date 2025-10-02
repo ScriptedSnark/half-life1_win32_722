@@ -104,6 +104,7 @@ extern  byte* skintable[MAX_LBM_HEIGHT];
 
 extern vec3_t	r_pright, r_pup, r_ppn;
 
+extern	int		a_skinwidth;
 extern int		r_anumverts;
 
 void D_Aff8Patch( void* pcolormap );
