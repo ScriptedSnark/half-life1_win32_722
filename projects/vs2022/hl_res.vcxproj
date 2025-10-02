@@ -124,20 +124,7 @@
     <ResourceCompile Include="..\..\shell\hl_res\hl_res.rc" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\shell\hl_res\AfxRes.h" />
-    <ClInclude Include="..\..\shell\hl_res\common.hpp" />
-    <ClInclude Include="..\..\shell\hl_res\hooks.hpp" />
-    <ClInclude Include="..\..\shell\hl_res\linked_list.hpp" />
     <ClInclude Include="..\..\shell\hl_res\resource.h" />
-    <ClInclude Include="..\..\shell\hl_res\StdAfx.h" />
-    <ClInclude Include="..\..\shell\hl_res\targetver.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="..\..\shell\hl_res\dllmain.cpp" />
-    <ClCompile Include="..\..\shell\hl_res\hooks.cpp" />
-    <ClCompile Include="..\..\shell\hl_res\StdAfx.cpp">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
-    </ClCompile>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
