@@ -213,7 +213,11 @@ void R_InitSky( void );	// called at level load
 void R_LoadSkys( void );
 void R_DrawSkyChain( struct msurface_s* psurf );
 void R_ClearSkyBox( void );
+#if defined( GLQUAKE )
+void R_DrawSkyBox( void );
+#else
 void R_DrawSkyBox( int sortKey );
+#endif
 
 void R_AddEfrags( cl_entity_t* ent );
 void R_RemoveEfrags( cl_entity_t* ent );

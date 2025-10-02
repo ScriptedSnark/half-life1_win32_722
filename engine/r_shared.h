@@ -125,6 +125,8 @@ qboolean R_CullBox( vec_t* mins, vec_t* maxs );
 											//  must be kept in sync
 #define ALIAS_XY_CLIP_MASK			0x000F
 
+#define	ZISCALE	((float)0x8000)
+
 // !!! if this is changed, it must be changed in asm_draw.h too !!!
 typedef struct edge_s
 {

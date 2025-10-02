@@ -15,8 +15,6 @@
 // Pointer to header block for studio model data
 studiohdr_t* pstudiohdr;
 
-// TODO: Implement
-
 vec3_t			r_colormix;
 colorVec		r_icolormix;
 vec3_t			r_blightvec[MAXSTUDIOBONES];	// light vectors in bone reference frames
@@ -27,8 +25,6 @@ float			rotationmatrix[3][4];
 // Concatenated bone and light transforms
 float			bonetransform[MAXSTUDIOBONES][3][4];
 float			lighttransform[MAXSTUDIOBONES][3][4];
-
-// TODO: Implement
 
 // Vert data, position and lighting
 auxvert_t		auxverts[MAXSTUDIOVERTS];
@@ -81,26 +77,22 @@ hull_t			studio_hull[STUDIO_NUM_HULLS];
 dclipnode_t		studio_clipnodes[6];
 mplane_t		studio_planes[STUDIO_NUM_PLANES];
 
-// TODO: Implement
+void R_StudioTransformAuxVert( auxvert_t* av, int bone, vec_t* vert );
+#if !defined( GLQUAKE )
+void R_StudioProjectFinalVert( finalvert_t* fv, auxvert_t* av );
+void R_LightLambert( float(*light)[4], float* normal, int* src );
+#endif
+void R_StudioChrome( int* pchrome, int bone, vec_t* normal );
+void R_StudioSetupSkin( mstudiotexture_t* ptexture );
+void R_LightStrength( int bone, float* vert, float(*light)[4] );
+void R_StudioLighting( float* lv, int bone, int flags, vec_t* normal );
 
 extern	vec3_t	shadevector;
-
-// TODO: Implement
-
-
-
-
-
-
-
-// TODO: Implement
 
 // Pointers to current body part and submodel
 mstudiobodyparts_t* pbodypart;
 mstudiomodel_t* psubmodel;
 mstudiomesh_t* pmesh;
-
-// TODO: Implement
 
 // Chrome and light data
 
@@ -126,6 +118,8 @@ auxvert_t* pauxverts;
 // the studio model
 int				drawstyle;
 
+extern	vec3_t* pvlightvalues;
+
 #if defined( GLQUAKE )
 int				r_ambientlight;					// ambient world light
 float			r_shadelight;					// direct world light
@@ -137,12 +131,21 @@ int				r_smodels_total;				// cookie
 #if !defined( GLQUAKE )
 int				r_smodels_total;				// cookie
 
-// TODO: Implement
+typedef struct {
+	int	index0;
+	int index1;
+} aedge_t;
+
+static aedge_t	aedges[12] = {
+{0, 1}, {1, 2}, {2, 3}, {3, 0},
+{4, 5}, {5, 6}, {6, 7}, {7, 4},
+{0, 5}, {1, 4}, {2, 7}, {3, 6}
+};
+
+static float	ziscale;
 #endif
 
 void R_StudioTransformVector( vec_t* in, vec_t* out );
-void R_StudioLighting( float* lv, int bone, int flags, vec_t* normal );
-
 int SignbitsForPlane( mplane_t* out );
 
 #if defined( GLQUAKE )
@@ -228,7 +231,138 @@ Checks if entity's bbox is in the view frustum
 */
 qboolean R_StudioCheckBBox( void )
 {
-	// TODO: Implement
+	int					i, flags, numv;
+	float				zi, basepts[8][3], v0, v1, frac;
+	finalvert_t* pv0, * pv1, viewpts[16];
+	auxvert_t* pa0, * pa1, viewaux[16];
+	mstudioseqdesc_t* pseqdesc;
+	qboolean			zclipped, zfullyclipped;
+	unsigned			anyclip, allclip;
+	int					minz;
+
+// expand, rotate, and translate points into worldspace
+
+	currententity->trivial_accept = 0;
+
+	if (currententity->sequence >= pstudiohdr->numseq)
+		currententity->sequence = 0;
+
+	pseqdesc = (mstudioseqdesc_t*)((byte*)pstudiohdr + pstudiohdr->seqindex) + currententity->sequence;
+
+// x worldspace coordinates
+	basepts[0][0] = basepts[1][0] = basepts[2][0] = basepts[3][0] =
+		(float)(pseqdesc->bbmin[0] <= pstudiohdr->bbmin[0] ? pseqdesc->bbmin[0] : pstudiohdr->bbmin[0]);
+	basepts[4][0] = basepts[5][0] = basepts[6][0] = basepts[7][0] =
+		(float)(pseqdesc->bbmax[0] >= pstudiohdr->bbmax[0] ? pseqdesc->bbmax[0] : pstudiohdr->bbmax[0]);
+
+// y worldspace coordinates
+	basepts[0][1] = basepts[3][1] = basepts[5][1] = basepts[6][1] =
+		(float)(pseqdesc->bbmin[1] <= pstudiohdr->bbmin[1] ? pseqdesc->bbmin[1] : pstudiohdr->bbmin[1]);
+	basepts[1][1] = basepts[2][1] = basepts[4][1] = basepts[7][1] =
+		(float)(pseqdesc->bbmax[1] >= pstudiohdr->bbmax[1] ? pseqdesc->bbmax[1] : pstudiohdr->bbmax[1]);
+
+// z worldspace coordinates
+	basepts[0][2] = basepts[1][2] = basepts[4][2] = basepts[5][2] =
+		(float)(pseqdesc->bbmin[2] <= pstudiohdr->bbmin[2] ? pseqdesc->bbmin[2] : pstudiohdr->bbmin[2]);
+	basepts[2][2] = basepts[3][2] = basepts[6][2] = basepts[7][2] =
+		(float)(pseqdesc->bbmax[2] >= pstudiohdr->bbmax[2] ? pseqdesc->bbmax[2] : pstudiohdr->bbmax[2]);
+
+	zclipped = FALSE;
+	zfullyclipped = TRUE;
+
+	minz = 9999;
+	for (i = 0; i < 8; i++)
+	{
+		R_StudioTransformVector(&basepts[i][0], &viewaux[i].fv[0]);
+
+		if (viewaux[i].fv[2] < ALIAS_Z_CLIP_PLANE)
+		{
+		// we must clip points that are closer than the near clip plane
+			viewpts[i].flags = ALIAS_Z_CLIP;
+			zclipped = TRUE;
+		}
+		else
+		{
+			if (viewaux[i].fv[2] < minz)
+				minz = viewaux[i].fv[2];
+			viewpts[i].flags = 0;
+			zfullyclipped = FALSE;
+		}
+	}
+
+
+	if (zfullyclipped)
+	{
+		return FALSE;	// everything was near-z-clipped
+	}
+
+	numv = 8;
+
+	if (zclipped)
+	{
+	// organize points by edges, use edges to get new points (possible trivial
+	// reject)
+		for (i = 0; i < 12; i++)
+		{
+		// edge endpoints
+			pv0 = &viewpts[aedges[i].index0];
+			pv1 = &viewpts[aedges[i].index1];
+			pa0 = &viewaux[aedges[i].index0];
+			pa1 = &viewaux[aedges[i].index1];
+
+		// if one end is clipped and the other isn't, make a new point
+			if (pv0->flags ^ pv1->flags)
+			{
+				frac = (ALIAS_Z_CLIP_PLANE - pa0->fv[2]) /
+					(pa1->fv[2] - pa0->fv[2]);
+				viewaux[numv].fv[0] = pa0->fv[0] +
+					(pa1->fv[0] - pa0->fv[0]) * frac;
+				viewaux[numv].fv[1] = pa0->fv[1] +
+					(pa1->fv[1] - pa0->fv[1]) * frac;
+				viewaux[numv].fv[2] = ALIAS_Z_CLIP_PLANE;
+				viewpts[numv].flags = 0;
+				numv++;
+			}
+		}
+	}
+
+// project the vertices that remain after clipping
+	anyclip = 0;
+	allclip = ALIAS_XY_CLIP_MASK;
+
+// TODO: probably should do this loop in ASM, especially if we use floats
+	for (i = 0; i < numv; i++)
+	{
+	// we don't need to bother with vertices that were z-clipped
+		if (viewpts[i].flags & ALIAS_Z_CLIP)
+			continue;
+
+		zi = 1.0 / viewaux[i].fv[2];
+
+	// FIXME: do with chop mode in ASM, or convert to float
+		v0 = (viewaux[i].fv[0] * xscale * zi) + xcenter;
+		v1 = (viewaux[i].fv[1] * yscale * zi) + ycenter;
+
+		flags = 0;
+
+		if (v0 < r_refdef.fvrectx)
+			flags |= ALIAS_LEFT_CLIP;
+		if (v1 < r_refdef.fvrecty)
+			flags |= ALIAS_TOP_CLIP;
+		if (v0 > r_refdef.fvrectright)
+			flags |= ALIAS_RIGHT_CLIP;
+		if (v1 > r_refdef.fvrectbottom)
+			flags |= ALIAS_BOTTOM_CLIP;
+
+		anyclip |= flags;
+		allclip &= flags;
+	}
+
+	if (allclip)
+		return FALSE;	// trivial reject off one side
+
+	currententity->trivial_accept = 0;
+
 	return TRUE;
 }
 #endif
@@ -276,6 +410,224 @@ void R_StudioTransformVector( vec_t* in, vec_t* out )
 	out[0] = DotProduct(in, rotationmatrix[0]) + rotationmatrix[0][3];
 	out[1] = DotProduct(in, rotationmatrix[1]) + rotationmatrix[1][3];
 	out[2] = DotProduct(in, rotationmatrix[2]) + rotationmatrix[2][3];
+}
+
+#endif
+
+#if !defined( GLQUAKE )
+/*
+================
+R_StudioDrawPoints
+	General clipped case
+
+inputs:
+	pfinalverts	- points to buffer area.
+
+outputs:
+	returns the number of triangles rendered
+================
+*/
+void R_StudioDrawPoints( void )
+{
+	int					i, j;
+	byte* pvertbone;
+	byte* pnormbone;
+	vec3_t* pstudioverts;
+	vec3_t* pstudionorms;
+	mstudiotexture_t* ptexture;
+	finalvert_t* fv, * fv2 = NULL, * fv3 = NULL;
+	auxvert_t* av;
+	float* lv;
+	short* pskinref;
+
+	pvertbone = (byte*)pstudiohdr + psubmodel->vertinfoindex;
+	pnormbone = (byte*)pstudiohdr + psubmodel->norminfoindex;
+
+	ptexture = (mstudiotexture_t*)((byte*)pstudiohdr + pstudiohdr->textureindex);
+
+	pstudioverts = (vec3_t*)((byte*)pstudiohdr + psubmodel->vertindex);
+	pstudionorms = (vec3_t*)((byte*)pstudiohdr + psubmodel->normindex);
+
+	pmesh = (mstudiomesh_t*)((byte*)pstudiohdr + psubmodel->meshindex);
+
+	pskinref = (short*)((byte*)pstudiohdr + pstudiohdr->skinindex);
+	if (currententity->skin != 0 && currententity->skin < pstudiohdr->numskinfamilies)
+		pskinref += currententity->skin * pstudiohdr->numskinref;
+
+	fv = pfinalverts;
+	r_anumverts = psubmodel->numverts;
+	lv = (float*)pvlightvalues;
+
+	for (i = 0; i < r_anumverts; i++, fv++)
+	{
+		av = &pauxverts[i];
+		R_StudioTransformAuxVert(av, pvertbone[i], pstudioverts[i]);
+		fv->flags = 0;
+
+		if (av->fv[2] < ALIAS_Z_CLIP_PLANE)
+			fv->flags = ALIAS_Z_CLIP;
+		else
+		{
+			R_StudioProjectFinalVert(fv, av);
+
+			if (fv->v[0] < r_refdef.aliasvrect.x)
+				fv->flags |= ALIAS_LEFT_CLIP;
+			if (fv->v[1] < r_refdef.aliasvrect.y)
+				fv->flags |= ALIAS_TOP_CLIP;
+			if (fv->v[0] > r_refdef.aliasvrectright)
+				fv->flags |= ALIAS_RIGHT_CLIP;
+			if (fv->v[1] > r_refdef.aliasvrectbottom)
+				fv->flags |= ALIAS_BOTTOM_CLIP;
+		}
+	}
+
+	drawstyle = r_fullbright.value > 1.0;
+
+// draw all triangles
+
+	for (i = 0; i < psubmodel->nummesh; i++)
+	{
+		int flags = ptexture[pskinref[pmesh[i].skinref]].flags;
+
+		for (j = 0; j < pmesh[i].numnorms; j++, lv++, pstudionorms++, pnormbone++)
+		{
+			R_StudioLighting(lv, *pnormbone, flags, (float*)pstudionorms);
+
+			if (flags & STUDIO_NF_CHROME)
+				R_StudioChrome(chrome[((byte*)lv - (byte*)pvlightvalues) / 4], *pnormbone, (vec_t*)pstudionorms);
+		}
+	}
+
+	pvertbone = (byte*)pstudiohdr + psubmodel->vertinfoindex;
+	pstudioverts = (vec3_t*)((byte*)pstudiohdr + psubmodel->vertindex);
+
+	pstudionorms = (vec3_t*)((byte*)pstudiohdr + psubmodel->normindex);
+
+	for (i = 0; i < r_anumverts; i++)
+	{
+		R_LightStrength(pvertbone[i], pstudioverts[i], lightpos[i]);
+	}
+
+//
+// clip and draw all triangles
+//
+	r_affinetridesc.numtriangles = 1;
+
+	for (i = 0; i < psubmodel->nummesh; i++)
+	{
+		short* ptricmds;
+		int	k, l;
+
+		if (r_fullbright.value < 0 || r_fullbright.value >= 2)
+			drawstyle = 1;
+		else if ((ptexture[pskinref[pmesh->skinref]].flags & STUDIO_NF_CHROME))
+			drawstyle = 2;
+		else
+			drawstyle = 0;
+
+		R_StudioSetupSkin(&ptexture[pskinref[pmesh->skinref]]);
+
+		r_affinetridesc.drawtype = (currententity->trivial_accept == 3) &&
+			r_recursiveaffinetriangles;
+
+		if (r_affinetridesc.drawtype)
+		{
+			D_PolysetUpdateTables();		// FIXME: precalc...
+		}
+		else
+		{
+#if	id386
+			D_Aff8Patch(currententity->colormap);
+#endif
+		}
+
+		ptricmds = (short*)((byte*)pstudiohdr + pmesh->triindex);
+		while (j = *(ptricmds++))
+		{
+			mtriangle_t mtri;
+			mtri.facesfront = 1;
+
+			if (j < 0)
+			{
+				j = -j;
+				k = 0;
+			}
+			else
+			{
+				k = 1;
+			}
+
+			for (l = 0; l < j; l++, ptricmds += 4)
+			{
+				mtri.vertindex[2] = ptricmds[0];
+				fv = &pfinalverts[mtri.vertindex[2]];
+
+				if (drawstyle == 0)
+				{
+					fv->v[2] = ptricmds[2] << 16;
+					fv->v[3] = ptricmds[3] << 16;
+					fv->v[4] = (*pvlightvalues)[ptricmds[1]];
+					R_LightLambert(lightpos[ptricmds[0]], pstudionorms[ptricmds[1]], &fv->v[4]);
+				}
+				else if (drawstyle == 1)
+				{
+					fv->v[2] = 0;
+					fv->v[3] = 0;
+					fv->v[4] = (*pvlightvalues)[ptricmds[1]];
+					R_LightLambert(lightpos[ptricmds[0]], pstudionorms[ptricmds[1]], &fv->v[4]);
+				}
+				else if (drawstyle == 2)
+				{
+					fv->v[2] = chrome[ptricmds[1]][0];
+					fv->v[3] = chrome[ptricmds[1]][1];
+					fv->v[4] = (*pvlightvalues)[ptricmds[1]];
+					R_LightLambert(lightpos[ptricmds[0]], pstudionorms[ptricmds[1]], &fv->v[4]);
+				}
+
+				if (l >= 2)
+				{
+					if (!(fv3->flags & fv2->flags & fv->flags & (ALIAS_XY_CLIP_MASK | ALIAS_Z_CLIP)))
+					{
+						if (!((fv3->flags | fv2->flags | fv->flags) &
+							  (ALIAS_XY_CLIP_MASK | ALIAS_Z_CLIP)))
+						{	// totally unclipped
+							r_affinetridesc.pfinalverts = pfinalverts;
+							r_affinetridesc.ptriangles = &mtri;
+							D_PolysetDraw();
+						}
+						else
+						{	// partially clipped
+							R_AliasClipTriangle(&mtri);
+						}
+					}
+				}
+
+				if (k == 1)
+				{
+					if (!(l & 1))
+					{
+						fv2 = fv;
+						mtri.vertindex[0] = mtri.vertindex[2];
+					}
+					else
+					{
+						mtri.vertindex[1] = mtri.vertindex[2];
+						fv3 = fv;
+					}
+				}
+				else
+				{
+					if (!l)
+					{
+						fv2 = fv;
+						mtri.vertindex[0] = mtri.vertindex[2];
+					}
+					mtri.vertindex[1] = mtri.vertindex[2];
+					fv3 = fv;
+				}
+			}
+		}
+	}
 }
 #endif
 
@@ -373,7 +725,38 @@ void R_StudioSetUpTransform( int trivial_accept )
 	AngleMatrix(angles, rotationmatrix);
 
 #if !defined( GLQUAKE )
-	// TODO: Implement
+	{
+		static float viewmatrix[3][4];
+
+		VectorCopy(vright, viewmatrix[0]);
+		VectorCopy(vup, viewmatrix[1]);
+		VectorInverse(viewmatrix[1]);
+		VectorCopy(vpn, viewmatrix[2]);
+
+		rotationmatrix[0][3] = modelpos[0] - r_origin[0];
+		rotationmatrix[1][3] = modelpos[1] - r_origin[1];
+		rotationmatrix[2][3] = modelpos[2] - r_origin[2];
+
+		R_ConcatTransforms(viewmatrix, rotationmatrix, aliastransform);
+
+		// do the scaling up of x and y to screen coordinates as part of the transform
+		// for the unclipped case (it would mess up clipping in the clipped case).
+		// Also scale down z, so 1/z is scaled 31 bits for free, and scale down x and y
+		// correspondingly so the projected x and y come out right
+		// FIXME: make this work for clipped case too?
+		if (trivial_accept)
+		{
+			for (i = 0; i < 4; i++)
+			{
+				aliastransform[0][i] *= aliasxscale *
+					(1.0 / (ZISCALE * 0x10000));
+				aliastransform[1][i] *= aliasyscale *
+					(1.0 / (ZISCALE * 0x10000));
+				aliastransform[2][i] *= 1.0 / (ZISCALE * 0x10000);
+
+			}
+		}
+	}
 #endif
 
 	rotationmatrix[0][3] = modelpos[0];
@@ -1779,6 +2162,26 @@ void R_StudioTransformAuxVert( auxvert_t* av, int bone, vec_t* vert )
 		+ bonetransform[bone][2][3];
 }
 
+#if !defined( GLQUAKE )
+/*
+================
+R_StudioProjectFinalVert
+================
+*/
+void R_StudioProjectFinalVert( finalvert_t* fv, auxvert_t* av )
+{
+	float	zi;
+
+// project points
+	zi = 1.0 / av->fv[2];
+
+	fv->v[5] = zi * ziscale;
+
+	fv->v[0] = (av->fv[0] * aliasxscale * zi) + aliasxcenter;
+	fv->v[1] = (av->fv[1] * aliasyscale * zi) + aliasycenter;
+}
+#endif
+
 /*
 ====================
 R_StudioLighting
@@ -1885,7 +2288,50 @@ enhancement and is an example of a forgiving lighting model
 // Software Lambert lighting, use a mixed color
 void R_LightLambert( float(*light)[4], float* normal, int* lambert )
 {
-	// TODO: Implement
+	int		i;
+	int		adj;
+	float	c;
+
+	if (numlights == 0)
+		return;
+
+	adj = 0;
+
+	for (i = 0; i < numlights; i++)
+	{
+		float r2, r;
+
+		r = -DotProduct(normal, light[i]);
+		if (r > 0.0)
+		{
+			if (light[i][3] == 0.0)
+			{
+				r2 = DotProduct(light[i], light[i]);
+				if (r2 > 0.0)
+				{
+					light[i][3] = locallightR2[i] / (sqrt(r2) * r2);
+					if (light[i][3] > 2.0)
+						light[i][3] = 2.0;
+				}
+				else
+				{
+					light[i][3] = 1.0;
+				}
+			}
+
+			c = r * light[i][3];
+			adj = (int)((float)adj + (float)(c * 1024.0));
+		}
+	}
+
+	if (adj)
+	{
+		*lambert = adj + lineargammatable[*lambert >> 6];
+		if (*lambert > 1023)
+			*lambert = 0xFF80;
+		else
+			*lambert = screengammatable[*lambert] << 6;
+	}
 }
 #else
 // GL Lambert lighting
@@ -2007,6 +2453,38 @@ void R_StudioChrome( int* pchrome, int bone, vec_t* normal )
 #endif
 }
 
+#if !defined( GLQUAKE )
+/*
+====================
+R_StudioSetupSkin
+
+Loads in appropriate texture for model
+====================
+*/
+void R_StudioSetupSkin( mstudiotexture_t* ptexture )
+{
+	r_affinetridesc.pskindesc = 0;
+
+	a_skinwidth = ptexture->width;
+
+	r_affinetridesc.skinwidth = a_skinwidth;
+	r_affinetridesc.pskin = (byte*)pstudiohdr + ptexture->index;
+	r_affinetridesc.seamfixupX16 = (a_skinwidth >> 1) << 16;
+	r_affinetridesc.skinheight = ptexture->height;
+
+	r_palette = (word*)((byte*)pstudiohdr + ptexture->index + ptexture->width * ptexture->height);
+
+	if (drawstyle == 1)
+	{
+		static int white_texture[2] = { 0, 0 };
+		static word white_pal[4] = { 192, 192, 192, 0 };
+		r_affinetridesc.pskin = white_texture;
+		r_palette = white_pal;
+		return;
+	}
+}
+#endif
+
 /*
 ===========
 R_StudioSetupLighting
@@ -2032,7 +2510,7 @@ void R_StudioSetupLighting( alight_t* plighting )
 		VectorIRotate(r_plightvec, lighttransform[i], r_blightvec[i]);
 	}
 
-	// the colorVec acceps 0-FFFFF range of colors, scale it with 192 and 255 respectively (C0 and FF)
+	// the colorVec accepts 0-FFFFF range of colors, scale it with 192 and 255 respectively (C0 and FF)
 	r_icolormix.r = (int)(plighting->color[0] * 0xC0FF) & 0xFF00;
 	r_icolormix.g = (int)(plighting->color[1] * 0xC0FF) & 0xFF00;
 	r_icolormix.b = (int)(plighting->color[2] * 0xC0FF) & 0xFF00;
@@ -2078,8 +2556,10 @@ int R_StudioDrawModel( int flags )
 	alight_t lighting;
 	vec3_t dir;
 
+#if defined( GLQUAKE )
 	VectorCopy(currententity->origin, r_entorigin);
 	VectorSubtract(r_origin, r_entorigin, modelorg);
+#endif
 
 	pstudiohdr = (studiohdr_t*)Mod_Extradata(currententity->model);
 
@@ -2136,8 +2616,10 @@ int R_StudioDrawPlayer( int flags, player_state_t* pplayer )
 	alight_t lighting;
 	vec3_t dir;
 
+#if defined( GLQUAKE )
 	VectorCopy(currententity->origin, r_entorigin);
 	VectorSubtract(r_origin, r_entorigin, modelorg);
+#endif
 
 	pstudiohdr = (studiohdr_t*)Mod_Extradata(currententity->model);
 
@@ -2587,7 +3069,13 @@ R_StudioVertBuffer
 */
 void R_StudioVertBuffer( void )
 {
-	// TODO: Implement
+	// cache align
+	static finalvert_t finalverts[2048 + 1];
+	pfinalverts = (finalvert_t*)
+		(((long)&finalverts[0] + CACHE_SIZE - 1) & ~(CACHE_SIZE - 1));
+	pauxverts = &auxverts[0];
+
+	pvlightvalues = lightvalues;
 }
 
 int SignbitsForPlane( mplane_t* out )
@@ -2614,7 +3102,50 @@ Finilize studio model rendering
 */
 void R_StudioRenderFinal( void )
 {
-	// TODO: Implement
+	int i;
+
+	R_StudioVertBuffer();
+
+	if (currententity->sequence < 0 || currententity->sequence >= pstudiohdr->numseq)
+	{
+		Con_DPrintf("sequence %d out of range for model %s\n", currententity->sequence, pstudiohdr->name);
+		currententity->sequence = 0;
+	}
+
+	if (currententity != &cl.viewent)
+		ziscale = (float)0x8000 * (float)0x10000;
+	else
+		ziscale = (float)0x8000 * (float)0x10000 * 3.0;
+
+	r_affinetridesc.drawtype = 0;
+
+	if (r_drawentities.value == 2)
+	{
+		R_StudioDrawBones();
+	}
+	else if (r_drawentities.value == 3)
+	{
+		R_StudioDrawHulls();
+	}
+	else if (r_drawentities.value == 4)
+	{
+		tri_RenderMode(kRenderTransAdd);
+		R_StudioDrawHulls();
+		tri_RenderMode(kRenderNormal);
+	}
+	else
+	{
+		for (i = 0; i < pstudiohdr->numbodyparts; i++)
+		{
+			R_StudioSetupModel(i);
+			R_StudioDrawPoints();
+		}
+	}
+
+	if (r_drawentities.value == 5)
+	{
+		R_StudioAbsBB();
+	}
 }
 #endif
 
@@ -2662,9 +3193,9 @@ void R_StudioRenderFinal( void )
 	}
 	else if (r_drawentities.value == 4)
 	{
-		tri_GL_RenderMode(kRenderTransAdd);
+		tri_RenderMode(kRenderTransAdd);
 		R_StudioDrawHulls();
-		tri_GL_RenderMode(kRenderNormal);
+		tri_RenderMode(kRenderNormal);
 	}
 	else
 	{
@@ -2996,5 +3527,3 @@ void GLR_StudioDrawShadow( void )
 	}
 }
 #endif
-
-// TODO: Implement
