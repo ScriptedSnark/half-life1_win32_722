@@ -493,7 +493,7 @@ void CBaseDoor::DoorTouch( CBaseEntity *pOther )
 	// If door has master, and it's not ready to trigger, 
 	// play 'locked' sound
 
-	if (m_sMaster && !UTIL_IsMasterTriggered(m_sMaster, pOther))
+	if (m_sMaster && !UTIL_IsMasterTriggered(m_sMaster))
 		PlayLockSounds(pev, &m_ls, TRUE, FALSE);
 	
 	// If door is somebody's target, then touching does nothing.
@@ -529,7 +529,7 @@ void CBaseDoor::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE use
 //
 int CBaseDoor::DoorActivate( )
 {
-	if (!UTIL_IsMasterTriggered(m_sMaster, m_hActivator))
+	if (!UTIL_IsMasterTriggered(m_sMaster))
 		return 0;
 
 	if (FBitSet(pev->spawnflags, SF_DOOR_NO_AUTO_RETURN) && m_toggle_state == TS_AT_TOP)

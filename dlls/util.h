@@ -248,7 +248,7 @@ extern TraceResult	UTIL_GetGlobalTrace		(void);
 extern Vector		UTIL_GetAimVector		(edict_t* pent, float flSpeed);
 extern int			UTIL_PointContents		(Vector &vec);
 
-extern int			UTIL_IsMasterTriggered	(string_t sMaster, CBaseEntity *pActivator);
+extern int			UTIL_IsMasterTriggered	(string_t sMaster);
 extern void			UTIL_BloodStream( Vector &origin, Vector &direction, int color, int amount );
 extern void			UTIL_BloodDrips( Vector &origin, const Vector &direction, int color, int amount );
 extern Vector		UTIL_RandomBloodVector( void );

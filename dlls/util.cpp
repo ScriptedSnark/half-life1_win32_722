@@ -854,20 +854,20 @@ Vector UTIL_GetAimVector( edict_t *pent, float flSpeed )
 	return tmp;
 }
 
-int UTIL_IsMasterTriggered(string_t sMaster, CBaseEntity *pActivator)
+int UTIL_IsMasterTriggered(string_t sMaster)
 {
 	if (sMaster)
 	{
 		edict_t *pentTarget = FIND_ENTITY_BY_TARGETNAME(NULL, STRING(sMaster));
 	
-		if ( !FNullEnt(pentTarget) )
+		if ( !FNullEnt(pentTarget) && FClassnameIs(pentTarget, "multisource") )
 		{
 			CBaseEntity *pMaster = CBaseEntity::Instance(pentTarget);
 			if ( pMaster && (pMaster->ObjectCaps() & FCAP_MASTER) )
-				return pMaster->IsTriggered( pActivator );
+				return pMaster->IsTriggered();
 		}
 
-		ALERT(at_console, "Master was null or not a master!\n");
+		ALERT(at_console, "Master was null or not a MultiSource!\n");
 	}
 
 	// if this isn't a master entity, just say yes.

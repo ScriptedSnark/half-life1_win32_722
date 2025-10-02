@@ -1,17 +1,3 @@
-/***
-*
-*	Copyright (c) 1999, Valve LLC. All rights reserved.
-*	
-*	This product contains software technology licensed from Id 
-*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
-*	All Rights Reserved.
-*
-*   Use, distribution, and modification of this source code and/or resulting
-*   object code is restricted to non-commercial enhancements to products from
-*   Valve LLC.  All other use, distribution, or modification is prohibited
-*   without written permission from Valve LLC.
-*
-****/
 /*
 
 ===== subs.cpp ========================================================
@@ -56,37 +42,10 @@ void CNullEntity :: Spawn( void )
 }
 LINK_ENTITY_TO_CLASS(info_null,CNullEntity);
 
-class CBaseDMStart : public CPointEntity
-{
-public:
-	void		KeyValue( KeyValueData *pkvd );
-	BOOL		IsTriggered( CBaseEntity *pEntity );
-
-private:
-};
-
 // These are the new entry points to entities. 
-LINK_ENTITY_TO_CLASS(info_player_deathmatch,CBaseDMStart);
+LINK_ENTITY_TO_CLASS(info_player_deathmatch,CPointEntity);
 LINK_ENTITY_TO_CLASS(info_player_start,CPointEntity);
 LINK_ENTITY_TO_CLASS(info_landmark,CPointEntity);
-
-void CBaseDMStart::KeyValue( KeyValueData *pkvd )
-{
-	if (FStrEq(pkvd->szKeyName, "master"))
-	{
-		pev->netname = ALLOC_STRING(pkvd->szValue);
-		pkvd->fHandled = TRUE;
-	}
-	else
-		CPointEntity::KeyValue( pkvd );
-}
-
-BOOL CBaseDMStart::IsTriggered( CBaseEntity *pEntity )
-{
-	BOOL master = UTIL_IsMasterTriggered( pev->netname, pEntity );
-
-	return master;
-}
 
 // This updates global tables that need to know about entities being removed
 void CBaseEntity::UpdateOnRemove( void )
@@ -319,14 +278,8 @@ void SetMovedir( entvars_t *pev )
 
 void CBaseDelay::DelayThink( void )
 {
-	CBaseEntity *pActivator = NULL;
-
-	if ( pev->owner != NULL )		// A player activated this on delay
-	{
-		pActivator = CBaseEntity::Instance( pev->owner );	
-	}
 	// The use type is cached (and stashed) in pev->button
-	SUB_UseTargets( pActivator, (USE_TYPE)pev->button, 0 );
+	SUB_UseTargets(this, (USE_TYPE)pev->button, 0 );
 	REMOVE_ENTITY(ENT(pev));
 }
 
@@ -436,7 +389,7 @@ void CBaseToggle :: LinearMoveDone( void )
 
 BOOL CBaseToggle :: IsLockedByMaster( void )
 {
-	if (m_sMaster && !UTIL_IsMasterTriggered(m_sMaster, m_hActivator))
+	if (m_sMaster && !UTIL_IsMasterTriggered(m_sMaster))
 		return TRUE;
 	else
 		return FALSE;

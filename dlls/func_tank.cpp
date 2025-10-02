@@ -344,13 +344,6 @@ BOOL CFuncTank :: StartControl( CBasePlayer *pController )
 	if ( m_pController != NULL )
 		return FALSE;
 
-	// Team only or disabled?
-	if ( m_iszMaster )
-	{
-		if ( !UTIL_IsMasterTriggered( m_iszMaster, pController ) )
-			return FALSE;
-	}
-
 	ALERT( at_console, "using TANK!\n");
 
 	// Holster player's weapon
