@@ -978,54 +978,54 @@ LSkip2:
  pop esi
  pop ebp
  ret
- public _D_PolysetDrawFinalVerts
-_D_PolysetDrawFinalVerts:
- push ebp
- push ebx
- mov ecx,ds:dword ptr[8+8+esp]
- mov ebx,ds:dword ptr[4+8+esp]
- push esi
- push edi
-LFVLoop:
- mov eax,ds:dword ptr[0+0+ebx]
- mov edx,ds:dword ptr[_r_refdef+40]
- cmp eax,edx
- jge LNextVert
- mov esi,ds:dword ptr[0+4+ebx]
- mov edx,ds:dword ptr[_r_refdef+44]
- cmp esi,edx
- jge LNextVert
- mov edi,ds:dword ptr[_zspantable+esi*4]
- mov edx,ds:dword ptr[0+20+ebx]
- shr edx,16
- cmp dx,ds:word ptr[edi+eax*2]
- jl LNextVert
- mov ds:word ptr[edi+eax*2],dx
- mov edi,ds:dword ptr[0+12+ebx]
- shr edi,16
- mov edi,ds:dword ptr[_skintable+edi*4]
- mov edx,ds:dword ptr[0+8+ebx]
- shr edx,16
- mov dl,ds:byte ptr[edi+edx]
- mov edi,ds:dword ptr[0+16+ebx]
- and edi,0FF00h
- and edx,000FFh
- add edi,edx
- mov edx,ds:dword ptr[_acolormap]
- mov dl,ds:byte ptr[edx+edi*1]
- mov edi,ds:dword ptr[_d_scantable+esi*4]
- mov esi,ds:dword ptr[_d_viewbuffer]
- add edi,eax
- mov ds:byte ptr[esi+edi],dl
-LNextVert:
- add ebx,32
- dec ecx
- jnz LFVLoop
- pop edi
- pop esi
- pop ebx
- pop ebp
- ret
+; public _D_PolysetDrawFinalVerts
+;_D_PolysetDrawFinalVerts:
+; push ebp
+; push ebx
+; mov ecx,ds:dword ptr[8+8+esp]
+; mov ebx,ds:dword ptr[4+8+esp]
+; push esi
+; push edi
+;LFVLoop:
+; mov eax,ds:dword ptr[0+0+ebx]
+; mov edx,ds:dword ptr[_r_refdef+40]
+; cmp eax,edx
+; jge LNextVert
+; mov esi,ds:dword ptr[0+4+ebx]
+; mov edx,ds:dword ptr[_r_refdef+44]
+; cmp esi,edx
+; jge LNextVert
+; mov edi,ds:dword ptr[_zspantable+esi*4]
+; mov edx,ds:dword ptr[0+20+ebx]
+; shr edx,16
+; cmp dx,ds:word ptr[edi+eax*2]
+; jl LNextVert
+; mov ds:word ptr[edi+eax*2],dx
+; mov edi,ds:dword ptr[0+12+ebx]
+; shr edi,16
+; mov edi,ds:dword ptr[_skintable+edi*4]
+; mov edx,ds:dword ptr[0+8+ebx]
+; shr edx,16
+; mov dl,ds:byte ptr[edi+edx]
+; mov edi,ds:dword ptr[0+16+ebx]
+; and edi,0FF00h
+; and edx,000FFh
+; add edi,edx
+; mov edx,ds:dword ptr[_acolormap]
+; mov dl,ds:byte ptr[edx+edi*1]
+; mov edi,ds:dword ptr[_d_scantable+esi*4]
+; mov esi,ds:dword ptr[_d_viewbuffer]
+; add edi,eax
+; mov ds:byte ptr[esi+edi],dl
+;LNextVert:
+; add ebx,32
+; dec ecx
+; jnz LFVLoop
+; pop edi
+; pop esi
+; pop ebx
+; pop ebp
+; ret
  public _D_DrawNonSubdiv
 _D_DrawNonSubdiv:
  push ebp

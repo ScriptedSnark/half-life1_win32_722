@@ -31,10 +31,6 @@ typedef struct
 
 //===================================================================
 
-
-
-
-
 extern int	sintable[];
 extern int	intsintable[];
 
@@ -101,18 +97,13 @@ extern void TransformVector( vec_t* in, vec_t* out );
 // !!! if this is changed, it must be changed in asm_draw.h too !!!
 #define	NEAR_CLIP	0.01
 
-
-
-
+extern int	ubasestep, errorterm, erroradjustup, erroradjustdown;
 
 extern	int d_lightstylevalue[256]; // 8.8 frac of base light value
 
 extern int* pfrustum_indexes[4];
 
 qboolean R_CullBox( vec_t* mins, vec_t* maxs );
-
-
-
 
 // flags in finalvert_t.flags
 #define ALIAS_LEFT_CLIP				0x0001
