@@ -513,7 +513,7 @@ void R_StudioDrawPoints( void )
 //
 	r_affinetridesc.numtriangles = 1;
 
-	for (i = 0; i < psubmodel->nummesh; i++)
+	for (i = 0; i < psubmodel->nummesh; i++, pmesh++)
 	{
 		short* ptricmds;
 		int	k, l;
