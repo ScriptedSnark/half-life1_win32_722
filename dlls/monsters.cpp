@@ -2007,10 +2007,9 @@ void CBaseMonster::MoveExecute( CBaseEntity *pTargetEnt, const Vector &vecDir, f
 //=========================================================
 void CBaseMonster :: MonsterInit ( void )
 {
-	if (!g_pGameRules->FAllowMonsters())
+	if (gpGlobals->deathmatch)
 	{
-		pev->flags |= FL_KILLME;		// Post this because some monster code modifies class data after calling this function
-//		REMOVE_ENTITY(ENT(pev));
+		REMOVE_ENTITY(ENT(pev));
 		return;
 	}
 

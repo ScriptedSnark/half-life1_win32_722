@@ -78,13 +78,11 @@ public:
 	virtual void ClientConnected( edict_t *pEntity ) = 0;// a client just connected to the server (player hasn't spawned yet)
 	virtual void InitHUD( CBasePlayer *pl ) = 0;		// the client dll is ready for updating
 	virtual void ClientDisconnected( edict_t *pClient ) = 0;// a client just disconnected from the server
-	virtual void UpdateGameMode( CBasePlayer *pPlayer ) {}  // the client needs to be informed of the current game mode
-
+	
 // Client damage rules
 	virtual float FlPlayerFallDamage( CBasePlayer *pPlayer ) = 0;// this client just hit the ground after a fall. How much damage?
 	virtual BOOL  FPlayerCanTakeDamage( CBasePlayer *pPlayer, CBaseEntity *pAttacker ) {return TRUE;};// can this player take damage from this attacker?
-	virtual BOOL ShouldAutoAim( CBasePlayer *pPlayer, edict_t *target ) { return TRUE; }
-
+	
 // Client spawn/respawn control
 	virtual void PlayerSpawn( CBasePlayer *pPlayer ) = 0;// called by CBasePlayer::Spawn just before releasing player into the game
 	virtual void PlayerThink( CBasePlayer *pPlayer ) = 0; // called by CBasePlayer::PreThink every frame, before physics are run and after keys are accepted
@@ -142,18 +140,10 @@ public:
 // Teamplay stuff
 	virtual const char *GetTeamID( CBaseEntity *pEntity ) = 0;// what team is this entity on?
 	virtual int PlayerRelationship( CBaseEntity *pPlayer, CBaseEntity *pTarget ) = 0;// What is the player's relationship with this entity?
-	virtual int GetTeamIndex( const char *pTeamName ) { return -1; }
-	virtual const char *GetIndexedTeamName( int teamIndex ) { return ""; }
-	virtual BOOL IsValidTeam( const char *pTeamName ) { return TRUE; }
-	virtual void ChangePlayerTeam( CBasePlayer *pPlayer, const char *pTeamName, BOOL bKill, BOOL bGib ) {}
-	virtual const char *SetDefaultPlayerTeam( CBasePlayer *pPlayer ) { return ""; }
-
+	
 // Sounds
 	virtual BOOL PlayTextureSounds( void ) { return TRUE; }
 	virtual BOOL PlayFootstepSounds( CBasePlayer *pl, float fvol ) { return TRUE; }
-
-// Monsters
-	virtual BOOL FAllowMonsters( void ) = 0;//are monsters allowed
 
 	// Immediately end a multiplayer game
 	virtual void EndMultiplayerGame( void ) {}
@@ -237,9 +227,6 @@ public:
 
 // What happens to a dead player's ammo	
 	virtual int DeadPlayerAmmo( CBasePlayer *pPlayer );
-
-// Monsters
-	virtual BOOL FAllowMonsters( void );
 
 // Teamplay stuff	
 	virtual const char *GetTeamID( CBaseEntity *pEntity ) {return "";};
