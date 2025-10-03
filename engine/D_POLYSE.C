@@ -833,7 +833,7 @@ void D_PolysetDrawSpansTransAdd(spanpackage_t* pspanpackage)
 						oldcolor = ((oldcolor & redblue) << 16) | (oldcolor & green);
 						newcolor = ((newcolor & redblue) << 16) | (newcolor & green);
 
-						blendbits = r_blend & ~15;
+						blendbits = r_blend & 240;
 						if (blendbits < 240)
 						{
 							deltacolor = newcolor >> 1;
@@ -893,7 +893,7 @@ void D_PolysetDrawSpansTransAdd(spanpackage_t* pspanpackage)
 						prevcolor = oldcolor;
 						newcolor = ((newcolor & redblue) << 16) | (newcolor & green);
 
-						blendbits = r_blend & ~15;
+						blendbits = r_blend & 240;
 						if (blendbits < 240)
 						{
 							deltacolor = newcolor >> 1;

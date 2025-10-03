@@ -1080,7 +1080,7 @@ void SV_CheckWaterTransition( edict_t* ent )
 
 	if (cont <= CONTENTS_WATER && cont > CONTENTS_TRANSLUCENT)
 	{
-		if (watertype == -1)
+		if (ent->v.watertype == -1)
 		{	// just crossed into water
 			SV_StartSound(ent, CHAN_AUTO, "player/pl_wade1.wav", 255, 1.0, 0, PITCH_NORM);
 			ent->v.velocity[2] *= 0.5;
