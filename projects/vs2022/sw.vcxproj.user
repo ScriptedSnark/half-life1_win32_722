@@ -13,5 +13,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LocalDebuggerWorkingDirectory>E:\Half-Life NetTest1</LocalDebuggerWorkingDirectory>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+    <LocalDebuggerCommandArguments>-dev -console</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommand>E:\Half-Life NetTest1\hl.exe</LocalDebuggerCommand>
   </PropertyGroup>
 </Project>

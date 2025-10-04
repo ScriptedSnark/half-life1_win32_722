@@ -43,7 +43,7 @@ int			in_cancel;
 KeyDown
 ============
 */
-void KeyDown( kbutton_t *b )
+void KeyDown( kbutton_t* b )
 {
 	int		k;
 	char* c;
@@ -77,7 +77,7 @@ void KeyDown( kbutton_t *b )
 KeyUp
 ============
 */
-void KeyUp( kbutton_t *b )
+void KeyUp( kbutton_t* b )
 {
 	int		k;
 	char* c;
@@ -627,7 +627,7 @@ typedef struct
 	float* start, * end;
 	trace_t		trace;
 	int			type;
-	edict_t		*passedict;
+	edict_t* passedict;
 	qboolean	monsterclip;
 } moveclip_t;
 

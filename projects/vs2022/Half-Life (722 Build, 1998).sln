@@ -21,6 +21,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sw", "sw.vcxproj", "{E5F149
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "a3dwrapper", "a3dwrapper.vcxproj", "{8BDE2D51-1B16-40C6-8E63-9D920A79F287}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "verifya3d", "verifya3d.vcxproj", "{F83C38D5-6DBF-4359-91A0-19EC7A19EDAB}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug - Address Sanitizer|Win32 = Debug - Address Sanitizer|Win32
@@ -64,6 +66,12 @@ Global
 		{8BDE2D51-1B16-40C6-8E63-9D920A79F287}.Debug|Win32.Build.0 = Debug|Win32
 		{8BDE2D51-1B16-40C6-8E63-9D920A79F287}.Release|Win32.ActiveCfg = Release|Win32
 		{8BDE2D51-1B16-40C6-8E63-9D920A79F287}.Release|Win32.Build.0 = Release|Win32
+		{F83C38D5-6DBF-4359-91A0-19EC7A19EDAB}.Debug - Address Sanitizer|Win32.ActiveCfg = Debug|Win32
+		{F83C38D5-6DBF-4359-91A0-19EC7A19EDAB}.Debug - Address Sanitizer|Win32.Build.0 = Debug|Win32
+		{F83C38D5-6DBF-4359-91A0-19EC7A19EDAB}.Debug|Win32.ActiveCfg = Debug|Win32
+		{F83C38D5-6DBF-4359-91A0-19EC7A19EDAB}.Debug|Win32.Build.0 = Debug|Win32
+		{F83C38D5-6DBF-4359-91A0-19EC7A19EDAB}.Release|Win32.ActiveCfg = Release|Win32
+		{F83C38D5-6DBF-4359-91A0-19EC7A19EDAB}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

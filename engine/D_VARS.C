@@ -1,8 +1,8 @@
 // r_vars.c: global refresh variables
 
-#if	!id386
-
 #include	"quakedef.h"
+
+#if	!id386
 
 // all global and static refresh variables are collected in a contiguous block
 // to avoid cache conflicts.
