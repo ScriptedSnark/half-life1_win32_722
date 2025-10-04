@@ -1,17 +1,3 @@
-/***
-*
-*	Copyright (c) 1999, Valve LLC. All rights reserved.
-*	
-*	This product contains software technology licensed from Id 
-*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
-*	All Rights Reserved.
-*
-*   Use, distribution, and modification of this source code and/or resulting
-*   object code is restricted to non-commercial enhancements to products from
-*   Valve LLC.  All other use, distribution, or modification is prohibited
-*   without written permission from Valve LLC.
-*
-****/
 #include "extdll.h"
 #include "util.h"
 #include "cbase.h"
@@ -303,8 +289,6 @@ void CXenTree :: Spawn( void )
 	UTIL_SetSize( pev, Vector(-30,-30,0), Vector(30,30,188));
 	SetActivity( ACT_IDLE );
 	pev->nextthink = gpGlobals->time + 0.1;
-	pev->frame = RANDOM_FLOAT(0,255);
-	pev->framerate = RANDOM_FLOAT( 0.7, 1.4 );
 
 	Vector triggerPosition;
 	UTIL_MakeVectorsPrivate( pev->angles, triggerPosition, NULL, NULL );
@@ -406,7 +390,6 @@ void CXenTree :: Think( void )
 		if ( m_fSequenceFinished )
 		{
 			SetActivity( ACT_IDLE );
-			pev->framerate = RANDOM_FLOAT( 0.6, 1.4 );
 		}
 		break;
 
@@ -432,7 +415,7 @@ public:
 	void		Precache( void );
 	void		Touch( CBaseEntity *pOther );
 	void		Think( void );
-	int			TakeDamage( entvars_t *pevInflictor, entvars_t *pevAttacker, float flDamage, int bitsDamageType ) { Attack(); return 0; }
+	int			TakeDamage( entvars_t *pevInflictor, entvars_t *pevAttacker, float flDamage, int bitsDamageType ) { return 0; }
 //	void		HandleAnimEvent( MonsterEvent_t *pEvent );
 	void		Attack( void ) {}
 
