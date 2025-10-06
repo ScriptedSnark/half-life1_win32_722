@@ -246,6 +246,7 @@ void UpdateStats(CBasePlayer *pPlayer)
 	int iAmmo[MAX_AMMO_SLOTS];
 	TESTSTATS II;
 	BOOL fLastTimeDead = FALSE;
+	int i;
 
 	memcpy(iAmmo, pPlayer->m_rgAmmo, sizeof(iAmmo));
 
@@ -258,7 +259,7 @@ void UpdateStats(CBasePlayer *pPlayer)
 	gStats.gameTime = (gpGlobals->time - gStats.lastGameTime) + gStats.gameTime;
 	gStats.lastGameTime = gpGlobals->time;
 
-	for ( int i = 0; i < MAX_ITEM_TYPES; i++ )
+	for ( i = 0; i < MAX_ITEM_TYPES; i++ )
 	{
 		ItemInfo II;
 		int iAmmoIndex;
@@ -274,7 +275,7 @@ void UpdateStats(CBasePlayer *pPlayer)
 			iAmmo[iAmmoIndex] += II.iAmmo1; // UNUSED?
 	}
 
-	for ( int i = 0; i < MAX_AMMO_SLOTS; i++ )
+	for ( i = 0; i < MAX_AMMO_SLOTS; i++ )
 	{
 		if ( !CBasePlayerItem::AmmoInfoArray[i].pszName )
 			continue;
@@ -1242,7 +1243,7 @@ void CBasePlayer::WaterMove()
 //
 void CBasePlayer::CheckWaterJump( )
 {
-	if ( m_hEnemy )  // Don't water jump if on a ladders?  (This prevents the bug where 
+	if ( m_hEnemy != NULL )  // Don't water jump if on a ladders?  (This prevents the bug where 
 		return;              //  you bounce off water when you are facing it on a ladder).
 
 	Vector vecStart = pev->origin;
@@ -2120,7 +2121,7 @@ void CBasePlayer::PreThink(void)
 	if (pev->button & IN_JUMP)
 	{
 		// If on a ladder, jump off the ladder
-		if (m_hEnemy)
+		if (m_hEnemy != NULL)
 		{
 			CBaseEntity* pLadder = m_hEnemy;
 
@@ -2147,7 +2148,7 @@ void CBasePlayer::PreThink(void)
 	UpdateStepSound();
 
 
-	if ( m_hEnemy ) // we're on ladder
+	if ( m_hEnemy != NULL ) // we're on ladder
 	{
 		qboolean fAbleToClimb = TRUE; // wrong
 

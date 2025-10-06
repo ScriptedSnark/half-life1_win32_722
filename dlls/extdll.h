@@ -32,6 +32,9 @@
 #pragma warning(disable : 4514)		// unreferenced inline function removed
 #pragma warning(disable : 4100)		// unreferenced formal parameter
 
+// ScriptedSnark: silence, mr. Vector
+#pragma warning(disable : 4270)
+
 // Prevent tons of unused windows definitions
 #define WIN32_LEAN_AND_MEAN
 #define NOWINRES
@@ -41,6 +44,13 @@
 #include "WINDOWS.H"
 
 #include "platform.h"
+
+// ScriptedSnark: MSVC++ 4.2 doesn't seem to have ARRAYSIZE
+// but we already have it defined in some engine headers
+// so let's use this
+#if (_MSC_VER == 1020)
+#define ARRAYSIZE Q_ARRAYSIZE
+#endif
 
 // Misc C-runtime library headers
 #include "STDIO.H"

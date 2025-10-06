@@ -416,3 +416,5 @@ FodyWeavers.xsd
 /engine/a3d/a3dwrapper.lib
 /engine/a3d/verifya3d.idb
 /engine/a3d/verifya3d.lib
+/dlls/Debughl
+/dlls/Releasehl
