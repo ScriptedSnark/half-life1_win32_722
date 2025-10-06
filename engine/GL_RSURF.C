@@ -2594,7 +2594,12 @@ void R_DrawDecals( void )
 
 		if (!gl_ztrick.value || gldepthmin < 0.5)
 		{
+			// KVS: The infamous WON-era decal flickering bug...
+#if defined( HLNT1_FIXES )
+			qglPolygonOffset(-1.0, -gl_polyoffset.value);
+#else
 			qglPolygonOffset(1.0, -gl_polyoffset.value);
+#endif
 		}
 		else
 		{
@@ -2684,7 +2689,12 @@ void R_DrawMTexDecals( void )
 
 		if (!gl_ztrick.value || gldepthmin < 0.5)
 		{
+			// KVS: The infamous WON-era decal flickering bug...
+#if defined( HLNT1_FIXES )
+			qglPolygonOffset(-1.0, -gl_polyoffset.value);
+#else
 			qglPolygonOffset(1.0, -gl_polyoffset.value);
+#endif
 		}
 		else
 		{

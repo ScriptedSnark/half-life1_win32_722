@@ -86,9 +86,6 @@ extern	mplane_t	screenedge[4];
 
 extern	vec3_t	r_entorigin;
 
-// TODO: Implement
-
-
 extern	int		r_visframecount;
 
 //=============================================================================
@@ -133,8 +130,6 @@ extern void R_RotateBmodel( void );
 extern int	c_faceclip;
 extern int	r_polycount;
 extern int	r_wholepolycount;
-
-// TODO: Implement
 
 extern int		r_currentkey;
 extern int		r_currentbkey;

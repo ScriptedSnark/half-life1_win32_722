@@ -4,10 +4,6 @@
 #define RENDER_H
 #pragma once
 
-
-// TODO: Implement
-
-
 //=============================================================================
 
 typedef struct efrag_s
@@ -34,11 +30,7 @@ typedef struct cl_entity_s
 
 	struct player_info_s* scoreboard;
 
-	// TODO: Implement
-
-	qboolean		resetlatched; //FF: maybe "nointerp"?
-
-	// TODO: Implement
+	qboolean		resetlatched;
 
 	entity_state_t	baseline;		// to fill in defaults in updates
 
@@ -58,12 +50,10 @@ typedef struct cl_entity_s
 
 	float			syncbase;
 
-	byte*			colormap;
+	byte* colormap;
 	int				effects;
 	int				skin;
 	int				visframe;
-
-	// TODO: Implement
 
 	int				trivial_accept;
 
@@ -96,9 +86,6 @@ typedef struct cl_entity_s
 	vec3_t			attachment[4];
 
 	mouth_t			mouth;			// For synchronizing mouth movements.
-
-	// TODO: Implement
-
 } cl_entity_t;
 
 typedef struct tempent_s
@@ -112,8 +99,6 @@ typedef struct tempent_s
 	float		fadeSpeed;
 	int			hitSound;
 	struct tempent_s* next;
-	//FF: there must be another field (4 bytes)
-	// TODO: Implement
 	cl_entity_t	entity;
 } TEMPENTITY;
 
@@ -147,9 +132,6 @@ typedef struct particle_s
 
 //====================================================
 
-// TODO: Implement
-
-
 typedef struct
 {
 	vrect_t		vrect;								// subwindow in video for refresh
@@ -180,8 +162,6 @@ typedef struct
 
 	color24		ambientlight;
 } refdef_t;
-
-// TODO: Implement
 
 extern	refdef_t	r_refdef;
 
@@ -222,10 +202,8 @@ void R_DrawSkyBox( int sortKey );
 void R_AddEfrags( cl_entity_t* ent );
 void R_RemoveEfrags( cl_entity_t* ent );
 
-void R_NewMap( void );
-
-
 // R_PART.C
+void R_NewMap( void );
 
 extern struct model_s* cl_sprite_dot;
 extern struct model_s* cl_sprite_lightning;
@@ -303,8 +281,5 @@ void D_InitCaches( void );
 void R_SetVrect( vrect_t* pvrect, vrect_t* pvrectin, int lineadj );
 
 void R_SetStackBase( void );
-
-// TODO: Implement
-
 
 #endif // RENDER_H

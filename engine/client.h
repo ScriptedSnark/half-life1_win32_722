@@ -4,9 +4,6 @@
 #include "cdll_int.h"
 #include "cshift.h"
 
-// TODO: Implement
-
-
 typedef struct
 {
 	int		length;
@@ -114,10 +111,6 @@ typedef struct
 {
 // connection information
 	cactive_t	state;
-
-
-	// TODO: Implement
-
 
 // network stuff
 	netchan_t	netchan;
@@ -329,10 +322,7 @@ typedef struct
 	int			stats[MAX_CL_STATS];	// health, etc
 	int			weapons;
 
-
-	// TODO: Implement
-
-	float frame_lerp; //FF: there probably was a structure similar to cmd_t but there are no xrefs so far to any of its other fields except frame_lerp, so TODO this later
+	float		frame_lerp;
 
 	// the client maintains its own idea of view angles, which are
 	// sent to the server each frame.  The server sets punchangle when
@@ -384,9 +374,6 @@ typedef struct
 	// Old Client clock
 	double		oldtime;
 
-
-	// TODO: Implement
-
 	frame_t		frames[UPDATE_BACKUP];
 
 	//
@@ -415,14 +402,6 @@ typedef struct
 	int			num_entities;	// held in cl_entities array
 	int			num_statics;	// held in cl_staticentities array
 
-	//FF: alignment of client_state_t is 8 (because it uses doubles)
-	//FF: but QW has the "cdtrack" field BEFORE viewent: https://github.com/id-Software/Quake/blob/bf4ac424ce754894ac8f1dae6a3981954bc9852d/QW/client/client.h#L285
-	//FF: meanwhile WinQuake has the "cdtrack" field AFTER viewent: https://github.com/id-Software/Quake/blob/bf4ac424ce754894ac8f1dae6a3981954bc9852d/WinQuake/client.h#L224
-	//FF: and so there are four bytes between num_statics and viewent, which could be the unused "cdtrack2" field or sth like that.
-	//FF: this could actually be a pad inserted by the compiler (because sizeof(num_statics) == 4, and we have alignment 8)
-	//FF: but viewent has its first field's size equal to num_statics' size.
-	//FF: this means that there's something fishy going on (the compiler PROBABLY should have NOT inserted a pad after num_statics because viewent.index (0 offset) is also 4 bytes in size)
-
 	cl_entity_t viewent;			// the gun model
 
 	int			cdtrack, looptrack;	// cd audio
@@ -434,8 +413,6 @@ typedef struct
 	int			weaponsequence;
 
 	int			fPrecaching;
-
-	// TODO: Implement
 
 	struct dlight_s* pLight;
 
@@ -479,10 +456,6 @@ extern	cvar_t	m_yaw;
 extern	cvar_t	m_forward;
 extern	cvar_t	m_side;
 
-
-
-
-
 extern	cvar_t	cl_upspeed;
 extern	cvar_t	cl_forwardspeed;
 extern	cvar_t	cl_backspeed;
@@ -495,14 +468,8 @@ extern	cvar_t	cl_pitchspeed;
 
 extern	cvar_t	cl_anglespeedkey;
 
-
-
-
 extern	cvar_t	cl_pitchup;
 extern	cvar_t	cl_pitchdown;
-
-
-// TODO: Implement
 
 extern	cvar_t	cl_nopred;
 extern	cvar_t	cl_pushlatency;
@@ -523,8 +490,6 @@ extern	qboolean g_bSkipUpload;
 extern	int	bitcounts[32 + 8];
 extern	int	playerbitcounts[MAX_CLIENTS];
 extern	int	custombitcounts[32];
-
-// TODO: Implement
 
 #define MAX_TEMP_ENTITIES	350			// lightning bolts, etc
 #define	MAX_STATIC_ENTITIES	32			// torches, etc
@@ -554,13 +519,9 @@ void	CL_DecayLights( void );
 void	CL_TouchLight( dlight_t* dl );
 
 void CL_Init( void );
-
-
 void CL_Disconnect( void );
-
 void CL_SignonReply( void );
 void CL_UpdateSoundFade( void );
-
 
 // Resource
 void CL_CreateResourceList( void );
@@ -572,7 +533,6 @@ void CL_SendResourceListBlock( void );
 qboolean CL_RequestMissingResources( void );
 void CL_ClearResourceLists( void );
 
-
 #define			MAX_VISEDICTS	512
 extern	int		cl_numvisedicts, cl_oldnumvisedicts, cl_numbeamentities;
 extern	cl_entity_t* cl_visedicts, * cl_oldvisedicts;
@@ -581,8 +541,6 @@ extern	cl_entity_t* cl_beamentities[MAX_BEAMENTS];
 
 extern	particle_t* free_particles;
 extern	particle_t* active_particles;
-
-// TODO: Implement
 
 //
 // cl_input
@@ -612,8 +570,6 @@ void CAM_Think( void );
 void CAM_ClearStates( void );
 void CAM_StartMouseMove( void );
 void CAM_EndMouseMove( void );
-
-// TODO: Implement
 
 void CL_CreateCustomizationList( void );
 void CL_ClearState( qboolean bQuiet );
@@ -683,23 +639,14 @@ void CL_DumpMessageLoad_f( void );
 void CL_BitCounts_f( void );
 void CL_ShowSizes( void );
 void CL_ParseServerMessage( void );
-
-
-
 void CL_DeallocateDynamicData( void );
-
-
 qboolean CL_CheckFile( char* filename );
-
-
 
 //
 // view
 //
 void V_StartPitchDrift( void );
 void V_StopPitchDrift( void );
-
-// TODO: Implement
 
 //
 // CL_TENT.C

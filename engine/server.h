@@ -36,8 +36,6 @@ typedef struct
 // server_static_t
 typedef struct server_static_s
 {
-	// TODO: Implement
-
 	struct client_s* clients;			// array of up to [maxclients] client slots
 
 	int			serverflags;			// episode completion information
@@ -47,9 +45,6 @@ typedef struct server_static_s
 	int			spawncount;				// Number of servers spawned since start,
 										// used to check late spawns (e.g., when d/l'ing lots of
 										// data)
-
-	// TODO: Implement
-
 	svstats_t	stats;
 } server_static_t;
 
@@ -88,8 +83,6 @@ typedef struct
 	resource_t	resources[MAX_RESOURCES];	// The resource list
 	int			num_resources;
 
-	// TODO: Implement
-
 	char*		model_precache[MAX_MODELS];	
 	struct model_s*	models[MAX_MODELS];
 	char*		sound_precache[MAX_SOUNDS];
@@ -125,9 +118,6 @@ typedef struct
 	int			num_signon_buffers;
 	int			signon_buffer_size[MAX_SIGNON_BUFFERS];
 	byte		signon_buffers[MAX_SIGNON_BUFFERS][MAX_DATAGRAM];
-
-	// TODO: Implement
-
 } server_t;
 
 typedef struct
@@ -161,13 +151,6 @@ typedef struct client_s
 	int delta_sequence;					// -1 = no compression.  This is where the server is creating the
 										// compressed info from.
 
-
-
-
-
-	// TODO: Implement
-	//FF: one field (four bytes)
-
 	qboolean privileged; // can execute any host command
 
 	qboolean sendsignon; // only valid before spawned
@@ -176,25 +159,13 @@ typedef struct client_s
 
 	qboolean fakeclient; // JAC: This client is a fake player controlled by the game DLL
 
-	// TODO: Implement
-	//FF: 12 bytes (vec3_t?)
-
 	usercmd_t lastcmd; // for filling in big drops and partial predictions
-
-	// TODO: Implement
-	//FF: one field (four bytes)
 
 	double localtime; // of last message
 
 	int		oldbuttons;
 
-	// TODO: Implement
-	//FF: 48 bytes
-
 	float	maxspeed; // localized maxspeed
-
-	// TODO: Implement
-	//FF: one field (four bytes), probably "entgravity"
 
 	// the datagram is written to after every frame, but only cleared
 	// when it is sent out to the client.  overflow is tolerated.
@@ -272,17 +243,9 @@ extern	cvar_t	deathmatch;
 extern	cvar_t	coop;
 extern	cvar_t	pausable;
 
-
-
-
 extern	cvar_t	sv_newunit;
-
 extern	cvar_t	sv_clienttrace;
-
 extern	cvar_t	sv_cheats;
-
-
-
 extern	cvar_t	sv_friction;
 extern	cvar_t	sv_stopspeed;
 extern	cvar_t	sv_gravity;
@@ -298,16 +261,11 @@ extern	cvar_t	sv_waterfriction;
 extern	cvar_t	sv_zmax;
 extern	cvar_t	sv_wateramp;
 extern	cvar_t	sv_skyname;
-
 extern	cvar_t	sv_idealpitchscale;
 extern	cvar_t	sv_edgefriction;
 extern	cvar_t	sv_maxspeed;
 extern	cvar_t	sv_accelerate;
-
-
-
 extern	cvar_t	sv_aim;
-
 extern	cvar_t	sv_allow_download;
 extern	cvar_t	sv_allow_upload;
 extern	cvar_t	sv_upload_maxsize;
@@ -339,16 +297,11 @@ extern	client_t*		host_client;
 
 extern	edict_t*		sv_player;
 
-
 extern	jmp_buf 	host_abortserver;
-
-
-
 
 extern edict_t** g_moved_edict;
 extern vec3_t* g_moved_from;
 extern byte* g_playertouch;
-
 
 //===========================================================
 
@@ -361,24 +314,13 @@ void SV_CheckTimeouts( void );
 void SV_FullClientUpdate( client_t* cl, sizebuf_t* sb );
 void SV_CountPlayers( int* clients, int* spectators );
 void SV_DropClient( client_t* drop, qboolean crash );
-
 int SV_PointLeafnum( vec_t* p );
-
 int SV_CalcPing( client_t* cl );
-
-
 void SV_StartParticle( const vec_t* org, const vec_t* dir, int color, int count );
 void SV_StartSound( edict_t* entity, int channel, const char* sample, int volume, float attenuation, int fFlags, int pitch );
-
-
 void SV_Multicast( vec_t* origin, int to, qboolean reliable );
-
-
-
-
 void SV_ClientPrintf( char* fmt, ... );
 void SV_BroadcastPrintf( char* fmt, ... );
-
 void SV_QueryMovevarsChanged( void );
 void SV_New_f( void );
 void SV_PTrack_f( void );
@@ -394,12 +336,16 @@ void SV_RemoveIP_f( void );
 void SV_ListIP_f( void );
 void SV_WriteIP_f( void );
 void SV_Keys_f( void );
+void SV_SendUserReg( sizebuf_t* sb );
+void SV_SendBan( void );
+qboolean SV_FilterPacket( void );
+void SV_SendClientMessages( void );
+void SV_WriteClientdataToMessage( client_t* client, sizebuf_t* msg );
+int SV_ModelIndex( char* name );
+void SV_FlushSignon( void );
+void SV_ClearClientStates( void );
 
 int RegUserMsg( const char* pszName, int iSize );
-
-
-
-void SV_ClearClientStates( void );
 
 typedef enum
 {
@@ -415,17 +361,6 @@ void Host_EndRedirect( void );
 void Host_RemoteCommand( netadr_t* net_from );
 
 //
-// sv_send.c
-//
-
-
-void SV_SendUserReg( sizebuf_t* sb );
-void SV_SendBan( void );
-qboolean SV_FilterPacket( void );
-void SV_SendClientMessages( void );
-void SV_WriteClientdataToMessage( client_t* client, sizebuf_t* msg );
-
-//
 // sv_user.c
 //
 void SV_SetIdealPitch( void );
@@ -438,12 +373,10 @@ void SV_Drop_f( void );
 //
 // sv_phys.c
 //
-// TODO: Implement
 void SV_Physics( void );
 trace_t SV_Trace_Toss( edict_t* ent, edict_t* ignore );
 qboolean SV_RunThink( edict_t* ent );
 void SV_Impact( edict_t* e1, edict_t* e2, trace_t* ptrace );
-// TODO: Implement
 void SV_SetMoveVars( void );
 
 //
@@ -457,10 +390,6 @@ void SV_MoveToOrigin_I( edict_t* ent, const float* pflGoal, float dist, int iStr
 //
 // sv_upld.c
 //
-// Wrong functions, wrong function order. fixme
-// TODO: Implement
-int SV_ModelIndex( char* name );
-void SV_FlushSignon( void );
 void SV_SendResourceListBlock_f( void );
 void SV_RequestResourceList_f( void );
 void SV_PrintCusomizations_f( void );

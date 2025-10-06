@@ -289,7 +289,6 @@ texture_t* R_TextureAnimation( texture_t* base )
 	return base;
 }
 
-
 /*
 ===============
 R_DrawSurface
@@ -494,7 +493,7 @@ void R_DrawSurface( void )
 	}
 }
 
-// Pre-computed random table for texture animation
+// Pre-computed random table to add some noise to animated textures
 static const int rtable[20][20] = {
 	{ 1630, 2723, 2341, 227, 534, 916, 2865, 356, 1445, 2401, 780, 2919, 3136, 2817, 770, 496, 338, 2106, 2607, 2420 },
 	{ 951, 2377, 3087, 2028, 595, 444, 3128, 1635, 2979, 3341, 1707, 1580, 2947, 299, 88, 433, 2364, 73, 774, 1361 },
