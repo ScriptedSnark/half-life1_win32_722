@@ -685,6 +685,36 @@ char *UTIL_dtos4( int d )
 	return buf;
 }
 
+void UTIL_CenterPrintAll(char *pString)
+{
+	const edict_s *v1; // eax
+	edict_s *v2; // edi
+	edict_s *v3; // ebx
+
+	v1 = g_engfuncs.pfnFindEntityByString(0, "classname", "player");
+	v2 = (edict_s *)v1;
+	if (v1)
+	{
+		if (g_engfuncs.pfnEntOffsetOfPEntity(v1))
+		{
+			v3 = 0;
+			if (v2)
+			{
+				do
+				{
+					if (!v2 || !g_engfuncs.pfnEntOffsetOfPEntity(v2))
+						break;
+					if (!v3)
+						v3 = v2;
+					if (!v2->free && (v2->v.flags & 8) != 0)
+						g_engfuncs.pfnClientPrintf(v2, print_center, pString);
+					v2 = g_engfuncs.pfnFindEntityByString(v2, "classname", "player");
+				} while (v3 != v2);
+			}
+		}
+	}
+}
+
 void UTIL_ShowMessage( char *pString, CBaseEntity *pEntity )
 {
 	if ( !pEntity || !(pEntity->pev->flags & FL_CLIENT) )
@@ -1329,7 +1359,24 @@ BOOL UTIL_IsValidEntity( edict_t *pent )
 	return TRUE;
 }
 
-void UTIL_CenterPrintAll(char *pString)
+void UTIL_PrecacheOther( const char *szClassname )
+{
+	edict_t	*pent;
+
+	pent = CREATE_NAMED_ENTITY( MAKE_STRING( szClassname ) );
+	if ( FNullEnt( pent ) )
+	{
+		ALERT ( at_console, "NULL Ent in UTIL_PrecacheOther\n" );
+		return;
+	}
+	
+	CBaseEntity *pEntity = CBaseEntity::Instance (VARS( pent ));
+	if (pEntity)
+		pEntity->Precache( );
+	REMOVE_ENTITY(pent);
+}
+
+void UTIL_ClientPrintAll(char *szText)
 {
 	const edict_s *v1; // eax
 	edict_s *v2; // edi
@@ -1351,29 +1398,12 @@ void UTIL_CenterPrintAll(char *pString)
 					if (!v3)
 						v3 = v2;
 					if (!v2->free && (v2->v.flags & 8) != 0)
-						g_engfuncs.pfnClientPrintf(v2, print_center, pString);
+						g_engfuncs.pfnClientPrintf(v2, print_chat, szText);
 					v2 = g_engfuncs.pfnFindEntityByString(v2, "classname", "player");
 				} while (v3 != v2);
 			}
 		}
 	}
-}
-
-void UTIL_PrecacheOther( const char *szClassname )
-{
-	edict_t	*pent;
-
-	pent = CREATE_NAMED_ENTITY( MAKE_STRING( szClassname ) );
-	if ( FNullEnt( pent ) )
-	{
-		ALERT ( at_console, "NULL Ent in UTIL_PrecacheOther\n" );
-		return;
-	}
-	
-	CBaseEntity *pEntity = CBaseEntity::Instance (VARS( pent ));
-	if (pEntity)
-		pEntity->Precache( );
-	REMOVE_ENTITY(pent);
 }
 
 //=========================================================

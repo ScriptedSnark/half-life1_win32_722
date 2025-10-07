@@ -1,6 +1,3 @@
-//
-// singleplay_gamerules.cpp
-//
 #include	"extdll.h"
 #include	"util.h"
 #include	"cbase.h"

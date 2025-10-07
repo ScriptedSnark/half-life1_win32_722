@@ -282,6 +282,8 @@ extern void			UTIL_BubbleTrail( Vector from, Vector to, int count );
 // allows precacheing of other entities
 extern void			UTIL_PrecacheOther( const char *szClassname );
 
+//
+extern void UTIL_ClientPrintAll(char *szText);
 extern void UTIL_CenterPrintAll(char *pString);
 
 typedef struct hudtextparms_s
