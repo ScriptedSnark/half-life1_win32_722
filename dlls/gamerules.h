@@ -95,7 +95,7 @@ public:
 	virtual void ClientUserInfoChanged( CBasePlayer *pPlayer, char *infobuffer ) {}		// the player has changed userinfo;  can change it now
 
 // Client kills/scoring
-	virtual int IPointsForKill( CBasePlayer *pAttacker, CBasePlayer *pKilled ) = 0;// how many points do I award whoever kills this player?
+	virtual int IPointsForKill( CBasePlayer *pKilled ) = 0;// how many points do I award whoever kills this player?
 	virtual void PlayerKilled( CBasePlayer *pVictim, entvars_t *pKiller, entvars_t *pInflictor ) = 0;// Called each time a player dies
 	virtual void DeathNotice( CBasePlayer *pVictim, entvars_t *pKiller, entvars_t *pInflictor )=  0;// Call this from within a GameRules class to report an obituary.
 // Weapon retrieval
@@ -189,7 +189,7 @@ public:
 	virtual BOOL AllowAutoTargetCrosshair( void );
 
 // Client kills/scoring
-	virtual int IPointsForKill( CBasePlayer *pAttacker, CBasePlayer *pKilled );
+	virtual int IPointsForKill( CBasePlayer *pKilled );
 	virtual void PlayerKilled( CBasePlayer *pVictim, entvars_t *pKiller, entvars_t *pInflictor );
 	virtual void DeathNotice( CBasePlayer *pVictim, entvars_t *pKiller, entvars_t *pInflictor );
 
@@ -322,9 +322,6 @@ public:
 
 	virtual BOOL PlayTextureSounds( void ) { return FALSE; }
 	virtual BOOL PlayFootstepSounds( CBasePlayer *pl, float fvol ) { return TRUE; }
-
-// Monsters
-	virtual BOOL FAllowMonsters( void );
 
 	// Immediately end a multiplayer game
 	virtual void EndMultiplayerGame( void ) { GoToIntermission(); }

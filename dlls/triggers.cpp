@@ -1171,7 +1171,7 @@ void CBaseTrigger :: ActivateMultiTrigger( CBaseEntity *pActivator )
 
 	if ( pev->message && pActivator->pev->flags & FL_CLIENT )
 	{
-		UTIL_ShowMessage( STRING(pev->message), pActivator );
+		UTIL_ShowMessage( STRING(pev->message), ENT(pActivator->pev) );
 //		CLIENT_PRINTF( ENT( pActivator->pev ), print_center, STRING(pev->message) );
 	}
 

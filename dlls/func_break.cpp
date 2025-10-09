@@ -889,7 +889,7 @@ void CPushable :: KeyValue( KeyValueData *pkvd )
 // Pull the func_pushable
 void CPushable :: Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value )
 {
-	if ( !pActivator || !pActivator->pev->flags & FL_CLIENT )
+	if ( !pActivator || !(pActivator->pev->flags & FL_CLIENT) )
 	{
 		if ( pev->spawnflags & SF_PUSH_BREAKABLE )
 			this->CBreakable::Use( pActivator, pCaller, useType, value );

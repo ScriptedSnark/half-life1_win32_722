@@ -2057,17 +2057,17 @@ void CMessage::KeyValue( KeyValueData *pkvd )
 
 void CMessage::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value )
 {
-	CBaseEntity *pPlayer = NULL;
+	edict_t *pPlayer = NULL;
 
 	if ( pev->spawnflags & SF_MESSAGE_ALL )
 		UTIL_ShowMessageAll( STRING(pev->message) );
 	else
 	{
 		if ( pActivator && pActivator->pev->flags & FL_CLIENT )
-			pPlayer = pActivator;
+			pPlayer = ENT( pActivator->pev );
 		else
 		{
-			pPlayer = CBaseEntity::Instance( g_engfuncs.pfnPEntityOfEntIndex( 1 ) );
+			pPlayer = g_engfuncs.pfnPEntityOfEntIndex( 1 );
 		}
 		if ( pPlayer )
 			UTIL_ShowMessage( STRING(pev->message), pPlayer );

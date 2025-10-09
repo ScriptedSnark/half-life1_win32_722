@@ -138,7 +138,7 @@ float CHalfLifeRules :: FlPlayerSpawnTime( CBasePlayer *pPlayer )
 // IPointsForKill - how many points awarded to anyone
 // that kills this player?
 //=========================================================
-int CHalfLifeRules :: IPointsForKill( CBasePlayer *pAttacker, CBasePlayer *pKilled )
+int CHalfLifeRules :: IPointsForKill( CBasePlayer *pKilled )
 {
 	return 1;
 }

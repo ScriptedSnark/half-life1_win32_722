@@ -8,7 +8,7 @@
 void	PF_makevectors_I( const float* rgflVector );
 float	PF_Time( void );
 void	PF_setorigin_I( edict_t* e, const float* org );
-void	PF_setsize_I( edict_t* e, float* rgflMin, float* rgflMax );
+void	PF_setsize_I( edict_t* e, const float* rgflMin, const float* rgflMax );
 void	PF_setmodel_I( edict_t* e, const char* m );
 int		PF_modelindex( const char* pstr );
 int		ModelFrames( int modelIndex );

@@ -326,7 +326,7 @@ void CBaseMonster :: GibMonster( void )
 		gibbed = TRUE;
 	}
 
-	if ( !pev->flags & FL_CLIENT )
+	if ( !(pev->flags & FL_CLIENT) )
 	{
 		if ( gibbed )
 		{

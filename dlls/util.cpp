@@ -1,17 +1,3 @@
-/***
-*
-*	Copyright (c) 1999, Valve LLC. All rights reserved.
-*	
-*	This product contains software technology licensed from Id 
-*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
-*	All Rights Reserved.
-*
-*   Use, distribution, and modification of this source code and/or resulting
-*   object code is restricted to non-commercial enhancements to products from
-*   Valve LLC.  All other use, distribution, or modification is prohibited
-*   without written permission from Valve LLC.
-*
-****/
 /*
 
 ===== util.cpp ========================================================
@@ -214,7 +200,7 @@ float UTIL_AngleDiff( float destAngle, float srcAngle )
 	return delta;
 }
 
-Vector UTIL_VecToAngles( Vector &vec )
+Vector UTIL_VecToAngles( const Vector &vec )
 {
 	float rgflVecOut[3];
 	VEC_TO_ANGLES(vec, rgflVecOut);
@@ -335,7 +321,7 @@ int UTIL_MonstersInSphere( CBaseEntity **pList, int listMax, const Vector &cente
 }
 
 
-CBaseEntity *UTIL_FindEntityInSphere( CBaseEntity *pStartEntity, Vector &vecCenter, float flRadius )
+CBaseEntity *UTIL_FindEntityInSphere( CBaseEntity *pStartEntity, const Vector &vecCenter, float flRadius )
 {
 	edict_t	*pentEntity;
 
@@ -403,27 +389,7 @@ CBaseEntity *UTIL_FindEntityGeneric( char *szWhatever, Vector &vecSrc, float flR
 }
 
 
-// returns a CBaseEntity pointer to a player by index.  Only returns if the player is spawned and connected
-// otherwise returns NULL
-// Index is 1 based
-CBaseEntity	*UTIL_PlayerByIndex( int playerIndex )
-{
-	CBaseEntity *pPlayer = NULL;
-
-	if ( playerIndex > 0 && playerIndex <= gpGlobals->maxClients )
-	{
-		edict_t *pPlayerEdict = INDEXENT( playerIndex );
-		if ( pPlayerEdict && !pPlayerEdict->free )
-		{
-			pPlayer = CBaseEntity::Instance( pPlayerEdict );
-		}
-	}
-	
-	return pPlayer;
-}
-
-
-void UTIL_MakeVectors( Vector &vecAngles )
+void UTIL_MakeVectors( const Vector &vecAngles )
 {
 	MAKE_VECTORS( vecAngles );
 }
@@ -440,7 +406,7 @@ void UTIL_MakeAimVectors( const Vector &vecAngles )
 
 #define SWAP(a,b,temp)	((temp)=(a),(a)=(b),(b)=(temp))
 
-void UTIL_MakeInvVectors( Vector &vec, globalvars_t *pgv )
+void UTIL_MakeInvVectors( const Vector &vec, globalvars_t *pgv )
 {
 	MAKE_VECTORS(vec);
 
@@ -481,21 +447,6 @@ static unsigned short FixedUnsigned16( float value, float scale )
 	return (unsigned short)output;
 }
 
-static short FixedSigned16( float value, float scale )
-{
-	int output;
-
-	output = value * scale;
-
-	if ( output > 32767 )
-		output = 32767;
-
-	if ( output < -32768 )
-		output = -32768;
-
-	return (short)output;
-}
-
 // Shake the screen of all clients within radius
 // radius == 0, shake all clients
 // UNDONE: Allow caller to shake clients not ONGROUND?
@@ -506,15 +457,21 @@ void UTIL_ScreenShake( const Vector &center, float amplitude, float frequency, f
 	int			i;
 	float		localAmplitude;
 	ScreenShake	shake;
+	edict_t *pEdict;
 
 	shake.duration = FixedUnsigned16( duration, 1<<12 );		// 4.12 fixed
 	shake.frequency = FixedUnsigned16( frequency, 1<<8 );	// 8.8 fixed
 
-	for ( i = 1; i <= gpGlobals->maxClients; i++ )
-	{
-		CBaseEntity *pPlayer = UTIL_PlayerByIndex( i );
+	pEdict = g_engfuncs.pfnPEntityOfEntIndex( 1 );
+	if ( !pEdict )
+		return;
 
-		if ( !pPlayer || !(pPlayer->pev->flags & FL_ONGROUND) )	// Don't shake if not onground
+	for ( i = 0; i < gpGlobals->maxClients; i++, pEdict++ )
+	{
+		if ( pEdict->free )	// Not in use
+			continue;
+
+		if ( !(pEdict->v.flags & FL_CLIENT) || !(pEdict->v.flags & FL_ONGROUND) )	// Don't shake if not onground
 			continue;
 
 		localAmplitude = 0;
@@ -523,7 +480,7 @@ void UTIL_ScreenShake( const Vector &center, float amplitude, float frequency, f
 			localAmplitude = amplitude;
 		else
 		{
-			Vector delta = center - pPlayer->pev->origin;
+			Vector delta = center - pEdict->v.origin;
 			float distance = delta.Length();
 	
 			// Had to get rid of this falloff - it didn't work well
@@ -534,7 +491,7 @@ void UTIL_ScreenShake( const Vector &center, float amplitude, float frequency, f
 		{
 			shake.amplitude = FixedUnsigned16( localAmplitude, 1<<12 );		// 4.12 fixed
 			
-			MESSAGE_BEGIN( MSG_ONE, gmsgShake, NULL, pPlayer->edict() );		// use the magic #1 for "one client"
+			MESSAGE_BEGIN( MSG_ONE, gmsgShake, NULL, pEdict );		// use the magic #1 for "one client"
 				
 				WRITE_SHORT( shake.amplitude );				// shake amount
 				WRITE_SHORT( shake.duration );				// shake lasts this long
@@ -553,8 +510,12 @@ void UTIL_ScreenShakeAll( const Vector &center, float amplitude, float frequency
 }
 
 
-void UTIL_ScreenFadeBuild( ScreenFade &fade, const Vector &color, float fadeTime, float fadeHold, int alpha, int flags )
+void UTIL_ScreenFade( const Vector &color, float fadeTime, float fadeHold, int alpha, int flags )
 {
+	int			i;
+	ScreenFade	fade;
+	edict_t *pEdict;
+
 	fade.duration = FixedUnsigned16( fadeTime, 1<<12 );		// 4.12 fixed
 	fade.holdTime = FixedUnsigned16( fadeHold, 1<<12 );		// 4.12 fixed
 	fade.r = (int)color.x;
@@ -562,165 +523,61 @@ void UTIL_ScreenFadeBuild( ScreenFade &fade, const Vector &color, float fadeTime
 	fade.b = (int)color.z;
 	fade.a = alpha;
 	fade.fadeFlags = flags;
-}
 
-
-void UTIL_ScreenFadeWrite( const ScreenFade &fade, CBaseEntity *pEntity )
-{
-	if ( !pEntity || !(pEntity->pev->flags & FL_CLIENT) )
+	pEdict = g_engfuncs.pfnPEntityOfEntIndex( 1 );
+	if ( !pEdict )
 		return;
 
-	MESSAGE_BEGIN( MSG_ONE, gmsgFade, NULL, pEntity->edict() );		// use the magic #1 for "one client"
-		
-		WRITE_SHORT( fade.duration );		// fade lasts this long
-		WRITE_SHORT( fade.holdTime );		// fade lasts this long
-		WRITE_SHORT( fade.fadeFlags );		// fade type (in / out)
-		WRITE_BYTE( fade.r );				// fade red
-		WRITE_BYTE( fade.g );				// fade green
-		WRITE_BYTE( fade.b );				// fade blue
-		WRITE_BYTE( fade.a );				// fade blue
-
-	MESSAGE_END();
-}
-
-
-void UTIL_ScreenFade( const Vector &color, float fadeTime, float fadeHold, int alpha, int flags )
-{
-	int			i;
-	ScreenFade	fade;
-
-
-	UTIL_ScreenFadeBuild( fade, color, fadeTime, fadeHold, alpha, flags );
-
-	for ( i = 1; i <= gpGlobals->maxClients; i++ )
+	for ( i = 0; i < gpGlobals->maxClients; i++, pEdict++ )
 	{
-		CBaseEntity *pPlayer = UTIL_PlayerByIndex( i );
-	
-		UTIL_ScreenFadeWrite( fade, pPlayer );
+		if ( pEdict->free )	// Not in use
+			continue;
+
+		if ( !(pEdict->v.flags & FL_CLIENT) )
+			continue;
+
+		MESSAGE_BEGIN( MSG_ONE, gmsgFade, NULL, pEdict );		// use the magic #1 for "one client"
+
+			WRITE_SHORT( fade.duration );		// fade lasts this long
+			WRITE_SHORT( fade.holdTime );		// fade lasts this long
+			WRITE_SHORT( fade.fadeFlags );		// fade type (in / out)
+			WRITE_BYTE( fade.r );				// fade red
+			WRITE_BYTE( fade.g );				// fade green
+			WRITE_BYTE( fade.b );				// fade blue
+			WRITE_BYTE( fade.a );				// fade blue
+
+		MESSAGE_END();
 	}
 }
 
 
-void UTIL_HudMessage( CBaseEntity *pEntity, const hudtextparms_t &textparms, char *pMessage )
+void UTIL_CenterPrintAll( char *pString )
 {
-	if ( !pEntity || !(pEntity->pev->flags & FL_CLIENT) )
-		return;
+	edict_t *client;
+	edict_t *pFirst = NULL;
 
-	MESSAGE_BEGIN( MSG_ONE, SVC_TEMPENTITY, NULL, pEntity->edict() );
-		WRITE_BYTE( TE_TEXTMESSAGE );
-		WRITE_BYTE( textparms.channel & 0xFF );
+	client = FIND_ENTITY_BY_CLASSNAME( NULL, "player" );
 
-		WRITE_SHORT( FixedSigned16( textparms.x, 1<<13 ) );
-		WRITE_SHORT( FixedSigned16( textparms.y, 1<<13 ) );
-		WRITE_BYTE( textparms.effect );
-
-		WRITE_BYTE( textparms.r1 );
-		WRITE_BYTE( textparms.g1 );
-		WRITE_BYTE( textparms.b1 );
-		WRITE_BYTE( textparms.a1 );
-
-		WRITE_BYTE( textparms.r2 );
-		WRITE_BYTE( textparms.g2 );
-		WRITE_BYTE( textparms.b2 );
-		WRITE_BYTE( textparms.a2 );
-
-		WRITE_SHORT( FixedUnsigned16( textparms.fadeinTime, 1<<8 ) );
-		WRITE_SHORT( FixedUnsigned16( textparms.fadeoutTime, 1<<8 ) );
-		WRITE_SHORT( FixedUnsigned16( textparms.holdTime, 1<<8 ) );
-
-		if ( textparms.effect == 2 )
-			WRITE_SHORT( FixedUnsigned16( textparms.fxTime, 1<<8 ) );
-		
-		if ( strlen( pMessage ) < 512 )
-		{
-			WRITE_STRING( pMessage );
-		}
-		else
-		{
-			char tmp[512];
-			strncpy( tmp, pMessage, 511 );
-			tmp[511] = 0;
-			WRITE_STRING( tmp );
-		}
-	MESSAGE_END();
-}
-
-void UTIL_HudMessageAll( const hudtextparms_t &textparms, char *pMessage )
-{
-	int			i;
-
-	for ( i = 1; i <= gpGlobals->maxClients; i++ )
+	while ( client && g_engfuncs.pfnEntOffsetOfPEntity(client) )
 	{
-		CBaseEntity *pPlayer = UTIL_PlayerByIndex( i );
-		if ( pPlayer )
-			UTIL_HudMessage( pPlayer, textparms, pMessage );
+		if ( !pFirst )
+			pFirst = client;
+
+		if ( !client->free && (client->v.flags & FL_CLIENT) )
+			CLIENT_PRINTF( client, print_center, pString );
+
+		client = FIND_ENTITY_BY_CLASSNAME( client, "player" );
+		if ( pFirst == client )
+			break;
 	}
 }
 
-char *UTIL_dtos1( int d )
+void UTIL_ShowMessage( char *pString, edict_t *pEdict )
 {
-	static char buf[8];
-	sprintf( buf, "%d", d );
-	return buf;
-}
-
-char *UTIL_dtos2( int d )
-{
-	static char buf[8];
-	sprintf( buf, "%d", d );
-	return buf;
-}
-
-char *UTIL_dtos3( int d )
-{
-	static char buf[8];
-	sprintf( buf, "%d", d );
-	return buf;
-}
-
-char *UTIL_dtos4( int d )
-{
-	static char buf[8];
-	sprintf( buf, "%d", d );
-	return buf;
-}
-
-void UTIL_CenterPrintAll(char *pString)
-{
-	const edict_s *v1; // eax
-	edict_s *v2; // edi
-	edict_s *v3; // ebx
-
-	v1 = g_engfuncs.pfnFindEntityByString(0, "classname", "player");
-	v2 = (edict_s *)v1;
-	if (v1)
-	{
-		if (g_engfuncs.pfnEntOffsetOfPEntity(v1))
-		{
-			v3 = 0;
-			if (v2)
-			{
-				do
-				{
-					if (!v2 || !g_engfuncs.pfnEntOffsetOfPEntity(v2))
-						break;
-					if (!v3)
-						v3 = v2;
-					if (!v2->free && (v2->v.flags & 8) != 0)
-						g_engfuncs.pfnClientPrintf(v2, print_center, pString);
-					v2 = g_engfuncs.pfnFindEntityByString(v2, "classname", "player");
-				} while (v3 != v2);
-			}
-		}
-	}
-}
-
-void UTIL_ShowMessage( char *pString, CBaseEntity *pEntity )
-{
-	if ( !pEntity || !(pEntity->pev->flags & FL_CLIENT) )
+	if ( !pEdict || pEdict->free || !(pEdict->v.flags & FL_CLIENT) )
 		return;
 
-	MESSAGE_BEGIN( MSG_ONE, gmsgHudText, NULL, pEntity->edict() );
+	MESSAGE_BEGIN( MSG_ONE, gmsgHudText, NULL, pEdict );
 	WRITE_STRING( pString );
 	MESSAGE_END();
 }
@@ -729,31 +586,34 @@ void UTIL_ShowMessage( char *pString, CBaseEntity *pEntity )
 void UTIL_ShowMessageAll( char *pString )
 {
 	int		i;
+	edict_s *pEdict;
+
+	pEdict = g_engfuncs.pfnPEntityOfEntIndex( 1 );
+	if ( !pEdict )
+		return;
 
 	// loop through all players
 
-	for ( i = 1; i <= gpGlobals->maxClients; i++ )
+	for ( i = 0; i < gpGlobals->maxClients; i++, pEdict++ )
 	{
-		CBaseEntity *pPlayer = UTIL_PlayerByIndex( i );
-		if ( pPlayer )
-			UTIL_ShowMessage( pString, pPlayer );
+		UTIL_ShowMessage( pString, pEdict );
 	}
 }
 
 // Overloaded to add IGNORE_GLASS
-void UTIL_TraceLine( Vector &vecStart, Vector &vecEnd, IGNORE_MONSTERS igmon, IGNORE_GLASS ignoreGlass, edict_t *pentIgnore, TraceResult *ptr )
+void UTIL_TraceLine( const Vector &vecStart, const Vector &vecEnd, IGNORE_MONSTERS igmon, IGNORE_GLASS ignoreGlass, edict_t *pentIgnore, TraceResult *ptr )
 {
 	TRACE_LINE( vecStart, vecEnd, (igmon == ignore_monsters ? TRUE : FALSE) | (ignoreGlass?0x100:0), pentIgnore, ptr );
 }
 
 
-void UTIL_TraceLine( Vector &vecStart, Vector &vecEnd, IGNORE_MONSTERS igmon, edict_t *pentIgnore, TraceResult *ptr )
+void UTIL_TraceLine( const Vector &vecStart, const Vector &vecEnd, IGNORE_MONSTERS igmon, edict_t *pentIgnore, TraceResult *ptr )
 {
 	TRACE_LINE( vecStart, vecEnd, (igmon == ignore_monsters ? TRUE : FALSE), pentIgnore, ptr );
 }
 
 
-void UTIL_TraceHull( Vector &vecStart, Vector &vecEnd, IGNORE_MONSTERS igmon, int hullNumber, edict_t *pentIgnore, TraceResult *ptr )
+void UTIL_TraceHull( const Vector &vecStart, const Vector &vecEnd, IGNORE_MONSTERS igmon, int hullNumber, edict_t *pentIgnore, TraceResult *ptr )
 {
 	TRACE_HULL( vecStart, vecEnd, (igmon == ignore_monsters ? TRUE : FALSE), hullNumber, pentIgnore, ptr );
 }
@@ -777,24 +637,24 @@ TraceResult UTIL_GetGlobalTrace( )
 }
 
 	
-void UTIL_SetSize( entvars_t *pev, Vector &vecMin, Vector &vecMax )
+void UTIL_SetSize( entvars_t *pev, const Vector &vecMin, const Vector &vecMax )
 {
 	SET_SIZE( ENT(pev), vecMin, vecMax );
 }
 	
 	
-float UTIL_VecToYaw( Vector &vec )
+float UTIL_VecToYaw( const Vector &vec )
 {
 	return VEC_TO_YAW(vec);
 }
 
 
-void UTIL_SetOrigin( entvars_t *pev, Vector &vecOrigin )
+void UTIL_SetOrigin( entvars_t *pev, const Vector &vecOrigin )
 {
 	SET_ORIGIN(ENT(pev), vecOrigin );
 }
 
-void UTIL_ParticleEffect( Vector &vecOrigin, Vector &vecDirection, ULONG ulColor, ULONG ulCount )
+void UTIL_ParticleEffect( const Vector &vecOrigin, const Vector &vecDirection, ULONG ulColor, ULONG ulCount )
 {
 	PARTICLE_EFFECT( vecOrigin, vecDirection, (float)ulColor, (float)ulCount );
 }
@@ -893,7 +753,7 @@ int UTIL_IsMasterTriggered(string_t sMaster)
 		if ( !FNullEnt(pentTarget) && FClassnameIs(pentTarget, "multisource") )
 		{
 			CBaseEntity *pMaster = CBaseEntity::Instance(pentTarget);
-			if ( pMaster && (pMaster->ObjectCaps() & FCAP_MASTER) )
+			if ( pMaster )
 				return pMaster->IsTriggered();
 		}
 
@@ -922,12 +782,12 @@ BOOL UTIL_ShouldShowBlood( int color )
 	return FALSE;
 }
 
-int UTIL_PointContents(	Vector &vec )
+int UTIL_PointContents(	const Vector &vec )
 {
 	return POINT_CONTENTS(vec);
 }
 
-void UTIL_BloodStream( Vector &origin, Vector &direction, int color, int amount )
+void UTIL_BloodStream( const Vector &origin, const Vector &direction, int color, int amount )
 {
 	if ( !UTIL_ShouldShowBlood( color ) )
 		return;
@@ -949,7 +809,7 @@ void UTIL_BloodStream( Vector &origin, Vector &direction, int color, int amount 
 	MESSAGE_END();
 }				
 
-void UTIL_BloodDrips( Vector &origin, const Vector &direction, int color, int amount )
+void UTIL_BloodDrips( const Vector &origin, const Vector &direction, int color, int amount )
 {
 	if ( !UTIL_ShouldShowBlood( color ) )
 		return;
@@ -959,12 +819,6 @@ void UTIL_BloodDrips( Vector &origin, const Vector &direction, int color, int am
 
 	if ( g_Language == LANGUAGE_GERMAN && color == BLOOD_COLOR_RED )
 		color = 0;
-
-	if ( g_pGameRules->IsMultiplayer() )
-	{
-		// scale up blood effect in multiplayer for better visibility
-		amount *= 2;
-	}
 
 	if ( amount > 255 )
 		amount = 255;
@@ -1011,9 +865,6 @@ void UTIL_DecalTrace( TraceResult *pTrace, int decalNumber )
 	int index;
 	int message;
 
-	if ( decalNumber < 0 )
-		return;
-
 	index = gDecals[ decalNumber ].index;
 
 	if ( index < 0 )
@@ -1033,9 +884,9 @@ void UTIL_DecalTrace( TraceResult *pTrace, int decalNumber )
 	else 
 		entityIndex = 0;
 
-	message = TE_DECAL;
 	if ( entityIndex != 0 )
 	{
+		message = TE_DECAL;
 		if ( index > 255 )
 		{
 			message = TE_DECALHIGH;
@@ -1114,7 +965,7 @@ void UTIL_GunshotDecalTrace( TraceResult *pTrace, int decalNumber )
 	if (pTrace->flFraction == 1.0)
 		return;
 
-	MESSAGE_BEGIN( MSG_PAS, SVC_TEMPENTITY, pTrace->vecEndPos );
+	MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
 		WRITE_BYTE( TE_GUNSHOTDECAL );
 		WRITE_COORD( pTrace->vecEndPos.x );
 		WRITE_COORD( pTrace->vecEndPos.y );
@@ -1125,7 +976,7 @@ void UTIL_GunshotDecalTrace( TraceResult *pTrace, int decalNumber )
 }
 
 
-void UTIL_Sparks( Vector &position )
+void UTIL_Sparks( const Vector &position )
 {
 	MESSAGE_BEGIN( MSG_PVS, SVC_TEMPENTITY, position );
 		WRITE_BYTE( TE_SPARKS );
@@ -1136,7 +987,7 @@ void UTIL_Sparks( Vector &position )
 }
 
 
-void UTIL_Ricochet( Vector &position, float scale )
+void UTIL_Ricochet( const Vector &position, float scale )
 {
 	MESSAGE_BEGIN( MSG_PVS, SVC_TEMPENTITY, position );
 		WRITE_BYTE( TE_ARMOR_RICOCHET );
@@ -1145,23 +996,6 @@ void UTIL_Ricochet( Vector &position, float scale )
 		WRITE_COORD( position.z );
 		WRITE_BYTE( (int)(scale*10) );
 	MESSAGE_END();
-}
-
-
-BOOL UTIL_TeamsMatch( char *pTeamName1, char *pTeamName2 )
-{
-	// Everyone matches unless it's teamplay
-	if ( !g_pGameRules->IsTeamplay() )
-		return TRUE;
-
-	// Both on a team?
-	if ( *pTeamName1 != 0 && *pTeamName2 != 0 )
-	{
-		if ( !stricmp( pTeamName1, pTeamName2 ) )	// Same Team?
-			return TRUE;
-	}
-
-	return FALSE;
 }
 
 
@@ -1195,32 +1029,6 @@ void UTIL_StringToVector( float *pVector, const char *pString )
 	}
 }
 
-
-void UTIL_StringToIntArray( int *pVector, int count, const char *pString )
-{
-	char *pstr, *pfront, tempString[128];
-	int	j;
-
-	strcpy( tempString, pString );
-	pstr = pfront = tempString;
-
-	for ( j = 0; j < count; j++ )			// lifted from pr_edict.c
-	{
-		pVector[j] = atoi( pfront );
-
-		while ( *pstr && *pstr != ' ' )
-			pstr++;
-		if (!*pstr)
-			break;
-		pstr++;
-		pfront = pstr;
-	}
-
-	for ( j++; j < count; j++ )
-	{
-		pVector[j] = 0;
-	}
-}
 
 Vector UTIL_ClampVectorToBox( const Vector &input, const Vector &clampSize )
 {
@@ -1376,33 +1184,24 @@ void UTIL_PrecacheOther( const char *szClassname )
 	REMOVE_ENTITY(pent);
 }
 
-void UTIL_ClientPrintAll(char *szText)
+void UTIL_ClientPrintAll( char *szText )
 {
-	const edict_s *v1; // eax
-	edict_s *v2; // edi
-	edict_s *v3; // ebx
+	edict_t *client;
+	edict_t *pFirst = NULL;
 
-	v1 = g_engfuncs.pfnFindEntityByString(0, "classname", "player");
-	v2 = (edict_s *)v1;
-	if (v1)
+	client = FIND_ENTITY_BY_CLASSNAME( NULL, "player" );
+
+	while ( client && g_engfuncs.pfnEntOffsetOfPEntity(client) )
 	{
-		if (g_engfuncs.pfnEntOffsetOfPEntity(v1))
-		{
-			v3 = 0;
-			if (v2)
-			{
-				do
-				{
-					if (!v2 || !g_engfuncs.pfnEntOffsetOfPEntity(v2))
-						break;
-					if (!v3)
-						v3 = v2;
-					if (!v2->free && (v2->v.flags & 8) != 0)
-						g_engfuncs.pfnClientPrintf(v2, print_chat, szText);
-					v2 = g_engfuncs.pfnFindEntityByString(v2, "classname", "player");
-				} while (v3 != v2);
-			}
-		}
+		if ( !pFirst )
+			pFirst = client;
+
+		if ( !client->free && (client->v.flags & FL_CLIENT) )
+			CLIENT_PRINTF( client, print_chat, szText );
+
+		client = FIND_ENTITY_BY_CLASSNAME( client, "player" );
+		if ( pFirst == client )
+			break;
 	}
 }
 

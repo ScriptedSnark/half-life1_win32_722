@@ -114,9 +114,9 @@ void CHalfLifeMultiplay :: Think ( void )
 		// check if any player is over the frag limit
 		for ( int i = 1; i <= gpGlobals->maxClients; i++ )
 		{
-			CBaseEntity *pPlayer = UTIL_PlayerByIndex( i );
+			edict_t *pPlayer = g_engfuncs.pfnPEntityOfEntIndex( i );
 
-			if ( pPlayer && pPlayer->pev->frags >= flFragLimit )
+			if ( pPlayer && pPlayer->v.frags >= flFragLimit )
 			{
 				GoToIntermission();
 				return;
@@ -270,8 +270,7 @@ void CHalfLifeMultiplay :: InitHUD( CBasePlayer *pl )
 	// loop through all active players and send their score info to the new client
 	for ( int i = 1; i <= gpGlobals->maxClients; i++ )
 	{
-		// FIXME:  Probably don't need to cast this just to read m_iDeaths
-		CBasePlayer *plr = (CBasePlayer *)UTIL_PlayerByIndex( i );
+		CBasePlayer *plr = GetClassPtr( (CBasePlayer *)i );
 
 		if ( plr )
 		{

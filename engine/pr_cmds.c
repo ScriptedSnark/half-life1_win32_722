@@ -46,7 +46,7 @@ void PF_setorigin_I( edict_t* e, const float* org )
 }
 
 
-void SetMinMaxSize( edict_t* e, float *min, float *max, qboolean rotate )
+void SetMinMaxSize( edict_t* e, const float *min, const float *max, qboolean rotate )
 {
 	float* angles;
 	vec3_t	rmin, rmax;
@@ -129,7 +129,7 @@ the size box is rotated by the current angle
 setsize (entity, minvector, maxvector)
 =================
 */
-void PF_setsize_I( edict_t* e, float* rgflMin, float* rgflMax )
+void PF_setsize_I( edict_t* e, const float* rgflMin, const float* rgflMax )
 {
 	SetMinMaxSize(e, rgflMin, rgflMax, FALSE);
 }
