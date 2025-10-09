@@ -1,17 +1,3 @@
-/***
-*
-*	Copyright (c) 1999, Valve LLC. All rights reserved.
-*	
-*	This product contains software technology licensed from Id 
-*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
-*	All Rights Reserved.
-*
-*   This source code contains proprietary and confidential information of
-*   Valve LLC and its suppliers.  Access to this code is restricted to
-*   persons who have executed a written SDK license with Valve.  Any access,
-*   use or distribution of this code by or to any unlicensed person is illegal.
-*
-****/
 //=========================================================
 // Agrunt - Dominant, warlike alien grunt monster
 //=========================================================
@@ -128,9 +114,9 @@ TYPEDESCRIPTION	CAGrunt::m_SaveData[] =
 {
 	DEFINE_FIELD( CAGrunt, m_fCanHornetAttack, FIELD_BOOLEAN ),
 	DEFINE_FIELD( CAGrunt, m_flNextHornetAttackCheck, FIELD_TIME ),
-	DEFINE_FIELD( CAGrunt, m_flNextPainTime, FIELD_TIME ),
-	DEFINE_FIELD( CAGrunt, m_flNextSpeakTime, FIELD_TIME ),
-	DEFINE_FIELD( CAGrunt, m_flNextWordTime, FIELD_TIME ),
+	DEFINE_FIELD( CAGrunt, m_flNextPainTime, FIELD_FLOAT ),
+	DEFINE_FIELD( CAGrunt, m_flNextSpeakTime, FIELD_FLOAT ),
+	DEFINE_FIELD( CAGrunt, m_flNextWordTime, FIELD_FLOAT ),
 	DEFINE_FIELD( CAGrunt, m_iLastWord, FIELD_INTEGER ),
 };
 
