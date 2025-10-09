@@ -1,17 +1,3 @@
-/***
-*
-*	Copyright (c) 1999, Valve LLC. All rights reserved.
-*	
-*	This product contains software technology licensed from Id 
-*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
-*	All Rights Reserved.
-*
-*   This source code contains proprietary and confidential information of
-*   Valve LLC and its suppliers.  Access to this code is restricted to
-*   persons who have executed a written SDK license with Valve.  Any access,
-*   use or distribution of this code by or to any unlicensed person is illegal.
-*
-****/
 #if !defined( OEM_BUILD ) && !defined( HLDEMO_BUILD )
 
 //=========================================================
@@ -173,10 +159,10 @@ void CHAssassin :: SetYawSpeed ( void )
 	{
 	case ACT_TURN_LEFT:
 	case ACT_TURN_RIGHT:
-		ys = 360;
+		ys = 110;
 		break;
 	default:			
-		ys = 360;
+		ys = 100;
 		break;
 	}
 
@@ -212,23 +198,23 @@ void CHAssassin :: Shoot ( void )
 	UTIL_MakeVectors ( pev->angles );
 
 	Vector	vecShellVelocity = gpGlobals->v_right * RANDOM_FLOAT(40,90) + gpGlobals->v_up * RANDOM_FLOAT(75,200) + gpGlobals->v_forward * RANDOM_FLOAT(-40, 40);
-	EjectBrass ( pev->origin + gpGlobals->v_up * 32 + gpGlobals->v_forward * 12, vecShellVelocity, pev->angles.y, m_iShell, TE_BOUNCE_SHELL); 
+	EjectBrass ( pev->origin + gpGlobals->v_up * 32 + gpGlobals->v_forward * 12, vecShellVelocity, pev->angles.y, m_iShell, TE_BOUNCE_SHELL);
+	m_iShell = 0;
 	FireBullets(1, vecShootOrigin, vecShootDir, Vector( m_flDiviation, m_flDiviation, m_flDiviation ), 2048, BULLET_MONSTER_9MM ); // shoot +-8 degrees
 
 	switch(RANDOM_LONG(0,1))
 	{
 	case 0:
+		m_iShell = 0;
 		EMIT_SOUND(ENT(pev), CHAN_WEAPON, "weapons/pl_gun1.wav", RANDOM_FLOAT(0.6, 0.8), ATTN_NORM);
 		break;
 	case 1:
+		m_iShell = 0;
 		EMIT_SOUND(ENT(pev), CHAN_WEAPON, "weapons/pl_gun2.wav", RANDOM_FLOAT(0.6, 0.8), ATTN_NORM);
 		break;
 	}
 
 	pev->effects |= EF_MUZZLEFLASH;
-
-	Vector angDir = UTIL_VecToAngles( vecShootDir );
-	SetBlending( 0, angDir.x );
 
 	m_cAmmoLoaded--;
 }
@@ -556,7 +542,7 @@ Schedule_t	slAssassinJump[] =
 Task_t	tlAssassinJumpAttack[] =
 {
 	{ TASK_SET_FAIL_SCHEDULE,	(float)SCHED_ASSASSIN_JUMP_LAND	},
-	// { TASK_SET_ACTIVITY,		(float)ACT_FLY	},
+	{ TASK_SET_ACTIVITY,		(float)ACT_FLY	},
 	{ TASK_ASSASSIN_FALL_TO_GROUND, (float)0		},
 };
 
@@ -989,13 +975,9 @@ Schedule_t* CHAssassin :: GetScheduleOfType ( int Type )
 		{
 			if (m_flNextJump > gpGlobals->time)
 			{
-				// can't jump yet, go ahead and fail
-				return slAssassinFail;
+				m_vecJumpVelocity = Vector( RANDOM_FLOAT(-128, 128), RANDOM_FLOAT(-128, 128), 512 );
 			}
-			else
-			{
-				return slAssassinJump;
-			}
+			return slAssassinJump;
 		}
 		else
 		{
