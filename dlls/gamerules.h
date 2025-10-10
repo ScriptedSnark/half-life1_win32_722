@@ -58,8 +58,7 @@ public:
 	virtual BOOL IsDeathmatch( void ) = 0;//is this a deathmatch game?
 	virtual BOOL IsTeamplay( void ) { return FALSE; };// is this deathmatch game being played with team rules?
 	virtual BOOL IsCoOp( void ) = 0;// is this a coop game?
-	virtual char *GetGameDescription( void ) { return "Half-Life"; }  // this is the game name that gets seen in the server browser
-	
+
 // Client connection/disconnection
 	virtual void ClientConnected( edict_t *pEntity ) = 0;// a client just connected to the server (player hasn't spawned yet)
 	virtual void InitHUD( CBasePlayer *pl ) = 0;		// the client dll is ready for updating
@@ -75,10 +74,6 @@ public:
 	virtual BOOL FPlayerCanRespawn( CBasePlayer *pPlayer ) = 0;// is this player allowed to respawn now?
 	virtual float FlPlayerSpawnTime( CBasePlayer *pPlayer ) = 0;// When in the future will this player be able to spawn?
 	virtual edict_t *GetPlayerSpawnSpot( CBasePlayer *pPlayer );// Place this player on their spawnspot and face them the proper direction.
-
-	virtual BOOL AllowAutoTargetCrosshair( void ) { return TRUE; };
-	virtual BOOL ClientCommand( CBasePlayer *pPlayer, const char *pcmd ) { return FALSE; };  // handles the user commands;  returns TRUE if command handled properly
-	virtual void ClientUserInfoChanged( CBasePlayer *pPlayer, char *infobuffer ) {}		// the player has changed userinfo;  can change it now
 
 // Client kills/scoring
 	virtual int IPointsForKill( CBasePlayer *pKilled ) = 0;// how many points do I award whoever kills this player?
@@ -124,15 +119,12 @@ public:
 	virtual int DeadPlayerAmmo( CBasePlayer *pPlayer ) = 0;// Do I drop ammo when the player dies? How much?
 
 // Teamplay stuff
-	virtual const char *GetTeamID( CBaseEntity *pEntity ) = 0;// what team is this entity on?
-	virtual int PlayerRelationship( CBaseEntity *pPlayer, CBaseEntity *pTarget ) = 0;// What is the player's relationship with this entity?
+	virtual int GetTeamID( CBaseEntity *pEntity ) = 0;// what team is this entity on?
+	virtual int PlayerRelationship( CBasePlayer *pPlayer, CBaseEntity *pTarget ) = 0;// What is the player's relationship with this entity?
 	
 // Sounds
 	virtual BOOL PlayTextureSounds( void ) { return TRUE; }
 	virtual BOOL PlayFootstepSounds( CBasePlayer *pl, float fvol ) { return TRUE; }
-
-	// Immediately end a multiplayer game
-	virtual void EndMultiplayerGame( void ) {}
 };
 
 
@@ -215,8 +207,8 @@ public:
 	virtual int DeadPlayerAmmo( CBasePlayer *pPlayer );
 
 // Teamplay stuff	
-	virtual const char *GetTeamID( CBaseEntity *pEntity ) {return "";};
-	virtual int PlayerRelationship( CBaseEntity *pPlayer, CBaseEntity *pTarget );
+	virtual int GetTeamID( CBaseEntity *pEntity ) { return -1; };
+	virtual int PlayerRelationship( CBasePlayer *pPlayer, CBaseEntity *pTarget );
 };
 
 //=========================================================
@@ -303,8 +295,8 @@ public:
 	virtual int DeadPlayerAmmo( CBasePlayer *pPlayer );
 
 // Teamplay stuff	
-	virtual const char *GetTeamID( CBaseEntity *pEntity ) {return "";}
-	virtual int PlayerRelationship( CBaseEntity *pPlayer, CBaseEntity *pTarget );
+	virtual int GetTeamID( CBaseEntity *pEntity ) { return pEntity->pev->team; }
+	virtual int PlayerRelationship( CBasePlayer *pPlayer, CBaseEntity *pTarget );
 
 	virtual BOOL PlayTextureSounds( void ) { return FALSE; }
 	virtual BOOL PlayFootstepSounds( CBasePlayer *pl, float fvol ) { return TRUE; }

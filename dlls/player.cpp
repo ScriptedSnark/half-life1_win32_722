@@ -4430,7 +4430,7 @@ Vector CBasePlayer :: GetAutoaimVector( float flDelta )
 	Vector angles = AutoaimDeflection(vecSrc, flDist, flDelta );
 
 	// update ontarget if changed
-	if ( !g_pGameRules->AllowAutoTargetCrosshair() )
+	if ( g_iSkillLevel != SKILL_EASY )
 		m_fOnTarget = 0;
 	else if (m_fOldTargeting != m_fOnTarget)
 	{
