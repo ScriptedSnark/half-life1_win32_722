@@ -82,15 +82,13 @@ void CHornet :: Spawn( void )
 	SetTouch( &CHornet::DieTouch );
 	SetThink( &CHornet::StartTrack );
 
-	edict_t *pSoundEnt = pev->owner;
-	if ( !pSoundEnt )
-		pSoundEnt = edict();
+	edict_t *pSoundEnt = edict();
 
 	switch (RANDOM_LONG(0,2))
 	{
-	case 0:	EMIT_SOUND( pSoundEnt, CHAN_WEAPON, "agrunt/ag_fire1.wav", 1, ATTN_NORM);	break;
-	case 1:	EMIT_SOUND( pSoundEnt, CHAN_WEAPON, "agrunt/ag_fire2.wav", 1, ATTN_NORM);	break;
-	case 2:	EMIT_SOUND( pSoundEnt, CHAN_WEAPON, "agrunt/ag_fire3.wav", 1, ATTN_NORM);	break;
+	case 0:	EMIT_SOUND( pSoundEnt, CHAN_VOICE, "agrunt/ag_fire1.wav", 1, ATTN_NORM);	break;
+	case 1:	EMIT_SOUND( pSoundEnt, CHAN_VOICE, "agrunt/ag_fire2.wav", 1, ATTN_NORM);	break;
+	case 2:	EMIT_SOUND( pSoundEnt, CHAN_VOICE, "agrunt/ag_fire3.wav", 1, ATTN_NORM);	break;
 	}
 
 	if ( !FNullEnt(pev->owner) && (pev->owner->v.flags & FL_CLIENT) )
