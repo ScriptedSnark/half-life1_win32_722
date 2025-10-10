@@ -42,8 +42,6 @@ class CSqueakGrenade : public CGrenade
 	
 	static	TYPEDESCRIPTION m_SaveData[];
 
-	static float m_flNextBounceSoundTime;
-
 	// CBaseEntity *m_pTarget;
 	float m_flDie;
 	Vector m_vecTarget;
@@ -53,8 +51,6 @@ class CSqueakGrenade : public CGrenade
 	EHANDLE m_hOwner;
 	int  m_iMyClass;
 };
-
-float CSqueakGrenade::m_flNextBounceSoundTime = 0;
 
 LINK_ENTITY_TO_CLASS( monster_snark, CSqueakGrenade );
 TYPEDESCRIPTION	CSqueakGrenade::m_SaveData[] = 
@@ -124,8 +120,6 @@ void CSqueakGrenade :: Spawn( void )
 	if ( pev->owner )
 		m_hOwner = Instance( pev->owner );
 
-	m_flNextBounceSoundTime = gpGlobals->time;// reset each time a snark is spawned.
-
 	pev->sequence = WSQUEAK_RUN;
 	ResetSequenceInfo( );
 }
@@ -160,16 +154,10 @@ void CSqueakGrenade :: Killed( entvars_t *pevAttacker, int iGib )
 
 	CSoundEnt::InsertSound ( bits_SOUND_COMBAT, pev->origin, SMALL_EXPLOSION_VOLUME, 3.0 );
 
-	UTIL_BloodDrips( pev->origin, g_vecZero, BloodColor(), 80 );
-
 	if (m_hOwner != NULL)
 		RadiusDamage ( pev, m_hOwner->pev, pev->dmg, CLASS_NONE, DMG_BLAST );
 	else
 		RadiusDamage ( pev, pev, pev->dmg, CLASS_NONE, DMG_BLAST );
-
-	// reset owner so death message happens
-	if (m_hOwner != NULL)
-		pev->owner = m_hOwner->edict();
 
 	CBaseMonster :: Killed( pevAttacker, GIB_ALWAYS );
 }
@@ -356,19 +344,6 @@ void CSqueakGrenade::SuperBounceTouch( CBaseEntity *pOther )
 		}
 	}
 
-	m_flNextHit = gpGlobals->time + 0.1;
-	m_flNextHunt = gpGlobals->time;
-
-	if ( g_pGameRules->IsMultiplayer() )
-	{
-		// in multiplayer, we limit how often snarks can make their bounce sounds to prevent overflows.
-		if ( gpGlobals->time < m_flNextBounceSoundTime )
-		{
-			// too soon!
-			return;
-		}
-	}
-
 	if (!(pev->flags & FL_ONGROUND))
 	{
 		// play bounce sound
@@ -381,14 +356,15 @@ void CSqueakGrenade::SuperBounceTouch( CBaseEntity *pOther )
 		else 
 			EMIT_SOUND_DYN(ENT(pev), CHAN_VOICE, "squeek/sqk_hunt3.wav", 1, ATTN_NORM, 0, (int)flpitch);
 		CSoundEnt::InsertSound ( bits_SOUND_COMBAT, pev->origin, 256, 0.25 );
+
+		m_flNextHit = gpGlobals->time + 0.1;
+		m_flNextHunt = gpGlobals->time;
 	}
 	else
 	{
 		// skittering sound
 		CSoundEnt::InsertSound ( bits_SOUND_COMBAT, pev->origin, 100, 0.1 );
 	}
-
-	m_flNextBounceSoundTime = gpGlobals->time + 0.5;// half second.
 }
 
 
