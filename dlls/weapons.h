@@ -242,24 +242,14 @@ public:
 
 	virtual int UpdateClientData( CBasePlayer *pPlayer ) { return 0; }
 
-	static ItemInfo ItemInfoArray[ MAX_WEAPONS ];
-	static AmmoInfo AmmoInfoArray[ MAX_AMMO_SLOTS ];
+	static ItemInfo ItemInfoArray[ MAX_WEAPONS ]; // TODO: Check for existing
+	static AmmoInfo AmmoInfoArray[ MAX_AMMO_SLOTS ]; // TODO: Check for existing
 
 	CBasePlayer	*m_pPlayer;
 	CBasePlayerItem *m_pNext;
 	int		m_iId;												// WEAPON_???
 
 	virtual int iItemSlot( void ) { return 0; }			// return 0 to MAX_ITEMS_SLOTS, used in hud
-
-	int			iItemPosition( void ) { return ItemInfoArray[ m_iId ].iPosition; }
-	char	*pszAmmo1( void )	{ return ItemInfoArray[ m_iId ].pszAmmo1; }
-	int			iAmmo1( void )	{ return ItemInfoArray[ m_iId ].iAmmo1; }
-	char	*pszAmmo2( void )	{ return ItemInfoArray[ m_iId ].pszAmmo2; }
-	int			iAmmo2( void )	{ return ItemInfoArray[ m_iId ].iAmmo2; }
-	char	*pszName( void )	{ return ItemInfoArray[ m_iId ].pszName; }
-	int			iMaxClip( void )	{ return ItemInfoArray[ m_iId ].iMaxClip; }
-	int			iWeight( void )		{ return ItemInfoArray[ m_iId ].iWeight; }
-	int			iFlags( void )		{ return ItemInfoArray[ m_iId ].iFlags; }
 
 	int		m_iIdPrimary;										// Unique Id for primary ammo
 	int		m_iIdSecondary;										// Unique Id for secondary ammo
@@ -312,7 +302,6 @@ public:
 	virtual int UpdateClientData( CBasePlayer *pPlayer );		// sends hud info to client dll, if things have changed
 	virtual void RetireWeapon( void );
 	virtual BOOL ShouldWeaponIdle( void ) {return FALSE; };
-	virtual void Holster( void );
 	
 	int	PrimaryAmmoIndex(); 
 	int	SecondaryAmmoIndex(); 

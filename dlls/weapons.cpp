@@ -1,17 +1,3 @@
-/***
-*
-*	Copyright (c) 1999, Valve LLC. All rights reserved.
-*	
-*	This product contains software technology licensed from Id 
-*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
-*	All Rights Reserved.
-*
-*   Use, distribution, and modification of this source code and/or resulting
-*   object code is restricted to non-commercial enhancements to products from
-*   Valve LLC.  All other use, distribution, or modification is prohibited
-*   without written permission from Valve LLC.
-*
-****/
 /*
 
 ===== weapons.cpp ========================================================
@@ -198,7 +184,7 @@ void DecalGunshot( TraceResult *pTrace, int iBulletType )
 //
 // EjectBrass - tosses a brass shell from passed origin at passed velocity
 //
-void EjectBrass ( Vector &vecOrigin, const Vector &vecVelocity, float rotation, int model, int soundtype )
+void EjectBrass ( const Vector &vecOrigin, const Vector &vecVelocity, float rotation, int model, int soundtype )
 {
 	// FIX: when the player shoots, their gun isn't in the same position as it is on the model other players see.
 
@@ -309,14 +295,7 @@ void W_Precache(void)
 	memset( CBasePlayerItem::AmmoInfoArray, 0, sizeof(CBasePlayerItem::AmmoInfoArray) );
 	giAmmoIndex = 0;
 
-	// custom items...
-
-	// common world objects
-	UTIL_PrecacheOther( "item_suit" );
-	UTIL_PrecacheOther( "item_battery" );
-	UTIL_PrecacheOther( "item_antidote" );
-	UTIL_PrecacheOther( "item_security" );
-	UTIL_PrecacheOther( "item_longjump" );
+	PRECACHE_MODEL ("models/grenade.mdl");
 
 	// shotgun
 	UTIL_PrecacheOtherWeapon( "weapon_shotgun" );
@@ -404,7 +383,6 @@ void W_Precache(void)
 
 
 	// used by explosions
-	PRECACHE_MODEL ("models/grenade.mdl");
 	PRECACHE_MODEL ("sprites/explode1.spr");
 
 	PRECACHE_SOUND ("weapons/debris1.wav");// explosion aftermaths
@@ -431,8 +409,8 @@ TYPEDESCRIPTION	CBasePlayerItem::m_SaveData[] =
 	DEFINE_FIELD( CBasePlayerItem, m_pNext, FIELD_CLASSPTR ),
 	//DEFINE_FIELD( CBasePlayerItem, m_fKnown, FIELD_INTEGER ),Reset to zero on load
 	DEFINE_FIELD( CBasePlayerItem, m_iId, FIELD_INTEGER ),
-	// DEFINE_FIELD( CBasePlayerItem, m_iIdPrimary, FIELD_INTEGER ),
-	// DEFINE_FIELD( CBasePlayerItem, m_iIdSecondary, FIELD_INTEGER ),
+	DEFINE_FIELD( CBasePlayerItem, m_iIdPrimary, FIELD_INTEGER ),
+	DEFINE_FIELD( CBasePlayerItem, m_iIdSecondary, FIELD_INTEGER ),
 };
 IMPLEMENT_SAVERESTORE( CBasePlayerItem, CBaseAnimating );
 
@@ -612,7 +590,7 @@ void CBasePlayerItem::DefaultTouch( CBaseEntity *pOther )
 	if (pOther->AddPlayerItem( this ))
 	{
 		AttachToPlayer( pPlayer );
-		EMIT_SOUND(ENT(pPlayer->pev), CHAN_ITEM, "items/gunpickup2.wav", 1, ATTN_NORM);
+		EMIT_SOUND(ENT(pev), CHAN_ITEM, "items/gunpickup2.wav", 1, ATTN_NORM);
 	}
 
 	SUB_UseTargets( pOther, USE_TOGGLE, 0 ); // UNDONE: when should this happen?
@@ -620,21 +598,15 @@ void CBasePlayerItem::DefaultTouch( CBaseEntity *pOther )
 
 void CBasePlayerWeapon::ItemPostFrame( void )
 {
+	ItemInfo info;
+	GetItemInfo(&info);
+
 	if ((m_fInReload) && (m_pPlayer->m_flNextAttack <= gpGlobals->time))
-	{
-		// complete the reload. 
-		int j = min( iMaxClip() - m_iClip, m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType]);	
-
-		// Add them to the clip
-		m_iClip += j;
-		m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] -= j;
-
 		m_fInReload = FALSE;
-	}
 
 	if ((m_pPlayer->pev->button & IN_ATTACK2) && (m_flNextSecondaryAttack <= gpGlobals->time))
 	{
-		if ( pszAmmo2() && !m_pPlayer->m_rgAmmo[SecondaryAmmoIndex()] )
+		if ( info.pszAmmo2 && !m_pPlayer->m_rgAmmo[SecondaryAmmoIndex()] )
 		{
 			m_fFireOnEmpty = TRUE;
 		}
@@ -644,14 +616,14 @@ void CBasePlayerWeapon::ItemPostFrame( void )
 	}
 	else if ((m_pPlayer->pev->button & IN_ATTACK) && (m_flNextPrimaryAttack <= gpGlobals->time))
 	{
-		if ( (m_iClip == 0 && pszAmmo1()) || (iMaxClip() == -1 && !m_pPlayer->m_rgAmmo[PrimaryAmmoIndex()] ) )
+		if ( (m_iClip == 0 && info.pszAmmo1) || (info.iMaxClip == -1 && !m_pPlayer->m_rgAmmo[PrimaryAmmoIndex()] ) )
 		{
 			m_fFireOnEmpty = TRUE;
 		}
 
 		PrimaryAttack();
 	}
-	else if ( m_pPlayer->pev->button & IN_RELOAD && iMaxClip() != WEAPON_NOCLIP && !m_fInReload ) 
+	else if ( m_pPlayer->pev->button & IN_RELOAD ) 
 	{
 		// reload when reload is pressed, or if no buttons are down and weapon is empty.
 		Reload();
@@ -662,10 +634,10 @@ void CBasePlayerWeapon::ItemPostFrame( void )
 
 		m_fFireOnEmpty = FALSE;
 
-		if ( !IsUseable() && m_flNextPrimaryAttack < gpGlobals->time ) 
+		if ( !IsUseable() && m_flNextPrimaryAttack < gpGlobals->time )
 		{
 			// weapon isn't useable, switch.
-			if ( !(iFlags() & ITEM_FLAG_NOAUTOSWITCHEMPTY) && g_pGameRules->GetNextBestWeapon( m_pPlayer, this ) )
+			if ( !(info.iFlags & ITEM_FLAG_NOAUTOSWITCHEMPTY) && g_pGameRules->GetNextBestWeapon( m_pPlayer, this ) )
 			{
 				m_flNextPrimaryAttack = gpGlobals->time + 0.3;
 				return;
@@ -674,7 +646,7 @@ void CBasePlayerWeapon::ItemPostFrame( void )
 		else
 		{
 			// weapon is useable. Reload if empty and weapon has waited as long as it has to after firing
-			if ( m_iClip == 0 && !(iFlags() & ITEM_FLAG_NOAUTORELOAD) && m_flNextPrimaryAttack < gpGlobals->time )
+			if ( m_iClip == 0 && !(info.iFlags & ITEM_FLAG_NOAUTORELOAD) && m_flNextPrimaryAttack < gpGlobals->time )
 			{
 				Reload();
 				return;
@@ -683,12 +655,6 @@ void CBasePlayerWeapon::ItemPostFrame( void )
 
 		WeaponIdle( );
 		return;
-	}
-	
-	// catch all
-	if ( ShouldWeaponIdle() )
-	{
-		WeaponIdle();
 	}
 }
 
@@ -726,7 +692,7 @@ void CBasePlayerItem::Kill( void )
 
 void CBasePlayerItem::Holster( void )
 { 
-	m_pPlayer->pev->viewmodel = 0; 
+	m_pPlayer->pev->viewmodel = 0;
 	m_pPlayer->pev->weaponmodel = 0;
 }
 
@@ -766,8 +732,10 @@ int CBasePlayerWeapon::AddToPlayer( CBasePlayer *pPlayer )
 
 	if ( !m_iPrimaryAmmoType )
 	{
-		m_iPrimaryAmmoType = pPlayer->GetAmmoIndex( pszAmmo1() );
-		m_iSecondaryAmmoType = pPlayer->GetAmmoIndex( pszAmmo2() );
+		ItemInfo II;
+		GetItemInfo( &II );
+		m_iPrimaryAmmoType = pPlayer->GetAmmoIndex( II.pszAmmo1 );
+		m_iSecondaryAmmoType = pPlayer->GetAmmoIndex( II.pszAmmo2 );
 	}
 
 
@@ -787,7 +755,7 @@ int CBasePlayerWeapon::UpdateClientData( CBasePlayer *pPlayer )
 			state = 1;
 	}
 
-	if ( !pPlayer->m_fWeapon || pPlayer->m_pActiveItem != pPlayer->m_pClientActiveItem || m_iClip != m_iClientClip || state != m_iClientWeaponState || pPlayer->m_iFOV != pPlayer->m_iClientFOV )
+	if ( !pPlayer->m_fWeapon || pPlayer->m_pActiveItem != pPlayer->m_pClientActiveItem || m_iClip != m_iClientClip || state != m_iClientWeaponState )
 	{
 		MESSAGE_BEGIN( MSG_ONE, gmsgCurWeapon, NULL, pPlayer->pev );
 			WRITE_BYTE( state );
@@ -822,25 +790,26 @@ BOOL CBasePlayerWeapon :: AddPrimaryAmmo( int iCount, char *szName, int iMaxClip
 	if (iMaxClip < 1)
 	{
 		m_iClip = -1;
-		iIdAmmo = m_pPlayer->GiveAmmo( iCount, szName, iMaxCarry, NULL );
+		iIdAmmo = m_pPlayer->GiveAmmo( iCount, szName, iMaxCarry, &m_iPrimaryAmmoType );
 	}
 	else if (m_iClip == 0)
 	{
 		int i;
 		i = min( m_iClip + iCount, iMaxClip ) - m_iClip;
 		m_iClip += i;
-		iIdAmmo = m_pPlayer->GiveAmmo( iCount - i, szName, iMaxCarry, NULL );
+		iIdAmmo = m_pPlayer->GiveAmmo( iCount - i, szName, iMaxCarry, &m_iPrimaryAmmoType );
 	}
 	else
 	{
-		iIdAmmo = m_pPlayer->GiveAmmo( iCount, szName, iMaxCarry, NULL );
+		iIdAmmo = m_pPlayer->GiveAmmo( iCount, szName, iMaxCarry, &m_iPrimaryAmmoType );
 	}
 	
 	// m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] = iMaxCarry; // hack for testing
 
-	if (iIdAmmo > 0)
+	m_iIdPrimary = iIdAmmo;
+
+	if (m_iIdPrimary > 0)
 	{
-		m_iPrimaryAmmoType = iIdAmmo;
 		if (m_pPlayer->HasPlayerItem( this ) )
 		{
 			// play the "got ammo" sound only if we gave some ammo to a player that already had this gun.
@@ -849,7 +818,7 @@ BOOL CBasePlayerWeapon :: AddPrimaryAmmo( int iCount, char *szName, int iMaxClip
 		}
 	}
 
-	return iIdAmmo > 0 ? TRUE : FALSE;
+	return m_iIdPrimary > 0 ? TRUE : FALSE;
 }
 
 
@@ -857,16 +826,17 @@ BOOL CBasePlayerWeapon :: AddSecondaryAmmo( int iCount, char *szName, int iMax )
 {
 	int iIdAmmo;
 
-	iIdAmmo = m_pPlayer->GiveAmmo( iCount, szName, iMax, NULL );
+	iIdAmmo = m_pPlayer->GiveAmmo( iCount, szName, iMax, &m_iSecondaryAmmoType );
 
 	//m_pPlayer->m_rgAmmo[m_iSecondaryAmmoType] = iMax; // hack for testing
 
-	if (iIdAmmo > 0)
+	m_iIdSecondary = iIdAmmo;
+
+	if (m_iIdSecondary)
 	{
-		m_iSecondaryAmmoType = iIdAmmo;
 		EMIT_SOUND(ENT(pev), CHAN_ITEM, "items/9mmclip1.wav", 1, ATTN_NORM);
 	}
-	return iIdAmmo > 0 ? TRUE : FALSE;
+	return m_iIdSecondary > 0 ? TRUE : FALSE;
 }
 
 //=========================================================
@@ -879,7 +849,10 @@ BOOL CBasePlayerWeapon :: IsUseable( void )
 {
 	if ( m_iClip <= 0 )
 	{
-		if ( m_pPlayer->m_rgAmmo[ PrimaryAmmoIndex() ] <= 0 && iAmmo1() != -1 )			
+		ItemInfo Info;
+		GetItemInfo(&Info);
+
+		if ( m_pPlayer->m_rgAmmo[ PrimaryAmmoIndex() ] <= 0 && Info.iAmmo1 != -1 )
 		{
 			// clip is empty (or nonexistant) and the player has no more ammo of this type. 
 			return FALSE;
@@ -893,17 +866,20 @@ BOOL CBasePlayerWeapon :: CanDeploy( void )
 {
 	BOOL bHasAmmo = 0;
 
-	if ( !pszAmmo1() )
+	ItemInfo info;
+	GetItemInfo(&info);
+
+	if ( !info.pszAmmo1 )
 	{
 		// this weapon doesn't use ammo, can always deploy.
 		return TRUE;
 	}
 
-	if ( pszAmmo1() )
+	if ( info.pszAmmo1 )
 	{
 		bHasAmmo |= (m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] != 0);
 	}
-	if ( pszAmmo2() )
+	if ( info.pszAmmo2 )
 	{
 		bHasAmmo |= (m_pPlayer->m_rgAmmo[m_iSecondaryAmmoType] != 0);
 	}
@@ -945,6 +921,9 @@ BOOL CBasePlayerWeapon :: DefaultReload( int iClipSize, int iAnim, float fDelay 
 	if (j == 0)
 		return FALSE;
 
+	m_iClip += j;
+
+	m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] -= j;
 	m_pPlayer->m_flNextAttack = gpGlobals->time + fDelay;
 
 	//!!UNDONE -- reload sound goes here !!!
@@ -984,13 +963,6 @@ int CBasePlayerWeapon::PrimaryAmmoIndex( void )
 int CBasePlayerWeapon::SecondaryAmmoIndex( void )
 {
 	return -1;
-}
-
-void CBasePlayerWeapon::Holster( void )
-{ 
-	m_fInReload = FALSE; // cancel any reload in progress.
-	m_pPlayer->pev->viewmodel = 0; 
-	m_pPlayer->pev->weaponmodel = 0;
 }
 
 void CBasePlayerAmmo::Spawn( void )
@@ -1070,17 +1042,20 @@ int CBasePlayerWeapon::ExtractAmmo( CBasePlayerWeapon *pWeapon )
 {
 	int			iReturn = 0; // ScriptedSnark: remove 0 for authentic uninitialized experience
 
-	if ( pszAmmo1() != NULL )
+	ItemInfo info;
+	GetItemInfo(&info);
+
+	if ( info.pszAmmo1 != NULL )
 	{
 		// blindly call with m_iDefaultAmmo. It's either going to be a value or zero. If it is zero,
 		// we only get the ammo in the weapon's clip, which is what we want. 
-		iReturn = pWeapon->AddPrimaryAmmo( m_iDefaultAmmo, (char *)pszAmmo1(), iMaxClip(), iAmmo1() );
+		iReturn = pWeapon->AddPrimaryAmmo( m_iDefaultAmmo, info.pszAmmo1, info.iMaxClip, info.iAmmo1 );
 		m_iDefaultAmmo = 0;
 	}
 
-	if ( pszAmmo2() != NULL )
+	if ( info.pszAmmo2 != NULL )
 	{
-		iReturn = pWeapon->AddSecondaryAmmo( 0, (char *)pszAmmo2(), iAmmo2() );
+		iReturn = pWeapon->AddSecondaryAmmo( 0, info.pszAmmo2, info.iAmmo2 );
 	}
 
 	return iReturn;
@@ -1093,6 +1068,9 @@ int CBasePlayerWeapon::ExtractClipAmmo( CBasePlayerWeapon *pWeapon )
 {
 	int			iAmmo;
 
+	ItemInfo info;
+	GetItemInfo(&info);
+
 	if ( m_iClip == WEAPON_NOCLIP )
 	{
 		iAmmo = 0;// guns with no clips always come empty if they are second-hand
@@ -1102,7 +1080,7 @@ int CBasePlayerWeapon::ExtractClipAmmo( CBasePlayerWeapon *pWeapon )
 		iAmmo = m_iClip;
 	}
 	
-	return pWeapon->m_pPlayer->GiveAmmo( iAmmo, (char *)pszAmmo1(), iAmmo1(), NULL ); // , &m_iPrimaryAmmoType
+	return pWeapon->m_pPlayer->GiveAmmo( iAmmo, info.pszAmmo1, info.iAmmo1, &m_iPrimaryAmmoType );
 }
 	
 //=========================================================
@@ -1112,7 +1090,6 @@ void CBasePlayerWeapon::RetireWeapon( void )
 {
 	// first, no viewmodel at all.
 	m_pPlayer->pev->viewmodel = iStringNull;
-	m_pPlayer->pev->weaponmodel = iStringNull;
 	//m_pPlayer->pev->viewmodelindex = NULL;
 
 	g_pGameRules->GetNextBestWeapon( m_pPlayer, this );

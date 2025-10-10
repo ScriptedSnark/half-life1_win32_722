@@ -61,24 +61,29 @@ edict_t *CGameRules :: GetPlayerSpawnSpot( CBasePlayer *pPlayer )
 //=========================================================
 BOOL CGameRules::CanHavePlayerItem( CBasePlayer *pPlayer, CBasePlayerItem *pWeapon )
 {
-	if ( pWeapon->pszAmmo1() )
+	ItemInfo info;
+
+	if ( pWeapon->GetItemInfo(&info) )
 	{
-		if ( !CanHaveAmmo( pPlayer, pWeapon->pszAmmo1(), pWeapon->iAmmo1() ) )
+		if ( info.pszAmmo1 )
 		{
-			// we can't carry anymore ammo for this gun. We can only 
-			// have the gun if we aren't already carrying one of this type
+			if ( !CanHaveAmmo( pPlayer, info.pszAmmo1, info.iAmmo1 ) )
+			{
+				// we can't carry anymore ammo for this gun. We can only 
+				// have the gun if we aren't already carrying one of this type
+				if ( pPlayer->HasPlayerItem( pWeapon ) )
+				{
+					return FALSE;
+				}
+			}
+		}
+		else
+		{
+			// weapon doesn't use ammo, don't take another if you already have it.
 			if ( pPlayer->HasPlayerItem( pWeapon ) )
 			{
 				return FALSE;
 			}
-		}
-	}
-	else
-	{
-		// weapon doesn't use ammo, don't take another if you already have it.
-		if ( pPlayer->HasPlayerItem( pWeapon ) )
-		{
-			return FALSE;
 		}
 	}
 

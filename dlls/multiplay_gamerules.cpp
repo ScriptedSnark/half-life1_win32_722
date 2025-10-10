@@ -151,6 +151,8 @@ BOOL CHalfLifeMultiplay::IsCoOp( void )
 //=========================================================
 BOOL CHalfLifeMultiplay::FShouldSwitchWeapon( CBasePlayer *pPlayer, CBasePlayerItem *pWeapon )
 {
+	ItemInfo iiCheck, iiActive;
+
 	if ( !pWeapon->CanDeploy() )
 	{
 		// that weapon can't deploy anyway.
@@ -169,7 +171,10 @@ BOOL CHalfLifeMultiplay::FShouldSwitchWeapon( CBasePlayer *pPlayer, CBasePlayerI
 		return FALSE;
 	}
 
-	if ( pWeapon->iWeight() > pPlayer->m_pActiveItem->iWeight() )
+	pWeapon->GetItemInfo(&iiCheck);
+	pPlayer->m_pActiveItem->GetItemInfo(&iiActive);
+
+	if ( iiCheck.iWeight > iiActive.iWeight )
 	{
 		return TRUE;
 	}
@@ -179,10 +184,10 @@ BOOL CHalfLifeMultiplay::FShouldSwitchWeapon( CBasePlayer *pPlayer, CBasePlayerI
 
 BOOL CHalfLifeMultiplay :: GetNextBestWeapon( CBasePlayer *pPlayer, CBasePlayerItem *pCurrentWeapon )
 {
-
+	ItemInfo Info;
 	CBasePlayerItem *pCheck;
 	CBasePlayerItem *pBest;// this will be used in the event that we don't find a weapon in the same category.
-	int iBestWeight;
+	int iWeight, iBestWeight;
 	int i;
 
 	iBestWeight = -1;// no weapon lower than -1 can be autoswitched to
@@ -194,13 +199,18 @@ BOOL CHalfLifeMultiplay :: GetNextBestWeapon( CBasePlayer *pPlayer, CBasePlayerI
 		return FALSE;
 	}
 
+	pCurrentWeapon->GetItemInfo(&Info);
+	iWeight = Info.iWeight;
+
 	for ( i = 0 ; i < MAX_ITEM_TYPES ; i++ )
 	{
 		pCheck = pPlayer->m_rgpPlayerItems[ i ];
 
 		while ( pCheck )
 		{
-			if ( pCheck->iWeight() > -1 && pCheck->iWeight() == pCurrentWeapon->iWeight() && pCheck != pCurrentWeapon )
+			pCheck->GetItemInfo(&Info);
+
+			if ( Info.iWeight > -1 && Info.iWeight == iWeight && pCheck != pCurrentWeapon )
 			{
 				// this weapon is from the same category. 
 				if ( pCheck->CanDeploy() )
@@ -211,7 +221,7 @@ BOOL CHalfLifeMultiplay :: GetNextBestWeapon( CBasePlayer *pPlayer, CBasePlayerI
 					}
 				}
 			}
-			else if ( pCheck->iWeight() > iBestWeight && pCheck != pCurrentWeapon )// don't reselect the weapon we're trying to get rid of
+			else if ( Info.iWeight > iBestWeight && pCheck != pCurrentWeapon )// don't reselect the weapon we're trying to get rid of
 			{
 				//ALERT ( at_console, "Considering %s\n", STRING( pCheck->pev->classname ) );
 				// we keep updating the 'best' weapon just in case we can't find a weapon of the same weight
@@ -220,7 +230,7 @@ BOOL CHalfLifeMultiplay :: GetNextBestWeapon( CBasePlayer *pPlayer, CBasePlayerI
 				if ( pCheck->CanDeploy() )
 				{
 					// if this weapon is useable, flag it as the best
-					iBestWeight = pCheck->iWeight();
+					iBestWeight = Info.iWeight;
 					pBest = pCheck;
 				}
 			}
@@ -482,7 +492,9 @@ void CHalfLifeMultiplay::DeathNotice( CBasePlayer *pVictim, entvars_t *pKiller, 
 				
 				if ( pPlayer->m_pActiveItem )
 				{
-					killer_weapon_name = pPlayer->m_pActiveItem->pszName();
+					ItemInfo II;
+					if ( pPlayer->m_pActiveItem->GetItemInfo(&II) )
+						killer_weapon_name = II.pszName;
 				}
 			}
 			else
@@ -576,8 +588,12 @@ float CHalfLifeMultiplay :: FlWeaponRespawnTime( CBasePlayerItem *pWeapon )
 {
 	if ( CVAR_GET_FLOAT("mp_weaponstay") > 0 )
 	{
+		ItemInfo II;
+		II.iFlags = 0;
+		pWeapon->GetItemInfo(&II);
+
 		// make sure it's only certain weapons
-		if ( !(pWeapon->iFlags() & ITEM_FLAG_LIMITINWORLD) )
+		if ( !(II.iFlags & ITEM_FLAG_LIMITINWORLD) )
 		{
 			return gpGlobals->time + 0;		// weapon respawns almost instantly
 		}
@@ -597,7 +613,7 @@ float CHalfLifeMultiplay :: FlWeaponRespawnTime( CBasePlayerItem *pWeapon )
 //=========================================================
 float CHalfLifeMultiplay :: FlWeaponTryRespawn( CBasePlayerItem *pWeapon )
 {
-	if ( pWeapon && pWeapon->m_iId && (pWeapon->iFlags() & ITEM_FLAG_LIMITINWORLD) )
+	if ( pWeapon && pWeapon->m_iId && (pWeapon->ItemInfoArray[pWeapon->m_iId].iFlags & ITEM_FLAG_LIMITINWORLD) )
 	{
 		if ( NUMBER_OF_ENTITIES() < (gpGlobals->maxEntities - ENTITY_INTOLERANCE) )
 			return 0;
@@ -640,7 +656,11 @@ BOOL CHalfLifeMultiplay::CanHavePlayerItem( CBasePlayer *pPlayer, CBasePlayerIte
 {
 	if ( CVAR_GET_FLOAT("mp_weaponstay") > 0 )
 	{
-		if ( pItem->iFlags() & ITEM_FLAG_LIMITINWORLD )
+		ItemInfo II;
+		II.iFlags = 0;
+		pItem->GetItemInfo(&II);
+
+		if ( II.iFlags & ITEM_FLAG_LIMITINWORLD )
 			return CGameRules::CanHavePlayerItem( pPlayer, pItem );
 
 		// check if the player already has this weapon
@@ -650,7 +670,7 @@ BOOL CHalfLifeMultiplay::CanHavePlayerItem( CBasePlayer *pPlayer, CBasePlayerIte
 
 			while ( it != NULL )
 			{
-				if ( it->m_iId == pItem->m_iId )
+				if ( it->m_iId == II.iId )
 				{
 					return FALSE;
 				}

@@ -3691,34 +3691,37 @@ void CBasePlayer::ImpulseCommands( )
 		break;
 
 	case 101:
-		gEvilImpulse101 = TRUE;
-		GiveNamedItem( "item_suit" );
-		GiveNamedItem( "item_battery" );
-		GiveNamedItem( "weapon_crowbar" );
-		GiveNamedItem( "weapon_9mmhandgun" );
-		GiveNamedItem( "ammo_9mmclip" );
-		GiveNamedItem( "weapon_shotgun" );
-		GiveNamedItem( "ammo_buckshot" );
-		GiveNamedItem( "weapon_9mmAR" );
-		GiveNamedItem( "ammo_9mmAR" );
-		GiveNamedItem( "ammo_ARgrenades" );
-		GiveNamedItem( "weapon_handgrenade" );
-		GiveNamedItem( "weapon_tripmine" );
+		if (g_flWeaponCheat != 0)
+		{
+			gEvilImpulse101 = TRUE;
+			GiveNamedItem("item_suit");
+			GiveNamedItem("item_battery");
+			GiveNamedItem("weapon_crowbar");
+			GiveNamedItem("weapon_9mmhandgun");
+			GiveNamedItem("ammo_9mmclip");
+			GiveNamedItem("weapon_shotgun");
+			GiveNamedItem("ammo_buckshot");
+			GiveNamedItem("weapon_9mmAR");
+			GiveNamedItem("ammo_9mmAR");
+			GiveNamedItem("ammo_ARgrenades");
+			GiveNamedItem("weapon_handgrenade");
+			GiveNamedItem("weapon_tripmine");
 #ifndef OEM_BUILD
-		GiveNamedItem( "weapon_357" );
-		GiveNamedItem( "ammo_357" );
-		GiveNamedItem( "weapon_crossbow" );
-		GiveNamedItem( "ammo_crossbow" );
-		GiveNamedItem( "weapon_egon" );
-		GiveNamedItem( "weapon_gauss" );
-		GiveNamedItem( "ammo_gaussclip" );
-		GiveNamedItem( "weapon_rpg" );
-		GiveNamedItem( "ammo_rpgclip" );
-		GiveNamedItem( "weapon_satchel" );
-		GiveNamedItem( "weapon_snark" );
-		GiveNamedItem( "weapon_hornetgun" );
+			GiveNamedItem("weapon_357");
+			GiveNamedItem("ammo_357");
+			GiveNamedItem("weapon_crossbow");
+			GiveNamedItem("ammo_crossbow");
+			GiveNamedItem("weapon_egon");
+			GiveNamedItem("weapon_gauss");
+			GiveNamedItem("ammo_gaussclip");
+			GiveNamedItem("weapon_rpg");
+			GiveNamedItem("ammo_rpgclip");
+			GiveNamedItem("weapon_satchel");
+			GiveNamedItem("weapon_snark");
+			GiveNamedItem("weapon_hornetgun");
 #endif
-		gEvilImpulse101 = FALSE;
+			gEvilImpulse101 = FALSE;
+		}
 		break;
 
 	case 102:
@@ -4655,8 +4658,9 @@ void CBasePlayer::DropPlayerItem ( char *pszItemName )
 
 	CBasePlayerItem *pWeapon;
 	int i;
+	ItemInfo info;
 
-	for ( i = 0 ; i < MAX_ITEM_TYPES ; i++ )
+	for ( i = 0, info.iSlot = 0; i < MAX_ITEM_TYPES ; i++, info.iSlot++ )
 	{
 		pWeapon = m_rgpPlayerItems[ i ];
 
@@ -4700,26 +4704,27 @@ void CBasePlayer::DropPlayerItem ( char *pszItemName )
 			pWeaponBox->pev->angles.z = 0;
 			pWeaponBox->PackWeapon( pWeapon );
 			pWeaponBox->pev->velocity = gpGlobals->v_forward * 300 + gpGlobals->v_forward * 100;
-			
+
 			// drop half of the ammo for this weapon.
 			int	iAmmoIndex;
 
-			iAmmoIndex = GetAmmoIndex ( pWeapon->pszAmmo1() ); // ???
+			pWeapon->GetItemInfo( &info );
+			iAmmoIndex = GetAmmoIndex ( info.pszAmmo1 ); // ???
 			
 			if ( iAmmoIndex != -1 )
 			{
 				// this weapon weapon uses ammo, so pack an appropriate amount.
-				if ( pWeapon->iFlags() & ITEM_FLAG_EXHAUSTIBLE )
+				if ( info.iFlags & ITEM_FLAG_EXHAUSTIBLE )
 				{
 					// pack up all the ammo, this weapon is its own ammo type
-					pWeaponBox->PackAmmo( MAKE_STRING(pWeapon->pszAmmo1()), m_rgAmmo[ iAmmoIndex ] );
+					pWeaponBox->PackAmmo( MAKE_STRING(info.pszAmmo1), m_rgAmmo[ iAmmoIndex ] );
 					m_rgAmmo[ iAmmoIndex ] = 0; 
 
 				}
 				else
 				{
 					// pack half of the ammo
-					pWeaponBox->PackAmmo( MAKE_STRING(pWeapon->pszAmmo1()), m_rgAmmo[ iAmmoIndex ] / 2 );
+					pWeaponBox->PackAmmo( MAKE_STRING(info.pszAmmo1), m_rgAmmo[ iAmmoIndex ] / 2 );
 					m_rgAmmo[ iAmmoIndex ] /= 2; 
 				}
 
