@@ -477,7 +477,7 @@ BOOL CHGrunt :: CheckRangeAttack2 ( float flDot, float flDist )
 		return m_fThrowGrenade;
 	}
 
-	if ( !FBitSet ( m_hEnemy->pev->flags, FL_ONGROUND ) && m_hEnemy->pev->waterlevel == 0 && m_vecEnemyLKP.z > pev->absmax.z  )
+	if ( !FBitSet ( m_hEnemy->pev->flags, FL_ONGROUND ) && m_hEnemy->pev->waterlevel == 0 )
 	{
 		//!!!BUGBUG - we should make this check movetype and make sure it isn't FLY? Players who jump a lot are unlikely to 
 		// be grenaded.
@@ -490,17 +490,8 @@ BOOL CHGrunt :: CheckRangeAttack2 ( float flDot, float flDist )
 
 	if (FBitSet( pev->weapons, HGRUNT_HANDGRENADE))
 	{
-		// find feet
-		if (RANDOM_LONG(0,1))
-		{
-			// magically know where they are
-			vecTarget = Vector( m_hEnemy->pev->origin.x, m_hEnemy->pev->origin.y, m_hEnemy->pev->absmin.z );
-		}
-		else
-		{
-			// toss it to where you last saw them
-			vecTarget = m_vecEnemyLKP;
-		}
+		// magically know where they are
+		vecTarget = Vector( m_hEnemy->pev->origin.x, m_hEnemy->pev->origin.y, m_hEnemy->pev->absmin.z );
 		// vecTarget = m_vecEnemyLKP + (m_hEnemy->BodyTarget( pev->origin ) - m_hEnemy->pev->origin);
 		// estimate position
 		// vecTarget = vecTarget + m_hEnemy->pev->velocity * 2;
@@ -2336,14 +2327,10 @@ Schedule_t* CHGrunt :: GetScheduleOfType ( int Type )
 		}
 	case SCHED_GRUNT_REPEL:
 		{
-			if (pev->velocity.z > -128)
-				pev->velocity.z -= 32;
 			return &slGruntRepel[ 0 ];
 		}
 	case SCHED_GRUNT_REPEL_ATTACK:
 		{
-			if (pev->velocity.z > -128)
-				pev->velocity.z -= 32;
 			return &slGruntRepelAttack[ 0 ];
 		}
 	case SCHED_GRUNT_REPEL_LAND:
