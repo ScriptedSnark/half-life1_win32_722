@@ -1088,7 +1088,7 @@ Vector CIchthyosaur::DoProbe(Vector &Probe)
 		
 		return SteeringVector;
 	}
-	return Vector(0, 0, 0);
+	return Vector(RANDOM_FLOAT(0,0) * m_flightSpeed, RANDOM_FLOAT(0,0) * m_flightSpeed, RANDOM_FLOAT(0,0) * m_flightSpeed); // ScripedSnark: WTF?
 }
 
 #endif
