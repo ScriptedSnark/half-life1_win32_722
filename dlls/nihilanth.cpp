@@ -277,9 +277,9 @@ void CNihilanth :: Spawn( void )
 	pev->flags			|= FL_MONSTER;
 	pev->takedamage		= DAMAGE_AIM;
 	pev->health			= gSkillData.nihilanthHealth;
-	pev->view_ofs		= Vector( 0, 0, 300 );
+	pev->view_ofs		= Vector( 0, 0, 512 );
 
-	m_flFieldOfView = -1; // 360 degrees
+	m_flFieldOfView = -0.707; // 270 degrees
 
 	pev->sequence = 0;
 	ResetSequenceInfo( );
@@ -317,8 +317,6 @@ void CNihilanth::Precache( void )
 	PRECACHE_MODEL("models/nihilanth.mdl");
 	PRECACHE_MODEL("sprites/lgtning.spr");
 	UTIL_PrecacheOther( "nihilanth_energy_ball" );
-	UTIL_PrecacheOther( "monster_alien_controller" );
-	UTIL_PrecacheOther( "monster_alien_slave" );
 
 	PRECACHE_SOUND_ARRAY( pAttackSounds );
 	PRECACHE_SOUND_ARRAY( pBallSounds );
@@ -1184,7 +1182,7 @@ void CNihilanth::CommandUse( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_
 	case USE_OFF:
 		{
 		CBaseEntity *pTouch = UTIL_FindEntityByTargetname( NULL, m_szDeadTouch );
-		if ( pTouch && m_hEnemy != NULL )
+		if ( pTouch )
 			pTouch->Touch( m_hEnemy );
 		}
 		break;
@@ -1590,7 +1588,7 @@ void CNihilanthHVR :: TeleportThink( void  )
 		if (m_hTargetEnt != NULL)
 			m_hTargetEnt->Use( m_hEnemy, m_hEnemy, USE_ON, 1.0 );
 
-		if ( m_hTouch != NULL && m_hEnemy != NULL )
+		if ( m_hTouch != NULL )
 			m_hTouch->Touch( m_hEnemy );
 	}
 	else 
@@ -1648,7 +1646,7 @@ void CNihilanthHVR::TeleportTouch( CBaseEntity *pOther )
 		if (m_hTargetEnt != NULL)
 			m_hTargetEnt->Use( pEnemy, pEnemy, USE_ON, 1.0 );
 
-		if (m_hTouch != NULL && pEnemy != NULL )
+		if (m_hTouch != NULL )
 			m_hTouch->Touch( pEnemy );
 	}
 	else
