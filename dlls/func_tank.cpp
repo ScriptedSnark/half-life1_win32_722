@@ -53,7 +53,7 @@ public:
 
 	inline BOOL IsActive( void ) { return (pev->spawnflags & SF_TANK_ACTIVE)?TRUE:FALSE; }
 	inline void TankActivate( void ) { pev->spawnflags |= SF_TANK_ACTIVE; pev->nextthink = pev->ltime + 0.1; m_fireLast = 0; }
-	inline void TankDeactivate( void ) { pev->spawnflags &= ~SF_TANK_ACTIVE; m_fireLast = 0; StopRotSound(); }
+	inline void TankDeactivate( void ) { pev->spawnflags &= ~SF_TANK_ACTIVE; m_fireLast = 0; }
 	inline BOOL CanFire( void ) { return (gpGlobals->time - m_lastSightTime) < m_persist; }
 	BOOL		InRange( float range );
 
@@ -113,7 +113,6 @@ protected:
 	
 	Vector		m_sightOrigin;	// Last sight of target
 	int			m_spread;		// firing spread
-	int			m_iszMaster;	// Master entity (game_team_master or multisource)
 };
 
 
@@ -144,7 +143,6 @@ TYPEDESCRIPTION	CFuncTank::m_SaveData[] =
 	DEFINE_FIELD( CFuncTank, m_vecControllerUsePos, FIELD_VECTOR ),
 	DEFINE_FIELD( CFuncTank, m_flNextAttack, FIELD_TIME ),
 	DEFINE_FIELD( CFuncTank, m_iBulletDamage, FIELD_INTEGER ),
-	DEFINE_FIELD( CFuncTank, m_iszMaster, FIELD_STRING ),
 };
 
 IMPLEMENT_SAVERESTORE( CFuncTank, CBaseEntity );
@@ -297,11 +295,6 @@ void CFuncTank :: KeyValue( KeyValueData *pkvd )
 	else if (FStrEq(pkvd->szKeyName, "maxRange"))
 	{
 		m_maxRange = atof(pkvd->szValue);
-		pkvd->fHandled = TRUE;
-	}
-	else if (FStrEq(pkvd->szKeyName, "master"))
-	{
-		m_iszMaster = ALLOC_STRING(pkvd->szValue);
 		pkvd->fHandled = TRUE;
 	}
 	else
