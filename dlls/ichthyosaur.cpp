@@ -74,6 +74,7 @@ public:
 	void  Swim( void );
 	Vector DoProbe(Vector &Probe);
 
+	void  Vector2String(const Vector* vec, char* str);
 	float VectorToPitch( const Vector &vec);
 	float FlPitchDiff( void );
 	float ChangePitch( int speed );
@@ -1089,6 +1090,25 @@ Vector CIchthyosaur::DoProbe(Vector &Probe)
 		return SteeringVector;
 	}
 	return Vector(RANDOM_FLOAT(0,0) * m_flightSpeed, RANDOM_FLOAT(0,0) * m_flightSpeed, RANDOM_FLOAT(0,0) * m_flightSpeed); // ScripedSnark: WTF?
+}
+
+void CIchthyosaur::Vector2String(const Vector* vec, char* str)
+{
+	char strx[30];
+	char stry[30];
+	char strz[30];
+
+	_gcvt(vec->x, 20, strx);
+	_gcvt(vec->y, 20, stry);
+	_gcvt(vec->z, 20, strz);
+
+	strcpy(str, "( ");
+	strcat(str, strx);
+	strcat(str, ", ");
+	strcat(str, stry);
+	strcat(str, ", ");
+	strcat(str, strz);
+	strcat(str, " )");
 }
 
 #endif
