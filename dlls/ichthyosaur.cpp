@@ -1092,7 +1092,7 @@ Vector CIchthyosaur::DoProbe(Vector &Probe)
 	return Vector(RANDOM_FLOAT(0,0) * m_flightSpeed, RANDOM_FLOAT(0,0) * m_flightSpeed, RANDOM_FLOAT(0,0) * m_flightSpeed); // ScripedSnark: WTF?
 }
 
-void CIchthyosaur::Vector2String(const Vector* vec, char* str)
+void CIchthyosaur::Vector2String( const Vector *vec, char *str )
 {
 	char strx[30];
 	char stry[30];
