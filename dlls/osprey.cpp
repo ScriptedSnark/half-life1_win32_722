@@ -169,8 +169,6 @@ void COsprey :: Spawn( void )
 
 void COsprey::Precache( void )
 {
-	UTIL_PrecacheOther( "monster_human_grunt" );
-
 	PRECACHE_MODEL("models/osprey.mdl");
 	PRECACHE_MODEL("models/HVR.mdl");
 
@@ -326,7 +324,6 @@ void COsprey :: HoverThink( void )
 	}
 
 	pev->nextthink = gpGlobals->time + 0.1;
-	UTIL_MakeAimVectors( pev->angles );
 	ShowDamage( );
 }
 
