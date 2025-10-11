@@ -1,18 +1,3 @@
-/***
-*
-*	Copyright (c) 1996-2002, Valve LLC. All rights reserved.
-*	
-*	This product contains software technology licensed from Id 
-*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
-*	All Rights Reserved.
-*
-*   Use, distribution, and modification of this source code and/or resulting
-*   object code is restricted to non-commercial enhancements to products from
-*   Valve LLC.  All other use, distribution, or modification is prohibited
-*   without written permission from Valve LLC.
-*
-****/
-
 {-0.525731, 0.000000, 0.850651}, 
 {-0.442863, 0.238856, 0.864188}, 
 {-0.295242, 0.000000, 0.955423}, 

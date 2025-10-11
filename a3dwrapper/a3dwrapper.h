@@ -1,14 +1,3 @@
-/*
- * a3dwrapper.h
- *
- *
- * Copyright (c) 1999 Aureal Semiconductor, Inc. - All rights reserved.
- *
- * This code may be used, copied or distributed in accordance with the terms
- * described in the A3D2.0 SDK License Agreement.
- *
-*/
-
 #ifndef A3DWRAPPERDP_H
 #define A3DWRAPPERDP_H
 #pragma once

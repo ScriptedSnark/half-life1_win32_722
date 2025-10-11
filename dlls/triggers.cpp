@@ -240,11 +240,6 @@ void CTriggerRelay::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE
 //**********************************************************
 // The Multimanager Entity - when fired, will fire up to 16 targets 
 // at specified times.
-// FLAG:		THREAD (create clones when triggered)
-// FLAG:		CLONE (this is a clone for a threaded execution)
-
-#define SF_MULTIMAN_CLONE		0x80000000
-#define SF_MULTIMAN_THREAD		0x00000001
 
 class CMultiManager : public CBaseToggle
 {
@@ -254,9 +249,7 @@ public:
 	void EXPORT ManagerThink ( void );
 	void EXPORT ManagerUse   ( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value );
 
-#if _DEBUG
 	void EXPORT ManagerReport( void );
-#endif
 
 	BOOL		HasTarget( string_t targetname );
 	
@@ -272,17 +265,6 @@ public:
 	float	m_startTime;// Time we started firing
 	int		m_iTargetName	[ MAX_MULTI_TARGETS ];// list if indexes into global string array
 	float	m_flTargetDelay [ MAX_MULTI_TARGETS ];// delay (in seconds) from time of manager fire to target fire
-private:
-	inline BOOL IsClone( void ) { return (pev->spawnflags & SF_MULTIMAN_CLONE) ? TRUE : FALSE; }
-	inline BOOL ShouldClone( void ) 
-	{ 
-		if ( IsClone() )
-			return FALSE;
-
-		return (pev->spawnflags & SF_MULTIMAN_THREAD) ? TRUE : FALSE; 
-	}
-
-	CMultiManager *Clone( void );
 };
 LINK_ENTITY_TO_CLASS( multi_manager, CMultiManager );
 
@@ -384,46 +366,16 @@ void CMultiManager :: ManagerThink ( void )
 	if ( m_index >= m_cTargets )// have we fired all targets?
 	{
 		SetThink( NULL );
-		if ( IsClone() )
-		{
-			UTIL_Remove( this );
-			return;
-		}
 		SetUse ( &CMultiManager::ManagerUse );// allow manager re-use 
 	}
 	else
 		pev->nextthink = m_startTime + m_flTargetDelay[ m_index ];
 }
 
-CMultiManager *CMultiManager::Clone( void )
-{
-	CMultiManager *pMulti = GetClassPtr( (CMultiManager *)NULL );
-
-	edict_t *pEdict = pMulti->pev->pContainingEntity;
-	memcpy( pMulti->pev, pev, sizeof(*pev) );
-	pMulti->pev->pContainingEntity = pEdict;
-
-	pMulti->pev->spawnflags |= SF_MULTIMAN_CLONE;
-	pMulti->m_cTargets = m_cTargets;
-	memcpy( pMulti->m_iTargetName, m_iTargetName, sizeof( m_iTargetName ) );
-	memcpy( pMulti->m_flTargetDelay, m_flTargetDelay, sizeof( m_flTargetDelay ) );
-
-	return pMulti;
-}
-
 
 // The USE function builds the time table and starts the entity thinking.
 void CMultiManager :: ManagerUse ( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value )
 {
-	// In multiplayer games, clone the MM and execute in the clone (like a thread)
-	// to allow multiple players to trigger the same multimanager
-	if ( ShouldClone() )
-	{
-		CMultiManager *pClone = Clone();
-		pClone->ManagerUse( pActivator, pCaller, useType, value );
-		return;
-	}
-
 	m_hActivator = pActivator;
 	m_index = 0;
 	m_startTime = gpGlobals->time;
@@ -434,7 +386,6 @@ void CMultiManager :: ManagerUse ( CBaseEntity *pActivator, CBaseEntity *pCaller
 	pev->nextthink = gpGlobals->time;
 }
 
-#if _DEBUG
 void CMultiManager :: ManagerReport ( void )
 {
 	int	cIndex;
@@ -444,7 +395,6 @@ void CMultiManager :: ManagerReport ( void )
 		ALERT ( at_console, "%s %f\n", STRING(m_iTargetName[cIndex]), m_flTargetDelay[cIndex] );
 	}
 }
-#endif
 
 //***********************************************************
 
@@ -913,53 +863,9 @@ void CBaseTrigger :: HurtTouch ( CBaseEntity *pOther )
 	if ( (pev->spawnflags & SF_TRIGGER_HURT_NO_CLIENTS) && pOther->pev->flags & FL_CLIENT )
 		return;
 
-	// HACKHACK -- In multiplayer, players touch this based on packet receipt.
-	// So the players who send packets later aren't always hurt.  Keep track of
-	// how much time has passed and whether or not you've touched that player
-	if ( g_pGameRules->IsMultiplayer() )
-	{
-		if ( pev->dmgtime > gpGlobals->time )
-		{
-			if ( gpGlobals->time != pev->pain_finished )
-			{// too early to hurt again, and not same frame with a different entity
-				if ( pOther->pev->flags & FL_CLIENT )
-				{
-					int playerMask = 1 << (pOther->entindex() - 1);
-
-					// If I've already touched this player (this time), then bail out
-					if ( pev->impulse & playerMask )
-						return;
-
-					// Mark this player as touched
-					// BUGBUG - There can be only 32 players!
-					pev->impulse |= playerMask;
-				}
-				else
-				{
-					return;
-				}
-			}
-		}
-		else
-		{
-			// New clock, "un-touch" all players
-			pev->impulse = 0;
-			if ( pOther->pev->flags & FL_CLIENT )
-			{
-				int playerMask = 1 << (pOther->entindex() - 1);
-
-				// Mark this player as touched
-				// BUGBUG - There can be only 32 players!
-				pev->impulse |= playerMask;
-			}
-		}
-	}
-	else	// Original code -- single player
-	{
-		if ( pev->dmgtime > gpGlobals->time && gpGlobals->time != pev->pain_finished )
-		{// too early to hurt again, and not same frame with a different entity
-			return;
-		}
+	if ( pev->dmgtime > gpGlobals->time && gpGlobals->time != pev->pain_finished )
+	{// too early to hurt again, and not same frame with a different entity
+		return;
 	}
 
 
@@ -1110,8 +1016,6 @@ void CBaseTrigger :: MultiTouch( CBaseEntity *pOther )
 		 ((pevToucher->flags & FL_MONSTER) && (pev->spawnflags & SF_TRIGGER_ALLOWMONSTERS)) ||
 		 (pev->spawnflags & SF_TRIGGER_PUSHABLES) && FClassnameIs(pevToucher,"func_pushable") )
 	{
-
-#if 0
 		// if the trigger has an angles field, check player's facing direction
 		if (pev->movedir != g_vecZero)
 		{
@@ -1119,7 +1023,6 @@ void CBaseTrigger :: MultiTouch( CBaseEntity *pOther )
 			if ( DotProduct( gpGlobals->v_forward, pev->movedir ) < 0 )
 				return;         // not facing the right way
 		}
-#endif
 		
 		ActivateMultiTrigger( pOther );
 	}
@@ -1456,7 +1359,7 @@ void CChangeLevel :: ChangeLevelNow( CBaseEntity *pActivator )
 	ASSERT(!FStrEq(m_szMapName, ""));
 
 	// Don't work in deathmatch
-	if ( g_pGameRules->IsDeathmatch() )
+	if ( gpGlobals->deathmatch )
 		return;
 
 	// Some people are firing these multiple times in a frame, disable
@@ -1932,7 +1835,7 @@ LINK_ENTITY_TO_CLASS( trigger_autosave, CTriggerSave );
 
 void CTriggerSave::Spawn( void )
 {
-	if ( g_pGameRules->IsDeathmatch() )
+	if ( gpGlobals->deathmatch )
 	{
 		REMOVE_ENTITY( ENT(pev) );
 		return;
@@ -1986,7 +1889,7 @@ void CTriggerEndSection::EndSectionUse( CBaseEntity *pActivator, CBaseEntity *pC
 
 void CTriggerEndSection::Spawn( void )
 {
-	if ( g_pGameRules->IsDeathmatch() )
+	if ( gpGlobals->deathmatch )
 	{
 		REMOVE_ENTITY( ENT(pev) );
 		return;
@@ -2077,7 +1980,7 @@ private:
 };
 LINK_ENTITY_TO_CLASS( trigger_changetarget, CTriggerChangeTarget );
 
-TYPEDESCRIPTION	CTriggerChangeTarget::m_SaveData[] = 
+TYPEDESCRIPTION	CTriggerChangeTarget::m_SaveData[] =
 {
 	DEFINE_FIELD( CTriggerChangeTarget, m_iszNewTarget, FIELD_STRING ),
 };
