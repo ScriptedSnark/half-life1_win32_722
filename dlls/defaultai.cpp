@@ -619,39 +619,6 @@ Schedule_t slChaseEnemy[] =
 	},
 };
 
-
-// Chase enemy failure schedule
-Task_t	tlChaseEnemyFailed[] =
-{
-	{ TASK_STOP_MOVING,				(float)0					},
-	{ TASK_WAIT,					(float)0.2					},
-	{ TASK_FIND_COVER_FROM_ENEMY,	(float)0					},
-	{ TASK_RUN_PATH,				(float)0					},
-	{ TASK_WAIT_FOR_MOVEMENT,		(float)0					},
-	{ TASK_REMEMBER,				(float)bits_MEMORY_INCOVER	},
-//	{ TASK_TURN_LEFT,				(float)179					},
-	{ TASK_FACE_ENEMY,				(float)0					},
-	{ TASK_WAIT,					(float)1					},
-};
-
-Schedule_t	slChaseEnemyFailed[] =
-{
-	{ 
-		tlChaseEnemyFailed,
-		ARRAYSIZE ( tlChaseEnemyFailed ), 
-		bits_COND_NEW_ENEMY			|
-		bits_COND_CAN_RANGE_ATTACK1	|
-		bits_COND_CAN_MELEE_ATTACK1	|
-		bits_COND_CAN_RANGE_ATTACK2	|
-		bits_COND_CAN_MELEE_ATTACK2	|
-		bits_COND_HEAR_SOUND,
-
-		bits_SOUND_DANGER,
-		"tlChaseEnemyFailed"
-	},
-};
-
-
 //=========================================================
 // small flinch, played when minor damage is taken.
 //=========================================================
@@ -988,7 +955,6 @@ Schedule_t *CBaseMonster::m_scheduleList[] =
 	slSpecialAttack1,
 	slSpecialAttack2,
 	slChaseEnemy,
-	slChaseEnemyFailed,
 	slSmallFlinch,
 	slDie,
 	slVictoryDance,
