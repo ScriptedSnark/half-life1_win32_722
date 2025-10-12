@@ -819,10 +819,6 @@ BOOL CBaseMonster :: CineCleanup( )
 		}
 		else
 			SUB_StartFadeOut(); // SetThink ( &CBaseEntity::SUB_DoNothing );
-		// This turns off animation & physics in case their origin ends up stuck in the world or something
-		StopAnimation();
-		pev->movetype = MOVETYPE_NONE;
-		pev->effects |= EF_NOINTERP;	// Don't interpolate either, assume the corpse is positioned in its final resting place
 		return FALSE;
 	}
 
@@ -889,10 +885,6 @@ BOOL CBaseMonster :: CineCleanup( )
 		// Dropping out because he got killed
 		// Can't call killed() no attacker and weirdness (late gibbing) may result
 		m_IdealMonsterState = MONSTERSTATE_DEAD;
-		SetConditions( bits_COND_LIGHT_DAMAGE );
-		pev->deadflag = DEAD_DYING;
-		FCheckAITrigger();
-		pev->deadflag = DEAD_NO;
 	}
 
 
