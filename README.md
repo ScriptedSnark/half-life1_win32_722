@@ -22,12 +22,15 @@ root.path="E:\Half-Life NetTest1"
 ## Building
 
 ### Visual Studio 2022
+
 Open the solution file located at:
 ```
 ..\half-life1_win32_722\projects\vs2022\Half-Life (722 Build, 1998).sln
 ```
 
 Now press `Build` -> `Build Solution` (or press `Ctrl+Shift+B` hotkey).
+
+**NOTE: if you get afxres.h error during hl_res.dll building, install Microsoft Foundation Class (MFC) library via VS installer.**
 
 ### Visual C++ 4.2
 Open any specific project you want to build, for example:
@@ -38,7 +41,9 @@ All project files are located in their directories.
 
 Now press `Build`  -> `Build X.dll` (or press `Shift+F8` hotkey).
 
-**WARNING: don't forget to set the Working Directory in the project properties, otherwise the engine may fail to load the GameDLL.**
+**NOTE: if you get ml.exe errors, install MASM 6.12 or newer right into your MSVC++ 4.2 (ml.exe should be inside `bin` directory or somewhere in PATH environment).**
+
+**WARNING: don't forget to set the Working Directory in the project properties, otherwise the engine may fail to load the GameDLL during debugging.**
 
 ## Required files for playing
 You will need the original data files from Half-Life 1 Net Test 1.
@@ -59,5 +64,5 @@ They are publicly available online and can be found on archival sources such as 
 - [Half-Life SDK 2.3](https://github.com/ScriptedSnark/hlsdk-versions/tree/hlsdk_sp_2_3)
 
 ## Special thanks
-- [Overfloater](https://github.com/TheOverfloater)
-- [Barspinoff](https://github.com/barspinoff)
+- [Overfloater](https://github.com/TheOverfloater) (for playtesting)
+- [Barspinoff](https://github.com/barspinoff) (for playtesting and assistance with software rendering)
