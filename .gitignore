@@ -418,3 +418,5 @@ FodyWeavers.xsd
 /engine/a3d/verifya3d.lib
 /dlls/Debughl
 /dlls/Releasehl
+/engine/SoftDebug
+/engine/SoftRelease

@@ -958,11 +958,11 @@ void R_DrawBEntitiesOnList( void )
 				{
 					for (k = 0; k < MAX_DLIGHTS; k++)
 					{
+						vec3_t saveOrigin;
 						if ((cl_dlights[k].die < cl.time) ||
 							(!cl_dlights[k].radius))
 							continue;
 
-						vec3_t saveOrigin;
 						VectorCopy(cl_dlights[k].origin, saveOrigin); // save prev
 						VectorSubtract(cl_dlights[k].origin, currententity->origin, cl_dlights[k].origin);
 						

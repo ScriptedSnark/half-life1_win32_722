@@ -3265,11 +3265,11 @@ int hA3D_FeedBuffer( void* pA3D, int iChannel, channel_t* ch, sfxcache_t* sc, in
 				// 8bit routines
 				if (sc->width == 1)
 				{
+					WORD* lpAudio1, dwBytes1;
+					WORD* lpAudio2, dwBytes2;
 					sfx = &sc->data[pos];
 
 					// Lock the buffer so we can write data to it
-					WORD* lpAudio1, dwBytes1;
-					WORD* lpAudio2, dwBytes2;
 					if (FAILED(A3D_SetSourceCursorPositionEx(pA3D, samplebytes * 2,
 						(void**)&lpAudio1, &dwBytes1,
 						(void**)&lpAudio2, &dwBytes2, 0)))

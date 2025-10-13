@@ -364,6 +364,7 @@ Checks if a client should receive a multicast message
 qboolean SV_ValidClientMulticast( client_t* client, int soundLeaf, int to )
 {
 	unsigned char* mask;
+	int bitNumber;
 
 	mask = NULL;
 
@@ -389,8 +390,6 @@ qboolean SV_ValidClientMulticast( client_t* client, int soundLeaf, int to )
 
 	if (!mask)
 		return TRUE;
-
-	int bitNumber;
 
 	// Get the leaf number the client is on.
 	bitNumber = SV_PointLeafnum(client->edict->v.origin);

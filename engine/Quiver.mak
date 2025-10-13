@@ -4,21 +4,27 @@
 # TARGTYPE "Win32 (x86) Dynamic-Link Library" 0x0102
 
 !IF "$(CFG)" == ""
-CFG=Quiver - Win32 Debug
-!MESSAGE No configuration specified.  Defaulting to Quiver - Win32 Debug.
+CFG=Quiver - Win32 GL Debug
+!MESSAGE No configuration specified.  Defaulting to Quiver - Win32 GL Debug.
 !ENDIF 
 
-!IF "$(CFG)" != "Quiver - Win32 Release" && "$(CFG)" != "Quiver - Win32 Debug"
+!IF "$(CFG)" != "Quiver - Win32 Release" && "$(CFG)" != "Quiver - Win32 Debug"\
+ && "$(CFG)" != "Quiver - Win32 GL Debug" && "$(CFG)" !=\
+ "Quiver - Win32 GL Release"
 !MESSAGE Invalid configuration "$(CFG)" specified.
 !MESSAGE You can specify a configuration when running NMAKE on this makefile
 !MESSAGE by defining the macro CFG on the command line.  For example:
 !MESSAGE 
-!MESSAGE NMAKE /f "Quiver.mak" CFG="Quiver - Win32 Debug"
+!MESSAGE NMAKE /f "Quiver.mak" CFG="Quiver - Win32 GL Debug"
 !MESSAGE 
 !MESSAGE Possible choices for configuration are:
 !MESSAGE 
 !MESSAGE "Quiver - Win32 Release" (based on "Win32 (x86) Dynamic-Link Library")
 !MESSAGE "Quiver - Win32 Debug" (based on "Win32 (x86) Dynamic-Link Library")
+!MESSAGE "Quiver - Win32 GL Debug" (based on\
+ "Win32 (x86) Dynamic-Link Library")
+!MESSAGE "Quiver - Win32 GL Release" (based on\
+ "Win32 (x86) Dynamic-Link Library")
 !MESSAGE 
 !ERROR An invalid configuration is specified.
 !ENDIF 
@@ -31,9 +37,9 @@ NULL=nul
 ################################################################################
 # Begin Project
 # PROP Target_Last_Scanned "Quiver - Win32 Debug"
+MTL=mktyplib.exe
 CPP=cl.exe
 RSC=rc.exe
-MTL=mktyplib.exe
 
 !IF  "$(CFG)" == "Quiver - Win32 Release"
 
@@ -44,107 +50,134 @@ MTL=mktyplib.exe
 # PROP BASE Target_Dir ""
 # PROP Use_MFC 0
 # PROP Use_Debug_Libraries 0
-# PROP Output_Dir "GLRelease"
-# PROP Intermediate_Dir "GLRelease"
+# PROP Output_Dir "SoftRelease"
+# PROP Intermediate_Dir "SoftRelease"
 # PROP Target_Dir ""
-OUTDIR=.\GLRelease
-INTDIR=.\GLRelease
+OUTDIR=.\SoftRelease
+INTDIR=.\SoftRelease
 
-ALL : "$(OUTDIR)\hw.dll"
+ALL : "$(OUTDIR)\sw.dll"
 
 CLEAN : 
+	-@erase "$(INTDIR)\a3dwrapper.obj"
 	-@erase "$(INTDIR)\buildnum.obj"
 	-@erase "$(INTDIR)\cdll_exp.obj"
 	-@erase "$(INTDIR)\cdll_int.obj"
 	-@erase "$(INTDIR)\chase.obj"
 	-@erase "$(INTDIR)\cl_cam.obj"
-	-@erase "$(INTDIR)\Cl_demo.obj"
+	-@erase "$(INTDIR)\CL_DEMO.OBJ"
 	-@erase "$(INTDIR)\cl_draw.obj"
 	-@erase "$(INTDIR)\cl_ents.obj"
 	-@erase "$(INTDIR)\cl_input.obj"
-	-@erase "$(INTDIR)\Cl_main.obj"
-	-@erase "$(INTDIR)\Cl_parse.obj"
+	-@erase "$(INTDIR)\CL_MAIN.OBJ"
+	-@erase "$(INTDIR)\CL_PARSE.OBJ"
 	-@erase "$(INTDIR)\cl_pred.obj"
-	-@erase "$(INTDIR)\Cl_tent.obj"
+	-@erase "$(INTDIR)\CL_TENT.OBJ"
 	-@erase "$(INTDIR)\cmd.obj"
 	-@erase "$(INTDIR)\cmodel.obj"
 	-@erase "$(INTDIR)\common.obj"
 	-@erase "$(INTDIR)\conproc.obj"
-	-@erase "$(INTDIR)\Console.obj"
+	-@erase "$(INTDIR)\CONSOLE.OBJ"
 	-@erase "$(INTDIR)\crc.obj"
 	-@erase "$(INTDIR)\cvar.obj"
-	-@erase "$(INTDIR)\Gl_draw.obj"
-	-@erase "$(INTDIR)\GL_MESH.OBJ"
-	-@erase "$(INTDIR)\Gl_model.obj"
-	-@erase "$(INTDIR)\gl_refrag.obj"
-	-@erase "$(INTDIR)\gl_rlight.obj"
-	-@erase "$(INTDIR)\Gl_rmain.obj"
-	-@erase "$(INTDIR)\Gl_rmisc.obj"
-	-@erase "$(INTDIR)\Gl_rsurf.obj"
-	-@erase "$(INTDIR)\gl_screen.obj"
-	-@erase "$(INTDIR)\Gl_vidnt.obj"
-	-@erase "$(INTDIR)\Gl_warp.obj"
-	-@erase "$(INTDIR)\glHud.obj"
-	-@erase "$(INTDIR)\glide.obj"
+	-@erase "$(INTDIR)\d_draw.obj"
+	-@erase "$(INTDIR)\d_draw16.obj"
+	-@erase "$(INTDIR)\D_EDGE.OBJ"
+	-@erase "$(INTDIR)\D_FILL.OBJ"
+	-@erase "$(INTDIR)\D_INIT.OBJ"
+	-@erase "$(INTDIR)\D_MODECH.OBJ"
+	-@erase "$(INTDIR)\D_PART.OBJ"
+	-@erase "$(INTDIR)\d_parta.obj"
+	-@erase "$(INTDIR)\d_polysa.obj"
+	-@erase "$(INTDIR)\D_POLYSE.OBJ"
+	-@erase "$(INTDIR)\D_SCAN.OBJ"
+	-@erase "$(INTDIR)\d_spr8.obj"
+	-@erase "$(INTDIR)\D_SPRITE.OBJ"
+	-@erase "$(INTDIR)\D_SURF.OBJ"
+	-@erase "$(INTDIR)\D_VARS.OBJ"
+	-@erase "$(INTDIR)\d_varsa.obj"
+	-@erase "$(INTDIR)\D_ZPOINT.OBJ"
+	-@erase "$(INTDIR)\draw.obj"
 	-@erase "$(INTDIR)\ha3d.obj"
+	-@erase "$(INTDIR)\ha3dg.obj"
 	-@erase "$(INTDIR)\hashpak.obj"
 	-@erase "$(INTDIR)\host.obj"
 	-@erase "$(INTDIR)\host_cmd.obj"
 	-@erase "$(INTDIR)\HUD.obj"
-	-@erase "$(INTDIR)\in_camera.obj"
 	-@erase "$(INTDIR)\in_win.obj"
-	-@erase "$(INTDIR)\Keys.obj"
+	-@erase "$(INTDIR)\KEYS.OBJ"
 	-@erase "$(INTDIR)\l_studio.obj"
 	-@erase "$(INTDIR)\math.obj"
 	-@erase "$(INTDIR)\mathlib.obj"
+	-@erase "$(INTDIR)\model.obj"
 	-@erase "$(INTDIR)\net_chan.obj"
 	-@erase "$(INTDIR)\net_ws.obj"
-	-@erase "$(INTDIR)\opengl2d3d.obj"
-	-@erase "$(INTDIR)\pe_export.obj"
+	-@erase "$(INTDIR)\NONINTEL.OBJ"
+	-@erase "$(INTDIR)\pe_win32.obj"
+	-@erase "$(INTDIR)\physics.obj"
 	-@erase "$(INTDIR)\pmove.obj"
 	-@erase "$(INTDIR)\pmovetst.obj"
 	-@erase "$(INTDIR)\pr_cmds.obj"
 	-@erase "$(INTDIR)\pr_edict.obj"
-	-@erase "$(INTDIR)\profile.obj"
-	-@erase "$(INTDIR)\qgl.obj"
-	-@erase "$(INTDIR)\R_part.obj"
+	-@erase "$(INTDIR)\R_ACLIP.OBJ"
+	-@erase "$(INTDIR)\r_aclipa.obj"
+	-@erase "$(INTDIR)\r_alias.obj"
+	-@erase "$(INTDIR)\r_aliasa.obj"
+	-@erase "$(INTDIR)\R_BSP.OBJ"
+	-@erase "$(INTDIR)\R_DRAW.OBJ"
+	-@erase "$(INTDIR)\r_drawa.obj"
+	-@erase "$(INTDIR)\R_EDGE.OBJ"
+	-@erase "$(INTDIR)\r_edgea.obj"
+	-@erase "$(INTDIR)\R_EFRAG.OBJ"
+	-@erase "$(INTDIR)\R_LIGHT.OBJ"
+	-@erase "$(INTDIR)\R_MAIN.OBJ"
+	-@erase "$(INTDIR)\R_MISC.OBJ"
+	-@erase "$(INTDIR)\R_PART.OBJ"
+	-@erase "$(INTDIR)\R_SKY.OBJ"
+	-@erase "$(INTDIR)\R_SPRITE.OBJ"
 	-@erase "$(INTDIR)\r_studio.obj"
+	-@erase "$(INTDIR)\R_SURF.OBJ"
 	-@erase "$(INTDIR)\r_trans.obj"
 	-@erase "$(INTDIR)\r_triangle.obj"
-	-@erase "$(INTDIR)\Snd_dma.obj"
-	-@erase "$(INTDIR)\Snd_mem.obj"
-	-@erase "$(INTDIR)\Snd_mix.obj"
+	-@erase "$(INTDIR)\R_VARS.OBJ"
+	-@erase "$(INTDIR)\r_varsa.obj"
+	-@erase "$(INTDIR)\SCREEN.OBJ"
+	-@erase "$(INTDIR)\SND_DMA.OBJ"
+	-@erase "$(INTDIR)\SND_MEM.OBJ"
+	-@erase "$(INTDIR)\SND_MIX.OBJ"
 	-@erase "$(INTDIR)\snd_mixa.obj"
-	-@erase "$(INTDIR)\Snd_win.obj"
-	-@erase "$(INTDIR)\sv_main.obj"
+	-@erase "$(INTDIR)\SND_WIN.OBJ"
+	-@erase "$(INTDIR)\surf16.obj"
+	-@erase "$(INTDIR)\surf8.obj"
+	-@erase "$(INTDIR)\SV_MAIN.OBJ"
 	-@erase "$(INTDIR)\sv_move.obj"
 	-@erase "$(INTDIR)\sv_phys.obj"
-	-@erase "$(INTDIR)\sv_send.obj"
 	-@erase "$(INTDIR)\sv_upld.obj"
 	-@erase "$(INTDIR)\sv_user.obj"
 	-@erase "$(INTDIR)\sys_win.obj"
 	-@erase "$(INTDIR)\sys_wina.obj"
 	-@erase "$(INTDIR)\textures.obj"
 	-@erase "$(INTDIR)\tmessage.obj"
-	-@erase "$(INTDIR)\vid_win.obj"
-	-@erase "$(INTDIR)\View.obj"
+	-@erase "$(INTDIR)\VID_WIN.OBJ"
+	-@erase "$(INTDIR)\VIEW.OBJ"
 	-@erase "$(INTDIR)\wad.obj"
 	-@erase "$(INTDIR)\world.obj"
 	-@erase "$(INTDIR)\worlda.obj"
 	-@erase "$(INTDIR)\zone.obj"
-	-@erase "$(OUTDIR)\hw.dll"
-	-@erase "$(OUTDIR)\hw.exp"
-	-@erase "$(OUTDIR)\hw.lib"
+	-@erase "$(OUTDIR)\sw.dll"
+	-@erase "$(OUTDIR)\sw.exp"
+	-@erase "$(OUTDIR)\sw.lib"
 
 "$(OUTDIR)" :
     if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
 
 # ADD BASE CPP /nologo /MT /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /YX /c
-# ADD CPP /nologo /MT /W3 /GX /O2 /I "..\common" /D "NDEBUG" /D "GLQUAKE" /D "__USEA3D" /D "__A3D_GEOM" /D "WIN32" /D "_WINDOWS" /YX /c
-CPP_PROJ=/nologo /MT /W3 /GX /O2 /I "..\common" /D "NDEBUG" /D "GLQUAKE" /D\
- "__USEA3D" /D "__A3D_GEOM" /D "WIN32" /D "_WINDOWS" /Fp"$(INTDIR)/Quiver.pch"\
- /YX /Fo"$(INTDIR)/" /c 
-CPP_OBJS=.\GLRelease/
+# ADD CPP /nologo /MT /W3 /GR /GX /O2 /I "..\common" /I "..\dx6sdk\include" /D "NDEBUG" /D "__USEA3D" /D "__A3D_GEOM" /D "WIN32" /D "_WINDOWS" /c
+# SUBTRACT CPP /YX
+CPP_PROJ=/nologo /MT /W3 /GR /GX /O2 /I "..\common" /I "..\dx6sdk\include" /D\
+ "NDEBUG" /D "__USEA3D" /D "__A3D_GEOM" /D "WIN32" /D "_WINDOWS" /Fo"$(INTDIR)/"\
+ /c 
+CPP_OBJS=.\SoftRelease/
 CPP_SBRS=.\.
 # ADD BASE MTL /nologo /D "NDEBUG" /win32
 # ADD MTL /nologo /D "NDEBUG" /win32
@@ -159,94 +192,120 @@ BSC32_SBRS= \
 	
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /dll /machine:I386
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib winmm.lib ws2_32.lib /nologo /subsystem:windows /dll /machine:I386 /out:"GLRelease/hw.dll"
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib winmm.lib ws2_32.lib /nologo /subsystem:windows /dll /machine:I386 /out:"SoftRelease/sw.dll"
 LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib\
  advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib\
  odbccp32.lib winmm.lib ws2_32.lib /nologo /subsystem:windows /dll\
- /incremental:no /pdb:"$(OUTDIR)/hw.pdb" /machine:I386 /out:"$(OUTDIR)/hw.dll"\
- /implib:"$(OUTDIR)/hw.lib" 
+ /incremental:no /pdb:"$(OUTDIR)/sw.pdb" /machine:I386 /out:"$(OUTDIR)/sw.dll"\
+ /implib:"$(OUTDIR)/sw.lib" 
 LINK32_OBJS= \
+	"$(INTDIR)\a3dwrapper.obj" \
 	"$(INTDIR)\buildnum.obj" \
 	"$(INTDIR)\cdll_exp.obj" \
 	"$(INTDIR)\cdll_int.obj" \
 	"$(INTDIR)\chase.obj" \
 	"$(INTDIR)\cl_cam.obj" \
-	"$(INTDIR)\Cl_demo.obj" \
+	"$(INTDIR)\CL_DEMO.OBJ" \
 	"$(INTDIR)\cl_draw.obj" \
 	"$(INTDIR)\cl_ents.obj" \
 	"$(INTDIR)\cl_input.obj" \
-	"$(INTDIR)\Cl_main.obj" \
-	"$(INTDIR)\Cl_parse.obj" \
+	"$(INTDIR)\CL_MAIN.OBJ" \
+	"$(INTDIR)\CL_PARSE.OBJ" \
 	"$(INTDIR)\cl_pred.obj" \
-	"$(INTDIR)\Cl_tent.obj" \
+	"$(INTDIR)\CL_TENT.OBJ" \
 	"$(INTDIR)\cmd.obj" \
 	"$(INTDIR)\cmodel.obj" \
 	"$(INTDIR)\common.obj" \
 	"$(INTDIR)\conproc.obj" \
-	"$(INTDIR)\Console.obj" \
+	"$(INTDIR)\CONSOLE.OBJ" \
 	"$(INTDIR)\crc.obj" \
 	"$(INTDIR)\cvar.obj" \
-	"$(INTDIR)\Gl_draw.obj" \
-	"$(INTDIR)\GL_MESH.OBJ" \
-	"$(INTDIR)\Gl_model.obj" \
-	"$(INTDIR)\gl_refrag.obj" \
-	"$(INTDIR)\gl_rlight.obj" \
-	"$(INTDIR)\Gl_rmain.obj" \
-	"$(INTDIR)\Gl_rmisc.obj" \
-	"$(INTDIR)\Gl_rsurf.obj" \
-	"$(INTDIR)\gl_screen.obj" \
-	"$(INTDIR)\Gl_vidnt.obj" \
-	"$(INTDIR)\Gl_warp.obj" \
-	"$(INTDIR)\glHud.obj" \
-	"$(INTDIR)\glide.obj" \
+	"$(INTDIR)\d_draw.obj" \
+	"$(INTDIR)\d_draw16.obj" \
+	"$(INTDIR)\D_EDGE.OBJ" \
+	"$(INTDIR)\D_FILL.OBJ" \
+	"$(INTDIR)\D_INIT.OBJ" \
+	"$(INTDIR)\D_MODECH.OBJ" \
+	"$(INTDIR)\D_PART.OBJ" \
+	"$(INTDIR)\d_parta.obj" \
+	"$(INTDIR)\d_polysa.obj" \
+	"$(INTDIR)\D_POLYSE.OBJ" \
+	"$(INTDIR)\D_SCAN.OBJ" \
+	"$(INTDIR)\d_spr8.obj" \
+	"$(INTDIR)\D_SPRITE.OBJ" \
+	"$(INTDIR)\D_SURF.OBJ" \
+	"$(INTDIR)\D_VARS.OBJ" \
+	"$(INTDIR)\d_varsa.obj" \
+	"$(INTDIR)\D_ZPOINT.OBJ" \
+	"$(INTDIR)\draw.obj" \
 	"$(INTDIR)\ha3d.obj" \
+	"$(INTDIR)\ha3dg.obj" \
 	"$(INTDIR)\hashpak.obj" \
 	"$(INTDIR)\host.obj" \
 	"$(INTDIR)\host_cmd.obj" \
 	"$(INTDIR)\HUD.obj" \
-	"$(INTDIR)\in_camera.obj" \
 	"$(INTDIR)\in_win.obj" \
-	"$(INTDIR)\Keys.obj" \
+	"$(INTDIR)\KEYS.OBJ" \
 	"$(INTDIR)\l_studio.obj" \
 	"$(INTDIR)\math.obj" \
 	"$(INTDIR)\mathlib.obj" \
+	"$(INTDIR)\model.obj" \
 	"$(INTDIR)\net_chan.obj" \
 	"$(INTDIR)\net_ws.obj" \
-	"$(INTDIR)\opengl2d3d.obj" \
-	"$(INTDIR)\pe_export.obj" \
+	"$(INTDIR)\NONINTEL.OBJ" \
+	"$(INTDIR)\pe_win32.obj" \
+	"$(INTDIR)\physics.obj" \
 	"$(INTDIR)\pmove.obj" \
 	"$(INTDIR)\pmovetst.obj" \
 	"$(INTDIR)\pr_cmds.obj" \
 	"$(INTDIR)\pr_edict.obj" \
-	"$(INTDIR)\profile.obj" \
-	"$(INTDIR)\qgl.obj" \
-	"$(INTDIR)\R_part.obj" \
+	"$(INTDIR)\R_ACLIP.OBJ" \
+	"$(INTDIR)\r_aclipa.obj" \
+	"$(INTDIR)\r_alias.obj" \
+	"$(INTDIR)\r_aliasa.obj" \
+	"$(INTDIR)\R_BSP.OBJ" \
+	"$(INTDIR)\R_DRAW.OBJ" \
+	"$(INTDIR)\r_drawa.obj" \
+	"$(INTDIR)\R_EDGE.OBJ" \
+	"$(INTDIR)\r_edgea.obj" \
+	"$(INTDIR)\R_EFRAG.OBJ" \
+	"$(INTDIR)\R_LIGHT.OBJ" \
+	"$(INTDIR)\R_MAIN.OBJ" \
+	"$(INTDIR)\R_MISC.OBJ" \
+	"$(INTDIR)\R_PART.OBJ" \
+	"$(INTDIR)\R_SKY.OBJ" \
+	"$(INTDIR)\R_SPRITE.OBJ" \
 	"$(INTDIR)\r_studio.obj" \
+	"$(INTDIR)\R_SURF.OBJ" \
 	"$(INTDIR)\r_trans.obj" \
 	"$(INTDIR)\r_triangle.obj" \
-	"$(INTDIR)\Snd_dma.obj" \
-	"$(INTDIR)\Snd_mem.obj" \
-	"$(INTDIR)\Snd_mix.obj" \
+	"$(INTDIR)\R_VARS.OBJ" \
+	"$(INTDIR)\r_varsa.obj" \
+	"$(INTDIR)\SCREEN.OBJ" \
+	"$(INTDIR)\SND_DMA.OBJ" \
+	"$(INTDIR)\SND_MEM.OBJ" \
+	"$(INTDIR)\SND_MIX.OBJ" \
 	"$(INTDIR)\snd_mixa.obj" \
-	"$(INTDIR)\Snd_win.obj" \
-	"$(INTDIR)\sv_main.obj" \
+	"$(INTDIR)\SND_WIN.OBJ" \
+	"$(INTDIR)\surf16.obj" \
+	"$(INTDIR)\surf8.obj" \
+	"$(INTDIR)\SV_MAIN.OBJ" \
 	"$(INTDIR)\sv_move.obj" \
 	"$(INTDIR)\sv_phys.obj" \
-	"$(INTDIR)\sv_send.obj" \
 	"$(INTDIR)\sv_upld.obj" \
 	"$(INTDIR)\sv_user.obj" \
 	"$(INTDIR)\sys_win.obj" \
 	"$(INTDIR)\sys_wina.obj" \
 	"$(INTDIR)\textures.obj" \
 	"$(INTDIR)\tmessage.obj" \
-	"$(INTDIR)\vid_win.obj" \
-	"$(INTDIR)\View.obj" \
+	"$(INTDIR)\VID_WIN.OBJ" \
+	"$(INTDIR)\VIEW.OBJ" \
 	"$(INTDIR)\wad.obj" \
 	"$(INTDIR)\world.obj" \
 	"$(INTDIR)\worlda.obj" \
 	"$(INTDIR)\zone.obj"
 
-"$(OUTDIR)\hw.dll" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
+"$(OUTDIR)\sw.dll" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
     $(LINK32) @<<
   $(LINK32_FLAGS) $(LINK32_OBJS)
 <<
@@ -260,82 +319,108 @@ LINK32_OBJS= \
 # PROP BASE Target_Dir ""
 # PROP Use_MFC 0
 # PROP Use_Debug_Libraries 1
-# PROP Output_Dir "GLDebug"
-# PROP Intermediate_Dir "GLDebug"
+# PROP Output_Dir "SoftDebug"
+# PROP Intermediate_Dir "SoftDebug"
 # PROP Target_Dir ""
-OUTDIR=.\GLDebug
-INTDIR=.\GLDebug
+OUTDIR=.\SoftDebug
+INTDIR=.\SoftDebug
 
-ALL : "$(OUTDIR)\hw.dll"
+ALL : "$(OUTDIR)\sw.dll"
 
 CLEAN : 
+	-@erase "$(INTDIR)\a3dwrapper.obj"
 	-@erase "$(INTDIR)\buildnum.obj"
 	-@erase "$(INTDIR)\cdll_exp.obj"
 	-@erase "$(INTDIR)\cdll_int.obj"
 	-@erase "$(INTDIR)\chase.obj"
 	-@erase "$(INTDIR)\cl_cam.obj"
-	-@erase "$(INTDIR)\Cl_demo.obj"
+	-@erase "$(INTDIR)\CL_DEMO.OBJ"
 	-@erase "$(INTDIR)\cl_draw.obj"
 	-@erase "$(INTDIR)\cl_ents.obj"
 	-@erase "$(INTDIR)\cl_input.obj"
-	-@erase "$(INTDIR)\Cl_main.obj"
-	-@erase "$(INTDIR)\Cl_parse.obj"
+	-@erase "$(INTDIR)\CL_MAIN.OBJ"
+	-@erase "$(INTDIR)\CL_PARSE.OBJ"
 	-@erase "$(INTDIR)\cl_pred.obj"
-	-@erase "$(INTDIR)\Cl_tent.obj"
+	-@erase "$(INTDIR)\CL_TENT.OBJ"
 	-@erase "$(INTDIR)\cmd.obj"
 	-@erase "$(INTDIR)\cmodel.obj"
 	-@erase "$(INTDIR)\common.obj"
 	-@erase "$(INTDIR)\conproc.obj"
-	-@erase "$(INTDIR)\Console.obj"
+	-@erase "$(INTDIR)\CONSOLE.OBJ"
 	-@erase "$(INTDIR)\crc.obj"
 	-@erase "$(INTDIR)\cvar.obj"
-	-@erase "$(INTDIR)\Gl_draw.obj"
-	-@erase "$(INTDIR)\GL_MESH.OBJ"
-	-@erase "$(INTDIR)\Gl_model.obj"
-	-@erase "$(INTDIR)\gl_refrag.obj"
-	-@erase "$(INTDIR)\gl_rlight.obj"
-	-@erase "$(INTDIR)\Gl_rmain.obj"
-	-@erase "$(INTDIR)\Gl_rmisc.obj"
-	-@erase "$(INTDIR)\Gl_rsurf.obj"
-	-@erase "$(INTDIR)\gl_screen.obj"
-	-@erase "$(INTDIR)\Gl_vidnt.obj"
-	-@erase "$(INTDIR)\Gl_warp.obj"
-	-@erase "$(INTDIR)\glHud.obj"
-	-@erase "$(INTDIR)\glide.obj"
+	-@erase "$(INTDIR)\d_draw.obj"
+	-@erase "$(INTDIR)\d_draw16.obj"
+	-@erase "$(INTDIR)\D_EDGE.OBJ"
+	-@erase "$(INTDIR)\D_FILL.OBJ"
+	-@erase "$(INTDIR)\D_INIT.OBJ"
+	-@erase "$(INTDIR)\D_MODECH.OBJ"
+	-@erase "$(INTDIR)\D_PART.OBJ"
+	-@erase "$(INTDIR)\d_parta.obj"
+	-@erase "$(INTDIR)\d_polysa.obj"
+	-@erase "$(INTDIR)\D_POLYSE.OBJ"
+	-@erase "$(INTDIR)\D_SCAN.OBJ"
+	-@erase "$(INTDIR)\d_spr8.obj"
+	-@erase "$(INTDIR)\D_SPRITE.OBJ"
+	-@erase "$(INTDIR)\D_SURF.OBJ"
+	-@erase "$(INTDIR)\D_VARS.OBJ"
+	-@erase "$(INTDIR)\d_varsa.obj"
+	-@erase "$(INTDIR)\D_ZPOINT.OBJ"
+	-@erase "$(INTDIR)\draw.obj"
 	-@erase "$(INTDIR)\ha3d.obj"
+	-@erase "$(INTDIR)\ha3dg.obj"
 	-@erase "$(INTDIR)\hashpak.obj"
 	-@erase "$(INTDIR)\host.obj"
 	-@erase "$(INTDIR)\host_cmd.obj"
 	-@erase "$(INTDIR)\HUD.obj"
-	-@erase "$(INTDIR)\in_camera.obj"
 	-@erase "$(INTDIR)\in_win.obj"
-	-@erase "$(INTDIR)\Keys.obj"
+	-@erase "$(INTDIR)\KEYS.OBJ"
 	-@erase "$(INTDIR)\l_studio.obj"
 	-@erase "$(INTDIR)\math.obj"
 	-@erase "$(INTDIR)\mathlib.obj"
+	-@erase "$(INTDIR)\model.obj"
 	-@erase "$(INTDIR)\net_chan.obj"
 	-@erase "$(INTDIR)\net_ws.obj"
-	-@erase "$(INTDIR)\opengl2d3d.obj"
-	-@erase "$(INTDIR)\pe_export.obj"
+	-@erase "$(INTDIR)\NONINTEL.OBJ"
+	-@erase "$(INTDIR)\pe_win32.obj"
+	-@erase "$(INTDIR)\physics.obj"
 	-@erase "$(INTDIR)\pmove.obj"
 	-@erase "$(INTDIR)\pmovetst.obj"
 	-@erase "$(INTDIR)\pr_cmds.obj"
 	-@erase "$(INTDIR)\pr_edict.obj"
-	-@erase "$(INTDIR)\profile.obj"
-	-@erase "$(INTDIR)\qgl.obj"
-	-@erase "$(INTDIR)\R_part.obj"
+	-@erase "$(INTDIR)\R_ACLIP.OBJ"
+	-@erase "$(INTDIR)\r_aclipa.obj"
+	-@erase "$(INTDIR)\r_alias.obj"
+	-@erase "$(INTDIR)\r_aliasa.obj"
+	-@erase "$(INTDIR)\R_BSP.OBJ"
+	-@erase "$(INTDIR)\R_DRAW.OBJ"
+	-@erase "$(INTDIR)\r_drawa.obj"
+	-@erase "$(INTDIR)\R_EDGE.OBJ"
+	-@erase "$(INTDIR)\r_edgea.obj"
+	-@erase "$(INTDIR)\R_EFRAG.OBJ"
+	-@erase "$(INTDIR)\R_LIGHT.OBJ"
+	-@erase "$(INTDIR)\R_MAIN.OBJ"
+	-@erase "$(INTDIR)\R_MISC.OBJ"
+	-@erase "$(INTDIR)\R_PART.OBJ"
+	-@erase "$(INTDIR)\R_SKY.OBJ"
+	-@erase "$(INTDIR)\R_SPRITE.OBJ"
 	-@erase "$(INTDIR)\r_studio.obj"
+	-@erase "$(INTDIR)\R_SURF.OBJ"
 	-@erase "$(INTDIR)\r_trans.obj"
 	-@erase "$(INTDIR)\r_triangle.obj"
-	-@erase "$(INTDIR)\Snd_dma.obj"
-	-@erase "$(INTDIR)\Snd_mem.obj"
-	-@erase "$(INTDIR)\Snd_mix.obj"
+	-@erase "$(INTDIR)\R_VARS.OBJ"
+	-@erase "$(INTDIR)\r_varsa.obj"
+	-@erase "$(INTDIR)\SCREEN.OBJ"
+	-@erase "$(INTDIR)\SND_DMA.OBJ"
+	-@erase "$(INTDIR)\SND_MEM.OBJ"
+	-@erase "$(INTDIR)\SND_MIX.OBJ"
 	-@erase "$(INTDIR)\snd_mixa.obj"
-	-@erase "$(INTDIR)\Snd_win.obj"
-	-@erase "$(INTDIR)\sv_main.obj"
+	-@erase "$(INTDIR)\SND_WIN.OBJ"
+	-@erase "$(INTDIR)\surf16.obj"
+	-@erase "$(INTDIR)\surf8.obj"
+	-@erase "$(INTDIR)\SV_MAIN.OBJ"
 	-@erase "$(INTDIR)\sv_move.obj"
 	-@erase "$(INTDIR)\sv_phys.obj"
-	-@erase "$(INTDIR)\sv_send.obj"
 	-@erase "$(INTDIR)\sv_upld.obj"
 	-@erase "$(INTDIR)\sv_user.obj"
 	-@erase "$(INTDIR)\sys_win.obj"
@@ -344,27 +429,28 @@ CLEAN :
 	-@erase "$(INTDIR)\tmessage.obj"
 	-@erase "$(INTDIR)\vc40.idb"
 	-@erase "$(INTDIR)\vc40.pdb"
-	-@erase "$(INTDIR)\vid_win.obj"
-	-@erase "$(INTDIR)\View.obj"
+	-@erase "$(INTDIR)\VID_WIN.OBJ"
+	-@erase "$(INTDIR)\VIEW.OBJ"
 	-@erase "$(INTDIR)\wad.obj"
 	-@erase "$(INTDIR)\world.obj"
 	-@erase "$(INTDIR)\worlda.obj"
 	-@erase "$(INTDIR)\zone.obj"
-	-@erase "$(OUTDIR)\hw.dll"
-	-@erase "$(OUTDIR)\hw.exp"
-	-@erase "$(OUTDIR)\hw.ilk"
-	-@erase "$(OUTDIR)\hw.lib"
-	-@erase "$(OUTDIR)\hw.pdb"
+	-@erase "$(OUTDIR)\sw.dll"
+	-@erase "$(OUTDIR)\sw.exp"
+	-@erase "$(OUTDIR)\sw.ilk"
+	-@erase "$(OUTDIR)\sw.lib"
+	-@erase "$(OUTDIR)\sw.pdb"
 
 "$(OUTDIR)" :
     if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
 
 # ADD BASE CPP /nologo /MTd /W3 /Gm /GX /Zi /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /YX /c
-# ADD CPP /nologo /MTd /W3 /Gm /GX /Zi /Od /I "..\common" /D "_DEBUG" /D "GLQUAKE" /D "__USEA3D" /D "__A3D_GEOM" /D "WIN32" /D "_WINDOWS" /YX /c
-CPP_PROJ=/nologo /MTd /W3 /Gm /GX /Zi /Od /I "..\common" /D "_DEBUG" /D\
- "GLQUAKE" /D "__USEA3D" /D "__A3D_GEOM" /D "WIN32" /D "_WINDOWS"\
- /Fp"$(INTDIR)/Quiver.pch" /YX /Fo"$(INTDIR)/" /Fd"$(INTDIR)/" /c 
-CPP_OBJS=.\GLDebug/
+# ADD CPP /nologo /MTd /W3 /Gm /GX /Zi /Od /I "..\common" /I "..\dx6sdk\include" /D "_DEBUG" /D "__USEA3D" /D "__A3D_GEOM" /D "WIN32" /D "_WINDOWS" /c
+# SUBTRACT CPP /YX
+CPP_PROJ=/nologo /MTd /W3 /Gm /GX /Zi /Od /I "..\common" /I "..\dx6sdk\include"\
+ /D "_DEBUG" /D "__USEA3D" /D "__A3D_GEOM" /D "WIN32" /D "_WINDOWS"\
+ /Fo"$(INTDIR)/" /Fd"$(INTDIR)/" /c 
+CPP_OBJS=.\SoftDebug/
 CPP_SBRS=.\.
 # ADD BASE MTL /nologo /D "_DEBUG" /win32
 # ADD MTL /nologo /D "_DEBUG" /win32
@@ -379,6 +465,252 @@ BSC32_SBRS= \
 	
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /dll /debug /machine:I386
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib winmm.lib ws2_32.lib /nologo /subsystem:windows /dll /debug /machine:I386 /out:"SoftDebug/sw.dll"
+LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib\
+ advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib\
+ odbccp32.lib winmm.lib ws2_32.lib /nologo /subsystem:windows /dll\
+ /incremental:yes /pdb:"$(OUTDIR)/sw.pdb" /debug /machine:I386\
+ /out:"$(OUTDIR)/sw.dll" /implib:"$(OUTDIR)/sw.lib" 
+LINK32_OBJS= \
+	"$(INTDIR)\a3dwrapper.obj" \
+	"$(INTDIR)\buildnum.obj" \
+	"$(INTDIR)\cdll_exp.obj" \
+	"$(INTDIR)\cdll_int.obj" \
+	"$(INTDIR)\chase.obj" \
+	"$(INTDIR)\cl_cam.obj" \
+	"$(INTDIR)\CL_DEMO.OBJ" \
+	"$(INTDIR)\cl_draw.obj" \
+	"$(INTDIR)\cl_ents.obj" \
+	"$(INTDIR)\cl_input.obj" \
+	"$(INTDIR)\CL_MAIN.OBJ" \
+	"$(INTDIR)\CL_PARSE.OBJ" \
+	"$(INTDIR)\cl_pred.obj" \
+	"$(INTDIR)\CL_TENT.OBJ" \
+	"$(INTDIR)\cmd.obj" \
+	"$(INTDIR)\cmodel.obj" \
+	"$(INTDIR)\common.obj" \
+	"$(INTDIR)\conproc.obj" \
+	"$(INTDIR)\CONSOLE.OBJ" \
+	"$(INTDIR)\crc.obj" \
+	"$(INTDIR)\cvar.obj" \
+	"$(INTDIR)\d_draw.obj" \
+	"$(INTDIR)\d_draw16.obj" \
+	"$(INTDIR)\D_EDGE.OBJ" \
+	"$(INTDIR)\D_FILL.OBJ" \
+	"$(INTDIR)\D_INIT.OBJ" \
+	"$(INTDIR)\D_MODECH.OBJ" \
+	"$(INTDIR)\D_PART.OBJ" \
+	"$(INTDIR)\d_parta.obj" \
+	"$(INTDIR)\d_polysa.obj" \
+	"$(INTDIR)\D_POLYSE.OBJ" \
+	"$(INTDIR)\D_SCAN.OBJ" \
+	"$(INTDIR)\d_spr8.obj" \
+	"$(INTDIR)\D_SPRITE.OBJ" \
+	"$(INTDIR)\D_SURF.OBJ" \
+	"$(INTDIR)\D_VARS.OBJ" \
+	"$(INTDIR)\d_varsa.obj" \
+	"$(INTDIR)\D_ZPOINT.OBJ" \
+	"$(INTDIR)\draw.obj" \
+	"$(INTDIR)\ha3d.obj" \
+	"$(INTDIR)\ha3dg.obj" \
+	"$(INTDIR)\hashpak.obj" \
+	"$(INTDIR)\host.obj" \
+	"$(INTDIR)\host_cmd.obj" \
+	"$(INTDIR)\HUD.obj" \
+	"$(INTDIR)\in_win.obj" \
+	"$(INTDIR)\KEYS.OBJ" \
+	"$(INTDIR)\l_studio.obj" \
+	"$(INTDIR)\math.obj" \
+	"$(INTDIR)\mathlib.obj" \
+	"$(INTDIR)\model.obj" \
+	"$(INTDIR)\net_chan.obj" \
+	"$(INTDIR)\net_ws.obj" \
+	"$(INTDIR)\NONINTEL.OBJ" \
+	"$(INTDIR)\pe_win32.obj" \
+	"$(INTDIR)\physics.obj" \
+	"$(INTDIR)\pmove.obj" \
+	"$(INTDIR)\pmovetst.obj" \
+	"$(INTDIR)\pr_cmds.obj" \
+	"$(INTDIR)\pr_edict.obj" \
+	"$(INTDIR)\R_ACLIP.OBJ" \
+	"$(INTDIR)\r_aclipa.obj" \
+	"$(INTDIR)\r_alias.obj" \
+	"$(INTDIR)\r_aliasa.obj" \
+	"$(INTDIR)\R_BSP.OBJ" \
+	"$(INTDIR)\R_DRAW.OBJ" \
+	"$(INTDIR)\r_drawa.obj" \
+	"$(INTDIR)\R_EDGE.OBJ" \
+	"$(INTDIR)\r_edgea.obj" \
+	"$(INTDIR)\R_EFRAG.OBJ" \
+	"$(INTDIR)\R_LIGHT.OBJ" \
+	"$(INTDIR)\R_MAIN.OBJ" \
+	"$(INTDIR)\R_MISC.OBJ" \
+	"$(INTDIR)\R_PART.OBJ" \
+	"$(INTDIR)\R_SKY.OBJ" \
+	"$(INTDIR)\R_SPRITE.OBJ" \
+	"$(INTDIR)\r_studio.obj" \
+	"$(INTDIR)\R_SURF.OBJ" \
+	"$(INTDIR)\r_trans.obj" \
+	"$(INTDIR)\r_triangle.obj" \
+	"$(INTDIR)\R_VARS.OBJ" \
+	"$(INTDIR)\r_varsa.obj" \
+	"$(INTDIR)\SCREEN.OBJ" \
+	"$(INTDIR)\SND_DMA.OBJ" \
+	"$(INTDIR)\SND_MEM.OBJ" \
+	"$(INTDIR)\SND_MIX.OBJ" \
+	"$(INTDIR)\snd_mixa.obj" \
+	"$(INTDIR)\SND_WIN.OBJ" \
+	"$(INTDIR)\surf16.obj" \
+	"$(INTDIR)\surf8.obj" \
+	"$(INTDIR)\SV_MAIN.OBJ" \
+	"$(INTDIR)\sv_move.obj" \
+	"$(INTDIR)\sv_phys.obj" \
+	"$(INTDIR)\sv_upld.obj" \
+	"$(INTDIR)\sv_user.obj" \
+	"$(INTDIR)\sys_win.obj" \
+	"$(INTDIR)\sys_wina.obj" \
+	"$(INTDIR)\textures.obj" \
+	"$(INTDIR)\tmessage.obj" \
+	"$(INTDIR)\VID_WIN.OBJ" \
+	"$(INTDIR)\VIEW.OBJ" \
+	"$(INTDIR)\wad.obj" \
+	"$(INTDIR)\world.obj" \
+	"$(INTDIR)\worlda.obj" \
+	"$(INTDIR)\zone.obj"
+
+"$(OUTDIR)\sw.dll" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
+    $(LINK32) @<<
+  $(LINK32_FLAGS) $(LINK32_OBJS)
+<<
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+# PROP BASE Use_MFC 0
+# PROP BASE Use_Debug_Libraries 1
+# PROP BASE Output_Dir "Quiver__"
+# PROP BASE Intermediate_Dir "Quiver__"
+# PROP BASE Target_Dir ""
+# PROP Use_MFC 0
+# PROP Use_Debug_Libraries 1
+# PROP Output_Dir "GLDebug"
+# PROP Intermediate_Dir "GLDebug"
+# PROP Target_Dir ""
+OUTDIR=.\GLDebug
+INTDIR=.\GLDebug
+
+ALL : "$(OUTDIR)\hw.dll"
+
+CLEAN : 
+	-@erase "$(INTDIR)\a3dwrapper.obj"
+	-@erase "$(INTDIR)\buildnum.obj"
+	-@erase "$(INTDIR)\cdll_exp.obj"
+	-@erase "$(INTDIR)\cdll_int.obj"
+	-@erase "$(INTDIR)\chase.obj"
+	-@erase "$(INTDIR)\cl_cam.obj"
+	-@erase "$(INTDIR)\CL_DEMO.OBJ"
+	-@erase "$(INTDIR)\cl_draw.obj"
+	-@erase "$(INTDIR)\cl_ents.obj"
+	-@erase "$(INTDIR)\cl_input.obj"
+	-@erase "$(INTDIR)\CL_MAIN.OBJ"
+	-@erase "$(INTDIR)\CL_PARSE.OBJ"
+	-@erase "$(INTDIR)\cl_pred.obj"
+	-@erase "$(INTDIR)\CL_TENT.OBJ"
+	-@erase "$(INTDIR)\cmd.obj"
+	-@erase "$(INTDIR)\cmodel.obj"
+	-@erase "$(INTDIR)\common.obj"
+	-@erase "$(INTDIR)\conproc.obj"
+	-@erase "$(INTDIR)\CONSOLE.OBJ"
+	-@erase "$(INTDIR)\crc.obj"
+	-@erase "$(INTDIR)\cvar.obj"
+	-@erase "$(INTDIR)\GL_DRAW.OBJ"
+	-@erase "$(INTDIR)\GL_MESH.OBJ"
+	-@erase "$(INTDIR)\GL_MODEL.OBJ"
+	-@erase "$(INTDIR)\gl_refrag.obj"
+	-@erase "$(INTDIR)\gl_rlight.obj"
+	-@erase "$(INTDIR)\GL_RMAIN.OBJ"
+	-@erase "$(INTDIR)\GL_RMISC.OBJ"
+	-@erase "$(INTDIR)\GL_RSURF.OBJ"
+	-@erase "$(INTDIR)\gl_screen.obj"
+	-@erase "$(INTDIR)\GL_VIDNT.OBJ"
+	-@erase "$(INTDIR)\GL_WARP.OBJ"
+	-@erase "$(INTDIR)\glHud.obj"
+	-@erase "$(INTDIR)\glide.obj"
+	-@erase "$(INTDIR)\ha3d.obj"
+	-@erase "$(INTDIR)\ha3dg.obj"
+	-@erase "$(INTDIR)\hashpak.obj"
+	-@erase "$(INTDIR)\host.obj"
+	-@erase "$(INTDIR)\host_cmd.obj"
+	-@erase "$(INTDIR)\HUD.obj"
+	-@erase "$(INTDIR)\in_win.obj"
+	-@erase "$(INTDIR)\KEYS.OBJ"
+	-@erase "$(INTDIR)\l_studio.obj"
+	-@erase "$(INTDIR)\math.obj"
+	-@erase "$(INTDIR)\mathlib.obj"
+	-@erase "$(INTDIR)\net_chan.obj"
+	-@erase "$(INTDIR)\net_ws.obj"
+	-@erase "$(INTDIR)\opengl2d3d.obj"
+	-@erase "$(INTDIR)\pe_win32.obj"
+	-@erase "$(INTDIR)\physics.obj"
+	-@erase "$(INTDIR)\pmove.obj"
+	-@erase "$(INTDIR)\pmovetst.obj"
+	-@erase "$(INTDIR)\pr_cmds.obj"
+	-@erase "$(INTDIR)\pr_edict.obj"
+	-@erase "$(INTDIR)\qgl.obj"
+	-@erase "$(INTDIR)\R_PART.OBJ"
+	-@erase "$(INTDIR)\r_studio.obj"
+	-@erase "$(INTDIR)\r_trans.obj"
+	-@erase "$(INTDIR)\r_triangle.obj"
+	-@erase "$(INTDIR)\SND_DMA.OBJ"
+	-@erase "$(INTDIR)\SND_MEM.OBJ"
+	-@erase "$(INTDIR)\SND_MIX.OBJ"
+	-@erase "$(INTDIR)\snd_mixa.obj"
+	-@erase "$(INTDIR)\SND_WIN.OBJ"
+	-@erase "$(INTDIR)\SV_MAIN.OBJ"
+	-@erase "$(INTDIR)\sv_move.obj"
+	-@erase "$(INTDIR)\sv_phys.obj"
+	-@erase "$(INTDIR)\sv_upld.obj"
+	-@erase "$(INTDIR)\sv_user.obj"
+	-@erase "$(INTDIR)\sys_win.obj"
+	-@erase "$(INTDIR)\sys_wina.obj"
+	-@erase "$(INTDIR)\textures.obj"
+	-@erase "$(INTDIR)\tmessage.obj"
+	-@erase "$(INTDIR)\vc40.idb"
+	-@erase "$(INTDIR)\vc40.pdb"
+	-@erase "$(INTDIR)\VIEW.OBJ"
+	-@erase "$(INTDIR)\wad.obj"
+	-@erase "$(INTDIR)\world.obj"
+	-@erase "$(INTDIR)\worlda.obj"
+	-@erase "$(INTDIR)\zone.obj"
+	-@erase "$(OUTDIR)\hw.dll"
+	-@erase "$(OUTDIR)\hw.exp"
+	-@erase "$(OUTDIR)\hw.ilk"
+	-@erase "$(OUTDIR)\hw.lib"
+	-@erase "$(OUTDIR)\hw.pdb"
+
+"$(OUTDIR)" :
+    if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
+
+# ADD BASE CPP /nologo /MTd /W3 /Gm /GX /Zi /Od /I "..\common" /D "_DEBUG" /D "GLQUAKE" /D "__USEA3D" /D "__A3D_GEOM" /D "WIN32" /D "_WINDOWS" /YX /c
+# ADD CPP /nologo /MTd /W3 /Gm /GX /Zi /Od /I "..\common" /I "..\dx6sdk\include" /D "_DEBUG" /D "GLQUAKE" /D "__USEA3D" /D "__A3D_GEOM" /D "WIN32" /D "_WINDOWS" /c
+# SUBTRACT CPP /YX
+CPP_PROJ=/nologo /MTd /W3 /Gm /GX /Zi /Od /I "..\common" /I "..\dx6sdk\include"\
+ /D "_DEBUG" /D "GLQUAKE" /D "__USEA3D" /D "__A3D_GEOM" /D "WIN32" /D "_WINDOWS"\
+ /Fo"$(INTDIR)/" /Fd"$(INTDIR)/" /c 
+CPP_OBJS=.\GLDebug/
+CPP_SBRS=.\.
+# ADD BASE MTL /nologo /D "_DEBUG" /win32
+# ADD MTL /nologo /D "_DEBUG" /win32
+MTL_PROJ=/nologo /D "_DEBUG" /win32 
+# ADD BASE RSC /l 0x409 /d "_DEBUG"
+# ADD RSC /l 0x409 /d "_DEBUG"
+BSC32=bscmake.exe
+# ADD BASE BSC32 /nologo
+# ADD BSC32 /nologo
+BSC32_FLAGS=/nologo /o"$(OUTDIR)/Quiver.bsc" 
+BSC32_SBRS= \
+	
+LINK32=link.exe
+# ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib winmm.lib ws2_32.lib /nologo /subsystem:windows /dll /debug /machine:I386 /out:"GLDebug/hw.dll"
 # ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib winmm.lib ws2_32.lib /nologo /subsystem:windows /dll /debug /machine:I386 /out:"GLDebug/hw.dll"
 LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib\
  advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib\
@@ -386,81 +718,295 @@ LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib\
  /incremental:yes /pdb:"$(OUTDIR)/hw.pdb" /debug /machine:I386\
  /out:"$(OUTDIR)/hw.dll" /implib:"$(OUTDIR)/hw.lib" 
 LINK32_OBJS= \
+	"$(INTDIR)\a3dwrapper.obj" \
 	"$(INTDIR)\buildnum.obj" \
 	"$(INTDIR)\cdll_exp.obj" \
 	"$(INTDIR)\cdll_int.obj" \
 	"$(INTDIR)\chase.obj" \
 	"$(INTDIR)\cl_cam.obj" \
-	"$(INTDIR)\Cl_demo.obj" \
+	"$(INTDIR)\CL_DEMO.OBJ" \
 	"$(INTDIR)\cl_draw.obj" \
 	"$(INTDIR)\cl_ents.obj" \
 	"$(INTDIR)\cl_input.obj" \
-	"$(INTDIR)\Cl_main.obj" \
-	"$(INTDIR)\Cl_parse.obj" \
+	"$(INTDIR)\CL_MAIN.OBJ" \
+	"$(INTDIR)\CL_PARSE.OBJ" \
 	"$(INTDIR)\cl_pred.obj" \
-	"$(INTDIR)\Cl_tent.obj" \
+	"$(INTDIR)\CL_TENT.OBJ" \
 	"$(INTDIR)\cmd.obj" \
 	"$(INTDIR)\cmodel.obj" \
 	"$(INTDIR)\common.obj" \
 	"$(INTDIR)\conproc.obj" \
-	"$(INTDIR)\Console.obj" \
+	"$(INTDIR)\CONSOLE.OBJ" \
 	"$(INTDIR)\crc.obj" \
 	"$(INTDIR)\cvar.obj" \
-	"$(INTDIR)\Gl_draw.obj" \
+	"$(INTDIR)\GL_DRAW.OBJ" \
 	"$(INTDIR)\GL_MESH.OBJ" \
-	"$(INTDIR)\Gl_model.obj" \
+	"$(INTDIR)\GL_MODEL.OBJ" \
 	"$(INTDIR)\gl_refrag.obj" \
 	"$(INTDIR)\gl_rlight.obj" \
-	"$(INTDIR)\Gl_rmain.obj" \
-	"$(INTDIR)\Gl_rmisc.obj" \
-	"$(INTDIR)\Gl_rsurf.obj" \
+	"$(INTDIR)\GL_RMAIN.OBJ" \
+	"$(INTDIR)\GL_RMISC.OBJ" \
+	"$(INTDIR)\GL_RSURF.OBJ" \
 	"$(INTDIR)\gl_screen.obj" \
-	"$(INTDIR)\Gl_vidnt.obj" \
-	"$(INTDIR)\Gl_warp.obj" \
+	"$(INTDIR)\GL_VIDNT.OBJ" \
+	"$(INTDIR)\GL_WARP.OBJ" \
 	"$(INTDIR)\glHud.obj" \
 	"$(INTDIR)\glide.obj" \
 	"$(INTDIR)\ha3d.obj" \
+	"$(INTDIR)\ha3dg.obj" \
 	"$(INTDIR)\hashpak.obj" \
 	"$(INTDIR)\host.obj" \
 	"$(INTDIR)\host_cmd.obj" \
 	"$(INTDIR)\HUD.obj" \
-	"$(INTDIR)\in_camera.obj" \
 	"$(INTDIR)\in_win.obj" \
-	"$(INTDIR)\Keys.obj" \
+	"$(INTDIR)\KEYS.OBJ" \
 	"$(INTDIR)\l_studio.obj" \
 	"$(INTDIR)\math.obj" \
 	"$(INTDIR)\mathlib.obj" \
 	"$(INTDIR)\net_chan.obj" \
 	"$(INTDIR)\net_ws.obj" \
 	"$(INTDIR)\opengl2d3d.obj" \
-	"$(INTDIR)\pe_export.obj" \
+	"$(INTDIR)\pe_win32.obj" \
+	"$(INTDIR)\physics.obj" \
 	"$(INTDIR)\pmove.obj" \
 	"$(INTDIR)\pmovetst.obj" \
 	"$(INTDIR)\pr_cmds.obj" \
 	"$(INTDIR)\pr_edict.obj" \
-	"$(INTDIR)\profile.obj" \
 	"$(INTDIR)\qgl.obj" \
-	"$(INTDIR)\R_part.obj" \
+	"$(INTDIR)\R_PART.OBJ" \
 	"$(INTDIR)\r_studio.obj" \
 	"$(INTDIR)\r_trans.obj" \
 	"$(INTDIR)\r_triangle.obj" \
-	"$(INTDIR)\Snd_dma.obj" \
-	"$(INTDIR)\Snd_mem.obj" \
-	"$(INTDIR)\Snd_mix.obj" \
+	"$(INTDIR)\SND_DMA.OBJ" \
+	"$(INTDIR)\SND_MEM.OBJ" \
+	"$(INTDIR)\SND_MIX.OBJ" \
 	"$(INTDIR)\snd_mixa.obj" \
-	"$(INTDIR)\Snd_win.obj" \
-	"$(INTDIR)\sv_main.obj" \
+	"$(INTDIR)\SND_WIN.OBJ" \
+	"$(INTDIR)\SV_MAIN.OBJ" \
 	"$(INTDIR)\sv_move.obj" \
 	"$(INTDIR)\sv_phys.obj" \
-	"$(INTDIR)\sv_send.obj" \
 	"$(INTDIR)\sv_upld.obj" \
 	"$(INTDIR)\sv_user.obj" \
 	"$(INTDIR)\sys_win.obj" \
 	"$(INTDIR)\sys_wina.obj" \
 	"$(INTDIR)\textures.obj" \
 	"$(INTDIR)\tmessage.obj" \
-	"$(INTDIR)\vid_win.obj" \
-	"$(INTDIR)\View.obj" \
+	"$(INTDIR)\VIEW.OBJ" \
+	"$(INTDIR)\wad.obj" \
+	"$(INTDIR)\world.obj" \
+	"$(INTDIR)\worlda.obj" \
+	"$(INTDIR)\zone.obj"
+
+"$(OUTDIR)\hw.dll" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
+    $(LINK32) @<<
+  $(LINK32_FLAGS) $(LINK32_OBJS)
+<<
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+# PROP BASE Use_MFC 0
+# PROP BASE Use_Debug_Libraries 0
+# PROP BASE Output_Dir "Quiver_0"
+# PROP BASE Intermediate_Dir "Quiver_0"
+# PROP BASE Target_Dir ""
+# PROP Use_MFC 0
+# PROP Use_Debug_Libraries 0
+# PROP Output_Dir "GLRelease"
+# PROP Intermediate_Dir "GLRelease"
+# PROP Target_Dir ""
+OUTDIR=.\GLRelease
+INTDIR=.\GLRelease
+
+ALL : "$(OUTDIR)\hw.dll"
+
+CLEAN : 
+	-@erase "$(INTDIR)\a3dwrapper.obj"
+	-@erase "$(INTDIR)\buildnum.obj"
+	-@erase "$(INTDIR)\cdll_exp.obj"
+	-@erase "$(INTDIR)\cdll_int.obj"
+	-@erase "$(INTDIR)\chase.obj"
+	-@erase "$(INTDIR)\cl_cam.obj"
+	-@erase "$(INTDIR)\CL_DEMO.OBJ"
+	-@erase "$(INTDIR)\cl_draw.obj"
+	-@erase "$(INTDIR)\cl_ents.obj"
+	-@erase "$(INTDIR)\cl_input.obj"
+	-@erase "$(INTDIR)\CL_MAIN.OBJ"
+	-@erase "$(INTDIR)\CL_PARSE.OBJ"
+	-@erase "$(INTDIR)\cl_pred.obj"
+	-@erase "$(INTDIR)\CL_TENT.OBJ"
+	-@erase "$(INTDIR)\cmd.obj"
+	-@erase "$(INTDIR)\cmodel.obj"
+	-@erase "$(INTDIR)\common.obj"
+	-@erase "$(INTDIR)\conproc.obj"
+	-@erase "$(INTDIR)\CONSOLE.OBJ"
+	-@erase "$(INTDIR)\crc.obj"
+	-@erase "$(INTDIR)\cvar.obj"
+	-@erase "$(INTDIR)\GL_DRAW.OBJ"
+	-@erase "$(INTDIR)\GL_MESH.OBJ"
+	-@erase "$(INTDIR)\GL_MODEL.OBJ"
+	-@erase "$(INTDIR)\gl_refrag.obj"
+	-@erase "$(INTDIR)\gl_rlight.obj"
+	-@erase "$(INTDIR)\GL_RMAIN.OBJ"
+	-@erase "$(INTDIR)\GL_RMISC.OBJ"
+	-@erase "$(INTDIR)\GL_RSURF.OBJ"
+	-@erase "$(INTDIR)\gl_screen.obj"
+	-@erase "$(INTDIR)\GL_VIDNT.OBJ"
+	-@erase "$(INTDIR)\GL_WARP.OBJ"
+	-@erase "$(INTDIR)\glHud.obj"
+	-@erase "$(INTDIR)\glide.obj"
+	-@erase "$(INTDIR)\ha3d.obj"
+	-@erase "$(INTDIR)\ha3dg.obj"
+	-@erase "$(INTDIR)\hashpak.obj"
+	-@erase "$(INTDIR)\host.obj"
+	-@erase "$(INTDIR)\host_cmd.obj"
+	-@erase "$(INTDIR)\HUD.obj"
+	-@erase "$(INTDIR)\in_win.obj"
+	-@erase "$(INTDIR)\KEYS.OBJ"
+	-@erase "$(INTDIR)\l_studio.obj"
+	-@erase "$(INTDIR)\math.obj"
+	-@erase "$(INTDIR)\mathlib.obj"
+	-@erase "$(INTDIR)\net_chan.obj"
+	-@erase "$(INTDIR)\net_ws.obj"
+	-@erase "$(INTDIR)\opengl2d3d.obj"
+	-@erase "$(INTDIR)\pe_win32.obj"
+	-@erase "$(INTDIR)\physics.obj"
+	-@erase "$(INTDIR)\pmove.obj"
+	-@erase "$(INTDIR)\pmovetst.obj"
+	-@erase "$(INTDIR)\pr_cmds.obj"
+	-@erase "$(INTDIR)\pr_edict.obj"
+	-@erase "$(INTDIR)\qgl.obj"
+	-@erase "$(INTDIR)\R_PART.OBJ"
+	-@erase "$(INTDIR)\r_studio.obj"
+	-@erase "$(INTDIR)\r_trans.obj"
+	-@erase "$(INTDIR)\r_triangle.obj"
+	-@erase "$(INTDIR)\SND_DMA.OBJ"
+	-@erase "$(INTDIR)\SND_MEM.OBJ"
+	-@erase "$(INTDIR)\SND_MIX.OBJ"
+	-@erase "$(INTDIR)\snd_mixa.obj"
+	-@erase "$(INTDIR)\SND_WIN.OBJ"
+	-@erase "$(INTDIR)\SV_MAIN.OBJ"
+	-@erase "$(INTDIR)\sv_move.obj"
+	-@erase "$(INTDIR)\sv_phys.obj"
+	-@erase "$(INTDIR)\sv_upld.obj"
+	-@erase "$(INTDIR)\sv_user.obj"
+	-@erase "$(INTDIR)\sys_win.obj"
+	-@erase "$(INTDIR)\sys_wina.obj"
+	-@erase "$(INTDIR)\textures.obj"
+	-@erase "$(INTDIR)\tmessage.obj"
+	-@erase "$(INTDIR)\VIEW.OBJ"
+	-@erase "$(INTDIR)\wad.obj"
+	-@erase "$(INTDIR)\world.obj"
+	-@erase "$(INTDIR)\worlda.obj"
+	-@erase "$(INTDIR)\zone.obj"
+	-@erase "$(OUTDIR)\hw.dll"
+	-@erase "$(OUTDIR)\hw.exp"
+	-@erase "$(OUTDIR)\hw.lib"
+
+"$(OUTDIR)" :
+    if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
+
+# ADD BASE CPP /nologo /MT /W3 /GX /O2 /I "..\common" /D "NDEBUG" /D "GLQUAKE" /D "__USEA3D" /D "__A3D_GEOM" /D "WIN32" /D "_WINDOWS" /YX /c
+# ADD CPP /nologo /MT /W3 /GR /GX /O2 /I "..\common" /I "..\dx6sdk\include" /D "NDEBUG" /D "GLQUAKE" /D "__USEA3D" /D "__A3D_GEOM" /D "WIN32" /D "_WINDOWS" /c
+# SUBTRACT CPP /YX
+CPP_PROJ=/nologo /MT /W3 /GR /GX /O2 /I "..\common" /I "..\dx6sdk\include" /D\
+ "NDEBUG" /D "GLQUAKE" /D "__USEA3D" /D "__A3D_GEOM" /D "WIN32" /D "_WINDOWS"\
+ /Fo"$(INTDIR)/" /c 
+CPP_OBJS=.\GLRelease/
+CPP_SBRS=.\.
+# ADD BASE MTL /nologo /D "NDEBUG" /win32
+# ADD MTL /nologo /D "NDEBUG" /win32
+MTL_PROJ=/nologo /D "NDEBUG" /win32 
+# ADD BASE RSC /l 0x409 /d "NDEBUG"
+# ADD RSC /l 0x409 /d "NDEBUG"
+BSC32=bscmake.exe
+# ADD BASE BSC32 /nologo
+# ADD BSC32 /nologo
+BSC32_FLAGS=/nologo /o"$(OUTDIR)/Quiver.bsc" 
+BSC32_SBRS= \
+	
+LINK32=link.exe
+# ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib winmm.lib ws2_32.lib /nologo /subsystem:windows /dll /machine:I386 /out:"GLRelease/hw.dll"
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib winmm.lib ws2_32.lib /nologo /subsystem:windows /dll /machine:I386 /out:"GLRelease/hw.dll"
+LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib\
+ advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib\
+ odbccp32.lib winmm.lib ws2_32.lib /nologo /subsystem:windows /dll\
+ /incremental:no /pdb:"$(OUTDIR)/hw.pdb" /machine:I386 /out:"$(OUTDIR)/hw.dll"\
+ /implib:"$(OUTDIR)/hw.lib" 
+LINK32_OBJS= \
+	"$(INTDIR)\a3dwrapper.obj" \
+	"$(INTDIR)\buildnum.obj" \
+	"$(INTDIR)\cdll_exp.obj" \
+	"$(INTDIR)\cdll_int.obj" \
+	"$(INTDIR)\chase.obj" \
+	"$(INTDIR)\cl_cam.obj" \
+	"$(INTDIR)\CL_DEMO.OBJ" \
+	"$(INTDIR)\cl_draw.obj" \
+	"$(INTDIR)\cl_ents.obj" \
+	"$(INTDIR)\cl_input.obj" \
+	"$(INTDIR)\CL_MAIN.OBJ" \
+	"$(INTDIR)\CL_PARSE.OBJ" \
+	"$(INTDIR)\cl_pred.obj" \
+	"$(INTDIR)\CL_TENT.OBJ" \
+	"$(INTDIR)\cmd.obj" \
+	"$(INTDIR)\cmodel.obj" \
+	"$(INTDIR)\common.obj" \
+	"$(INTDIR)\conproc.obj" \
+	"$(INTDIR)\CONSOLE.OBJ" \
+	"$(INTDIR)\crc.obj" \
+	"$(INTDIR)\cvar.obj" \
+	"$(INTDIR)\GL_DRAW.OBJ" \
+	"$(INTDIR)\GL_MESH.OBJ" \
+	"$(INTDIR)\GL_MODEL.OBJ" \
+	"$(INTDIR)\gl_refrag.obj" \
+	"$(INTDIR)\gl_rlight.obj" \
+	"$(INTDIR)\GL_RMAIN.OBJ" \
+	"$(INTDIR)\GL_RMISC.OBJ" \
+	"$(INTDIR)\GL_RSURF.OBJ" \
+	"$(INTDIR)\gl_screen.obj" \
+	"$(INTDIR)\GL_VIDNT.OBJ" \
+	"$(INTDIR)\GL_WARP.OBJ" \
+	"$(INTDIR)\glHud.obj" \
+	"$(INTDIR)\glide.obj" \
+	"$(INTDIR)\ha3d.obj" \
+	"$(INTDIR)\ha3dg.obj" \
+	"$(INTDIR)\hashpak.obj" \
+	"$(INTDIR)\host.obj" \
+	"$(INTDIR)\host_cmd.obj" \
+	"$(INTDIR)\HUD.obj" \
+	"$(INTDIR)\in_win.obj" \
+	"$(INTDIR)\KEYS.OBJ" \
+	"$(INTDIR)\l_studio.obj" \
+	"$(INTDIR)\math.obj" \
+	"$(INTDIR)\mathlib.obj" \
+	"$(INTDIR)\net_chan.obj" \
+	"$(INTDIR)\net_ws.obj" \
+	"$(INTDIR)\opengl2d3d.obj" \
+	"$(INTDIR)\pe_win32.obj" \
+	"$(INTDIR)\physics.obj" \
+	"$(INTDIR)\pmove.obj" \
+	"$(INTDIR)\pmovetst.obj" \
+	"$(INTDIR)\pr_cmds.obj" \
+	"$(INTDIR)\pr_edict.obj" \
+	"$(INTDIR)\qgl.obj" \
+	"$(INTDIR)\R_PART.OBJ" \
+	"$(INTDIR)\r_studio.obj" \
+	"$(INTDIR)\r_trans.obj" \
+	"$(INTDIR)\r_triangle.obj" \
+	"$(INTDIR)\SND_DMA.OBJ" \
+	"$(INTDIR)\SND_MEM.OBJ" \
+	"$(INTDIR)\SND_MIX.OBJ" \
+	"$(INTDIR)\snd_mixa.obj" \
+	"$(INTDIR)\SND_WIN.OBJ" \
+	"$(INTDIR)\SV_MAIN.OBJ" \
+	"$(INTDIR)\sv_move.obj" \
+	"$(INTDIR)\sv_phys.obj" \
+	"$(INTDIR)\sv_upld.obj" \
+	"$(INTDIR)\sv_user.obj" \
+	"$(INTDIR)\sys_win.obj" \
+	"$(INTDIR)\sys_wina.obj" \
+	"$(INTDIR)\textures.obj" \
+	"$(INTDIR)\tmessage.obj" \
+	"$(INTDIR)\VIEW.OBJ" \
 	"$(INTDIR)\wad.obj" \
 	"$(INTDIR)\world.obj" \
 	"$(INTDIR)\worlda.obj" \
@@ -496,21 +1042,31 @@ LINK32_OBJS= \
 
 # Name "Quiver - Win32 Release"
 # Name "Quiver - Win32 Debug"
+# Name "Quiver - Win32 GL Debug"
+# Name "Quiver - Win32 GL Release"
 
 !IF  "$(CFG)" == "Quiver - Win32 Release"
 
 !ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
 
 !ENDIF 
 
 ################################################################################
 # Begin Source File
 
-SOURCE=.\zone.h
+SOURCE=.\adivtab.h
 
 !IF  "$(CFG)" == "Quiver - Win32 Release"
 
 !ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
 
 !ENDIF 
 
@@ -524,6 +1080,10 @@ SOURCE=.\anorm_dots.h
 
 !ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
 
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
 !ENDIF 
 
 # End Source File
@@ -535,6 +1095,10 @@ SOURCE=.\anorms.h
 !IF  "$(CFG)" == "Quiver - Win32 Release"
 
 !ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
 
 !ENDIF 
 
@@ -548,6 +1112,10 @@ SOURCE=.\beamdef.h
 
 !ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
 
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
 !ENDIF 
 
 # End Source File
@@ -560,6 +1128,10 @@ SOURCE=.\bothdefs.h
 
 !ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
 
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
 !ENDIF 
 
 # End Source File
@@ -571,6 +1143,10 @@ SOURCE=.\bspfile.h
 !IF  "$(CFG)" == "Quiver - Win32 Release"
 
 !ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
 
 !ENDIF 
 
@@ -591,21 +1167,23 @@ DEP_CPP_BUILD=\
 	".\cmd.h"\
 	".\color.h"\
 	".\common.h"\
-	".\Console.h"\
+	".\CONSOLE.H"\
 	".\const.h"\
 	".\crc.h"\
 	".\cshift.h"\
 	".\custom.h"\
 	".\cvar.h"\
 	".\cvardef.h"\
+	".\d_iface.h"\
 	".\draw.h"\
 	".\eiface.h"\
-	".\Gl_model.h"\
-	".\Glquake.h"\
+	".\GL_MODEL.H"\
+	".\GLQUAKE.H"\
 	".\host_cmd.h"\
 	".\input.h"\
 	".\keys.h"\
 	".\mathlib.h"\
+	".\model.h"\
 	".\modelgen.h"\
 	".\net.h"\
 	".\pr_dlls.h"\
@@ -614,8 +1192,10 @@ DEP_CPP_BUILD=\
 	".\protocol.h"\
 	".\qgl.h"\
 	".\quakedef.h"\
+	".\r_local.h"\
 	".\r_shared.h"\
 	".\render.h"\
+	".\save.h"\
 	".\sbar.h"\
 	".\screen.h"\
 	".\server.h"\
@@ -630,7 +1210,7 @@ DEP_CPP_BUILD=\
 	".\world.h"\
 	".\wrect.h"\
 	".\zone.h"\
-	{$(INCLUDE)}"\GL\gl.h"\
+	{$(INCLUDE)}"\gl\GL.H"\
 	
 NODEP_CPP_BUILD=\
 	".\cmdlib.h"\
@@ -639,8 +1219,31 @@ NODEP_CPP_BUILD=\
 	".\trilib.h"\
 	
 
+!IF  "$(CFG)" == "Quiver - Win32 Release"
+
+
 "$(INTDIR)\buildnum.obj" : $(SOURCE) $(DEP_CPP_BUILD) "$(INTDIR)"
 
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+
+"$(INTDIR)\buildnum.obj" : $(SOURCE) $(DEP_CPP_BUILD) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+
+"$(INTDIR)\buildnum.obj" : $(SOURCE) $(DEP_CPP_BUILD) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+
+"$(INTDIR)\buildnum.obj" : $(SOURCE) $(DEP_CPP_BUILD) "$(INTDIR)"
+
+
+!ENDIF 
 
 # End Source File
 ################################################################################
@@ -659,21 +1262,23 @@ DEP_CPP_CDLL_=\
 	".\cmd.h"\
 	".\color.h"\
 	".\common.h"\
-	".\Console.h"\
+	".\CONSOLE.H"\
 	".\const.h"\
 	".\crc.h"\
 	".\cshift.h"\
 	".\custom.h"\
 	".\cvar.h"\
 	".\cvardef.h"\
+	".\d_iface.h"\
 	".\draw.h"\
 	".\eiface.h"\
-	".\Gl_model.h"\
-	".\Glquake.h"\
+	".\GL_MODEL.H"\
+	".\GLQUAKE.H"\
 	".\host_cmd.h"\
 	".\input.h"\
 	".\keys.h"\
 	".\mathlib.h"\
+	".\model.h"\
 	".\modelgen.h"\
 	".\net.h"\
 	".\pr_dlls.h"\
@@ -682,8 +1287,10 @@ DEP_CPP_CDLL_=\
 	".\protocol.h"\
 	".\qgl.h"\
 	".\quakedef.h"\
+	".\r_local.h"\
 	".\r_shared.h"\
 	".\render.h"\
+	".\save.h"\
 	".\sbar.h"\
 	".\screen.h"\
 	".\server.h"\
@@ -698,7 +1305,7 @@ DEP_CPP_CDLL_=\
 	".\world.h"\
 	".\wrect.h"\
 	".\zone.h"\
-	{$(INCLUDE)}"\GL\gl.h"\
+	{$(INCLUDE)}"\gl\GL.H"\
 	
 NODEP_CPP_CDLL_=\
 	".\cmdlib.h"\
@@ -707,8 +1314,31 @@ NODEP_CPP_CDLL_=\
 	".\trilib.h"\
 	
 
+!IF  "$(CFG)" == "Quiver - Win32 Release"
+
+
 "$(INTDIR)\cdll_exp.obj" : $(SOURCE) $(DEP_CPP_CDLL_) "$(INTDIR)"
 
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+
+"$(INTDIR)\cdll_exp.obj" : $(SOURCE) $(DEP_CPP_CDLL_) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+
+"$(INTDIR)\cdll_exp.obj" : $(SOURCE) $(DEP_CPP_CDLL_) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+
+"$(INTDIR)\cdll_exp.obj" : $(SOURCE) $(DEP_CPP_CDLL_) "$(INTDIR)"
+
+
+!ENDIF 
 
 # End Source File
 ################################################################################
@@ -729,22 +1359,24 @@ DEP_CPP_CDLL_I=\
 	".\cmd.h"\
 	".\color.h"\
 	".\common.h"\
-	".\Console.h"\
+	".\CONSOLE.H"\
 	".\const.h"\
 	".\crc.h"\
 	".\cshift.h"\
 	".\custom.h"\
 	".\cvar.h"\
 	".\cvardef.h"\
+	".\d_iface.h"\
 	".\draw.h"\
 	".\eiface.h"\
-	".\Gl_model.h"\
-	".\Glquake.h"\
+	".\GL_MODEL.H"\
+	".\GLQUAKE.H"\
 	".\host_cmd.h"\
 	".\hud_handlers.h"\
 	".\input.h"\
 	".\keys.h"\
 	".\mathlib.h"\
+	".\model.h"\
 	".\modelgen.h"\
 	".\net.h"\
 	".\pr_dlls.h"\
@@ -753,8 +1385,10 @@ DEP_CPP_CDLL_I=\
 	".\protocol.h"\
 	".\qgl.h"\
 	".\quakedef.h"\
+	".\r_local.h"\
 	".\r_shared.h"\
 	".\render.h"\
+	".\save.h"\
 	".\sbar.h"\
 	".\screen.h"\
 	".\server.h"\
@@ -771,7 +1405,7 @@ DEP_CPP_CDLL_I=\
 	".\world.h"\
 	".\wrect.h"\
 	".\zone.h"\
-	{$(INCLUDE)}"\GL\gl.h"\
+	{$(INCLUDE)}"\gl\GL.H"\
 	
 NODEP_CPP_CDLL_I=\
 	".\cmdlib.h"\
@@ -780,8 +1414,31 @@ NODEP_CPP_CDLL_I=\
 	".\trilib.h"\
 	
 
+!IF  "$(CFG)" == "Quiver - Win32 Release"
+
+
 "$(INTDIR)\cdll_int.obj" : $(SOURCE) $(DEP_CPP_CDLL_I) "$(INTDIR)"
 
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+
+"$(INTDIR)\cdll_int.obj" : $(SOURCE) $(DEP_CPP_CDLL_I) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+
+"$(INTDIR)\cdll_int.obj" : $(SOURCE) $(DEP_CPP_CDLL_I) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+
+"$(INTDIR)\cdll_int.obj" : $(SOURCE) $(DEP_CPP_CDLL_I) "$(INTDIR)"
+
+
+!ENDIF 
 
 # End Source File
 ################################################################################
@@ -792,6 +1449,10 @@ SOURCE=.\cdll_int.h
 !IF  "$(CFG)" == "Quiver - Win32 Release"
 
 !ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
 
 !ENDIF 
 
@@ -812,21 +1473,23 @@ DEP_CPP_CHASE=\
 	".\cmd.h"\
 	".\color.h"\
 	".\common.h"\
-	".\Console.h"\
+	".\CONSOLE.H"\
 	".\const.h"\
 	".\crc.h"\
 	".\cshift.h"\
 	".\custom.h"\
 	".\cvar.h"\
 	".\cvardef.h"\
+	".\d_iface.h"\
 	".\draw.h"\
 	".\eiface.h"\
-	".\Gl_model.h"\
-	".\Glquake.h"\
+	".\GL_MODEL.H"\
+	".\GLQUAKE.H"\
 	".\host_cmd.h"\
 	".\input.h"\
 	".\keys.h"\
 	".\mathlib.h"\
+	".\model.h"\
 	".\modelgen.h"\
 	".\net.h"\
 	".\pr_dlls.h"\
@@ -835,8 +1498,10 @@ DEP_CPP_CHASE=\
 	".\protocol.h"\
 	".\qgl.h"\
 	".\quakedef.h"\
+	".\r_local.h"\
 	".\r_shared.h"\
 	".\render.h"\
+	".\save.h"\
 	".\sbar.h"\
 	".\screen.h"\
 	".\server.h"\
@@ -851,7 +1516,7 @@ DEP_CPP_CHASE=\
 	".\world.h"\
 	".\wrect.h"\
 	".\zone.h"\
-	{$(INCLUDE)}"\GL\gl.h"\
+	{$(INCLUDE)}"\gl\GL.H"\
 	
 NODEP_CPP_CHASE=\
 	".\cmdlib.h"\
@@ -860,8 +1525,31 @@ NODEP_CPP_CHASE=\
 	".\trilib.h"\
 	
 
+!IF  "$(CFG)" == "Quiver - Win32 Release"
+
+
 "$(INTDIR)\chase.obj" : $(SOURCE) $(DEP_CPP_CHASE) "$(INTDIR)"
 
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+
+"$(INTDIR)\chase.obj" : $(SOURCE) $(DEP_CPP_CHASE) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+
+"$(INTDIR)\chase.obj" : $(SOURCE) $(DEP_CPP_CHASE) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+
+"$(INTDIR)\chase.obj" : $(SOURCE) $(DEP_CPP_CHASE) "$(INTDIR)"
+
+
+!ENDIF 
 
 # End Source File
 ################################################################################
@@ -880,31 +1568,36 @@ DEP_CPP_CL_CA=\
 	".\cmd.h"\
 	".\color.h"\
 	".\common.h"\
-	".\Console.h"\
+	".\CONSOLE.H"\
 	".\const.h"\
 	".\crc.h"\
 	".\cshift.h"\
 	".\custom.h"\
 	".\cvar.h"\
 	".\cvardef.h"\
+	".\d_iface.h"\
 	".\draw.h"\
 	".\eiface.h"\
-	".\Gl_model.h"\
-	".\Glquake.h"\
+	".\GL_MODEL.H"\
+	".\GLQUAKE.H"\
 	".\host_cmd.h"\
 	".\input.h"\
 	".\keys.h"\
 	".\mathlib.h"\
+	".\model.h"\
 	".\modelgen.h"\
 	".\net.h"\
+	".\pmove.h"\
 	".\pr_dlls.h"\
 	".\progdefs.h"\
 	".\Progs.h"\
 	".\protocol.h"\
 	".\qgl.h"\
 	".\quakedef.h"\
+	".\r_local.h"\
 	".\r_shared.h"\
 	".\render.h"\
+	".\save.h"\
 	".\sbar.h"\
 	".\screen.h"\
 	".\server.h"\
@@ -920,7 +1613,7 @@ DEP_CPP_CL_CA=\
 	".\world.h"\
 	".\wrect.h"\
 	".\zone.h"\
-	{$(INCLUDE)}"\GL\gl.h"\
+	{$(INCLUDE)}"\gl\GL.H"\
 	
 NODEP_CPP_CL_CA=\
 	".\cmdlib.h"\
@@ -929,14 +1622,37 @@ NODEP_CPP_CL_CA=\
 	".\trilib.h"\
 	
 
+!IF  "$(CFG)" == "Quiver - Win32 Release"
+
+
 "$(INTDIR)\cl_cam.obj" : $(SOURCE) $(DEP_CPP_CL_CA) "$(INTDIR)"
 
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+
+"$(INTDIR)\cl_cam.obj" : $(SOURCE) $(DEP_CPP_CL_CA) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+
+"$(INTDIR)\cl_cam.obj" : $(SOURCE) $(DEP_CPP_CL_CA) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+
+"$(INTDIR)\cl_cam.obj" : $(SOURCE) $(DEP_CPP_CL_CA) "$(INTDIR)"
+
+
+!ENDIF 
 
 # End Source File
 ################################################################################
 # Begin Source File
 
-SOURCE=.\Cl_demo.c
+SOURCE=.\CL_DEMO.C
 DEP_CPP_CL_DE=\
 	"..\common\dll_state.h"\
 	"..\common\platform.h"\
@@ -950,21 +1666,23 @@ DEP_CPP_CL_DE=\
 	".\cmd.h"\
 	".\color.h"\
 	".\common.h"\
-	".\Console.h"\
+	".\CONSOLE.H"\
 	".\const.h"\
 	".\crc.h"\
 	".\cshift.h"\
 	".\custom.h"\
 	".\cvar.h"\
 	".\cvardef.h"\
+	".\d_iface.h"\
 	".\draw.h"\
 	".\eiface.h"\
-	".\Gl_model.h"\
-	".\Glquake.h"\
+	".\GL_MODEL.H"\
+	".\GLQUAKE.H"\
 	".\host_cmd.h"\
 	".\input.h"\
 	".\keys.h"\
 	".\mathlib.h"\
+	".\model.h"\
 	".\modelgen.h"\
 	".\net.h"\
 	".\pr_dlls.h"\
@@ -973,11 +1691,14 @@ DEP_CPP_CL_DE=\
 	".\protocol.h"\
 	".\qgl.h"\
 	".\quakedef.h"\
+	".\r_local.h"\
 	".\r_shared.h"\
 	".\render.h"\
+	".\save.h"\
 	".\sbar.h"\
 	".\screen.h"\
 	".\server.h"\
+	".\shake.h"\
 	".\sound.h"\
 	".\spritegn.h"\
 	".\studio.h"\
@@ -990,7 +1711,7 @@ DEP_CPP_CL_DE=\
 	".\world.h"\
 	".\wrect.h"\
 	".\zone.h"\
-	{$(INCLUDE)}"\GL\gl.h"\
+	{$(INCLUDE)}"\gl\GL.H"\
 	
 NODEP_CPP_CL_DE=\
 	".\cmdlib.h"\
@@ -999,8 +1720,31 @@ NODEP_CPP_CL_DE=\
 	".\trilib.h"\
 	
 
-"$(INTDIR)\Cl_demo.obj" : $(SOURCE) $(DEP_CPP_CL_DE) "$(INTDIR)"
+!IF  "$(CFG)" == "Quiver - Win32 Release"
 
+
+"$(INTDIR)\CL_DEMO.OBJ" : $(SOURCE) $(DEP_CPP_CL_DE) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+
+"$(INTDIR)\CL_DEMO.OBJ" : $(SOURCE) $(DEP_CPP_CL_DE) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+
+"$(INTDIR)\CL_DEMO.OBJ" : $(SOURCE) $(DEP_CPP_CL_DE) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+
+"$(INTDIR)\CL_DEMO.OBJ" : $(SOURCE) $(DEP_CPP_CL_DE) "$(INTDIR)"
+
+
+!ENDIF 
 
 # End Source File
 ################################################################################
@@ -1011,6 +1755,10 @@ SOURCE=.\cl_demo.h
 !IF  "$(CFG)" == "Quiver - Win32 Release"
 
 !ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
 
 !ENDIF 
 
@@ -1032,21 +1780,23 @@ DEP_CPP_CL_DR=\
 	".\cmd.h"\
 	".\color.h"\
 	".\common.h"\
-	".\Console.h"\
+	".\CONSOLE.H"\
 	".\const.h"\
 	".\crc.h"\
 	".\cshift.h"\
 	".\custom.h"\
 	".\cvar.h"\
 	".\cvardef.h"\
+	".\d_iface.h"\
 	".\draw.h"\
 	".\eiface.h"\
-	".\Gl_model.h"\
-	".\Glquake.h"\
+	".\GL_MODEL.H"\
+	".\GLQUAKE.H"\
 	".\host_cmd.h"\
 	".\input.h"\
 	".\keys.h"\
 	".\mathlib.h"\
+	".\model.h"\
 	".\modelgen.h"\
 	".\net.h"\
 	".\pr_dlls.h"\
@@ -1058,6 +1808,7 @@ DEP_CPP_CL_DR=\
 	".\r_local.h"\
 	".\r_shared.h"\
 	".\render.h"\
+	".\save.h"\
 	".\sbar.h"\
 	".\screen.h"\
 	".\server.h"\
@@ -1072,7 +1823,7 @@ DEP_CPP_CL_DR=\
 	".\world.h"\
 	".\wrect.h"\
 	".\zone.h"\
-	{$(INCLUDE)}"\GL\gl.h"\
+	{$(INCLUDE)}"\gl\GL.H"\
 	
 NODEP_CPP_CL_DR=\
 	".\cmdlib.h"\
@@ -1081,8 +1832,31 @@ NODEP_CPP_CL_DR=\
 	".\trilib.h"\
 	
 
+!IF  "$(CFG)" == "Quiver - Win32 Release"
+
+
 "$(INTDIR)\cl_draw.obj" : $(SOURCE) $(DEP_CPP_CL_DR) "$(INTDIR)"
 
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+
+"$(INTDIR)\cl_draw.obj" : $(SOURCE) $(DEP_CPP_CL_DR) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+
+"$(INTDIR)\cl_draw.obj" : $(SOURCE) $(DEP_CPP_CL_DR) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+
+"$(INTDIR)\cl_draw.obj" : $(SOURCE) $(DEP_CPP_CL_DR) "$(INTDIR)"
+
+
+!ENDIF 
 
 # End Source File
 ################################################################################
@@ -1094,6 +1868,10 @@ SOURCE=.\cl_draw.h
 
 !ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
 
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
 !ENDIF 
 
 # End Source File
@@ -1101,9 +1879,6 @@ SOURCE=.\cl_draw.h
 # Begin Source File
 
 SOURCE=.\cl_ents.c
-
-!IF  "$(CFG)" == "Quiver - Win32 Release"
-
 DEP_CPP_CL_EN=\
 	"..\common\dll_state.h"\
 	"..\common\platform.h"\
@@ -1118,7 +1893,7 @@ DEP_CPP_CL_EN=\
 	".\cmd.h"\
 	".\color.h"\
 	".\common.h"\
-	".\Console.h"\
+	".\CONSOLE.H"\
 	".\const.h"\
 	".\crc.h"\
 	".\cshift.h"\
@@ -1126,14 +1901,16 @@ DEP_CPP_CL_EN=\
 	".\customentity.h"\
 	".\cvar.h"\
 	".\cvardef.h"\
+	".\d_iface.h"\
 	".\draw.h"\
 	".\eiface.h"\
-	".\Gl_model.h"\
-	".\Glquake.h"\
+	".\GL_MODEL.H"\
+	".\GLQUAKE.H"\
 	".\host_cmd.h"\
 	".\input.h"\
 	".\keys.h"\
 	".\mathlib.h"\
+	".\model.h"\
 	".\modelgen.h"\
 	".\net.h"\
 	".\pmove.h"\
@@ -1144,8 +1921,10 @@ DEP_CPP_CL_EN=\
 	".\protocol.h"\
 	".\qgl.h"\
 	".\quakedef.h"\
+	".\r_local.h"\
 	".\r_shared.h"\
 	".\render.h"\
+	".\save.h"\
 	".\sbar.h"\
 	".\screen.h"\
 	".\server.h"\
@@ -1160,7 +1939,7 @@ DEP_CPP_CL_EN=\
 	".\world.h"\
 	".\wrect.h"\
 	".\zone.h"\
-	{$(INCLUDE)}"\GL\gl.h"\
+	{$(INCLUDE)}"\gl\GL.H"\
 	
 NODEP_CPP_CL_EN=\
 	".\cmdlib.h"\
@@ -1168,76 +1947,27 @@ NODEP_CPP_CL_EN=\
 	".\scriplib.h"\
 	".\trilib.h"\
 	
+
+!IF  "$(CFG)" == "Quiver - Win32 Release"
+
 
 "$(INTDIR)\cl_ents.obj" : $(SOURCE) $(DEP_CPP_CL_EN) "$(INTDIR)"
 
 
 !ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
 
-DEP_CPP_CL_EN=\
-	"..\common\dll_state.h"\
-	"..\common\platform.h"\
-	"..\common\qfont.h"\
-	".\beamdef.h"\
-	".\bothdefs.h"\
-	".\bspfile.h"\
-	".\cdll_int.h"\
-	".\cl_demo.h"\
-	".\cl_tent.h"\
-	".\client.h"\
-	".\cmd.h"\
-	".\color.h"\
-	".\common.h"\
-	".\Console.h"\
-	".\const.h"\
-	".\crc.h"\
-	".\cshift.h"\
-	".\custom.h"\
-	".\customentity.h"\
-	".\cvar.h"\
-	".\cvardef.h"\
-	".\draw.h"\
-	".\eiface.h"\
-	".\Gl_model.h"\
-	".\Glquake.h"\
-	".\host_cmd.h"\
-	".\input.h"\
-	".\keys.h"\
-	".\mathlib.h"\
-	".\modelgen.h"\
-	".\net.h"\
-	".\pmove.h"\
-	".\pr_cmds.h"\
-	".\pr_dlls.h"\
-	".\progdefs.h"\
-	".\Progs.h"\
-	".\protocol.h"\
-	".\qgl.h"\
-	".\quakedef.h"\
-	".\r_shared.h"\
-	".\render.h"\
-	".\sbar.h"\
-	".\screen.h"\
-	".\server.h"\
-	".\sound.h"\
-	".\spritegn.h"\
-	".\studio.h"\
-	".\sys.h"\
-	".\vid.h"\
-	".\view.h"\
-	".\vmodes.h"\
-	".\wad.h"\
-	".\world.h"\
-	".\wrect.h"\
-	".\zone.h"\
-	{$(INCLUDE)}"\GL\gl.h"\
-	
-NODEP_CPP_CL_EN=\
-	".\cmdlib.h"\
-	".\lbmlib.h"\
-	".\scriplib.h"\
-	".\trilib.h"\
-	
+
+"$(INTDIR)\cl_ents.obj" : $(SOURCE) $(DEP_CPP_CL_EN) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+
+"$(INTDIR)\cl_ents.obj" : $(SOURCE) $(DEP_CPP_CL_EN) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
 
 "$(INTDIR)\cl_ents.obj" : $(SOURCE) $(DEP_CPP_CL_EN) "$(INTDIR)"
 
@@ -1261,21 +1991,23 @@ DEP_CPP_CL_IN=\
 	".\cmd.h"\
 	".\color.h"\
 	".\common.h"\
-	".\Console.h"\
+	".\CONSOLE.H"\
 	".\const.h"\
 	".\crc.h"\
 	".\cshift.h"\
 	".\custom.h"\
 	".\cvar.h"\
 	".\cvardef.h"\
+	".\d_iface.h"\
 	".\draw.h"\
 	".\eiface.h"\
-	".\Gl_model.h"\
-	".\Glquake.h"\
+	".\GL_MODEL.H"\
+	".\GLQUAKE.H"\
 	".\host_cmd.h"\
 	".\input.h"\
 	".\keys.h"\
 	".\mathlib.h"\
+	".\model.h"\
 	".\modelgen.h"\
 	".\net.h"\
 	".\pr_dlls.h"\
@@ -1284,8 +2016,10 @@ DEP_CPP_CL_IN=\
 	".\protocol.h"\
 	".\qgl.h"\
 	".\quakedef.h"\
+	".\r_local.h"\
 	".\r_shared.h"\
 	".\render.h"\
+	".\save.h"\
 	".\sbar.h"\
 	".\screen.h"\
 	".\server.h"\
@@ -1301,7 +2035,7 @@ DEP_CPP_CL_IN=\
 	".\world.h"\
 	".\wrect.h"\
 	".\zone.h"\
-	{$(INCLUDE)}"\GL\gl.h"\
+	{$(INCLUDE)}"\gl\GL.H"\
 	
 NODEP_CPP_CL_IN=\
 	".\cmdlib.h"\
@@ -1310,157 +2044,28 @@ NODEP_CPP_CL_IN=\
 	".\trilib.h"\
 	
 
-"$(INTDIR)\cl_input.obj" : $(SOURCE) $(DEP_CPP_CL_IN) "$(INTDIR)"
-
-
-# End Source File
-################################################################################
-# Begin Source File
-
-SOURCE=.\Cl_main.c
-
 !IF  "$(CFG)" == "Quiver - Win32 Release"
 
-DEP_CPP_CL_MA=\
-	"..\common\dll_state.h"\
-	"..\common\platform.h"\
-	"..\common\qfont.h"\
-	".\beamdef.h"\
-	".\bothdefs.h"\
-	".\bspfile.h"\
-	".\cdll_int.h"\
-	".\cl_demo.h"\
-	".\cl_tent.h"\
-	".\client.h"\
-	".\cmd.h"\
-	".\color.h"\
-	".\common.h"\
-	".\Console.h"\
-	".\const.h"\
-	".\crc.h"\
-	".\cshift.h"\
-	".\custom.h"\
-	".\cvar.h"\
-	".\cvardef.h"\
-	".\decal.h"\
-	".\draw.h"\
-	".\eiface.h"\
-	".\Gl_model.h"\
-	".\Glquake.h"\
-	".\hashpak.h"\
-	".\host_cmd.h"\
-	".\input.h"\
-	".\keys.h"\
-	".\mathlib.h"\
-	".\modelgen.h"\
-	".\net.h"\
-	".\pmove.h"\
-	".\pr_dlls.h"\
-	".\progdefs.h"\
-	".\Progs.h"\
-	".\protocol.h"\
-	".\qgl.h"\
-	".\quakedef.h"\
-	".\r_shared.h"\
-	".\render.h"\
-	".\sbar.h"\
-	".\screen.h"\
-	".\server.h"\
-	".\sound.h"\
-	".\spritegn.h"\
-	".\studio.h"\
-	".\sys.h"\
-	".\tmessage.h"\
-	".\vid.h"\
-	".\view.h"\
-	".\vmodes.h"\
-	".\wad.h"\
-	".\winquake.h"\
-	".\world.h"\
-	".\wrect.h"\
-	".\zone.h"\
-	{$(INCLUDE)}"\GL\gl.h"\
-	
-NODEP_CPP_CL_MA=\
-	".\cmdlib.h"\
-	".\lbmlib.h"\
-	".\scriplib.h"\
-	".\trilib.h"\
-	
 
-"$(INTDIR)\Cl_main.obj" : $(SOURCE) $(DEP_CPP_CL_MA) "$(INTDIR)"
+"$(INTDIR)\cl_input.obj" : $(SOURCE) $(DEP_CPP_CL_IN) "$(INTDIR)"
 
 
 !ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
 
-DEP_CPP_CL_MA=\
-	"..\common\dll_state.h"\
-	"..\common\platform.h"\
-	"..\common\qfont.h"\
-	".\beamdef.h"\
-	".\bothdefs.h"\
-	".\bspfile.h"\
-	".\cdll_int.h"\
-	".\cl_demo.h"\
-	".\cl_tent.h"\
-	".\client.h"\
-	".\cmd.h"\
-	".\color.h"\
-	".\common.h"\
-	".\Console.h"\
-	".\const.h"\
-	".\crc.h"\
-	".\cshift.h"\
-	".\custom.h"\
-	".\cvar.h"\
-	".\cvardef.h"\
-	".\decal.h"\
-	".\draw.h"\
-	".\eiface.h"\
-	".\Gl_model.h"\
-	".\Glquake.h"\
-	".\hashpak.h"\
-	".\host_cmd.h"\
-	".\input.h"\
-	".\keys.h"\
-	".\mathlib.h"\
-	".\modelgen.h"\
-	".\net.h"\
-	".\pmove.h"\
-	".\pr_dlls.h"\
-	".\progdefs.h"\
-	".\Progs.h"\
-	".\protocol.h"\
-	".\qgl.h"\
-	".\quakedef.h"\
-	".\r_shared.h"\
-	".\render.h"\
-	".\sbar.h"\
-	".\screen.h"\
-	".\server.h"\
-	".\sound.h"\
-	".\spritegn.h"\
-	".\studio.h"\
-	".\sys.h"\
-	".\tmessage.h"\
-	".\vid.h"\
-	".\view.h"\
-	".\vmodes.h"\
-	".\wad.h"\
-	".\winquake.h"\
-	".\world.h"\
-	".\wrect.h"\
-	".\zone.h"\
-	{$(INCLUDE)}"\GL\gl.h"\
-	
-NODEP_CPP_CL_MA=\
-	".\cmdlib.h"\
-	".\lbmlib.h"\
-	".\scriplib.h"\
-	".\trilib.h"\
-	
 
-"$(INTDIR)\Cl_main.obj" : $(SOURCE) $(DEP_CPP_CL_MA) "$(INTDIR)"
+"$(INTDIR)\cl_input.obj" : $(SOURCE) $(DEP_CPP_CL_IN) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+
+"$(INTDIR)\cl_input.obj" : $(SOURCE) $(DEP_CPP_CL_IN) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+
+"$(INTDIR)\cl_input.obj" : $(SOURCE) $(DEP_CPP_CL_IN) "$(INTDIR)"
 
 
 !ENDIF 
@@ -1469,7 +2074,111 @@ NODEP_CPP_CL_MA=\
 ################################################################################
 # Begin Source File
 
-SOURCE=.\Cl_parse.c
+SOURCE=.\CL_MAIN.C
+DEP_CPP_CL_MA=\
+	"..\common\clientid.h"\
+	"..\common\dll_state.h"\
+	"..\common\platform.h"\
+	"..\common\qfont.h"\
+	".\beamdef.h"\
+	".\bothdefs.h"\
+	".\bspfile.h"\
+	".\cdll_int.h"\
+	".\cl_demo.h"\
+	".\cl_servercache.h"\
+	".\cl_tent.h"\
+	".\client.h"\
+	".\cmd.h"\
+	".\color.h"\
+	".\common.h"\
+	".\CONSOLE.H"\
+	".\const.h"\
+	".\crc.h"\
+	".\cshift.h"\
+	".\custom.h"\
+	".\cvar.h"\
+	".\cvardef.h"\
+	".\d_iface.h"\
+	".\decal.h"\
+	".\draw.h"\
+	".\eiface.h"\
+	".\GL_MODEL.H"\
+	".\GLQUAKE.H"\
+	".\hashpak.h"\
+	".\host_cmd.h"\
+	".\input.h"\
+	".\keys.h"\
+	".\mathlib.h"\
+	".\model.h"\
+	".\modelgen.h"\
+	".\net.h"\
+	".\pmove.h"\
+	".\pr_dlls.h"\
+	".\progdefs.h"\
+	".\Progs.h"\
+	".\protocol.h"\
+	".\qgl.h"\
+	".\quakedef.h"\
+	".\r_local.h"\
+	".\r_shared.h"\
+	".\render.h"\
+	".\save.h"\
+	".\sbar.h"\
+	".\screen.h"\
+	".\server.h"\
+	".\sound.h"\
+	".\spritegn.h"\
+	".\studio.h"\
+	".\sys.h"\
+	".\tmessage.h"\
+	".\vid.h"\
+	".\view.h"\
+	".\vmodes.h"\
+	".\wad.h"\
+	".\winquake.h"\
+	".\world.h"\
+	".\wrect.h"\
+	".\zone.h"\
+	{$(INCLUDE)}"\gl\GL.H"\
+	
+NODEP_CPP_CL_MA=\
+	".\cmdlib.h"\
+	".\lbmlib.h"\
+	".\scriplib.h"\
+	".\trilib.h"\
+	
+
+!IF  "$(CFG)" == "Quiver - Win32 Release"
+
+
+"$(INTDIR)\CL_MAIN.OBJ" : $(SOURCE) $(DEP_CPP_CL_MA) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+
+"$(INTDIR)\CL_MAIN.OBJ" : $(SOURCE) $(DEP_CPP_CL_MA) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+
+"$(INTDIR)\CL_MAIN.OBJ" : $(SOURCE) $(DEP_CPP_CL_MA) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+
+"$(INTDIR)\CL_MAIN.OBJ" : $(SOURCE) $(DEP_CPP_CL_MA) "$(INTDIR)"
+
+
+!ENDIF 
+
+# End Source File
+################################################################################
+# Begin Source File
+
+SOURCE=.\CL_PARSE.C
 DEP_CPP_CL_PA=\
 	"..\common\dll_state.h"\
 	"..\common\platform.h"\
@@ -1484,22 +2193,25 @@ DEP_CPP_CL_PA=\
 	".\cmd.h"\
 	".\color.h"\
 	".\common.h"\
-	".\Console.h"\
+	".\CONSOLE.H"\
 	".\const.h"\
 	".\crc.h"\
 	".\cshift.h"\
 	".\custom.h"\
 	".\cvar.h"\
 	".\cvardef.h"\
+	".\d_iface.h"\
 	".\decal.h"\
 	".\draw.h"\
 	".\eiface.h"\
-	".\Gl_model.h"\
-	".\Glquake.h"\
+	".\GL_MODEL.H"\
+	".\GLQUAKE.H"\
+	".\hashpak.h"\
 	".\host_cmd.h"\
 	".\input.h"\
 	".\keys.h"\
 	".\mathlib.h"\
+	".\model.h"\
 	".\modelgen.h"\
 	".\net.h"\
 	".\pmove.h"\
@@ -1509,9 +2221,11 @@ DEP_CPP_CL_PA=\
 	".\protocol.h"\
 	".\qgl.h"\
 	".\quakedef.h"\
+	".\r_local.h"\
 	".\r_shared.h"\
 	".\r_trans.h"\
 	".\render.h"\
+	".\save.h"\
 	".\sbar.h"\
 	".\screen.h"\
 	".\server.h"\
@@ -1526,7 +2240,7 @@ DEP_CPP_CL_PA=\
 	".\world.h"\
 	".\wrect.h"\
 	".\zone.h"\
-	{$(INCLUDE)}"\GL\gl.h"\
+	{$(INCLUDE)}"\gl\GL.H"\
 	
 NODEP_CPP_CL_PA=\
 	".\cmdlib.h"\
@@ -1535,8 +2249,31 @@ NODEP_CPP_CL_PA=\
 	".\trilib.h"\
 	
 
-"$(INTDIR)\Cl_parse.obj" : $(SOURCE) $(DEP_CPP_CL_PA) "$(INTDIR)"
+!IF  "$(CFG)" == "Quiver - Win32 Release"
 
+
+"$(INTDIR)\CL_PARSE.OBJ" : $(SOURCE) $(DEP_CPP_CL_PA) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+
+"$(INTDIR)\CL_PARSE.OBJ" : $(SOURCE) $(DEP_CPP_CL_PA) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+
+"$(INTDIR)\CL_PARSE.OBJ" : $(SOURCE) $(DEP_CPP_CL_PA) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+
+"$(INTDIR)\CL_PARSE.OBJ" : $(SOURCE) $(DEP_CPP_CL_PA) "$(INTDIR)"
+
+
+!ENDIF 
 
 # End Source File
 ################################################################################
@@ -1555,21 +2292,23 @@ DEP_CPP_CL_PR=\
 	".\cmd.h"\
 	".\color.h"\
 	".\common.h"\
-	".\Console.h"\
+	".\CONSOLE.H"\
 	".\const.h"\
 	".\crc.h"\
 	".\cshift.h"\
 	".\custom.h"\
 	".\cvar.h"\
 	".\cvardef.h"\
+	".\d_iface.h"\
 	".\draw.h"\
 	".\eiface.h"\
-	".\Gl_model.h"\
-	".\Glquake.h"\
+	".\GL_MODEL.H"\
+	".\GLQUAKE.H"\
 	".\host_cmd.h"\
 	".\input.h"\
 	".\keys.h"\
 	".\mathlib.h"\
+	".\model.h"\
 	".\modelgen.h"\
 	".\net.h"\
 	".\pmove.h"\
@@ -1579,8 +2318,10 @@ DEP_CPP_CL_PR=\
 	".\protocol.h"\
 	".\qgl.h"\
 	".\quakedef.h"\
+	".\r_local.h"\
 	".\r_shared.h"\
 	".\render.h"\
+	".\save.h"\
 	".\sbar.h"\
 	".\screen.h"\
 	".\server.h"\
@@ -1596,7 +2337,7 @@ DEP_CPP_CL_PR=\
 	".\world.h"\
 	".\wrect.h"\
 	".\zone.h"\
-	{$(INCLUDE)}"\GL\gl.h"\
+	{$(INCLUDE)}"\gl\GL.H"\
 	
 NODEP_CPP_CL_PR=\
 	".\cmdlib.h"\
@@ -1605,14 +2346,53 @@ NODEP_CPP_CL_PR=\
 	".\trilib.h"\
 	
 
+!IF  "$(CFG)" == "Quiver - Win32 Release"
+
+
 "$(INTDIR)\cl_pred.obj" : $(SOURCE) $(DEP_CPP_CL_PR) "$(INTDIR)"
 
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+
+"$(INTDIR)\cl_pred.obj" : $(SOURCE) $(DEP_CPP_CL_PR) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+
+"$(INTDIR)\cl_pred.obj" : $(SOURCE) $(DEP_CPP_CL_PR) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+
+"$(INTDIR)\cl_pred.obj" : $(SOURCE) $(DEP_CPP_CL_PR) "$(INTDIR)"
+
+
+!ENDIF 
 
 # End Source File
 ################################################################################
 # Begin Source File
 
-SOURCE=.\Cl_tent.c
+SOURCE=.\cl_servercache.h
+
+!IF  "$(CFG)" == "Quiver - Win32 Release"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+!ENDIF 
+
+# End Source File
+################################################################################
+# Begin Source File
+
+SOURCE=.\CL_TENT.C
 DEP_CPP_CL_TE=\
 	"..\common\dll_state.h"\
 	"..\common\platform.h"\
@@ -1627,22 +2407,24 @@ DEP_CPP_CL_TE=\
 	".\cmd.h"\
 	".\color.h"\
 	".\common.h"\
-	".\Console.h"\
+	".\CONSOLE.H"\
 	".\const.h"\
 	".\crc.h"\
 	".\cshift.h"\
 	".\custom.h"\
 	".\cvar.h"\
 	".\cvardef.h"\
+	".\d_iface.h"\
 	".\decal.h"\
 	".\draw.h"\
 	".\eiface.h"\
-	".\Gl_model.h"\
-	".\Glquake.h"\
+	".\GL_MODEL.H"\
+	".\GLQUAKE.H"\
 	".\host_cmd.h"\
 	".\input.h"\
 	".\keys.h"\
 	".\mathlib.h"\
+	".\model.h"\
 	".\modelgen.h"\
 	".\net.h"\
 	".\pr_cmds.h"\
@@ -1652,10 +2434,12 @@ DEP_CPP_CL_TE=\
 	".\protocol.h"\
 	".\qgl.h"\
 	".\quakedef.h"\
+	".\r_local.h"\
 	".\r_shared.h"\
 	".\r_studio.h"\
 	".\r_trans.h"\
 	".\render.h"\
+	".\save.h"\
 	".\sbar.h"\
 	".\screen.h"\
 	".\server.h"\
@@ -1670,7 +2454,7 @@ DEP_CPP_CL_TE=\
 	".\world.h"\
 	".\wrect.h"\
 	".\zone.h"\
-	{$(INCLUDE)}"\GL\gl.h"\
+	{$(INCLUDE)}"\gl\GL.H"\
 	
 NODEP_CPP_CL_TE=\
 	".\cmdlib.h"\
@@ -1679,8 +2463,31 @@ NODEP_CPP_CL_TE=\
 	".\trilib.h"\
 	
 
-"$(INTDIR)\Cl_tent.obj" : $(SOURCE) $(DEP_CPP_CL_TE) "$(INTDIR)"
+!IF  "$(CFG)" == "Quiver - Win32 Release"
 
+
+"$(INTDIR)\CL_TENT.OBJ" : $(SOURCE) $(DEP_CPP_CL_TE) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+
+"$(INTDIR)\CL_TENT.OBJ" : $(SOURCE) $(DEP_CPP_CL_TE) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+
+"$(INTDIR)\CL_TENT.OBJ" : $(SOURCE) $(DEP_CPP_CL_TE) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+
+"$(INTDIR)\CL_TENT.OBJ" : $(SOURCE) $(DEP_CPP_CL_TE) "$(INTDIR)"
+
+
+!ENDIF 
 
 # End Source File
 ################################################################################
@@ -1691,6 +2498,10 @@ SOURCE=.\cl_tent.h
 !IF  "$(CFG)" == "Quiver - Win32 Release"
 
 !ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
 
 !ENDIF 
 
@@ -1703,6 +2514,10 @@ SOURCE=.\client.h
 !IF  "$(CFG)" == "Quiver - Win32 Release"
 
 !ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
 
 !ENDIF 
 
@@ -1724,21 +2539,23 @@ DEP_CPP_CMD_C=\
 	".\cmd.h"\
 	".\color.h"\
 	".\common.h"\
-	".\Console.h"\
+	".\CONSOLE.H"\
 	".\const.h"\
 	".\crc.h"\
 	".\cshift.h"\
 	".\custom.h"\
 	".\cvar.h"\
 	".\cvardef.h"\
+	".\d_iface.h"\
 	".\draw.h"\
 	".\eiface.h"\
-	".\Gl_model.h"\
-	".\Glquake.h"\
+	".\GL_MODEL.H"\
+	".\GLQUAKE.H"\
 	".\host_cmd.h"\
 	".\input.h"\
 	".\keys.h"\
 	".\mathlib.h"\
+	".\model.h"\
 	".\modelgen.h"\
 	".\net.h"\
 	".\pr_dlls.h"\
@@ -1747,8 +2564,10 @@ DEP_CPP_CMD_C=\
 	".\protocol.h"\
 	".\qgl.h"\
 	".\quakedef.h"\
+	".\r_local.h"\
 	".\r_shared.h"\
 	".\render.h"\
+	".\save.h"\
 	".\sbar.h"\
 	".\screen.h"\
 	".\server.h"\
@@ -1764,7 +2583,7 @@ DEP_CPP_CMD_C=\
 	".\world.h"\
 	".\wrect.h"\
 	".\zone.h"\
-	{$(INCLUDE)}"\GL\gl.h"\
+	{$(INCLUDE)}"\gl\GL.H"\
 	
 NODEP_CPP_CMD_C=\
 	".\cmdlib.h"\
@@ -1773,8 +2592,31 @@ NODEP_CPP_CMD_C=\
 	".\trilib.h"\
 	
 
+!IF  "$(CFG)" == "Quiver - Win32 Release"
+
+
 "$(INTDIR)\cmd.obj" : $(SOURCE) $(DEP_CPP_CMD_C) "$(INTDIR)"
 
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+
+"$(INTDIR)\cmd.obj" : $(SOURCE) $(DEP_CPP_CMD_C) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+
+"$(INTDIR)\cmd.obj" : $(SOURCE) $(DEP_CPP_CMD_C) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+
+"$(INTDIR)\cmd.obj" : $(SOURCE) $(DEP_CPP_CMD_C) "$(INTDIR)"
+
+
+!ENDIF 
 
 # End Source File
 ################################################################################
@@ -1785,6 +2627,10 @@ SOURCE=.\cmd.h
 !IF  "$(CFG)" == "Quiver - Win32 Release"
 
 !ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
 
 !ENDIF 
 
@@ -1806,21 +2652,23 @@ DEP_CPP_CMODE=\
 	".\cmodel.h"\
 	".\color.h"\
 	".\common.h"\
-	".\Console.h"\
+	".\CONSOLE.H"\
 	".\const.h"\
 	".\crc.h"\
 	".\cshift.h"\
 	".\custom.h"\
 	".\cvar.h"\
 	".\cvardef.h"\
+	".\d_iface.h"\
 	".\draw.h"\
 	".\eiface.h"\
-	".\Gl_model.h"\
-	".\Glquake.h"\
+	".\GL_MODEL.H"\
+	".\GLQUAKE.H"\
 	".\host_cmd.h"\
 	".\input.h"\
 	".\keys.h"\
 	".\mathlib.h"\
+	".\model.h"\
 	".\modelgen.h"\
 	".\net.h"\
 	".\pr_dlls.h"\
@@ -1829,8 +2677,10 @@ DEP_CPP_CMODE=\
 	".\protocol.h"\
 	".\qgl.h"\
 	".\quakedef.h"\
+	".\r_local.h"\
 	".\r_shared.h"\
 	".\render.h"\
+	".\save.h"\
 	".\sbar.h"\
 	".\screen.h"\
 	".\server.h"\
@@ -1845,7 +2695,7 @@ DEP_CPP_CMODE=\
 	".\world.h"\
 	".\wrect.h"\
 	".\zone.h"\
-	{$(INCLUDE)}"\GL\gl.h"\
+	{$(INCLUDE)}"\gl\GL.H"\
 	
 NODEP_CPP_CMODE=\
 	".\cmdlib.h"\
@@ -1854,8 +2704,31 @@ NODEP_CPP_CMODE=\
 	".\trilib.h"\
 	
 
+!IF  "$(CFG)" == "Quiver - Win32 Release"
+
+
 "$(INTDIR)\cmodel.obj" : $(SOURCE) $(DEP_CPP_CMODE) "$(INTDIR)"
 
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+
+"$(INTDIR)\cmodel.obj" : $(SOURCE) $(DEP_CPP_CMODE) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+
+"$(INTDIR)\cmodel.obj" : $(SOURCE) $(DEP_CPP_CMODE) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+
+"$(INTDIR)\cmodel.obj" : $(SOURCE) $(DEP_CPP_CMODE) "$(INTDIR)"
+
+
+!ENDIF 
 
 # End Source File
 ################################################################################
@@ -1866,6 +2739,10 @@ SOURCE=.\cmodel.h
 !IF  "$(CFG)" == "Quiver - Win32 Release"
 
 !ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
 
 !ENDIF 
 
@@ -1878,6 +2755,10 @@ SOURCE=.\color.h
 !IF  "$(CFG)" == "Quiver - Win32 Release"
 
 !ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
 
 !ENDIF 
 
@@ -1898,22 +2779,24 @@ DEP_CPP_COMMO=\
 	".\cmd.h"\
 	".\color.h"\
 	".\common.h"\
-	".\Console.h"\
+	".\CONSOLE.H"\
 	".\const.h"\
 	".\crc.h"\
 	".\cshift.h"\
 	".\custom.h"\
 	".\cvar.h"\
 	".\cvardef.h"\
+	".\d_iface.h"\
 	".\decal.h"\
 	".\draw.h"\
 	".\eiface.h"\
-	".\Gl_model.h"\
-	".\Glquake.h"\
+	".\GL_MODEL.H"\
+	".\GLQUAKE.H"\
 	".\host_cmd.h"\
 	".\input.h"\
 	".\keys.h"\
 	".\mathlib.h"\
+	".\model.h"\
 	".\modelgen.h"\
 	".\net.h"\
 	".\pr_cmds.h"\
@@ -1926,6 +2809,7 @@ DEP_CPP_COMMO=\
 	".\r_local.h"\
 	".\r_shared.h"\
 	".\render.h"\
+	".\save.h"\
 	".\sbar.h"\
 	".\screen.h"\
 	".\server.h"\
@@ -1941,7 +2825,7 @@ DEP_CPP_COMMO=\
 	".\world.h"\
 	".\wrect.h"\
 	".\zone.h"\
-	{$(INCLUDE)}"\GL\gl.h"\
+	{$(INCLUDE)}"\gl\GL.H"\
 	
 NODEP_CPP_COMMO=\
 	".\cmdlib.h"\
@@ -1950,8 +2834,31 @@ NODEP_CPP_COMMO=\
 	".\trilib.h"\
 	
 
+!IF  "$(CFG)" == "Quiver - Win32 Release"
+
+
 "$(INTDIR)\common.obj" : $(SOURCE) $(DEP_CPP_COMMO) "$(INTDIR)"
 
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+
+"$(INTDIR)\common.obj" : $(SOURCE) $(DEP_CPP_COMMO) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+
+"$(INTDIR)\common.obj" : $(SOURCE) $(DEP_CPP_COMMO) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+
+"$(INTDIR)\common.obj" : $(SOURCE) $(DEP_CPP_COMMO) "$(INTDIR)"
+
+
+!ENDIF 
 
 # End Source File
 ################################################################################
@@ -1962,6 +2869,10 @@ SOURCE=.\common.h
 !IF  "$(CFG)" == "Quiver - Win32 Release"
 
 !ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
 
 !ENDIF 
 
@@ -1983,21 +2894,23 @@ DEP_CPP_CONPR=\
 	".\color.h"\
 	".\common.h"\
 	".\conproc.h"\
-	".\Console.h"\
+	".\CONSOLE.H"\
 	".\const.h"\
 	".\crc.h"\
 	".\cshift.h"\
 	".\custom.h"\
 	".\cvar.h"\
 	".\cvardef.h"\
+	".\d_iface.h"\
 	".\draw.h"\
 	".\eiface.h"\
-	".\Gl_model.h"\
-	".\Glquake.h"\
+	".\GL_MODEL.H"\
+	".\GLQUAKE.H"\
 	".\host_cmd.h"\
 	".\input.h"\
 	".\keys.h"\
 	".\mathlib.h"\
+	".\model.h"\
 	".\modelgen.h"\
 	".\net.h"\
 	".\pr_dlls.h"\
@@ -2006,8 +2919,10 @@ DEP_CPP_CONPR=\
 	".\protocol.h"\
 	".\qgl.h"\
 	".\quakedef.h"\
+	".\r_local.h"\
 	".\r_shared.h"\
 	".\render.h"\
+	".\save.h"\
 	".\sbar.h"\
 	".\screen.h"\
 	".\server.h"\
@@ -2022,7 +2937,7 @@ DEP_CPP_CONPR=\
 	".\world.h"\
 	".\wrect.h"\
 	".\zone.h"\
-	{$(INCLUDE)}"\GL\gl.h"\
+	{$(INCLUDE)}"\gl\GL.H"\
 	
 NODEP_CPP_CONPR=\
 	".\cmdlib.h"\
@@ -2031,8 +2946,31 @@ NODEP_CPP_CONPR=\
 	".\trilib.h"\
 	
 
+!IF  "$(CFG)" == "Quiver - Win32 Release"
+
+
 "$(INTDIR)\conproc.obj" : $(SOURCE) $(DEP_CPP_CONPR) "$(INTDIR)"
 
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+
+"$(INTDIR)\conproc.obj" : $(SOURCE) $(DEP_CPP_CONPR) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+
+"$(INTDIR)\conproc.obj" : $(SOURCE) $(DEP_CPP_CONPR) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+
+"$(INTDIR)\conproc.obj" : $(SOURCE) $(DEP_CPP_CONPR) "$(INTDIR)"
+
+
+!ENDIF 
 
 # End Source File
 ################################################################################
@@ -2044,13 +2982,17 @@ SOURCE=.\conproc.h
 
 !ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
 
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
 !ENDIF 
 
 # End Source File
 ################################################################################
 # Begin Source File
 
-SOURCE=.\Console.c
+SOURCE=.\CONSOLE.C
 DEP_CPP_CONSO=\
 	"..\common\dll_state.h"\
 	"..\common\platform.h"\
@@ -2063,21 +3005,23 @@ DEP_CPP_CONSO=\
 	".\cmd.h"\
 	".\color.h"\
 	".\common.h"\
-	".\Console.h"\
+	".\CONSOLE.H"\
 	".\const.h"\
 	".\crc.h"\
 	".\cshift.h"\
 	".\custom.h"\
 	".\cvar.h"\
 	".\cvardef.h"\
+	".\d_iface.h"\
 	".\draw.h"\
 	".\eiface.h"\
-	".\Gl_model.h"\
-	".\Glquake.h"\
+	".\GL_MODEL.H"\
+	".\GLQUAKE.H"\
 	".\host_cmd.h"\
 	".\input.h"\
 	".\keys.h"\
 	".\mathlib.h"\
+	".\model.h"\
 	".\modelgen.h"\
 	".\net.h"\
 	".\pr_dlls.h"\
@@ -2086,8 +3030,10 @@ DEP_CPP_CONSO=\
 	".\protocol.h"\
 	".\qgl.h"\
 	".\quakedef.h"\
+	".\r_local.h"\
 	".\r_shared.h"\
 	".\render.h"\
+	".\save.h"\
 	".\sbar.h"\
 	".\screen.h"\
 	".\server.h"\
@@ -2103,7 +3049,7 @@ DEP_CPP_CONSO=\
 	".\world.h"\
 	".\wrect.h"\
 	".\zone.h"\
-	{$(INCLUDE)}"\GL\gl.h"\
+	{$(INCLUDE)}"\gl\GL.H"\
 	
 NODEP_CPP_CONSO=\
 	".\cmdlib.h"\
@@ -2112,18 +3058,45 @@ NODEP_CPP_CONSO=\
 	".\trilib.h"\
 	
 
-"$(INTDIR)\Console.obj" : $(SOURCE) $(DEP_CPP_CONSO) "$(INTDIR)"
+!IF  "$(CFG)" == "Quiver - Win32 Release"
 
+
+"$(INTDIR)\CONSOLE.OBJ" : $(SOURCE) $(DEP_CPP_CONSO) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+
+"$(INTDIR)\CONSOLE.OBJ" : $(SOURCE) $(DEP_CPP_CONSO) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+
+"$(INTDIR)\CONSOLE.OBJ" : $(SOURCE) $(DEP_CPP_CONSO) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+
+"$(INTDIR)\CONSOLE.OBJ" : $(SOURCE) $(DEP_CPP_CONSO) "$(INTDIR)"
+
+
+!ENDIF 
 
 # End Source File
 ################################################################################
 # Begin Source File
 
-SOURCE=.\Console.h
+SOURCE=.\CONSOLE.H
 
 !IF  "$(CFG)" == "Quiver - Win32 Release"
 
 !ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
 
 !ENDIF 
 
@@ -2136,6 +3109,10 @@ SOURCE=.\const.h
 !IF  "$(CFG)" == "Quiver - Win32 Release"
 
 !ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
 
 !ENDIF 
 
@@ -2156,21 +3133,23 @@ DEP_CPP_CRC_C=\
 	".\cmd.h"\
 	".\color.h"\
 	".\common.h"\
-	".\Console.h"\
+	".\CONSOLE.H"\
 	".\const.h"\
 	".\crc.h"\
 	".\cshift.h"\
 	".\custom.h"\
 	".\cvar.h"\
 	".\cvardef.h"\
+	".\d_iface.h"\
 	".\draw.h"\
 	".\eiface.h"\
-	".\Gl_model.h"\
-	".\Glquake.h"\
+	".\GL_MODEL.H"\
+	".\GLQUAKE.H"\
 	".\host_cmd.h"\
 	".\input.h"\
 	".\keys.h"\
 	".\mathlib.h"\
+	".\model.h"\
 	".\modelgen.h"\
 	".\net.h"\
 	".\pr_dlls.h"\
@@ -2179,8 +3158,10 @@ DEP_CPP_CRC_C=\
 	".\protocol.h"\
 	".\qgl.h"\
 	".\quakedef.h"\
+	".\r_local.h"\
 	".\r_shared.h"\
 	".\render.h"\
+	".\save.h"\
 	".\sbar.h"\
 	".\screen.h"\
 	".\server.h"\
@@ -2195,7 +3176,7 @@ DEP_CPP_CRC_C=\
 	".\world.h"\
 	".\wrect.h"\
 	".\zone.h"\
-	{$(INCLUDE)}"\GL\gl.h"\
+	{$(INCLUDE)}"\gl\GL.H"\
 	
 NODEP_CPP_CRC_C=\
 	".\cmdlib.h"\
@@ -2204,8 +3185,31 @@ NODEP_CPP_CRC_C=\
 	".\trilib.h"\
 	
 
+!IF  "$(CFG)" == "Quiver - Win32 Release"
+
+
 "$(INTDIR)\crc.obj" : $(SOURCE) $(DEP_CPP_CRC_C) "$(INTDIR)"
 
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+
+"$(INTDIR)\crc.obj" : $(SOURCE) $(DEP_CPP_CRC_C) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+
+"$(INTDIR)\crc.obj" : $(SOURCE) $(DEP_CPP_CRC_C) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+
+"$(INTDIR)\crc.obj" : $(SOURCE) $(DEP_CPP_CRC_C) "$(INTDIR)"
+
+
+!ENDIF 
 
 # End Source File
 ################################################################################
@@ -2216,6 +3220,10 @@ SOURCE=.\crc.h
 !IF  "$(CFG)" == "Quiver - Win32 Release"
 
 !ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
 
 !ENDIF 
 
@@ -2229,6 +3237,10 @@ SOURCE=.\cshift.h
 
 !ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
 
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
 !ENDIF 
 
 # End Source File
@@ -2241,6 +3253,10 @@ SOURCE=.\custom.h
 
 !ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
 
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
 !ENDIF 
 
 # End Source File
@@ -2252,6 +3268,10 @@ SOURCE=.\customentity.h
 !IF  "$(CFG)" == "Quiver - Win32 Release"
 
 !ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
 
 !ENDIF 
 
@@ -2272,21 +3292,23 @@ DEP_CPP_CVAR_=\
 	".\cmd.h"\
 	".\color.h"\
 	".\common.h"\
-	".\Console.h"\
+	".\CONSOLE.H"\
 	".\const.h"\
 	".\crc.h"\
 	".\cshift.h"\
 	".\custom.h"\
 	".\cvar.h"\
 	".\cvardef.h"\
+	".\d_iface.h"\
 	".\draw.h"\
 	".\eiface.h"\
-	".\Gl_model.h"\
-	".\Glquake.h"\
+	".\GL_MODEL.H"\
+	".\GLQUAKE.H"\
 	".\host_cmd.h"\
 	".\input.h"\
 	".\keys.h"\
 	".\mathlib.h"\
+	".\model.h"\
 	".\modelgen.h"\
 	".\net.h"\
 	".\pr_dlls.h"\
@@ -2295,8 +3317,10 @@ DEP_CPP_CVAR_=\
 	".\protocol.h"\
 	".\qgl.h"\
 	".\quakedef.h"\
+	".\r_local.h"\
 	".\r_shared.h"\
 	".\render.h"\
+	".\save.h"\
 	".\sbar.h"\
 	".\screen.h"\
 	".\server.h"\
@@ -2312,7 +3336,7 @@ DEP_CPP_CVAR_=\
 	".\world.h"\
 	".\wrect.h"\
 	".\zone.h"\
-	{$(INCLUDE)}"\GL\gl.h"\
+	{$(INCLUDE)}"\gl\GL.H"\
 	
 NODEP_CPP_CVAR_=\
 	".\cmdlib.h"\
@@ -2321,8 +3345,31 @@ NODEP_CPP_CVAR_=\
 	".\trilib.h"\
 	
 
+!IF  "$(CFG)" == "Quiver - Win32 Release"
+
+
 "$(INTDIR)\cvar.obj" : $(SOURCE) $(DEP_CPP_CVAR_) "$(INTDIR)"
 
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+
+"$(INTDIR)\cvar.obj" : $(SOURCE) $(DEP_CPP_CVAR_) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+
+"$(INTDIR)\cvar.obj" : $(SOURCE) $(DEP_CPP_CVAR_) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+
+"$(INTDIR)\cvar.obj" : $(SOURCE) $(DEP_CPP_CVAR_) "$(INTDIR)"
+
+
+!ENDIF 
 
 # End Source File
 ################################################################################
@@ -2333,6 +3380,10 @@ SOURCE=.\cvar.h
 !IF  "$(CFG)" == "Quiver - Win32 Release"
 
 !ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
 
 !ENDIF 
 
@@ -2346,17 +3397,9 @@ SOURCE=.\cvardef.h
 
 !ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
 
-!ENDIF 
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
 
-# End Source File
-################################################################################
-# Begin Source File
-
-SOURCE=.\decal.h
-
-!IF  "$(CFG)" == "Quiver - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
 
 !ENDIF 
 
@@ -2364,44 +3407,8 @@ SOURCE=.\decal.h
 ################################################################################
 # Begin Source File
 
-SOURCE=.\draw.h
-
-!IF  "$(CFG)" == "Quiver - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
-
-!ENDIF 
-
-# End Source File
-################################################################################
-# Begin Source File
-
-SOURCE=.\dummyfile.h
-
-!IF  "$(CFG)" == "Quiver - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
-
-!ENDIF 
-
-# End Source File
-################################################################################
-# Begin Source File
-
-SOURCE=.\eiface.h
-
-!IF  "$(CFG)" == "Quiver - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
-
-!ENDIF 
-
-# End Source File
-################################################################################
-# Begin Source File
-
-SOURCE=.\Gl_draw.c
-DEP_CPP_GL_DR=\
+SOURCE=.\D_EDGE.C
+DEP_CPP_D_EDG=\
 	"..\common\dll_state.h"\
 	"..\common\platform.h"\
 	"..\common\qfont.h"\
@@ -2413,25 +3420,26 @@ DEP_CPP_GL_DR=\
 	".\cmd.h"\
 	".\color.h"\
 	".\common.h"\
-	".\Console.h"\
+	".\CONSOLE.H"\
 	".\const.h"\
 	".\crc.h"\
 	".\cshift.h"\
 	".\custom.h"\
 	".\cvar.h"\
 	".\cvardef.h"\
-	".\decal.h"\
+	".\d_iface.h"\
+	".\d_local.h"\
 	".\draw.h"\
 	".\eiface.h"\
-	".\Gl_model.h"\
-	".\Glquake.h"\
+	".\GL_MODEL.H"\
+	".\GLQUAKE.H"\
 	".\host_cmd.h"\
 	".\input.h"\
 	".\keys.h"\
 	".\mathlib.h"\
+	".\model.h"\
 	".\modelgen.h"\
 	".\net.h"\
-	".\opengl2d3d.h"\
 	".\pr_cmds.h"\
 	".\pr_dlls.h"\
 	".\progdefs.h"\
@@ -2439,8 +3447,226 @@ DEP_CPP_GL_DR=\
 	".\protocol.h"\
 	".\qgl.h"\
 	".\quakedef.h"\
+	".\r_local.h"\
 	".\r_shared.h"\
 	".\render.h"\
+	".\save.h"\
+	".\sbar.h"\
+	".\screen.h"\
+	".\server.h"\
+	".\sound.h"\
+	".\spritegn.h"\
+	".\studio.h"\
+	".\sys.h"\
+	".\vid.h"\
+	".\view.h"\
+	".\vmodes.h"\
+	".\wad.h"\
+	".\water.h"\
+	".\world.h"\
+	".\wrect.h"\
+	".\zone.h"\
+	{$(INCLUDE)}"\gl\GL.H"\
+	
+NODEP_CPP_D_EDG=\
+	".\cmdlib.h"\
+	".\lbmlib.h"\
+	".\scriplib.h"\
+	".\trilib.h"\
+	
+
+!IF  "$(CFG)" == "Quiver - Win32 Release"
+
+
+"$(INTDIR)\D_EDGE.OBJ" : $(SOURCE) $(DEP_CPP_D_EDG) "$(INTDIR)"
+   $(CPP) /nologo /MT /W3 /GR /GX /O2 /I "..\common" /I "..\dx6sdk\include" /D\
+ "NDEBUG" /D "__USEA3D" /D "__A3D_GEOM" /D "WIN32" /D "_WINDOWS" /Fo"$(INTDIR)/"\
+ /c $(SOURCE)
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+
+"$(INTDIR)\D_EDGE.OBJ" : $(SOURCE) $(DEP_CPP_D_EDG) "$(INTDIR)"
+   $(CPP) /nologo /MTd /W3 /Gm /GX /Zi /Od /I "..\common" /I\
+ "..\dx6sdk\include" /D "_DEBUG" /D "__USEA3D" /D "__A3D_GEOM" /D "WIN32" /D\
+ "_WINDOWS" /Fo"$(INTDIR)/" /Fd"$(INTDIR)/" /c $(SOURCE)
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+# PROP Exclude_From_Build 1
+
+!ENDIF 
+
+# End Source File
+################################################################################
+# Begin Source File
+
+SOURCE=.\D_FILL.C
+DEP_CPP_D_FIL=\
+	"..\common\dll_state.h"\
+	"..\common\platform.h"\
+	"..\common\qfont.h"\
+	".\beamdef.h"\
+	".\bothdefs.h"\
+	".\bspfile.h"\
+	".\cdll_int.h"\
+	".\client.h"\
+	".\cmd.h"\
+	".\color.h"\
+	".\common.h"\
+	".\CONSOLE.H"\
+	".\const.h"\
+	".\crc.h"\
+	".\cshift.h"\
+	".\custom.h"\
+	".\cvar.h"\
+	".\cvardef.h"\
+	".\d_iface.h"\
+	".\draw.h"\
+	".\eiface.h"\
+	".\GL_MODEL.H"\
+	".\GLQUAKE.H"\
+	".\host_cmd.h"\
+	".\input.h"\
+	".\keys.h"\
+	".\mathlib.h"\
+	".\model.h"\
+	".\modelgen.h"\
+	".\net.h"\
+	".\pr_dlls.h"\
+	".\progdefs.h"\
+	".\Progs.h"\
+	".\protocol.h"\
+	".\qgl.h"\
+	".\quakedef.h"\
+	".\r_local.h"\
+	".\r_shared.h"\
+	".\render.h"\
+	".\save.h"\
+	".\sbar.h"\
+	".\screen.h"\
+	".\server.h"\
+	".\sound.h"\
+	".\spritegn.h"\
+	".\studio.h"\
+	".\sys.h"\
+	".\vid.h"\
+	".\view.h"\
+	".\vmodes.h"\
+	".\wad.h"\
+	".\world.h"\
+	".\wrect.h"\
+	".\zone.h"\
+	{$(INCLUDE)}"\gl\GL.H"\
+	
+NODEP_CPP_D_FIL=\
+	".\cmdlib.h"\
+	".\lbmlib.h"\
+	".\scriplib.h"\
+	".\trilib.h"\
+	
+
+!IF  "$(CFG)" == "Quiver - Win32 Release"
+
+
+"$(INTDIR)\D_FILL.OBJ" : $(SOURCE) $(DEP_CPP_D_FIL) "$(INTDIR)"
+   $(CPP) /nologo /MT /W3 /GR /GX /O2 /I "..\common" /I "..\dx6sdk\include" /D\
+ "NDEBUG" /D "__USEA3D" /D "__A3D_GEOM" /D "WIN32" /D "_WINDOWS" /Fo"$(INTDIR)/"\
+ /c $(SOURCE)
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+
+"$(INTDIR)\D_FILL.OBJ" : $(SOURCE) $(DEP_CPP_D_FIL) "$(INTDIR)"
+   $(CPP) /nologo /MTd /W3 /Gm /GX /Zi /Od /I "..\common" /I\
+ "..\dx6sdk\include" /D "_DEBUG" /D "__USEA3D" /D "__A3D_GEOM" /D "WIN32" /D\
+ "_WINDOWS" /Fo"$(INTDIR)/" /Fd"$(INTDIR)/" /c $(SOURCE)
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+# PROP Exclude_From_Build 1
+
+!ENDIF 
+
+# End Source File
+################################################################################
+# Begin Source File
+
+SOURCE=.\d_iface.h
+
+!IF  "$(CFG)" == "Quiver - Win32 Release"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+# PROP Exclude_From_Build 1
+
+!ENDIF 
+
+# End Source File
+################################################################################
+# Begin Source File
+
+SOURCE=.\D_INIT.C
+DEP_CPP_D_INI=\
+	"..\common\dll_state.h"\
+	"..\common\platform.h"\
+	"..\common\qfont.h"\
+	".\beamdef.h"\
+	".\bothdefs.h"\
+	".\bspfile.h"\
+	".\cdll_int.h"\
+	".\client.h"\
+	".\cmd.h"\
+	".\color.h"\
+	".\common.h"\
+	".\CONSOLE.H"\
+	".\const.h"\
+	".\crc.h"\
+	".\cshift.h"\
+	".\custom.h"\
+	".\cvar.h"\
+	".\cvardef.h"\
+	".\d_iface.h"\
+	".\d_local.h"\
+	".\draw.h"\
+	".\eiface.h"\
+	".\GL_MODEL.H"\
+	".\GLQUAKE.H"\
+	".\host_cmd.h"\
+	".\input.h"\
+	".\keys.h"\
+	".\mathlib.h"\
+	".\model.h"\
+	".\modelgen.h"\
+	".\net.h"\
+	".\pr_dlls.h"\
+	".\progdefs.h"\
+	".\Progs.h"\
+	".\protocol.h"\
+	".\qgl.h"\
+	".\quakedef.h"\
+	".\r_local.h"\
+	".\r_shared.h"\
+	".\render.h"\
+	".\save.h"\
 	".\sbar.h"\
 	".\screen.h"\
 	".\server.h"\
@@ -2456,7 +3682,1063 @@ DEP_CPP_GL_DR=\
 	".\world.h"\
 	".\wrect.h"\
 	".\zone.h"\
-	{$(INCLUDE)}"\GL\gl.h"\
+	{$(INCLUDE)}"\gl\GL.H"\
+	
+NODEP_CPP_D_INI=\
+	".\cmdlib.h"\
+	".\lbmlib.h"\
+	".\scriplib.h"\
+	".\trilib.h"\
+	
+
+!IF  "$(CFG)" == "Quiver - Win32 Release"
+
+
+"$(INTDIR)\D_INIT.OBJ" : $(SOURCE) $(DEP_CPP_D_INI) "$(INTDIR)"
+   $(CPP) /nologo /MT /W3 /GR /GX /O2 /I "..\common" /I "..\dx6sdk\include" /D\
+ "NDEBUG" /D "__USEA3D" /D "__A3D_GEOM" /D "WIN32" /D "_WINDOWS" /Fo"$(INTDIR)/"\
+ /c $(SOURCE)
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+
+"$(INTDIR)\D_INIT.OBJ" : $(SOURCE) $(DEP_CPP_D_INI) "$(INTDIR)"
+   $(CPP) /nologo /MTd /W3 /Gm /GX /Zi /Od /I "..\common" /I\
+ "..\dx6sdk\include" /D "_DEBUG" /D "__USEA3D" /D "__A3D_GEOM" /D "WIN32" /D\
+ "_WINDOWS" /Fo"$(INTDIR)/" /Fd"$(INTDIR)/" /c $(SOURCE)
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+# PROP Exclude_From_Build 1
+
+!ENDIF 
+
+# End Source File
+################################################################################
+# Begin Source File
+
+SOURCE=.\d_local.h
+
+!IF  "$(CFG)" == "Quiver - Win32 Release"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+# PROP Exclude_From_Build 1
+
+!ENDIF 
+
+# End Source File
+################################################################################
+# Begin Source File
+
+SOURCE=.\D_MODECH.C
+DEP_CPP_D_MOD=\
+	"..\common\dll_state.h"\
+	"..\common\platform.h"\
+	"..\common\qfont.h"\
+	".\beamdef.h"\
+	".\bothdefs.h"\
+	".\bspfile.h"\
+	".\cdll_int.h"\
+	".\client.h"\
+	".\cmd.h"\
+	".\color.h"\
+	".\common.h"\
+	".\CONSOLE.H"\
+	".\const.h"\
+	".\crc.h"\
+	".\cshift.h"\
+	".\custom.h"\
+	".\cvar.h"\
+	".\cvardef.h"\
+	".\d_iface.h"\
+	".\d_local.h"\
+	".\draw.h"\
+	".\eiface.h"\
+	".\GL_MODEL.H"\
+	".\GLQUAKE.H"\
+	".\host_cmd.h"\
+	".\input.h"\
+	".\keys.h"\
+	".\mathlib.h"\
+	".\model.h"\
+	".\modelgen.h"\
+	".\net.h"\
+	".\pr_dlls.h"\
+	".\progdefs.h"\
+	".\Progs.h"\
+	".\protocol.h"\
+	".\qgl.h"\
+	".\quakedef.h"\
+	".\r_local.h"\
+	".\r_shared.h"\
+	".\render.h"\
+	".\save.h"\
+	".\sbar.h"\
+	".\screen.h"\
+	".\server.h"\
+	".\sound.h"\
+	".\spritegn.h"\
+	".\studio.h"\
+	".\sys.h"\
+	".\vid.h"\
+	".\view.h"\
+	".\vmodes.h"\
+	".\wad.h"\
+	".\world.h"\
+	".\wrect.h"\
+	".\zone.h"\
+	{$(INCLUDE)}"\gl\GL.H"\
+	
+NODEP_CPP_D_MOD=\
+	".\cmdlib.h"\
+	".\lbmlib.h"\
+	".\scriplib.h"\
+	".\trilib.h"\
+	
+
+!IF  "$(CFG)" == "Quiver - Win32 Release"
+
+
+"$(INTDIR)\D_MODECH.OBJ" : $(SOURCE) $(DEP_CPP_D_MOD) "$(INTDIR)"
+   $(CPP) /nologo /MT /W3 /GR /GX /O2 /I "..\common" /I "..\dx6sdk\include" /D\
+ "NDEBUG" /D "__USEA3D" /D "__A3D_GEOM" /D "WIN32" /D "_WINDOWS" /Fo"$(INTDIR)/"\
+ /c $(SOURCE)
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+
+"$(INTDIR)\D_MODECH.OBJ" : $(SOURCE) $(DEP_CPP_D_MOD) "$(INTDIR)"
+   $(CPP) /nologo /MTd /W3 /Gm /GX /Zi /Od /I "..\common" /I\
+ "..\dx6sdk\include" /D "_DEBUG" /D "__USEA3D" /D "__A3D_GEOM" /D "WIN32" /D\
+ "_WINDOWS" /Fo"$(INTDIR)/" /Fd"$(INTDIR)/" /c $(SOURCE)
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+# PROP Exclude_From_Build 1
+
+!ENDIF 
+
+# End Source File
+################################################################################
+# Begin Source File
+
+SOURCE=.\D_PART.C
+DEP_CPP_D_PAR=\
+	"..\common\dll_state.h"\
+	"..\common\platform.h"\
+	"..\common\qfont.h"\
+	".\beamdef.h"\
+	".\bothdefs.h"\
+	".\bspfile.h"\
+	".\cdll_int.h"\
+	".\client.h"\
+	".\cmd.h"\
+	".\color.h"\
+	".\common.h"\
+	".\CONSOLE.H"\
+	".\const.h"\
+	".\crc.h"\
+	".\cshift.h"\
+	".\custom.h"\
+	".\cvar.h"\
+	".\cvardef.h"\
+	".\d_iface.h"\
+	".\d_local.h"\
+	".\draw.h"\
+	".\eiface.h"\
+	".\GL_MODEL.H"\
+	".\GLQUAKE.H"\
+	".\host_cmd.h"\
+	".\input.h"\
+	".\keys.h"\
+	".\mathlib.h"\
+	".\model.h"\
+	".\modelgen.h"\
+	".\net.h"\
+	".\pr_dlls.h"\
+	".\progdefs.h"\
+	".\Progs.h"\
+	".\protocol.h"\
+	".\qgl.h"\
+	".\quakedef.h"\
+	".\r_local.h"\
+	".\r_shared.h"\
+	".\render.h"\
+	".\save.h"\
+	".\sbar.h"\
+	".\screen.h"\
+	".\server.h"\
+	".\sound.h"\
+	".\spritegn.h"\
+	".\studio.h"\
+	".\sys.h"\
+	".\vid.h"\
+	".\view.h"\
+	".\vmodes.h"\
+	".\wad.h"\
+	".\world.h"\
+	".\wrect.h"\
+	".\zone.h"\
+	{$(INCLUDE)}"\gl\GL.H"\
+	
+NODEP_CPP_D_PAR=\
+	".\cmdlib.h"\
+	".\lbmlib.h"\
+	".\scriplib.h"\
+	".\trilib.h"\
+	
+
+!IF  "$(CFG)" == "Quiver - Win32 Release"
+
+
+"$(INTDIR)\D_PART.OBJ" : $(SOURCE) $(DEP_CPP_D_PAR) "$(INTDIR)"
+   $(CPP) /nologo /MT /W3 /GR /GX /O2 /I "..\common" /I "..\dx6sdk\include" /D\
+ "NDEBUG" /D "__USEA3D" /D "__A3D_GEOM" /D "WIN32" /D "_WINDOWS" /Fo"$(INTDIR)/"\
+ /c $(SOURCE)
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+
+"$(INTDIR)\D_PART.OBJ" : $(SOURCE) $(DEP_CPP_D_PAR) "$(INTDIR)"
+   $(CPP) /nologo /MTd /W3 /Gm /GX /Zi /Od /I "..\common" /I\
+ "..\dx6sdk\include" /D "_DEBUG" /D "__USEA3D" /D "__A3D_GEOM" /D "WIN32" /D\
+ "_WINDOWS" /Fo"$(INTDIR)/" /Fd"$(INTDIR)/" /c $(SOURCE)
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+# PROP Exclude_From_Build 1
+
+!ENDIF 
+
+# End Source File
+################################################################################
+# Begin Source File
+
+SOURCE=.\D_POLYSE.C
+DEP_CPP_D_POL=\
+	"..\common\dll_state.h"\
+	"..\common\platform.h"\
+	"..\common\qfont.h"\
+	".\adivtab.h"\
+	".\beamdef.h"\
+	".\bothdefs.h"\
+	".\bspfile.h"\
+	".\cdll_int.h"\
+	".\client.h"\
+	".\cmd.h"\
+	".\color.h"\
+	".\common.h"\
+	".\CONSOLE.H"\
+	".\const.h"\
+	".\crc.h"\
+	".\cshift.h"\
+	".\custom.h"\
+	".\cvar.h"\
+	".\cvardef.h"\
+	".\d_iface.h"\
+	".\d_local.h"\
+	".\draw.h"\
+	".\eiface.h"\
+	".\GL_MODEL.H"\
+	".\GLQUAKE.H"\
+	".\host_cmd.h"\
+	".\input.h"\
+	".\keys.h"\
+	".\mathlib.h"\
+	".\model.h"\
+	".\modelgen.h"\
+	".\net.h"\
+	".\pr_dlls.h"\
+	".\progdefs.h"\
+	".\Progs.h"\
+	".\protocol.h"\
+	".\qgl.h"\
+	".\quakedef.h"\
+	".\r_local.h"\
+	".\r_shared.h"\
+	".\render.h"\
+	".\save.h"\
+	".\sbar.h"\
+	".\screen.h"\
+	".\server.h"\
+	".\sound.h"\
+	".\spritegn.h"\
+	".\studio.h"\
+	".\sys.h"\
+	".\vid.h"\
+	".\view.h"\
+	".\vmodes.h"\
+	".\wad.h"\
+	".\world.h"\
+	".\wrect.h"\
+	".\zone.h"\
+	{$(INCLUDE)}"\gl\GL.H"\
+	
+NODEP_CPP_D_POL=\
+	".\cmdlib.h"\
+	".\lbmlib.h"\
+	".\scriplib.h"\
+	".\trilib.h"\
+	
+
+!IF  "$(CFG)" == "Quiver - Win32 Release"
+
+
+"$(INTDIR)\D_POLYSE.OBJ" : $(SOURCE) $(DEP_CPP_D_POL) "$(INTDIR)"
+   $(CPP) /nologo /MT /W3 /GR /GX /O2 /I "..\common" /I "..\dx6sdk\include" /D\
+ "NDEBUG" /D "__USEA3D" /D "__A3D_GEOM" /D "WIN32" /D "_WINDOWS" /Fo"$(INTDIR)/"\
+ /c $(SOURCE)
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+
+"$(INTDIR)\D_POLYSE.OBJ" : $(SOURCE) $(DEP_CPP_D_POL) "$(INTDIR)"
+   $(CPP) /nologo /MTd /W3 /Gm /GX /Zi /Od /I "..\common" /I\
+ "..\dx6sdk\include" /D "_DEBUG" /D "__USEA3D" /D "__A3D_GEOM" /D "WIN32" /D\
+ "_WINDOWS" /Fo"$(INTDIR)/" /Fd"$(INTDIR)/" /c $(SOURCE)
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+# PROP Exclude_From_Build 1
+
+!ENDIF 
+
+# End Source File
+################################################################################
+# Begin Source File
+
+SOURCE=.\D_SCAN.C
+DEP_CPP_D_SCA=\
+	"..\common\dll_state.h"\
+	"..\common\platform.h"\
+	"..\common\qfont.h"\
+	".\beamdef.h"\
+	".\bothdefs.h"\
+	".\bspfile.h"\
+	".\cdll_int.h"\
+	".\client.h"\
+	".\cmd.h"\
+	".\color.h"\
+	".\common.h"\
+	".\CONSOLE.H"\
+	".\const.h"\
+	".\crc.h"\
+	".\cshift.h"\
+	".\custom.h"\
+	".\cvar.h"\
+	".\cvardef.h"\
+	".\d_iface.h"\
+	".\d_local.h"\
+	".\draw.h"\
+	".\eiface.h"\
+	".\GL_MODEL.H"\
+	".\GLQUAKE.H"\
+	".\host_cmd.h"\
+	".\input.h"\
+	".\keys.h"\
+	".\mathlib.h"\
+	".\model.h"\
+	".\modelgen.h"\
+	".\net.h"\
+	".\pr_cmds.h"\
+	".\pr_dlls.h"\
+	".\progdefs.h"\
+	".\Progs.h"\
+	".\protocol.h"\
+	".\qgl.h"\
+	".\quakedef.h"\
+	".\r_local.h"\
+	".\r_shared.h"\
+	".\render.h"\
+	".\save.h"\
+	".\sbar.h"\
+	".\screen.h"\
+	".\server.h"\
+	".\sound.h"\
+	".\spritegn.h"\
+	".\studio.h"\
+	".\sys.h"\
+	".\vid.h"\
+	".\view.h"\
+	".\vmodes.h"\
+	".\wad.h"\
+	".\world.h"\
+	".\wrect.h"\
+	".\zone.h"\
+	{$(INCLUDE)}"\gl\GL.H"\
+	
+NODEP_CPP_D_SCA=\
+	".\cmdlib.h"\
+	".\lbmlib.h"\
+	".\scriplib.h"\
+	".\trilib.h"\
+	
+
+!IF  "$(CFG)" == "Quiver - Win32 Release"
+
+
+"$(INTDIR)\D_SCAN.OBJ" : $(SOURCE) $(DEP_CPP_D_SCA) "$(INTDIR)"
+   $(CPP) /nologo /MT /W3 /GR /GX /O2 /I "..\common" /I "..\dx6sdk\include" /D\
+ "NDEBUG" /D "__USEA3D" /D "__A3D_GEOM" /D "WIN32" /D "_WINDOWS" /Fo"$(INTDIR)/"\
+ /c $(SOURCE)
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+
+"$(INTDIR)\D_SCAN.OBJ" : $(SOURCE) $(DEP_CPP_D_SCA) "$(INTDIR)"
+   $(CPP) /nologo /MTd /W3 /Gm /GX /Zi /Od /I "..\common" /I\
+ "..\dx6sdk\include" /D "_DEBUG" /D "__USEA3D" /D "__A3D_GEOM" /D "WIN32" /D\
+ "_WINDOWS" /Fo"$(INTDIR)/" /Fd"$(INTDIR)/" /c $(SOURCE)
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+# PROP Exclude_From_Build 1
+
+!ENDIF 
+
+# End Source File
+################################################################################
+# Begin Source File
+
+SOURCE=.\D_SPRITE.C
+DEP_CPP_D_SPR=\
+	"..\common\dll_state.h"\
+	"..\common\platform.h"\
+	"..\common\qfont.h"\
+	".\beamdef.h"\
+	".\bothdefs.h"\
+	".\bspfile.h"\
+	".\cdll_int.h"\
+	".\client.h"\
+	".\cmd.h"\
+	".\color.h"\
+	".\common.h"\
+	".\CONSOLE.H"\
+	".\const.h"\
+	".\crc.h"\
+	".\cshift.h"\
+	".\custom.h"\
+	".\cvar.h"\
+	".\cvardef.h"\
+	".\d_iface.h"\
+	".\d_local.h"\
+	".\draw.h"\
+	".\eiface.h"\
+	".\GL_MODEL.H"\
+	".\GLQUAKE.H"\
+	".\host_cmd.h"\
+	".\input.h"\
+	".\keys.h"\
+	".\mathlib.h"\
+	".\model.h"\
+	".\modelgen.h"\
+	".\net.h"\
+	".\pr_dlls.h"\
+	".\progdefs.h"\
+	".\Progs.h"\
+	".\protocol.h"\
+	".\qgl.h"\
+	".\quakedef.h"\
+	".\r_local.h"\
+	".\r_shared.h"\
+	".\render.h"\
+	".\save.h"\
+	".\sbar.h"\
+	".\screen.h"\
+	".\server.h"\
+	".\sound.h"\
+	".\spritegn.h"\
+	".\studio.h"\
+	".\sys.h"\
+	".\vid.h"\
+	".\view.h"\
+	".\vmodes.h"\
+	".\wad.h"\
+	".\world.h"\
+	".\wrect.h"\
+	".\zone.h"\
+	{$(INCLUDE)}"\gl\GL.H"\
+	
+NODEP_CPP_D_SPR=\
+	".\cmdlib.h"\
+	".\lbmlib.h"\
+	".\scriplib.h"\
+	".\trilib.h"\
+	
+
+!IF  "$(CFG)" == "Quiver - Win32 Release"
+
+
+"$(INTDIR)\D_SPRITE.OBJ" : $(SOURCE) $(DEP_CPP_D_SPR) "$(INTDIR)"
+   $(CPP) /nologo /MT /W3 /GR /GX /O2 /I "..\common" /I "..\dx6sdk\include" /D\
+ "NDEBUG" /D "__USEA3D" /D "__A3D_GEOM" /D "WIN32" /D "_WINDOWS" /Fo"$(INTDIR)/"\
+ /c $(SOURCE)
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+
+"$(INTDIR)\D_SPRITE.OBJ" : $(SOURCE) $(DEP_CPP_D_SPR) "$(INTDIR)"
+   $(CPP) /nologo /MTd /W3 /Gm /GX /Zi /Od /I "..\common" /I\
+ "..\dx6sdk\include" /D "_DEBUG" /D "__USEA3D" /D "__A3D_GEOM" /D "WIN32" /D\
+ "_WINDOWS" /Fo"$(INTDIR)/" /Fd"$(INTDIR)/" /c $(SOURCE)
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+# PROP Exclude_From_Build 1
+
+!ENDIF 
+
+# End Source File
+################################################################################
+# Begin Source File
+
+SOURCE=.\D_SURF.C
+DEP_CPP_D_SUR=\
+	"..\common\dll_state.h"\
+	"..\common\platform.h"\
+	"..\common\qfont.h"\
+	".\beamdef.h"\
+	".\bothdefs.h"\
+	".\bspfile.h"\
+	".\cdll_int.h"\
+	".\client.h"\
+	".\cmd.h"\
+	".\color.h"\
+	".\common.h"\
+	".\CONSOLE.H"\
+	".\const.h"\
+	".\crc.h"\
+	".\cshift.h"\
+	".\custom.h"\
+	".\cvar.h"\
+	".\cvardef.h"\
+	".\d_iface.h"\
+	".\d_local.h"\
+	".\draw.h"\
+	".\eiface.h"\
+	".\GL_MODEL.H"\
+	".\GLQUAKE.H"\
+	".\host_cmd.h"\
+	".\input.h"\
+	".\keys.h"\
+	".\mathlib.h"\
+	".\model.h"\
+	".\modelgen.h"\
+	".\net.h"\
+	".\pr_dlls.h"\
+	".\progdefs.h"\
+	".\Progs.h"\
+	".\protocol.h"\
+	".\qgl.h"\
+	".\quakedef.h"\
+	".\r_local.h"\
+	".\r_shared.h"\
+	".\render.h"\
+	".\save.h"\
+	".\sbar.h"\
+	".\screen.h"\
+	".\server.h"\
+	".\sound.h"\
+	".\spritegn.h"\
+	".\studio.h"\
+	".\sys.h"\
+	".\vid.h"\
+	".\view.h"\
+	".\vmodes.h"\
+	".\wad.h"\
+	".\water.h"\
+	".\world.h"\
+	".\wrect.h"\
+	".\zone.h"\
+	{$(INCLUDE)}"\gl\GL.H"\
+	
+NODEP_CPP_D_SUR=\
+	".\cmdlib.h"\
+	".\lbmlib.h"\
+	".\scriplib.h"\
+	".\trilib.h"\
+	
+
+!IF  "$(CFG)" == "Quiver - Win32 Release"
+
+
+"$(INTDIR)\D_SURF.OBJ" : $(SOURCE) $(DEP_CPP_D_SUR) "$(INTDIR)"
+   $(CPP) /nologo /MT /W3 /GR /GX /O2 /I "..\common" /I "..\dx6sdk\include" /D\
+ "NDEBUG" /D "__USEA3D" /D "__A3D_GEOM" /D "WIN32" /D "_WINDOWS" /Fo"$(INTDIR)/"\
+ /c $(SOURCE)
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+
+"$(INTDIR)\D_SURF.OBJ" : $(SOURCE) $(DEP_CPP_D_SUR) "$(INTDIR)"
+   $(CPP) /nologo /MTd /W3 /Gm /GX /Zi /Od /I "..\common" /I\
+ "..\dx6sdk\include" /D "_DEBUG" /D "__USEA3D" /D "__A3D_GEOM" /D "WIN32" /D\
+ "_WINDOWS" /Fo"$(INTDIR)/" /Fd"$(INTDIR)/" /c $(SOURCE)
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+# PROP Exclude_From_Build 1
+
+!ENDIF 
+
+# End Source File
+################################################################################
+# Begin Source File
+
+SOURCE=.\D_VARS.C
+DEP_CPP_D_VAR=\
+	"..\common\dll_state.h"\
+	"..\common\platform.h"\
+	"..\common\qfont.h"\
+	".\beamdef.h"\
+	".\bothdefs.h"\
+	".\bspfile.h"\
+	".\cdll_int.h"\
+	".\client.h"\
+	".\cmd.h"\
+	".\color.h"\
+	".\common.h"\
+	".\CONSOLE.H"\
+	".\const.h"\
+	".\crc.h"\
+	".\cshift.h"\
+	".\custom.h"\
+	".\cvar.h"\
+	".\cvardef.h"\
+	".\d_iface.h"\
+	".\draw.h"\
+	".\eiface.h"\
+	".\GL_MODEL.H"\
+	".\GLQUAKE.H"\
+	".\host_cmd.h"\
+	".\input.h"\
+	".\keys.h"\
+	".\mathlib.h"\
+	".\model.h"\
+	".\modelgen.h"\
+	".\net.h"\
+	".\pr_dlls.h"\
+	".\progdefs.h"\
+	".\Progs.h"\
+	".\protocol.h"\
+	".\qgl.h"\
+	".\quakedef.h"\
+	".\r_local.h"\
+	".\r_shared.h"\
+	".\render.h"\
+	".\save.h"\
+	".\sbar.h"\
+	".\screen.h"\
+	".\server.h"\
+	".\sound.h"\
+	".\spritegn.h"\
+	".\studio.h"\
+	".\sys.h"\
+	".\vid.h"\
+	".\view.h"\
+	".\vmodes.h"\
+	".\wad.h"\
+	".\world.h"\
+	".\wrect.h"\
+	".\zone.h"\
+	{$(INCLUDE)}"\gl\GL.H"\
+	
+NODEP_CPP_D_VAR=\
+	".\cmdlib.h"\
+	".\lbmlib.h"\
+	".\scriplib.h"\
+	".\trilib.h"\
+	
+
+!IF  "$(CFG)" == "Quiver - Win32 Release"
+
+
+"$(INTDIR)\D_VARS.OBJ" : $(SOURCE) $(DEP_CPP_D_VAR) "$(INTDIR)"
+   $(CPP) /nologo /MT /W3 /GR /GX /O2 /I "..\common" /I "..\dx6sdk\include" /D\
+ "NDEBUG" /D "__USEA3D" /D "__A3D_GEOM" /D "WIN32" /D "_WINDOWS" /Fo"$(INTDIR)/"\
+ /c $(SOURCE)
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+
+"$(INTDIR)\D_VARS.OBJ" : $(SOURCE) $(DEP_CPP_D_VAR) "$(INTDIR)"
+   $(CPP) /nologo /MTd /W3 /Gm /GX /Zi /Od /I "..\common" /I\
+ "..\dx6sdk\include" /D "_DEBUG" /D "__USEA3D" /D "__A3D_GEOM" /D "WIN32" /D\
+ "_WINDOWS" /Fo"$(INTDIR)/" /Fd"$(INTDIR)/" /c $(SOURCE)
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+# PROP Exclude_From_Build 1
+
+!ENDIF 
+
+# End Source File
+################################################################################
+# Begin Source File
+
+SOURCE=.\D_ZPOINT.C
+DEP_CPP_D_ZPO=\
+	"..\common\dll_state.h"\
+	"..\common\platform.h"\
+	"..\common\qfont.h"\
+	".\beamdef.h"\
+	".\bothdefs.h"\
+	".\bspfile.h"\
+	".\cdll_int.h"\
+	".\client.h"\
+	".\cmd.h"\
+	".\color.h"\
+	".\common.h"\
+	".\CONSOLE.H"\
+	".\const.h"\
+	".\crc.h"\
+	".\cshift.h"\
+	".\custom.h"\
+	".\cvar.h"\
+	".\cvardef.h"\
+	".\d_iface.h"\
+	".\d_local.h"\
+	".\draw.h"\
+	".\eiface.h"\
+	".\GL_MODEL.H"\
+	".\GLQUAKE.H"\
+	".\host_cmd.h"\
+	".\input.h"\
+	".\keys.h"\
+	".\mathlib.h"\
+	".\model.h"\
+	".\modelgen.h"\
+	".\net.h"\
+	".\pr_dlls.h"\
+	".\progdefs.h"\
+	".\Progs.h"\
+	".\protocol.h"\
+	".\qgl.h"\
+	".\quakedef.h"\
+	".\r_local.h"\
+	".\r_shared.h"\
+	".\render.h"\
+	".\save.h"\
+	".\sbar.h"\
+	".\screen.h"\
+	".\server.h"\
+	".\sound.h"\
+	".\spritegn.h"\
+	".\studio.h"\
+	".\sys.h"\
+	".\vid.h"\
+	".\view.h"\
+	".\vmodes.h"\
+	".\wad.h"\
+	".\world.h"\
+	".\wrect.h"\
+	".\zone.h"\
+	{$(INCLUDE)}"\gl\GL.H"\
+	
+NODEP_CPP_D_ZPO=\
+	".\cmdlib.h"\
+	".\lbmlib.h"\
+	".\scriplib.h"\
+	".\trilib.h"\
+	
+
+!IF  "$(CFG)" == "Quiver - Win32 Release"
+
+
+"$(INTDIR)\D_ZPOINT.OBJ" : $(SOURCE) $(DEP_CPP_D_ZPO) "$(INTDIR)"
+   $(CPP) /nologo /MT /W3 /GR /GX /O2 /I "..\common" /I "..\dx6sdk\include" /D\
+ "NDEBUG" /D "__USEA3D" /D "__A3D_GEOM" /D "WIN32" /D "_WINDOWS" /Fo"$(INTDIR)/"\
+ /c $(SOURCE)
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+
+"$(INTDIR)\D_ZPOINT.OBJ" : $(SOURCE) $(DEP_CPP_D_ZPO) "$(INTDIR)"
+   $(CPP) /nologo /MTd /W3 /Gm /GX /Zi /Od /I "..\common" /I\
+ "..\dx6sdk\include" /D "_DEBUG" /D "__USEA3D" /D "__A3D_GEOM" /D "WIN32" /D\
+ "_WINDOWS" /Fo"$(INTDIR)/" /Fd"$(INTDIR)/" /c $(SOURCE)
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+# PROP Exclude_From_Build 1
+
+!ENDIF 
+
+# End Source File
+################################################################################
+# Begin Source File
+
+SOURCE=.\decal.h
+
+!IF  "$(CFG)" == "Quiver - Win32 Release"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+!ENDIF 
+
+# End Source File
+################################################################################
+# Begin Source File
+
+SOURCE=.\draw.c
+DEP_CPP_DRAW_=\
+	"..\common\dll_state.h"\
+	"..\common\platform.h"\
+	"..\common\qfont.h"\
+	".\beamdef.h"\
+	".\bothdefs.h"\
+	".\bspfile.h"\
+	".\cdll_int.h"\
+	".\client.h"\
+	".\cmd.h"\
+	".\color.h"\
+	".\common.h"\
+	".\CONSOLE.H"\
+	".\const.h"\
+	".\crc.h"\
+	".\cshift.h"\
+	".\custom.h"\
+	".\cvar.h"\
+	".\cvardef.h"\
+	".\d_iface.h"\
+	".\decal.h"\
+	".\draw.h"\
+	".\eiface.h"\
+	".\GL_MODEL.H"\
+	".\GLQUAKE.H"\
+	".\host_cmd.h"\
+	".\input.h"\
+	".\keys.h"\
+	".\mathlib.h"\
+	".\model.h"\
+	".\modelgen.h"\
+	".\net.h"\
+	".\pr_dlls.h"\
+	".\progdefs.h"\
+	".\Progs.h"\
+	".\protocol.h"\
+	".\qgl.h"\
+	".\quakedef.h"\
+	".\r_local.h"\
+	".\r_shared.h"\
+	".\render.h"\
+	".\save.h"\
+	".\sbar.h"\
+	".\screen.h"\
+	".\server.h"\
+	".\sound.h"\
+	".\spritegn.h"\
+	".\studio.h"\
+	".\sys.h"\
+	".\vid.h"\
+	".\view.h"\
+	".\vmodes.h"\
+	".\wad.h"\
+	".\winquake.h"\
+	".\world.h"\
+	".\wrect.h"\
+	".\zone.h"\
+	{$(INCLUDE)}"\gl\GL.H"\
+	
+NODEP_CPP_DRAW_=\
+	".\cmdlib.h"\
+	".\lbmlib.h"\
+	".\scriplib.h"\
+	".\trilib.h"\
+	
+
+!IF  "$(CFG)" == "Quiver - Win32 Release"
+
+
+"$(INTDIR)\draw.obj" : $(SOURCE) $(DEP_CPP_DRAW_) "$(INTDIR)"
+   $(CPP) /nologo /MT /W3 /GR /GX /O2 /I "..\common" /I "..\dx6sdk\include" /D\
+ "NDEBUG" /D "__USEA3D" /D "__A3D_GEOM" /D "WIN32" /D "_WINDOWS" /Fo"$(INTDIR)/"\
+ /c $(SOURCE)
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+
+"$(INTDIR)\draw.obj" : $(SOURCE) $(DEP_CPP_DRAW_) "$(INTDIR)"
+   $(CPP) /nologo /MTd /W3 /Gm /GX /Zi /Od /I "..\common" /I\
+ "..\dx6sdk\include" /D "_DEBUG" /D "__USEA3D" /D "__A3D_GEOM" /D "WIN32" /D\
+ "_WINDOWS" /Fo"$(INTDIR)/" /Fd"$(INTDIR)/" /c $(SOURCE)
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+# PROP Exclude_From_Build 1
+
+!ENDIF 
+
+# End Source File
+################################################################################
+# Begin Source File
+
+SOURCE=.\draw.h
+
+!IF  "$(CFG)" == "Quiver - Win32 Release"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+# PROP Exclude_From_Build 1
+
+!ENDIF 
+
+# End Source File
+################################################################################
+# Begin Source File
+
+SOURCE=.\eiface.h
+
+!IF  "$(CFG)" == "Quiver - Win32 Release"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+!ENDIF 
+
+# End Source File
+################################################################################
+# Begin Source File
+
+SOURCE=.\GL_DRAW.C
+DEP_CPP_GL_DR=\
+	"..\common\dll_state.h"\
+	"..\common\platform.h"\
+	"..\common\qfont.h"\
+	".\beamdef.h"\
+	".\bothdefs.h"\
+	".\bspfile.h"\
+	".\cdll_int.h"\
+	".\client.h"\
+	".\cmd.h"\
+	".\color.h"\
+	".\common.h"\
+	".\CONSOLE.H"\
+	".\const.h"\
+	".\crc.h"\
+	".\cshift.h"\
+	".\custom.h"\
+	".\cvar.h"\
+	".\cvardef.h"\
+	".\d_iface.h"\
+	".\decal.h"\
+	".\draw.h"\
+	".\eiface.h"\
+	".\GL_MODEL.H"\
+	".\GLQUAKE.H"\
+	".\host_cmd.h"\
+	".\input.h"\
+	".\keys.h"\
+	".\mathlib.h"\
+	".\model.h"\
+	".\modelgen.h"\
+	".\net.h"\
+	".\opengl2d3d.h"\
+	".\pr_cmds.h"\
+	".\pr_dlls.h"\
+	".\progdefs.h"\
+	".\Progs.h"\
+	".\protocol.h"\
+	".\qgl.h"\
+	".\quakedef.h"\
+	".\r_local.h"\
+	".\r_shared.h"\
+	".\render.h"\
+	".\save.h"\
+	".\sbar.h"\
+	".\screen.h"\
+	".\server.h"\
+	".\sound.h"\
+	".\spritegn.h"\
+	".\studio.h"\
+	".\sys.h"\
+	".\vid.h"\
+	".\view.h"\
+	".\vmodes.h"\
+	".\wad.h"\
+	".\winquake.h"\
+	".\world.h"\
+	".\wrect.h"\
+	".\zone.h"\
+	{$(INCLUDE)}"\gl\GL.H"\
 	
 NODEP_CPP_GL_DR=\
 	".\cmdlib.h"\
@@ -2465,8 +4747,33 @@ NODEP_CPP_GL_DR=\
 	".\trilib.h"\
 	
 
-"$(INTDIR)\Gl_draw.obj" : $(SOURCE) $(DEP_CPP_GL_DR) "$(INTDIR)"
+!IF  "$(CFG)" == "Quiver - Win32 Release"
 
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+
+"$(INTDIR)\GL_DRAW.OBJ" : $(SOURCE) $(DEP_CPP_GL_DR) "$(INTDIR)"
+   $(CPP) /nologo /MTd /W3 /Gm /GX /Zi /Od /I "..\common" /I\
+ "..\dx6sdk\include" /D "_DEBUG" /D "GLQUAKE" /D "__USEA3D" /D "__A3D_GEOM" /D\
+ "WIN32" /D "_WINDOWS" /Fo"$(INTDIR)/" /Fd"$(INTDIR)/" /c $(SOURCE)
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+
+"$(INTDIR)\GL_DRAW.OBJ" : $(SOURCE) $(DEP_CPP_GL_DR) "$(INTDIR)"
+   $(CPP) /nologo /MT /W3 /GR /GX /O2 /I "..\common" /I "..\dx6sdk\include" /D\
+ "NDEBUG" /D "GLQUAKE" /D "__USEA3D" /D "__A3D_GEOM" /D "WIN32" /D "_WINDOWS"\
+ /Fo"$(INTDIR)/" /c $(SOURCE)
+
+
+!ENDIF 
 
 # End Source File
 ################################################################################
@@ -2476,7 +4783,15 @@ SOURCE=.\gl_hw.h
 
 !IF  "$(CFG)" == "Quiver - Win32 Release"
 
+# PROP Exclude_From_Build 1
+
 !ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
 
 !ENDIF 
 
@@ -2484,7 +4799,104 @@ SOURCE=.\gl_hw.h
 ################################################################################
 # Begin Source File
 
-SOURCE=.\Gl_model.c
+SOURCE=.\GL_MESH.C
+DEP_CPP_GL_ME=\
+	"..\common\dll_state.h"\
+	"..\common\platform.h"\
+	"..\common\qfont.h"\
+	".\beamdef.h"\
+	".\bothdefs.h"\
+	".\bspfile.h"\
+	".\cdll_int.h"\
+	".\client.h"\
+	".\cmd.h"\
+	".\color.h"\
+	".\common.h"\
+	".\CONSOLE.H"\
+	".\const.h"\
+	".\crc.h"\
+	".\cshift.h"\
+	".\custom.h"\
+	".\cvar.h"\
+	".\cvardef.h"\
+	".\d_iface.h"\
+	".\draw.h"\
+	".\eiface.h"\
+	".\GL_MODEL.H"\
+	".\GLQUAKE.H"\
+	".\host_cmd.h"\
+	".\input.h"\
+	".\keys.h"\
+	".\mathlib.h"\
+	".\model.h"\
+	".\modelgen.h"\
+	".\net.h"\
+	".\pr_dlls.h"\
+	".\progdefs.h"\
+	".\Progs.h"\
+	".\protocol.h"\
+	".\qgl.h"\
+	".\quakedef.h"\
+	".\r_local.h"\
+	".\r_shared.h"\
+	".\render.h"\
+	".\save.h"\
+	".\sbar.h"\
+	".\screen.h"\
+	".\server.h"\
+	".\sound.h"\
+	".\spritegn.h"\
+	".\studio.h"\
+	".\sys.h"\
+	".\vid.h"\
+	".\view.h"\
+	".\vmodes.h"\
+	".\wad.h"\
+	".\world.h"\
+	".\wrect.h"\
+	".\zone.h"\
+	{$(INCLUDE)}"\gl\GL.H"\
+	
+NODEP_CPP_GL_ME=\
+	".\cmdlib.h"\
+	".\lbmlib.h"\
+	".\scriplib.h"\
+	".\trilib.h"\
+	
+
+!IF  "$(CFG)" == "Quiver - Win32 Release"
+
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+
+"$(INTDIR)\GL_MESH.OBJ" : $(SOURCE) $(DEP_CPP_GL_ME) "$(INTDIR)"
+   $(CPP) /nologo /MTd /W3 /Gm /GX /Zi /Od /I "..\common" /I\
+ "..\dx6sdk\include" /D "_DEBUG" /D "GLQUAKE" /D "__USEA3D" /D "__A3D_GEOM" /D\
+ "WIN32" /D "_WINDOWS" /Fo"$(INTDIR)/" /Fd"$(INTDIR)/" /c $(SOURCE)
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+
+"$(INTDIR)\GL_MESH.OBJ" : $(SOURCE) $(DEP_CPP_GL_ME) "$(INTDIR)"
+   $(CPP) /nologo /MT /W3 /GR /GX /O2 /I "..\common" /I "..\dx6sdk\include" /D\
+ "NDEBUG" /D "GLQUAKE" /D "__USEA3D" /D "__A3D_GEOM" /D "WIN32" /D "_WINDOWS"\
+ /Fo"$(INTDIR)/" /c $(SOURCE)
+
+
+!ENDIF 
+
+# End Source File
+################################################################################
+# Begin Source File
+
+SOURCE=.\GL_MODEL.C
 DEP_CPP_GL_MO=\
 	"..\common\dll_state.h"\
 	"..\common\platform.h"\
@@ -2497,23 +4909,25 @@ DEP_CPP_GL_MO=\
 	".\cmd.h"\
 	".\color.h"\
 	".\common.h"\
-	".\Console.h"\
+	".\CONSOLE.H"\
 	".\const.h"\
 	".\crc.h"\
 	".\cshift.h"\
 	".\custom.h"\
 	".\cvar.h"\
 	".\cvardef.h"\
+	".\d_iface.h"\
 	".\decal.h"\
 	".\draw.h"\
 	".\eiface.h"\
-	".\Gl_model.h"\
+	".\GL_MODEL.H"\
 	".\gl_water.h"\
-	".\Glquake.h"\
+	".\GLQUAKE.H"\
 	".\host_cmd.h"\
 	".\input.h"\
 	".\keys.h"\
 	".\mathlib.h"\
+	".\model.h"\
 	".\modelgen.h"\
 	".\net.h"\
 	".\pr_dlls.h"\
@@ -2522,8 +4936,10 @@ DEP_CPP_GL_MO=\
 	".\protocol.h"\
 	".\qgl.h"\
 	".\quakedef.h"\
+	".\r_local.h"\
 	".\r_shared.h"\
 	".\render.h"\
+	".\save.h"\
 	".\sbar.h"\
 	".\screen.h"\
 	".\server.h"\
@@ -2539,7 +4955,7 @@ DEP_CPP_GL_MO=\
 	".\world.h"\
 	".\wrect.h"\
 	".\zone.h"\
-	{$(INCLUDE)}"\GL\gl.h"\
+	{$(INCLUDE)}"\gl\GL.H"\
 	
 NODEP_CPP_GL_MO=\
 	".\cmdlib.h"\
@@ -2548,18 +4964,51 @@ NODEP_CPP_GL_MO=\
 	".\trilib.h"\
 	
 
-"$(INTDIR)\Gl_model.obj" : $(SOURCE) $(DEP_CPP_GL_MO) "$(INTDIR)"
+!IF  "$(CFG)" == "Quiver - Win32 Release"
 
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+
+"$(INTDIR)\GL_MODEL.OBJ" : $(SOURCE) $(DEP_CPP_GL_MO) "$(INTDIR)"
+   $(CPP) /nologo /MTd /W3 /Gm /GX /Zi /Od /I "..\common" /I\
+ "..\dx6sdk\include" /D "_DEBUG" /D "GLQUAKE" /D "__USEA3D" /D "__A3D_GEOM" /D\
+ "WIN32" /D "_WINDOWS" /Fo"$(INTDIR)/" /Fd"$(INTDIR)/" /c $(SOURCE)
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+
+"$(INTDIR)\GL_MODEL.OBJ" : $(SOURCE) $(DEP_CPP_GL_MO) "$(INTDIR)"
+   $(CPP) /nologo /MT /W3 /GR /GX /O2 /I "..\common" /I "..\dx6sdk\include" /D\
+ "NDEBUG" /D "GLQUAKE" /D "__USEA3D" /D "__A3D_GEOM" /D "WIN32" /D "_WINDOWS"\
+ /Fo"$(INTDIR)/" /c $(SOURCE)
+
+
+!ENDIF 
 
 # End Source File
 ################################################################################
 # Begin Source File
 
-SOURCE=.\Gl_model.h
+SOURCE=.\GL_MODEL.H
 
 !IF  "$(CFG)" == "Quiver - Win32 Release"
 
+# PROP Exclude_From_Build 1
+
 !ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
 
 !ENDIF 
 
@@ -2580,21 +5029,23 @@ DEP_CPP_GL_RE=\
 	".\cmd.h"\
 	".\color.h"\
 	".\common.h"\
-	".\Console.h"\
+	".\CONSOLE.H"\
 	".\const.h"\
 	".\crc.h"\
 	".\cshift.h"\
 	".\custom.h"\
 	".\cvar.h"\
 	".\cvardef.h"\
+	".\d_iface.h"\
 	".\draw.h"\
 	".\eiface.h"\
-	".\Gl_model.h"\
-	".\Glquake.h"\
+	".\GL_MODEL.H"\
+	".\GLQUAKE.H"\
 	".\host_cmd.h"\
 	".\input.h"\
 	".\keys.h"\
 	".\mathlib.h"\
+	".\model.h"\
 	".\modelgen.h"\
 	".\net.h"\
 	".\pr_dlls.h"\
@@ -2603,8 +5054,10 @@ DEP_CPP_GL_RE=\
 	".\protocol.h"\
 	".\qgl.h"\
 	".\quakedef.h"\
+	".\r_local.h"\
 	".\r_shared.h"\
 	".\render.h"\
+	".\save.h"\
 	".\sbar.h"\
 	".\screen.h"\
 	".\server.h"\
@@ -2619,7 +5072,7 @@ DEP_CPP_GL_RE=\
 	".\world.h"\
 	".\wrect.h"\
 	".\zone.h"\
-	{$(INCLUDE)}"\GL\gl.h"\
+	{$(INCLUDE)}"\gl\GL.H"\
 	
 NODEP_CPP_GL_RE=\
 	".\cmdlib.h"\
@@ -2628,8 +5081,33 @@ NODEP_CPP_GL_RE=\
 	".\trilib.h"\
 	
 
-"$(INTDIR)\gl_refrag.obj" : $(SOURCE) $(DEP_CPP_GL_RE) "$(INTDIR)"
+!IF  "$(CFG)" == "Quiver - Win32 Release"
 
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+
+"$(INTDIR)\gl_refrag.obj" : $(SOURCE) $(DEP_CPP_GL_RE) "$(INTDIR)"
+   $(CPP) /nologo /MTd /W3 /Gm /GX /Zi /Od /I "..\common" /I\
+ "..\dx6sdk\include" /D "_DEBUG" /D "GLQUAKE" /D "__USEA3D" /D "__A3D_GEOM" /D\
+ "WIN32" /D "_WINDOWS" /Fo"$(INTDIR)/" /Fd"$(INTDIR)/" /c $(SOURCE)
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+
+"$(INTDIR)\gl_refrag.obj" : $(SOURCE) $(DEP_CPP_GL_RE) "$(INTDIR)"
+   $(CPP) /nologo /MT /W3 /GR /GX /O2 /I "..\common" /I "..\dx6sdk\include" /D\
+ "NDEBUG" /D "GLQUAKE" /D "__USEA3D" /D "__A3D_GEOM" /D "WIN32" /D "_WINDOWS"\
+ /Fo"$(INTDIR)/" /c $(SOURCE)
+
+
+!ENDIF 
 
 # End Source File
 ################################################################################
@@ -2648,21 +5126,23 @@ DEP_CPP_GL_RL=\
 	".\cmd.h"\
 	".\color.h"\
 	".\common.h"\
-	".\Console.h"\
+	".\CONSOLE.H"\
 	".\const.h"\
 	".\crc.h"\
 	".\cshift.h"\
 	".\custom.h"\
 	".\cvar.h"\
 	".\cvardef.h"\
+	".\d_iface.h"\
 	".\draw.h"\
 	".\eiface.h"\
-	".\Gl_model.h"\
-	".\Glquake.h"\
+	".\GL_MODEL.H"\
+	".\GLQUAKE.H"\
 	".\host_cmd.h"\
 	".\input.h"\
 	".\keys.h"\
 	".\mathlib.h"\
+	".\model.h"\
 	".\modelgen.h"\
 	".\net.h"\
 	".\pr_dlls.h"\
@@ -2674,6 +5154,7 @@ DEP_CPP_GL_RL=\
 	".\r_local.h"\
 	".\r_shared.h"\
 	".\render.h"\
+	".\save.h"\
 	".\sbar.h"\
 	".\screen.h"\
 	".\server.h"\
@@ -2688,7 +5169,7 @@ DEP_CPP_GL_RL=\
 	".\world.h"\
 	".\wrect.h"\
 	".\zone.h"\
-	{$(INCLUDE)}"\GL\gl.h"\
+	{$(INCLUDE)}"\gl\GL.H"\
 	
 NODEP_CPP_GL_RL=\
 	".\cmdlib.h"\
@@ -2697,24 +5178,142 @@ NODEP_CPP_GL_RL=\
 	".\trilib.h"\
 	
 
+!IF  "$(CFG)" == "Quiver - Win32 Release"
+
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+
 "$(INTDIR)\gl_rlight.obj" : $(SOURCE) $(DEP_CPP_GL_RL) "$(INTDIR)"
+   $(CPP) /nologo /MTd /W3 /Gm /GX /Zi /Od /I "..\common" /I\
+ "..\dx6sdk\include" /D "_DEBUG" /D "GLQUAKE" /D "__USEA3D" /D "__A3D_GEOM" /D\
+ "WIN32" /D "_WINDOWS" /Fo"$(INTDIR)/" /Fd"$(INTDIR)/" /c $(SOURCE)
 
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+
+"$(INTDIR)\gl_rlight.obj" : $(SOURCE) $(DEP_CPP_GL_RL) "$(INTDIR)"
+   $(CPP) /nologo /MT /W3 /GR /GX /O2 /I "..\common" /I "..\dx6sdk\include" /D\
+ "NDEBUG" /D "GLQUAKE" /D "__USEA3D" /D "__A3D_GEOM" /D "WIN32" /D "_WINDOWS"\
+ /Fo"$(INTDIR)/" /c $(SOURCE)
+
+
+!ENDIF 
 
 # End Source File
 ################################################################################
 # Begin Source File
 
-SOURCE=.\Gl_rmain.c
-
-"$(INTDIR)\Gl_rmain.obj" : $(SOURCE) "$(INTDIR)"
-
-
-# End Source File
-################################################################################
-# Begin Source File
-
-SOURCE=.\Gl_rmisc.c
+SOURCE=.\GL_RMAIN.C
 DEP_CPP_GL_RM=\
+	"..\common\dll_state.h"\
+	"..\common\platform.h"\
+	"..\common\qfont.h"\
+	".\anorm_dots.h"\
+	".\anorms.h"\
+	".\beamdef.h"\
+	".\bothdefs.h"\
+	".\bspfile.h"\
+	".\cdll_int.h"\
+	".\client.h"\
+	".\cmd.h"\
+	".\color.h"\
+	".\common.h"\
+	".\CONSOLE.H"\
+	".\const.h"\
+	".\crc.h"\
+	".\cshift.h"\
+	".\custom.h"\
+	".\cvar.h"\
+	".\cvardef.h"\
+	".\d_iface.h"\
+	".\draw.h"\
+	".\eiface.h"\
+	".\GL_MODEL.H"\
+	".\GLQUAKE.H"\
+	".\host_cmd.h"\
+	".\input.h"\
+	".\keys.h"\
+	".\mathlib.h"\
+	".\model.h"\
+	".\modelgen.h"\
+	".\net.h"\
+	".\pr_dlls.h"\
+	".\progdefs.h"\
+	".\Progs.h"\
+	".\protocol.h"\
+	".\qgl.h"\
+	".\quakedef.h"\
+	".\r_local.h"\
+	".\r_shared.h"\
+	".\r_studio.h"\
+	".\r_trans.h"\
+	".\render.h"\
+	".\save.h"\
+	".\sbar.h"\
+	".\screen.h"\
+	".\server.h"\
+	".\shake.h"\
+	".\sound.h"\
+	".\spritegn.h"\
+	".\studio.h"\
+	".\sys.h"\
+	".\vid.h"\
+	".\view.h"\
+	".\vmodes.h"\
+	".\wad.h"\
+	".\world.h"\
+	".\wrect.h"\
+	".\zone.h"\
+	{$(INCLUDE)}"\gl\GL.H"\
+	
+NODEP_CPP_GL_RM=\
+	".\cmdlib.h"\
+	".\lbmlib.h"\
+	".\scriplib.h"\
+	".\trilib.h"\
+	
+
+!IF  "$(CFG)" == "Quiver - Win32 Release"
+
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+
+"$(INTDIR)\GL_RMAIN.OBJ" : $(SOURCE) $(DEP_CPP_GL_RM) "$(INTDIR)"
+   $(CPP) /nologo /MTd /W3 /Gm /GX /Zi /Od /I "..\common" /I\
+ "..\dx6sdk\include" /D "_DEBUG" /D "GLQUAKE" /D "__USEA3D" /D "__A3D_GEOM" /D\
+ "WIN32" /D "_WINDOWS" /Fo"$(INTDIR)/" /Fd"$(INTDIR)/" /c $(SOURCE)
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+
+"$(INTDIR)\GL_RMAIN.OBJ" : $(SOURCE) $(DEP_CPP_GL_RM) "$(INTDIR)"
+   $(CPP) /nologo /MT /W3 /GR /GX /O2 /I "..\common" /I "..\dx6sdk\include" /D\
+ "NDEBUG" /D "GLQUAKE" /D "__USEA3D" /D "__A3D_GEOM" /D "WIN32" /D "_WINDOWS"\
+ /Fo"$(INTDIR)/" /c $(SOURCE)
+
+
+!ENDIF 
+
+# End Source File
+################################################################################
+# Begin Source File
+
+SOURCE=.\GL_RMISC.C
+DEP_CPP_GL_RMI=\
 	"..\common\dll_state.h"\
 	"..\common\platform.h"\
 	"..\common\qfont.h"\
@@ -2726,21 +5325,23 @@ DEP_CPP_GL_RM=\
 	".\cmd.h"\
 	".\color.h"\
 	".\common.h"\
-	".\Console.h"\
+	".\CONSOLE.H"\
 	".\const.h"\
 	".\crc.h"\
 	".\cshift.h"\
 	".\custom.h"\
 	".\cvar.h"\
 	".\cvardef.h"\
+	".\d_iface.h"\
 	".\draw.h"\
 	".\eiface.h"\
-	".\Gl_model.h"\
-	".\Glquake.h"\
+	".\GL_MODEL.H"\
+	".\GLQUAKE.H"\
 	".\host_cmd.h"\
 	".\input.h"\
 	".\keys.h"\
 	".\mathlib.h"\
+	".\model.h"\
 	".\modelgen.h"\
 	".\net.h"\
 	".\pr_dlls.h"\
@@ -2749,8 +5350,10 @@ DEP_CPP_GL_RM=\
 	".\protocol.h"\
 	".\qgl.h"\
 	".\quakedef.h"\
+	".\r_local.h"\
 	".\r_shared.h"\
 	".\render.h"\
+	".\save.h"\
 	".\sbar.h"\
 	".\screen.h"\
 	".\server.h"\
@@ -2765,23 +5368,48 @@ DEP_CPP_GL_RM=\
 	".\world.h"\
 	".\wrect.h"\
 	".\zone.h"\
-	{$(INCLUDE)}"\GL\gl.h"\
+	{$(INCLUDE)}"\gl\GL.H"\
 	
-NODEP_CPP_GL_RM=\
+NODEP_CPP_GL_RMI=\
 	".\cmdlib.h"\
 	".\lbmlib.h"\
 	".\scriplib.h"\
 	".\trilib.h"\
 	
 
-"$(INTDIR)\Gl_rmisc.obj" : $(SOURCE) $(DEP_CPP_GL_RM) "$(INTDIR)"
+!IF  "$(CFG)" == "Quiver - Win32 Release"
 
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+
+"$(INTDIR)\GL_RMISC.OBJ" : $(SOURCE) $(DEP_CPP_GL_RMI) "$(INTDIR)"
+   $(CPP) /nologo /MTd /W3 /Gm /GX /Zi /Od /I "..\common" /I\
+ "..\dx6sdk\include" /D "_DEBUG" /D "GLQUAKE" /D "__USEA3D" /D "__A3D_GEOM" /D\
+ "WIN32" /D "_WINDOWS" /Fo"$(INTDIR)/" /Fd"$(INTDIR)/" /c $(SOURCE)
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+
+"$(INTDIR)\GL_RMISC.OBJ" : $(SOURCE) $(DEP_CPP_GL_RMI) "$(INTDIR)"
+   $(CPP) /nologo /MT /W3 /GR /GX /O2 /I "..\common" /I "..\dx6sdk\include" /D\
+ "NDEBUG" /D "GLQUAKE" /D "__USEA3D" /D "__A3D_GEOM" /D "WIN32" /D "_WINDOWS"\
+ /Fo"$(INTDIR)/" /c $(SOURCE)
+
+
+!ENDIF 
 
 # End Source File
 ################################################################################
 # Begin Source File
 
-SOURCE=.\Gl_rsurf.c
+SOURCE=.\GL_RSURF.C
 DEP_CPP_GL_RS=\
 	"..\common\dll_state.h"\
 	"..\common\platform.h"\
@@ -2795,23 +5423,25 @@ DEP_CPP_GL_RS=\
 	".\cmodel.h"\
 	".\color.h"\
 	".\common.h"\
-	".\Console.h"\
+	".\CONSOLE.H"\
 	".\const.h"\
 	".\crc.h"\
 	".\cshift.h"\
 	".\custom.h"\
 	".\cvar.h"\
 	".\cvardef.h"\
+	".\d_iface.h"\
 	".\decal.h"\
 	".\draw.h"\
 	".\eiface.h"\
-	".\Gl_model.h"\
+	".\GL_MODEL.H"\
 	".\gl_water.h"\
-	".\Glquake.h"\
+	".\GLQUAKE.H"\
 	".\host_cmd.h"\
 	".\input.h"\
 	".\keys.h"\
 	".\mathlib.h"\
+	".\model.h"\
 	".\modelgen.h"\
 	".\net.h"\
 	".\pr_cmds.h"\
@@ -2821,8 +5451,10 @@ DEP_CPP_GL_RS=\
 	".\protocol.h"\
 	".\qgl.h"\
 	".\quakedef.h"\
+	".\r_local.h"\
 	".\r_shared.h"\
 	".\render.h"\
+	".\save.h"\
 	".\sbar.h"\
 	".\screen.h"\
 	".\server.h"\
@@ -2837,7 +5469,7 @@ DEP_CPP_GL_RS=\
 	".\world.h"\
 	".\wrect.h"\
 	".\zone.h"\
-	{$(INCLUDE)}"\GL\gl.h"\
+	{$(INCLUDE)}"\gl\GL.H"\
 	
 NODEP_CPP_GL_RS=\
 	".\cmdlib.h"\
@@ -2846,8 +5478,33 @@ NODEP_CPP_GL_RS=\
 	".\trilib.h"\
 	
 
-"$(INTDIR)\Gl_rsurf.obj" : $(SOURCE) $(DEP_CPP_GL_RS) "$(INTDIR)"
+!IF  "$(CFG)" == "Quiver - Win32 Release"
 
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+
+"$(INTDIR)\GL_RSURF.OBJ" : $(SOURCE) $(DEP_CPP_GL_RS) "$(INTDIR)"
+   $(CPP) /nologo /MTd /W3 /Gm /GX /Zi /Od /I "..\common" /I\
+ "..\dx6sdk\include" /D "_DEBUG" /D "GLQUAKE" /D "__USEA3D" /D "__A3D_GEOM" /D\
+ "WIN32" /D "_WINDOWS" /Fo"$(INTDIR)/" /Fd"$(INTDIR)/" /c $(SOURCE)
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+
+"$(INTDIR)\GL_RSURF.OBJ" : $(SOURCE) $(DEP_CPP_GL_RS) "$(INTDIR)"
+   $(CPP) /nologo /MT /W3 /GR /GX /O2 /I "..\common" /I "..\dx6sdk\include" /D\
+ "NDEBUG" /D "GLQUAKE" /D "__USEA3D" /D "__A3D_GEOM" /D "WIN32" /D "_WINDOWS"\
+ /Fo"$(INTDIR)/" /c $(SOURCE)
+
+
+!ENDIF 
 
 # End Source File
 ################################################################################
@@ -2866,21 +5523,23 @@ DEP_CPP_GL_SC=\
 	".\cmd.h"\
 	".\color.h"\
 	".\common.h"\
-	".\Console.h"\
+	".\CONSOLE.H"\
 	".\const.h"\
 	".\crc.h"\
 	".\cshift.h"\
 	".\custom.h"\
 	".\cvar.h"\
 	".\cvardef.h"\
+	".\d_iface.h"\
 	".\draw.h"\
 	".\eiface.h"\
-	".\Gl_model.h"\
-	".\Glquake.h"\
+	".\GL_MODEL.H"\
+	".\GLQUAKE.H"\
 	".\host_cmd.h"\
 	".\input.h"\
 	".\keys.h"\
 	".\mathlib.h"\
+	".\model.h"\
 	".\modelgen.h"\
 	".\net.h"\
 	".\pr_dlls.h"\
@@ -2889,8 +5548,10 @@ DEP_CPP_GL_SC=\
 	".\protocol.h"\
 	".\qgl.h"\
 	".\quakedef.h"\
+	".\r_local.h"\
 	".\r_shared.h"\
 	".\render.h"\
+	".\save.h"\
 	".\sbar.h"\
 	".\screen.h"\
 	".\server.h"\
@@ -2905,7 +5566,7 @@ DEP_CPP_GL_SC=\
 	".\world.h"\
 	".\wrect.h"\
 	".\zone.h"\
-	{$(INCLUDE)}"\GL\gl.h"\
+	{$(INCLUDE)}"\gl\GL.H"\
 	
 NODEP_CPP_GL_SC=\
 	".\cmdlib.h"\
@@ -2914,14 +5575,39 @@ NODEP_CPP_GL_SC=\
 	".\trilib.h"\
 	
 
-"$(INTDIR)\gl_screen.obj" : $(SOURCE) $(DEP_CPP_GL_SC) "$(INTDIR)"
+!IF  "$(CFG)" == "Quiver - Win32 Release"
 
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+
+"$(INTDIR)\gl_screen.obj" : $(SOURCE) $(DEP_CPP_GL_SC) "$(INTDIR)"
+   $(CPP) /nologo /MTd /W3 /Gm /GX /Zi /Od /I "..\common" /I\
+ "..\dx6sdk\include" /D "_DEBUG" /D "GLQUAKE" /D "__USEA3D" /D "__A3D_GEOM" /D\
+ "WIN32" /D "_WINDOWS" /Fo"$(INTDIR)/" /Fd"$(INTDIR)/" /c $(SOURCE)
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+
+"$(INTDIR)\gl_screen.obj" : $(SOURCE) $(DEP_CPP_GL_SC) "$(INTDIR)"
+   $(CPP) /nologo /MT /W3 /GR /GX /O2 /I "..\common" /I "..\dx6sdk\include" /D\
+ "NDEBUG" /D "GLQUAKE" /D "__USEA3D" /D "__A3D_GEOM" /D "WIN32" /D "_WINDOWS"\
+ /Fo"$(INTDIR)/" /c $(SOURCE)
+
+
+!ENDIF 
 
 # End Source File
 ################################################################################
 # Begin Source File
 
-SOURCE=.\Gl_vidnt.c
+SOURCE=.\GL_VIDNT.C
 DEP_CPP_GL_VI=\
 	"..\common\dll_state.h"\
 	"..\common\platform.h"\
@@ -2934,22 +5620,24 @@ DEP_CPP_GL_VI=\
 	".\cmd.h"\
 	".\color.h"\
 	".\common.h"\
-	".\Console.h"\
+	".\CONSOLE.H"\
 	".\const.h"\
 	".\crc.h"\
 	".\cshift.h"\
 	".\custom.h"\
 	".\cvar.h"\
 	".\cvardef.h"\
+	".\d_iface.h"\
 	".\draw.h"\
 	".\eiface.h"\
 	".\gl_hw.h"\
-	".\Gl_model.h"\
-	".\Glquake.h"\
+	".\GL_MODEL.H"\
+	".\GLQUAKE.H"\
 	".\host_cmd.h"\
 	".\input.h"\
 	".\keys.h"\
 	".\mathlib.h"\
+	".\model.h"\
 	".\modelgen.h"\
 	".\net.h"\
 	".\opengl2d3d.h"\
@@ -2959,8 +5647,10 @@ DEP_CPP_GL_VI=\
 	".\protocol.h"\
 	".\qgl.h"\
 	".\quakedef.h"\
+	".\r_local.h"\
 	".\r_shared.h"\
 	".\render.h"\
+	".\save.h"\
 	".\sbar.h"\
 	".\screen.h"\
 	".\server.h"\
@@ -2976,7 +5666,7 @@ DEP_CPP_GL_VI=\
 	".\world.h"\
 	".\wrect.h"\
 	".\zone.h"\
-	{$(INCLUDE)}"\GL\gl.h"\
+	{$(INCLUDE)}"\gl\GL.H"\
 	
 NODEP_CPP_GL_VI=\
 	".\cmdlib.h"\
@@ -2985,14 +5675,39 @@ NODEP_CPP_GL_VI=\
 	".\trilib.h"\
 	
 
-"$(INTDIR)\Gl_vidnt.obj" : $(SOURCE) $(DEP_CPP_GL_VI) "$(INTDIR)"
+!IF  "$(CFG)" == "Quiver - Win32 Release"
 
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+
+"$(INTDIR)\GL_VIDNT.OBJ" : $(SOURCE) $(DEP_CPP_GL_VI) "$(INTDIR)"
+   $(CPP) /nologo /MTd /W3 /Gm /GX /Zi /Od /I "..\common" /I\
+ "..\dx6sdk\include" /D "_DEBUG" /D "GLQUAKE" /D "__USEA3D" /D "__A3D_GEOM" /D\
+ "WIN32" /D "_WINDOWS" /Fo"$(INTDIR)/" /Fd"$(INTDIR)/" /c $(SOURCE)
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+
+"$(INTDIR)\GL_VIDNT.OBJ" : $(SOURCE) $(DEP_CPP_GL_VI) "$(INTDIR)"
+   $(CPP) /nologo /MT /W3 /GR /GX /O2 /I "..\common" /I "..\dx6sdk\include" /D\
+ "NDEBUG" /D "GLQUAKE" /D "__USEA3D" /D "__A3D_GEOM" /D "WIN32" /D "_WINDOWS"\
+ /Fo"$(INTDIR)/" /c $(SOURCE)
+
+
+!ENDIF 
 
 # End Source File
 ################################################################################
 # Begin Source File
 
-SOURCE=.\Gl_warp.c
+SOURCE=.\GL_WARP.C
 DEP_CPP_GL_WA=\
 	"..\common\dll_state.h"\
 	"..\common\platform.h"\
@@ -3005,23 +5720,25 @@ DEP_CPP_GL_WA=\
 	".\cmd.h"\
 	".\color.h"\
 	".\common.h"\
-	".\Console.h"\
+	".\CONSOLE.H"\
 	".\const.h"\
 	".\crc.h"\
 	".\cshift.h"\
 	".\custom.h"\
 	".\cvar.h"\
 	".\cvardef.h"\
+	".\d_iface.h"\
 	".\draw.h"\
 	".\eiface.h"\
-	".\Gl_model.h"\
+	".\GL_MODEL.H"\
 	".\gl_warp_sin.h"\
 	".\gl_water.h"\
-	".\Glquake.h"\
+	".\GLQUAKE.H"\
 	".\host_cmd.h"\
 	".\input.h"\
 	".\keys.h"\
 	".\mathlib.h"\
+	".\model.h"\
 	".\modelgen.h"\
 	".\net.h"\
 	".\pr_cmds.h"\
@@ -3031,8 +5748,10 @@ DEP_CPP_GL_WA=\
 	".\protocol.h"\
 	".\qgl.h"\
 	".\quakedef.h"\
+	".\r_local.h"\
 	".\r_shared.h"\
 	".\render.h"\
+	".\save.h"\
 	".\sbar.h"\
 	".\screen.h"\
 	".\server.h"\
@@ -3047,7 +5766,7 @@ DEP_CPP_GL_WA=\
 	".\world.h"\
 	".\wrect.h"\
 	".\zone.h"\
-	{$(INCLUDE)}"\GL\gl.h"\
+	{$(INCLUDE)}"\gl\GL.H"\
 	
 NODEP_CPP_GL_WA=\
 	".\cmdlib.h"\
@@ -3056,8 +5775,33 @@ NODEP_CPP_GL_WA=\
 	".\trilib.h"\
 	
 
-"$(INTDIR)\Gl_warp.obj" : $(SOURCE) $(DEP_CPP_GL_WA) "$(INTDIR)"
+!IF  "$(CFG)" == "Quiver - Win32 Release"
 
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+
+"$(INTDIR)\GL_WARP.OBJ" : $(SOURCE) $(DEP_CPP_GL_WA) "$(INTDIR)"
+   $(CPP) /nologo /MTd /W3 /Gm /GX /Zi /Od /I "..\common" /I\
+ "..\dx6sdk\include" /D "_DEBUG" /D "GLQUAKE" /D "__USEA3D" /D "__A3D_GEOM" /D\
+ "WIN32" /D "_WINDOWS" /Fo"$(INTDIR)/" /Fd"$(INTDIR)/" /c $(SOURCE)
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+
+"$(INTDIR)\GL_WARP.OBJ" : $(SOURCE) $(DEP_CPP_GL_WA) "$(INTDIR)"
+   $(CPP) /nologo /MT /W3 /GR /GX /O2 /I "..\common" /I "..\dx6sdk\include" /D\
+ "NDEBUG" /D "GLQUAKE" /D "__USEA3D" /D "__A3D_GEOM" /D "WIN32" /D "_WINDOWS"\
+ /Fo"$(INTDIR)/" /c $(SOURCE)
+
+
+!ENDIF 
 
 # End Source File
 ################################################################################
@@ -3067,7 +5811,15 @@ SOURCE=.\gl_warp_sin.h
 
 !IF  "$(CFG)" == "Quiver - Win32 Release"
 
+# PROP Exclude_From_Build 1
+
 !ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
 
 !ENDIF 
 
@@ -3079,7 +5831,15 @@ SOURCE=.\gl_water.h
 
 !IF  "$(CFG)" == "Quiver - Win32 Release"
 
+# PROP Exclude_From_Build 1
+
 !ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
 
 !ENDIF 
 
@@ -3100,21 +5860,23 @@ DEP_CPP_GLHUD=\
 	".\cmd.h"\
 	".\color.h"\
 	".\common.h"\
-	".\Console.h"\
+	".\CONSOLE.H"\
 	".\const.h"\
 	".\crc.h"\
 	".\cshift.h"\
 	".\custom.h"\
 	".\cvar.h"\
 	".\cvardef.h"\
+	".\d_iface.h"\
 	".\draw.h"\
 	".\eiface.h"\
-	".\Gl_model.h"\
-	".\Glquake.h"\
+	".\GL_MODEL.H"\
+	".\GLQUAKE.H"\
 	".\host_cmd.h"\
 	".\input.h"\
 	".\keys.h"\
 	".\mathlib.h"\
+	".\model.h"\
 	".\modelgen.h"\
 	".\net.h"\
 	".\pr_dlls.h"\
@@ -3123,8 +5885,10 @@ DEP_CPP_GLHUD=\
 	".\protocol.h"\
 	".\qgl.h"\
 	".\quakedef.h"\
+	".\r_local.h"\
 	".\r_shared.h"\
 	".\render.h"\
+	".\save.h"\
 	".\sbar.h"\
 	".\screen.h"\
 	".\server.h"\
@@ -3139,7 +5903,7 @@ DEP_CPP_GLHUD=\
 	".\world.h"\
 	".\wrect.h"\
 	".\zone.h"\
-	{$(INCLUDE)}"\GL\gl.h"\
+	{$(INCLUDE)}"\gl\GL.H"\
 	
 NODEP_CPP_GLHUD=\
 	".\cmdlib.h"\
@@ -3148,8 +5912,33 @@ NODEP_CPP_GLHUD=\
 	".\trilib.h"\
 	
 
-"$(INTDIR)\glHud.obj" : $(SOURCE) $(DEP_CPP_GLHUD) "$(INTDIR)"
+!IF  "$(CFG)" == "Quiver - Win32 Release"
 
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+
+"$(INTDIR)\glHud.obj" : $(SOURCE) $(DEP_CPP_GLHUD) "$(INTDIR)"
+   $(CPP) /nologo /MTd /W3 /Gm /GX /Zi /Od /I "..\common" /I\
+ "..\dx6sdk\include" /D "_DEBUG" /D "GLQUAKE" /D "__USEA3D" /D "__A3D_GEOM" /D\
+ "WIN32" /D "_WINDOWS" /Fo"$(INTDIR)/" /Fd"$(INTDIR)/" /c $(SOURCE)
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+
+"$(INTDIR)\glHud.obj" : $(SOURCE) $(DEP_CPP_GLHUD) "$(INTDIR)"
+   $(CPP) /nologo /MT /W3 /GR /GX /O2 /I "..\common" /I "..\dx6sdk\include" /D\
+ "NDEBUG" /D "GLQUAKE" /D "__USEA3D" /D "__A3D_GEOM" /D "WIN32" /D "_WINDOWS"\
+ /Fo"$(INTDIR)/" /c $(SOURCE)
+
+
+!ENDIF 
 
 # End Source File
 ################################################################################
@@ -3170,21 +5959,23 @@ DEP_CPP_GLIDE=\
 	".\cmd.h"\
 	".\color.h"\
 	".\common.h"\
-	".\Console.h"\
+	".\CONSOLE.H"\
 	".\const.h"\
 	".\crc.h"\
 	".\cshift.h"\
 	".\custom.h"\
 	".\cvar.h"\
 	".\cvardef.h"\
+	".\d_iface.h"\
 	".\draw.h"\
 	".\eiface.h"\
-	".\Gl_model.h"\
-	".\Glquake.h"\
+	".\GL_MODEL.H"\
+	".\GLQUAKE.H"\
 	".\host_cmd.h"\
 	".\input.h"\
 	".\keys.h"\
 	".\mathlib.h"\
+	".\model.h"\
 	".\modelgen.h"\
 	".\net.h"\
 	".\pr_dlls.h"\
@@ -3193,8 +5984,10 @@ DEP_CPP_GLIDE=\
 	".\protocol.h"\
 	".\qgl.h"\
 	".\quakedef.h"\
+	".\r_local.h"\
 	".\r_shared.h"\
 	".\render.h"\
+	".\save.h"\
 	".\sbar.h"\
 	".\screen.h"\
 	".\server.h"\
@@ -3209,7 +6002,7 @@ DEP_CPP_GLIDE=\
 	".\world.h"\
 	".\wrect.h"\
 	".\zone.h"\
-	{$(INCLUDE)}"\GL\gl.h"\
+	{$(INCLUDE)}"\gl\GL.H"\
 	
 NODEP_CPP_GLIDE=\
 	".\cmdlib.h"\
@@ -3218,18 +6011,31 @@ NODEP_CPP_GLIDE=\
 	".\trilib.h"\
 	
 
-"$(INTDIR)\glide.obj" : $(SOURCE) $(DEP_CPP_GLIDE) "$(INTDIR)"
-
-
-# End Source File
-################################################################################
-# Begin Source File
-
-SOURCE=.\Glquake.h
-
 !IF  "$(CFG)" == "Quiver - Win32 Release"
 
+# PROP Exclude_From_Build 1
+
 !ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+
+"$(INTDIR)\glide.obj" : $(SOURCE) $(DEP_CPP_GLIDE) "$(INTDIR)"
+   $(CPP) /nologo /MTd /W3 /Gm /GX /Zi /Od /I "..\common" /I\
+ "..\dx6sdk\include" /D "_DEBUG" /D "GLQUAKE" /D "__USEA3D" /D "__A3D_GEOM" /D\
+ "WIN32" /D "_WINDOWS" /Fo"$(INTDIR)/" /Fd"$(INTDIR)/" /c $(SOURCE)
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+
+"$(INTDIR)\glide.obj" : $(SOURCE) $(DEP_CPP_GLIDE) "$(INTDIR)"
+   $(CPP) /nologo /MT /W3 /GR /GX /O2 /I "..\common" /I "..\dx6sdk\include" /D\
+ "NDEBUG" /D "GLQUAKE" /D "__USEA3D" /D "__A3D_GEOM" /D "WIN32" /D "_WINDOWS"\
+ /Fo"$(INTDIR)/" /c $(SOURCE)
+
 
 !ENDIF 
 
@@ -3237,12 +6043,31 @@ SOURCE=.\Glquake.h
 ################################################################################
 # Begin Source File
 
-SOURCE=.\ha3d.c
+SOURCE=.\GLQUAKE.H
+
+!IF  "$(CFG)" == "Quiver - Win32 Release"
+
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+!ENDIF 
+
+# End Source File
+################################################################################
+# Begin Source File
+
+SOURCE=.\ha3d.cpp
 DEP_CPP_HA3D_=\
 	"..\common\dll_state.h"\
 	"..\common\platform.h"\
 	"..\common\qfont.h"\
-	".\a3d.h"\
 	".\beamdef.h"\
 	".\bothdefs.h"\
 	".\bspfile.h"\
@@ -3251,21 +6076,23 @@ DEP_CPP_HA3D_=\
 	".\cmd.h"\
 	".\color.h"\
 	".\common.h"\
-	".\Console.h"\
+	".\CONSOLE.H"\
 	".\const.h"\
 	".\crc.h"\
 	".\cshift.h"\
 	".\custom.h"\
 	".\cvar.h"\
 	".\cvardef.h"\
+	".\d_iface.h"\
 	".\draw.h"\
 	".\eiface.h"\
-	".\Gl_model.h"\
-	".\Glquake.h"\
+	".\GL_MODEL.H"\
+	".\GLQUAKE.H"\
 	".\host_cmd.h"\
 	".\input.h"\
 	".\keys.h"\
 	".\mathlib.h"\
+	".\model.h"\
 	".\modelgen.h"\
 	".\net.h"\
 	".\pr_dlls.h"\
@@ -3274,11 +6101,14 @@ DEP_CPP_HA3D_=\
 	".\protocol.h"\
 	".\qgl.h"\
 	".\quakedef.h"\
+	".\r_local.h"\
 	".\r_shared.h"\
 	".\render.h"\
+	".\save.h"\
 	".\sbar.h"\
 	".\screen.h"\
 	".\server.h"\
+	".\snd_a3d.h"\
 	".\sound.h"\
 	".\spritegn.h"\
 	".\studio.h"\
@@ -3287,11 +6117,10 @@ DEP_CPP_HA3D_=\
 	".\view.h"\
 	".\vmodes.h"\
 	".\wad.h"\
-	".\winquake.h"\
 	".\world.h"\
 	".\wrect.h"\
 	".\zone.h"\
-	{$(INCLUDE)}"\GL\gl.h"\
+	{$(INCLUDE)}"\gl\GL.H"\
 	
 NODEP_CPP_HA3D_=\
 	".\cmdlib.h"\
@@ -3300,8 +6129,127 @@ NODEP_CPP_HA3D_=\
 	".\trilib.h"\
 	
 
+!IF  "$(CFG)" == "Quiver - Win32 Release"
+
+
 "$(INTDIR)\ha3d.obj" : $(SOURCE) $(DEP_CPP_HA3D_) "$(INTDIR)"
 
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+
+"$(INTDIR)\ha3d.obj" : $(SOURCE) $(DEP_CPP_HA3D_) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+
+"$(INTDIR)\ha3d.obj" : $(SOURCE) $(DEP_CPP_HA3D_) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+
+"$(INTDIR)\ha3d.obj" : $(SOURCE) $(DEP_CPP_HA3D_) "$(INTDIR)"
+
+
+!ENDIF 
+
+# End Source File
+################################################################################
+# Begin Source File
+
+SOURCE=.\ha3dg.cpp
+DEP_CPP_HA3DG=\
+	"..\common\dll_state.h"\
+	"..\common\platform.h"\
+	"..\common\qfont.h"\
+	".\beamdef.h"\
+	".\bothdefs.h"\
+	".\bspfile.h"\
+	".\cdll_int.h"\
+	".\client.h"\
+	".\cmd.h"\
+	".\color.h"\
+	".\common.h"\
+	".\CONSOLE.H"\
+	".\const.h"\
+	".\crc.h"\
+	".\cshift.h"\
+	".\custom.h"\
+	".\cvar.h"\
+	".\cvardef.h"\
+	".\d_iface.h"\
+	".\draw.h"\
+	".\eiface.h"\
+	".\GL_MODEL.H"\
+	".\GLQUAKE.H"\
+	".\host_cmd.h"\
+	".\input.h"\
+	".\keys.h"\
+	".\mathlib.h"\
+	".\model.h"\
+	".\modelgen.h"\
+	".\net.h"\
+	".\pr_dlls.h"\
+	".\progdefs.h"\
+	".\Progs.h"\
+	".\protocol.h"\
+	".\qgl.h"\
+	".\quakedef.h"\
+	".\r_local.h"\
+	".\r_shared.h"\
+	".\render.h"\
+	".\save.h"\
+	".\sbar.h"\
+	".\screen.h"\
+	".\server.h"\
+	".\snd_a3d.h"\
+	".\sound.h"\
+	".\spritegn.h"\
+	".\studio.h"\
+	".\sys.h"\
+	".\vid.h"\
+	".\view.h"\
+	".\vmodes.h"\
+	".\wad.h"\
+	".\world.h"\
+	".\wrect.h"\
+	".\zone.h"\
+	{$(INCLUDE)}"\gl\GL.H"\
+	
+NODEP_CPP_HA3DG=\
+	".\cmdlib.h"\
+	".\lbmlib.h"\
+	".\scriplib.h"\
+	".\trilib.h"\
+	
+
+!IF  "$(CFG)" == "Quiver - Win32 Release"
+
+
+"$(INTDIR)\ha3dg.obj" : $(SOURCE) $(DEP_CPP_HA3DG) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+
+"$(INTDIR)\ha3dg.obj" : $(SOURCE) $(DEP_CPP_HA3DG) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+
+"$(INTDIR)\ha3dg.obj" : $(SOURCE) $(DEP_CPP_HA3DG) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+
+"$(INTDIR)\ha3dg.obj" : $(SOURCE) $(DEP_CPP_HA3DG) "$(INTDIR)"
+
+
+!ENDIF 
 
 # End Source File
 ################################################################################
@@ -3316,26 +6264,29 @@ DEP_CPP_HASHP=\
 	".\bothdefs.h"\
 	".\bspfile.h"\
 	".\cdll_int.h"\
+	".\cl_demo.h"\
 	".\client.h"\
 	".\cmd.h"\
 	".\color.h"\
 	".\common.h"\
-	".\Console.h"\
+	".\CONSOLE.H"\
 	".\const.h"\
 	".\crc.h"\
 	".\cshift.h"\
 	".\custom.h"\
 	".\cvar.h"\
 	".\cvardef.h"\
+	".\d_iface.h"\
 	".\draw.h"\
 	".\eiface.h"\
-	".\Gl_model.h"\
-	".\Glquake.h"\
+	".\GL_MODEL.H"\
+	".\GLQUAKE.H"\
 	".\hashpak.h"\
 	".\host_cmd.h"\
 	".\input.h"\
 	".\keys.h"\
 	".\mathlib.h"\
+	".\model.h"\
 	".\modelgen.h"\
 	".\net.h"\
 	".\pr_dlls.h"\
@@ -3344,8 +6295,10 @@ DEP_CPP_HASHP=\
 	".\protocol.h"\
 	".\qgl.h"\
 	".\quakedef.h"\
+	".\r_local.h"\
 	".\r_shared.h"\
 	".\render.h"\
+	".\save.h"\
 	".\sbar.h"\
 	".\screen.h"\
 	".\server.h"\
@@ -3360,7 +6313,7 @@ DEP_CPP_HASHP=\
 	".\world.h"\
 	".\wrect.h"\
 	".\zone.h"\
-	{$(INCLUDE)}"\GL\gl.h"\
+	{$(INCLUDE)}"\gl\GL.H"\
 	
 NODEP_CPP_HASHP=\
 	".\cmdlib.h"\
@@ -3369,8 +6322,31 @@ NODEP_CPP_HASHP=\
 	".\trilib.h"\
 	
 
+!IF  "$(CFG)" == "Quiver - Win32 Release"
+
+
 "$(INTDIR)\hashpak.obj" : $(SOURCE) $(DEP_CPP_HASHP) "$(INTDIR)"
 
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+
+"$(INTDIR)\hashpak.obj" : $(SOURCE) $(DEP_CPP_HASHP) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+
+"$(INTDIR)\hashpak.obj" : $(SOURCE) $(DEP_CPP_HASHP) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+
+"$(INTDIR)\hashpak.obj" : $(SOURCE) $(DEP_CPP_HASHP) "$(INTDIR)"
+
+
+!ENDIF 
 
 # End Source File
 ################################################################################
@@ -3381,6 +6357,10 @@ SOURCE=.\hashpak.h
 !IF  "$(CFG)" == "Quiver - Win32 Release"
 
 !ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
 
 !ENDIF 
 
@@ -3402,21 +6382,23 @@ DEP_CPP_HOST_=\
 	".\cmodel.h"\
 	".\color.h"\
 	".\common.h"\
-	".\Console.h"\
+	".\CONSOLE.H"\
 	".\const.h"\
 	".\crc.h"\
 	".\cshift.h"\
 	".\custom.h"\
 	".\cvar.h"\
 	".\cvardef.h"\
+	".\d_iface.h"\
 	".\draw.h"\
 	".\eiface.h"\
-	".\Gl_model.h"\
-	".\Glquake.h"\
+	".\GL_MODEL.H"\
+	".\GLQUAKE.H"\
 	".\host_cmd.h"\
 	".\input.h"\
 	".\keys.h"\
 	".\mathlib.h"\
+	".\model.h"\
 	".\modelgen.h"\
 	".\net.h"\
 	".\pr_dlls.h"\
@@ -3426,8 +6408,10 @@ DEP_CPP_HOST_=\
 	".\protocol.h"\
 	".\qgl.h"\
 	".\quakedef.h"\
+	".\r_local.h"\
 	".\r_shared.h"\
 	".\render.h"\
+	".\save.h"\
 	".\sbar.h"\
 	".\screen.h"\
 	".\server.h"\
@@ -3443,7 +6427,7 @@ DEP_CPP_HOST_=\
 	".\world.h"\
 	".\wrect.h"\
 	".\zone.h"\
-	{$(INCLUDE)}"\GL\gl.h"\
+	{$(INCLUDE)}"\gl\GL.H"\
 	
 NODEP_CPP_HOST_=\
 	".\cmdlib.h"\
@@ -3452,8 +6436,31 @@ NODEP_CPP_HOST_=\
 	".\trilib.h"\
 	
 
+!IF  "$(CFG)" == "Quiver - Win32 Release"
+
+
 "$(INTDIR)\host.obj" : $(SOURCE) $(DEP_CPP_HOST_) "$(INTDIR)"
 
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+
+"$(INTDIR)\host.obj" : $(SOURCE) $(DEP_CPP_HOST_) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+
+"$(INTDIR)\host.obj" : $(SOURCE) $(DEP_CPP_HOST_) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+
+"$(INTDIR)\host.obj" : $(SOURCE) $(DEP_CPP_HOST_) "$(INTDIR)"
+
+
+!ENDIF 
 
 # End Source File
 ################################################################################
@@ -3473,21 +6480,25 @@ DEP_CPP_HOST_C=\
 	".\cmd.h"\
 	".\color.h"\
 	".\common.h"\
-	".\Console.h"\
+	".\CONSOLE.H"\
 	".\const.h"\
 	".\crc.h"\
 	".\cshift.h"\
 	".\custom.h"\
 	".\cvar.h"\
 	".\cvardef.h"\
+	".\d_iface.h"\
+	".\decal.h"\
 	".\draw.h"\
 	".\eiface.h"\
-	".\Gl_model.h"\
-	".\Glquake.h"\
+	".\GL_MODEL.H"\
+	".\GLQUAKE.H"\
+	".\hashpak.h"\
 	".\host_cmd.h"\
 	".\input.h"\
 	".\keys.h"\
 	".\mathlib.h"\
+	".\model.h"\
 	".\modelgen.h"\
 	".\net.h"\
 	".\pr_cmds.h"\
@@ -3498,8 +6509,11 @@ DEP_CPP_HOST_C=\
 	".\protocol.h"\
 	".\qgl.h"\
 	".\quakedef.h"\
+	".\r_local.h"\
 	".\r_shared.h"\
+	".\r_studio.h"\
 	".\render.h"\
+	".\save.h"\
 	".\sbar.h"\
 	".\screen.h"\
 	".\server.h"\
@@ -3515,7 +6529,7 @@ DEP_CPP_HOST_C=\
 	".\world.h"\
 	".\wrect.h"\
 	".\zone.h"\
-	{$(INCLUDE)}"\GL\gl.h"\
+	{$(INCLUDE)}"\gl\GL.H"\
 	
 NODEP_CPP_HOST_C=\
 	".\cmdlib.h"\
@@ -3524,8 +6538,31 @@ NODEP_CPP_HOST_C=\
 	".\trilib.h"\
 	
 
+!IF  "$(CFG)" == "Quiver - Win32 Release"
+
+
 "$(INTDIR)\host_cmd.obj" : $(SOURCE) $(DEP_CPP_HOST_C) "$(INTDIR)"
 
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+
+"$(INTDIR)\host_cmd.obj" : $(SOURCE) $(DEP_CPP_HOST_C) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+
+"$(INTDIR)\host_cmd.obj" : $(SOURCE) $(DEP_CPP_HOST_C) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+
+"$(INTDIR)\host_cmd.obj" : $(SOURCE) $(DEP_CPP_HOST_C) "$(INTDIR)"
+
+
+!ENDIF 
 
 # End Source File
 ################################################################################
@@ -3536,6 +6573,10 @@ SOURCE=.\host_cmd.h
 !IF  "$(CFG)" == "Quiver - Win32 Release"
 
 !ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
 
 !ENDIF 
 
@@ -3552,35 +6593,41 @@ DEP_CPP_HUD_C=\
 	".\bothdefs.h"\
 	".\bspfile.h"\
 	".\cdll_int.h"\
+	".\cl_tent.h"\
 	".\client.h"\
 	".\cmd.h"\
 	".\color.h"\
 	".\common.h"\
-	".\Console.h"\
+	".\CONSOLE.H"\
 	".\const.h"\
 	".\crc.h"\
 	".\cshift.h"\
 	".\custom.h"\
 	".\cvar.h"\
 	".\cvardef.h"\
+	".\d_iface.h"\
 	".\draw.h"\
 	".\eiface.h"\
-	".\Gl_model.h"\
-	".\Glquake.h"\
+	".\GL_MODEL.H"\
+	".\GLQUAKE.H"\
 	".\host_cmd.h"\
 	".\input.h"\
 	".\keys.h"\
 	".\mathlib.h"\
+	".\model.h"\
 	".\modelgen.h"\
 	".\net.h"\
+	".\pr_cmds.h"\
 	".\pr_dlls.h"\
 	".\progdefs.h"\
 	".\Progs.h"\
 	".\protocol.h"\
 	".\qgl.h"\
 	".\quakedef.h"\
+	".\r_local.h"\
 	".\r_shared.h"\
 	".\render.h"\
+	".\save.h"\
 	".\sbar.h"\
 	".\screen.h"\
 	".\server.h"\
@@ -3595,7 +6642,7 @@ DEP_CPP_HUD_C=\
 	".\world.h"\
 	".\wrect.h"\
 	".\zone.h"\
-	{$(INCLUDE)}"\GL\gl.h"\
+	{$(INCLUDE)}"\gl\GL.H"\
 	
 NODEP_CPP_HUD_C=\
 	".\cmdlib.h"\
@@ -3604,8 +6651,32 @@ NODEP_CPP_HUD_C=\
 	".\trilib.h"\
 	
 
+!IF  "$(CFG)" == "Quiver - Win32 Release"
+
+
 "$(INTDIR)\HUD.obj" : $(SOURCE) $(DEP_CPP_HUD_C) "$(INTDIR)"
 
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+
+"$(INTDIR)\HUD.obj" : $(SOURCE) $(DEP_CPP_HUD_C) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+# PROP Exclude_From_Build 0
+
+"$(INTDIR)\HUD.obj" : $(SOURCE) $(DEP_CPP_HUD_C) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+
+"$(INTDIR)\HUD.obj" : $(SOURCE) $(DEP_CPP_HUD_C) "$(INTDIR)"
+
+
+!ENDIF 
 
 # End Source File
 ################################################################################
@@ -3617,16 +6688,11 @@ SOURCE=.\hud_handlers.h
 
 !ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
 
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
 !ENDIF 
-
-# End Source File
-################################################################################
-# Begin Source File
-
-SOURCE=.\in_camera.c
-
-"$(INTDIR)\in_camera.obj" : $(SOURCE) "$(INTDIR)"
-
 
 # End Source File
 ################################################################################
@@ -3645,21 +6711,23 @@ DEP_CPP_IN_WI=\
 	".\cmd.h"\
 	".\color.h"\
 	".\common.h"\
-	".\Console.h"\
+	".\CONSOLE.H"\
 	".\const.h"\
 	".\crc.h"\
 	".\cshift.h"\
 	".\custom.h"\
 	".\cvar.h"\
 	".\cvardef.h"\
+	".\d_iface.h"\
 	".\draw.h"\
 	".\eiface.h"\
-	".\Gl_model.h"\
-	".\Glquake.h"\
+	".\GL_MODEL.H"\
+	".\GLQUAKE.H"\
 	".\host_cmd.h"\
 	".\input.h"\
 	".\keys.h"\
 	".\mathlib.h"\
+	".\model.h"\
 	".\modelgen.h"\
 	".\net.h"\
 	".\pr_dlls.h"\
@@ -3668,8 +6736,10 @@ DEP_CPP_IN_WI=\
 	".\protocol.h"\
 	".\qgl.h"\
 	".\quakedef.h"\
+	".\r_local.h"\
 	".\r_shared.h"\
 	".\render.h"\
+	".\save.h"\
 	".\sbar.h"\
 	".\screen.h"\
 	".\server.h"\
@@ -3685,7 +6755,7 @@ DEP_CPP_IN_WI=\
 	".\world.h"\
 	".\wrect.h"\
 	".\zone.h"\
-	{$(INCLUDE)}"\GL\gl.h"\
+	{$(INCLUDE)}"\gl\GL.H"\
 	
 NODEP_CPP_IN_WI=\
 	".\cmdlib.h"\
@@ -3694,8 +6764,31 @@ NODEP_CPP_IN_WI=\
 	".\trilib.h"\
 	
 
+!IF  "$(CFG)" == "Quiver - Win32 Release"
+
+
 "$(INTDIR)\in_win.obj" : $(SOURCE) $(DEP_CPP_IN_WI) "$(INTDIR)"
 
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+
+"$(INTDIR)\in_win.obj" : $(SOURCE) $(DEP_CPP_IN_WI) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+
+"$(INTDIR)\in_win.obj" : $(SOURCE) $(DEP_CPP_IN_WI) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+
+"$(INTDIR)\in_win.obj" : $(SOURCE) $(DEP_CPP_IN_WI) "$(INTDIR)"
+
+
+!ENDIF 
 
 # End Source File
 ################################################################################
@@ -3707,13 +6800,17 @@ SOURCE=.\input.h
 
 !ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
 
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
 !ENDIF 
 
 # End Source File
 ################################################################################
 # Begin Source File
 
-SOURCE=.\Keys.c
+SOURCE=.\KEYS.C
 DEP_CPP_KEYS_=\
 	"..\common\dll_state.h"\
 	"..\common\platform.h"\
@@ -3726,21 +6823,23 @@ DEP_CPP_KEYS_=\
 	".\cmd.h"\
 	".\color.h"\
 	".\common.h"\
-	".\Console.h"\
+	".\CONSOLE.H"\
 	".\const.h"\
 	".\crc.h"\
 	".\cshift.h"\
 	".\custom.h"\
 	".\cvar.h"\
 	".\cvardef.h"\
+	".\d_iface.h"\
 	".\draw.h"\
 	".\eiface.h"\
-	".\Gl_model.h"\
-	".\Glquake.h"\
+	".\GL_MODEL.H"\
+	".\GLQUAKE.H"\
 	".\host_cmd.h"\
 	".\input.h"\
 	".\keys.h"\
 	".\mathlib.h"\
+	".\model.h"\
 	".\modelgen.h"\
 	".\net.h"\
 	".\pr_dlls.h"\
@@ -3749,8 +6848,10 @@ DEP_CPP_KEYS_=\
 	".\protocol.h"\
 	".\qgl.h"\
 	".\quakedef.h"\
+	".\r_local.h"\
 	".\r_shared.h"\
 	".\render.h"\
+	".\save.h"\
 	".\sbar.h"\
 	".\screen.h"\
 	".\server.h"\
@@ -3766,7 +6867,7 @@ DEP_CPP_KEYS_=\
 	".\world.h"\
 	".\wrect.h"\
 	".\zone.h"\
-	{$(INCLUDE)}"\GL\gl.h"\
+	{$(INCLUDE)}"\gl\GL.H"\
 	
 NODEP_CPP_KEYS_=\
 	".\cmdlib.h"\
@@ -3775,8 +6876,31 @@ NODEP_CPP_KEYS_=\
 	".\trilib.h"\
 	
 
-"$(INTDIR)\Keys.obj" : $(SOURCE) $(DEP_CPP_KEYS_) "$(INTDIR)"
+!IF  "$(CFG)" == "Quiver - Win32 Release"
 
+
+"$(INTDIR)\KEYS.OBJ" : $(SOURCE) $(DEP_CPP_KEYS_) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+
+"$(INTDIR)\KEYS.OBJ" : $(SOURCE) $(DEP_CPP_KEYS_) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+
+"$(INTDIR)\KEYS.OBJ" : $(SOURCE) $(DEP_CPP_KEYS_) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+
+"$(INTDIR)\KEYS.OBJ" : $(SOURCE) $(DEP_CPP_KEYS_) "$(INTDIR)"
+
+
+!ENDIF 
 
 # End Source File
 ################################################################################
@@ -3787,6 +6911,10 @@ SOURCE=.\keys.h
 !IF  "$(CFG)" == "Quiver - Win32 Release"
 
 !ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
 
 !ENDIF 
 
@@ -3807,21 +6935,23 @@ DEP_CPP_L_STU=\
 	".\cmd.h"\
 	".\color.h"\
 	".\common.h"\
-	".\Console.h"\
+	".\CONSOLE.H"\
 	".\const.h"\
 	".\crc.h"\
 	".\cshift.h"\
 	".\custom.h"\
 	".\cvar.h"\
 	".\cvardef.h"\
+	".\d_iface.h"\
 	".\draw.h"\
 	".\eiface.h"\
-	".\Gl_model.h"\
-	".\Glquake.h"\
+	".\GL_MODEL.H"\
+	".\GLQUAKE.H"\
 	".\host_cmd.h"\
 	".\input.h"\
 	".\keys.h"\
 	".\mathlib.h"\
+	".\model.h"\
 	".\modelgen.h"\
 	".\net.h"\
 	".\pr_dlls.h"\
@@ -3830,8 +6960,10 @@ DEP_CPP_L_STU=\
 	".\protocol.h"\
 	".\qgl.h"\
 	".\quakedef.h"\
+	".\r_local.h"\
 	".\r_shared.h"\
 	".\render.h"\
+	".\save.h"\
 	".\sbar.h"\
 	".\screen.h"\
 	".\server.h"\
@@ -3846,7 +6978,7 @@ DEP_CPP_L_STU=\
 	".\world.h"\
 	".\wrect.h"\
 	".\zone.h"\
-	{$(INCLUDE)}"\GL\gl.h"\
+	{$(INCLUDE)}"\gl\GL.H"\
 	
 NODEP_CPP_L_STU=\
 	".\cmdlib.h"\
@@ -3855,8 +6987,31 @@ NODEP_CPP_L_STU=\
 	".\trilib.h"\
 	
 
+!IF  "$(CFG)" == "Quiver - Win32 Release"
+
+
 "$(INTDIR)\l_studio.obj" : $(SOURCE) $(DEP_CPP_L_STU) "$(INTDIR)"
 
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+
+"$(INTDIR)\l_studio.obj" : $(SOURCE) $(DEP_CPP_L_STU) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+
+"$(INTDIR)\l_studio.obj" : $(SOURCE) $(DEP_CPP_L_STU) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+
+"$(INTDIR)\l_studio.obj" : $(SOURCE) $(DEP_CPP_L_STU) "$(INTDIR)"
+
+
+!ENDIF 
 
 # End Source File
 ################################################################################
@@ -3875,21 +7030,23 @@ DEP_CPP_MATHL=\
 	".\cmd.h"\
 	".\color.h"\
 	".\common.h"\
-	".\Console.h"\
+	".\CONSOLE.H"\
 	".\const.h"\
 	".\crc.h"\
 	".\cshift.h"\
 	".\custom.h"\
 	".\cvar.h"\
 	".\cvardef.h"\
+	".\d_iface.h"\
 	".\draw.h"\
 	".\eiface.h"\
-	".\Gl_model.h"\
-	".\Glquake.h"\
+	".\GL_MODEL.H"\
+	".\GLQUAKE.H"\
 	".\host_cmd.h"\
 	".\input.h"\
 	".\keys.h"\
 	".\mathlib.h"\
+	".\model.h"\
 	".\modelgen.h"\
 	".\net.h"\
 	".\pr_dlls.h"\
@@ -3898,8 +7055,10 @@ DEP_CPP_MATHL=\
 	".\protocol.h"\
 	".\qgl.h"\
 	".\quakedef.h"\
+	".\r_local.h"\
 	".\r_shared.h"\
 	".\render.h"\
+	".\save.h"\
 	".\sbar.h"\
 	".\screen.h"\
 	".\server.h"\
@@ -3914,7 +7073,7 @@ DEP_CPP_MATHL=\
 	".\world.h"\
 	".\wrect.h"\
 	".\zone.h"\
-	{$(INCLUDE)}"\GL\gl.h"\
+	{$(INCLUDE)}"\gl\GL.H"\
 	
 NODEP_CPP_MATHL=\
 	".\cmdlib.h"\
@@ -3923,8 +7082,31 @@ NODEP_CPP_MATHL=\
 	".\trilib.h"\
 	
 
+!IF  "$(CFG)" == "Quiver - Win32 Release"
+
+
 "$(INTDIR)\mathlib.obj" : $(SOURCE) $(DEP_CPP_MATHL) "$(INTDIR)"
 
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+
+"$(INTDIR)\mathlib.obj" : $(SOURCE) $(DEP_CPP_MATHL) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+
+"$(INTDIR)\mathlib.obj" : $(SOURCE) $(DEP_CPP_MATHL) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+
+"$(INTDIR)\mathlib.obj" : $(SOURCE) $(DEP_CPP_MATHL) "$(INTDIR)"
+
+
+!ENDIF 
 
 # End Source File
 ################################################################################
@@ -3936,17 +7118,126 @@ SOURCE=.\mathlib.h
 
 !ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
 
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
 !ENDIF 
 
 # End Source File
 ################################################################################
 # Begin Source File
 
-SOURCE=.\modelgen.h
+SOURCE=.\model.c
+DEP_CPP_MODEL=\
+	"..\common\dll_state.h"\
+	"..\common\platform.h"\
+	"..\common\qfont.h"\
+	".\beamdef.h"\
+	".\bothdefs.h"\
+	".\bspfile.h"\
+	".\cdll_int.h"\
+	".\client.h"\
+	".\cmd.h"\
+	".\color.h"\
+	".\common.h"\
+	".\CONSOLE.H"\
+	".\const.h"\
+	".\crc.h"\
+	".\cshift.h"\
+	".\custom.h"\
+	".\cvar.h"\
+	".\cvardef.h"\
+	".\d_iface.h"\
+	".\decal.h"\
+	".\draw.h"\
+	".\eiface.h"\
+	".\GL_MODEL.H"\
+	".\GLQUAKE.H"\
+	".\host_cmd.h"\
+	".\input.h"\
+	".\keys.h"\
+	".\mathlib.h"\
+	".\model.h"\
+	".\modelgen.h"\
+	".\net.h"\
+	".\pr_dlls.h"\
+	".\progdefs.h"\
+	".\Progs.h"\
+	".\protocol.h"\
+	".\qgl.h"\
+	".\quakedef.h"\
+	".\r_local.h"\
+	".\r_shared.h"\
+	".\render.h"\
+	".\save.h"\
+	".\sbar.h"\
+	".\screen.h"\
+	".\server.h"\
+	".\sound.h"\
+	".\spritegn.h"\
+	".\studio.h"\
+	".\sys.h"\
+	".\textures.h"\
+	".\vid.h"\
+	".\view.h"\
+	".\vmodes.h"\
+	".\wad.h"\
+	".\world.h"\
+	".\wrect.h"\
+	".\zone.h"\
+	{$(INCLUDE)}"\gl\GL.H"\
+	
+NODEP_CPP_MODEL=\
+	".\cmdlib.h"\
+	".\lbmlib.h"\
+	".\scriplib.h"\
+	".\trilib.h"\
+	
+
+!IF  "$(CFG)" == "Quiver - Win32 Release"
+
+
+"$(INTDIR)\model.obj" : $(SOURCE) $(DEP_CPP_MODEL) "$(INTDIR)"
+   $(CPP) /nologo /MT /W3 /GR /GX /O2 /I "..\common" /I "..\dx6sdk\include" /D\
+ "NDEBUG" /D "__USEA3D" /D "__A3D_GEOM" /D "WIN32" /D "_WINDOWS" /Fo"$(INTDIR)/"\
+ /c $(SOURCE)
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+
+"$(INTDIR)\model.obj" : $(SOURCE) $(DEP_CPP_MODEL) "$(INTDIR)"
+   $(CPP) /nologo /MTd /W3 /Gm /GX /Zi /Od /I "..\common" /I\
+ "..\dx6sdk\include" /D "_DEBUG" /D "__USEA3D" /D "__A3D_GEOM" /D "WIN32" /D\
+ "_WINDOWS" /Fo"$(INTDIR)/" /Fd"$(INTDIR)/" /c $(SOURCE)
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+# PROP Exclude_From_Build 1
+
+!ENDIF 
+
+# End Source File
+################################################################################
+# Begin Source File
+
+SOURCE=.\model.h
 
 !IF  "$(CFG)" == "Quiver - Win32 Release"
 
 !ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
 
 !ENDIF 
 
@@ -3959,6 +7250,10 @@ SOURCE=.\net.h
 !IF  "$(CFG)" == "Quiver - Win32 Release"
 
 !ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
 
 !ENDIF 
 
@@ -3979,21 +7274,23 @@ DEP_CPP_NET_C=\
 	".\cmd.h"\
 	".\color.h"\
 	".\common.h"\
-	".\Console.h"\
+	".\CONSOLE.H"\
 	".\const.h"\
 	".\crc.h"\
 	".\cshift.h"\
 	".\custom.h"\
 	".\cvar.h"\
 	".\cvardef.h"\
+	".\d_iface.h"\
 	".\draw.h"\
 	".\eiface.h"\
-	".\Gl_model.h"\
-	".\Glquake.h"\
+	".\GL_MODEL.H"\
+	".\GLQUAKE.H"\
 	".\host_cmd.h"\
 	".\input.h"\
 	".\keys.h"\
 	".\mathlib.h"\
+	".\model.h"\
 	".\modelgen.h"\
 	".\net.h"\
 	".\pr_dlls.h"\
@@ -4002,8 +7299,10 @@ DEP_CPP_NET_C=\
 	".\protocol.h"\
 	".\qgl.h"\
 	".\quakedef.h"\
+	".\r_local.h"\
 	".\r_shared.h"\
 	".\render.h"\
+	".\save.h"\
 	".\sbar.h"\
 	".\screen.h"\
 	".\server.h"\
@@ -4019,7 +7318,7 @@ DEP_CPP_NET_C=\
 	".\world.h"\
 	".\wrect.h"\
 	".\zone.h"\
-	{$(INCLUDE)}"\GL\gl.h"\
+	{$(INCLUDE)}"\gl\GL.H"\
 	
 NODEP_CPP_NET_C=\
 	".\cmdlib.h"\
@@ -4028,8 +7327,31 @@ NODEP_CPP_NET_C=\
 	".\trilib.h"\
 	
 
+!IF  "$(CFG)" == "Quiver - Win32 Release"
+
+
 "$(INTDIR)\net_chan.obj" : $(SOURCE) $(DEP_CPP_NET_C) "$(INTDIR)"
 
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+
+"$(INTDIR)\net_chan.obj" : $(SOURCE) $(DEP_CPP_NET_C) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+
+"$(INTDIR)\net_chan.obj" : $(SOURCE) $(DEP_CPP_NET_C) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+
+"$(INTDIR)\net_chan.obj" : $(SOURCE) $(DEP_CPP_NET_C) "$(INTDIR)"
+
+
+!ENDIF 
 
 # End Source File
 ################################################################################
@@ -4048,21 +7370,23 @@ DEP_CPP_NET_W=\
 	".\cmd.h"\
 	".\color.h"\
 	".\common.h"\
-	".\Console.h"\
+	".\CONSOLE.H"\
 	".\const.h"\
 	".\crc.h"\
 	".\cshift.h"\
 	".\custom.h"\
 	".\cvar.h"\
 	".\cvardef.h"\
+	".\d_iface.h"\
 	".\draw.h"\
 	".\eiface.h"\
-	".\Gl_model.h"\
-	".\Glquake.h"\
+	".\GL_MODEL.H"\
+	".\GLQUAKE.H"\
 	".\host_cmd.h"\
 	".\input.h"\
 	".\keys.h"\
 	".\mathlib.h"\
+	".\model.h"\
 	".\modelgen.h"\
 	".\net.h"\
 	".\pr_cmds.h"\
@@ -4072,8 +7396,10 @@ DEP_CPP_NET_W=\
 	".\protocol.h"\
 	".\qgl.h"\
 	".\quakedef.h"\
+	".\r_local.h"\
 	".\r_shared.h"\
 	".\render.h"\
+	".\save.h"\
 	".\sbar.h"\
 	".\screen.h"\
 	".\server.h"\
@@ -4088,7 +7414,7 @@ DEP_CPP_NET_W=\
 	".\world.h"\
 	".\wrect.h"\
 	".\zone.h"\
-	{$(INCLUDE)}"\GL\gl.h"\
+	{$(INCLUDE)}"\gl\GL.H"\
 	
 NODEP_CPP_NET_W=\
 	".\cmdlib.h"\
@@ -4097,14 +7423,135 @@ NODEP_CPP_NET_W=\
 	".\trilib.h"\
 	
 
+!IF  "$(CFG)" == "Quiver - Win32 Release"
+
+
 "$(INTDIR)\net_ws.obj" : $(SOURCE) $(DEP_CPP_NET_W) "$(INTDIR)"
 
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+
+"$(INTDIR)\net_ws.obj" : $(SOURCE) $(DEP_CPP_NET_W) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+
+"$(INTDIR)\net_ws.obj" : $(SOURCE) $(DEP_CPP_NET_W) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+
+"$(INTDIR)\net_ws.obj" : $(SOURCE) $(DEP_CPP_NET_W) "$(INTDIR)"
+
+
+!ENDIF 
 
 # End Source File
 ################################################################################
 # Begin Source File
 
-SOURCE=.\opengl2d3d.c
+SOURCE=.\NONINTEL.C
+DEP_CPP_NONIN=\
+	"..\common\dll_state.h"\
+	"..\common\platform.h"\
+	"..\common\qfont.h"\
+	".\beamdef.h"\
+	".\bothdefs.h"\
+	".\bspfile.h"\
+	".\cdll_int.h"\
+	".\client.h"\
+	".\cmd.h"\
+	".\color.h"\
+	".\common.h"\
+	".\CONSOLE.H"\
+	".\const.h"\
+	".\crc.h"\
+	".\cshift.h"\
+	".\custom.h"\
+	".\cvar.h"\
+	".\cvardef.h"\
+	".\d_iface.h"\
+	".\d_local.h"\
+	".\draw.h"\
+	".\eiface.h"\
+	".\GL_MODEL.H"\
+	".\GLQUAKE.H"\
+	".\host_cmd.h"\
+	".\input.h"\
+	".\keys.h"\
+	".\mathlib.h"\
+	".\model.h"\
+	".\modelgen.h"\
+	".\net.h"\
+	".\pr_dlls.h"\
+	".\progdefs.h"\
+	".\Progs.h"\
+	".\protocol.h"\
+	".\qgl.h"\
+	".\quakedef.h"\
+	".\r_local.h"\
+	".\r_shared.h"\
+	".\render.h"\
+	".\save.h"\
+	".\sbar.h"\
+	".\screen.h"\
+	".\server.h"\
+	".\sound.h"\
+	".\spritegn.h"\
+	".\studio.h"\
+	".\sys.h"\
+	".\vid.h"\
+	".\view.h"\
+	".\vmodes.h"\
+	".\wad.h"\
+	".\world.h"\
+	".\wrect.h"\
+	".\zone.h"\
+	{$(INCLUDE)}"\gl\GL.H"\
+	
+NODEP_CPP_NONIN=\
+	".\cmdlib.h"\
+	".\lbmlib.h"\
+	".\scriplib.h"\
+	".\trilib.h"\
+	
+
+!IF  "$(CFG)" == "Quiver - Win32 Release"
+
+
+"$(INTDIR)\NONINTEL.OBJ" : $(SOURCE) $(DEP_CPP_NONIN) "$(INTDIR)"
+   $(CPP) /nologo /MT /W3 /GR /GX /O2 /I "..\common" /I "..\dx6sdk\include" /D\
+ "NDEBUG" /D "__USEA3D" /D "__A3D_GEOM" /D "WIN32" /D "_WINDOWS" /Fo"$(INTDIR)/"\
+ /c $(SOURCE)
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+
+"$(INTDIR)\NONINTEL.OBJ" : $(SOURCE) $(DEP_CPP_NONIN) "$(INTDIR)"
+   $(CPP) /nologo /MTd /W3 /Gm /GX /Zi /Od /I "..\common" /I\
+ "..\dx6sdk\include" /D "_DEBUG" /D "__USEA3D" /D "__A3D_GEOM" /D "WIN32" /D\
+ "_WINDOWS" /Fo"$(INTDIR)/" /Fd"$(INTDIR)/" /c $(SOURCE)
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+# PROP Exclude_From_Build 1
+
+!ENDIF 
+
+# End Source File
+################################################################################
+# Begin Source File
+
+SOURCE=.\opengl2d3d.cpp
 DEP_CPP_OPENG=\
 	"..\common\dll_state.h"\
 	"..\common\platform.h"\
@@ -4117,21 +7564,23 @@ DEP_CPP_OPENG=\
 	".\cmd.h"\
 	".\color.h"\
 	".\common.h"\
-	".\Console.h"\
+	".\CONSOLE.H"\
 	".\const.h"\
 	".\crc.h"\
 	".\cshift.h"\
 	".\custom.h"\
 	".\cvar.h"\
 	".\cvardef.h"\
+	".\d_iface.h"\
 	".\draw.h"\
 	".\eiface.h"\
-	".\Gl_model.h"\
-	".\Glquake.h"\
+	".\GL_MODEL.H"\
+	".\GLQUAKE.H"\
 	".\host_cmd.h"\
 	".\input.h"\
 	".\keys.h"\
 	".\mathlib.h"\
+	".\model.h"\
 	".\modelgen.h"\
 	".\net.h"\
 	".\opengl2d3d.h"\
@@ -4141,8 +7590,10 @@ DEP_CPP_OPENG=\
 	".\protocol.h"\
 	".\qgl.h"\
 	".\quakedef.h"\
+	".\r_local.h"\
 	".\r_shared.h"\
 	".\render.h"\
+	".\save.h"\
 	".\sbar.h"\
 	".\screen.h"\
 	".\server.h"\
@@ -4158,7 +7609,7 @@ DEP_CPP_OPENG=\
 	".\world.h"\
 	".\wrect.h"\
 	".\zone.h"\
-	{$(INCLUDE)}"\GL\gl.h"\
+	{$(INCLUDE)}"\gl\GL.H"\
 	
 NODEP_CPP_OPENG=\
 	".\cmdlib.h"\
@@ -4167,8 +7618,33 @@ NODEP_CPP_OPENG=\
 	".\trilib.h"\
 	
 
-"$(INTDIR)\opengl2d3d.obj" : $(SOURCE) $(DEP_CPP_OPENG) "$(INTDIR)"
+!IF  "$(CFG)" == "Quiver - Win32 Release"
 
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+
+"$(INTDIR)\opengl2d3d.obj" : $(SOURCE) $(DEP_CPP_OPENG) "$(INTDIR)"
+   $(CPP) /nologo /MTd /W3 /Gm /GX /Zi /Od /I "..\common" /I\
+ "..\dx6sdk\include" /D "_DEBUG" /D "GLQUAKE" /D "__USEA3D" /D "__A3D_GEOM" /D\
+ "WIN32" /D "_WINDOWS" /Fo"$(INTDIR)/" /Fd"$(INTDIR)/" /c $(SOURCE)
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+
+"$(INTDIR)\opengl2d3d.obj" : $(SOURCE) $(DEP_CPP_OPENG) "$(INTDIR)"
+   $(CPP) /nologo /MT /W3 /GR /GX /O2 /I "..\common" /I "..\dx6sdk\include" /D\
+ "NDEBUG" /D "GLQUAKE" /D "__USEA3D" /D "__A3D_GEOM" /D "WIN32" /D "_WINDOWS"\
+ /Fo"$(INTDIR)/" /c $(SOURCE)
+
+
+!ENDIF 
 
 # End Source File
 ################################################################################
@@ -4180,14 +7656,18 @@ SOURCE=.\opengl2d3d.h
 
 !ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
 
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
 !ENDIF 
 
 # End Source File
 ################################################################################
 # Begin Source File
 
-SOURCE=.\pe_export.c
-DEP_CPP_PE_EX=\
+SOURCE=.\pe_win32.c
+DEP_CPP_PE_WI=\
 	"..\common\dll_state.h"\
 	"..\common\platform.h"\
 	"..\common\qfont.h"\
@@ -4199,21 +7679,23 @@ DEP_CPP_PE_EX=\
 	".\cmd.h"\
 	".\color.h"\
 	".\common.h"\
-	".\Console.h"\
+	".\CONSOLE.H"\
 	".\const.h"\
 	".\crc.h"\
 	".\cshift.h"\
 	".\custom.h"\
 	".\cvar.h"\
 	".\cvardef.h"\
+	".\d_iface.h"\
 	".\draw.h"\
 	".\eiface.h"\
-	".\Gl_model.h"\
-	".\Glquake.h"\
+	".\GL_MODEL.H"\
+	".\GLQUAKE.H"\
 	".\host_cmd.h"\
 	".\input.h"\
 	".\keys.h"\
 	".\mathlib.h"\
+	".\model.h"\
 	".\modelgen.h"\
 	".\net.h"\
 	".\pr_dlls.h"\
@@ -4222,8 +7704,10 @@ DEP_CPP_PE_EX=\
 	".\protocol.h"\
 	".\qgl.h"\
 	".\quakedef.h"\
+	".\r_local.h"\
 	".\r_shared.h"\
 	".\render.h"\
+	".\save.h"\
 	".\sbar.h"\
 	".\screen.h"\
 	".\server.h"\
@@ -4239,17 +7723,135 @@ DEP_CPP_PE_EX=\
 	".\world.h"\
 	".\wrect.h"\
 	".\zone.h"\
-	{$(INCLUDE)}"\GL\gl.h"\
+	{$(INCLUDE)}"\gl\GL.H"\
 	
-NODEP_CPP_PE_EX=\
+NODEP_CPP_PE_WI=\
 	".\cmdlib.h"\
 	".\lbmlib.h"\
 	".\scriplib.h"\
 	".\trilib.h"\
 	
 
-"$(INTDIR)\pe_export.obj" : $(SOURCE) $(DEP_CPP_PE_EX) "$(INTDIR)"
+!IF  "$(CFG)" == "Quiver - Win32 Release"
 
+
+"$(INTDIR)\pe_win32.obj" : $(SOURCE) $(DEP_CPP_PE_WI) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+
+"$(INTDIR)\pe_win32.obj" : $(SOURCE) $(DEP_CPP_PE_WI) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+
+"$(INTDIR)\pe_win32.obj" : $(SOURCE) $(DEP_CPP_PE_WI) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+
+"$(INTDIR)\pe_win32.obj" : $(SOURCE) $(DEP_CPP_PE_WI) "$(INTDIR)"
+
+
+!ENDIF 
+
+# End Source File
+################################################################################
+# Begin Source File
+
+SOURCE=.\physics.c
+DEP_CPP_PHYSI=\
+	"..\common\dll_state.h"\
+	"..\common\platform.h"\
+	"..\common\qfont.h"\
+	".\beamdef.h"\
+	".\bothdefs.h"\
+	".\bspfile.h"\
+	".\cdll_int.h"\
+	".\client.h"\
+	".\cmd.h"\
+	".\color.h"\
+	".\common.h"\
+	".\CONSOLE.H"\
+	".\const.h"\
+	".\crc.h"\
+	".\cshift.h"\
+	".\custom.h"\
+	".\cvar.h"\
+	".\cvardef.h"\
+	".\d_iface.h"\
+	".\draw.h"\
+	".\eiface.h"\
+	".\GL_MODEL.H"\
+	".\GLQUAKE.H"\
+	".\host_cmd.h"\
+	".\input.h"\
+	".\keys.h"\
+	".\mathlib.h"\
+	".\model.h"\
+	".\modelgen.h"\
+	".\net.h"\
+	".\pr_dlls.h"\
+	".\progdefs.h"\
+	".\Progs.h"\
+	".\protocol.h"\
+	".\qgl.h"\
+	".\quakedef.h"\
+	".\r_local.h"\
+	".\r_shared.h"\
+	".\render.h"\
+	".\save.h"\
+	".\sbar.h"\
+	".\screen.h"\
+	".\server.h"\
+	".\sound.h"\
+	".\spritegn.h"\
+	".\studio.h"\
+	".\sys.h"\
+	".\vid.h"\
+	".\view.h"\
+	".\vmodes.h"\
+	".\wad.h"\
+	".\world.h"\
+	".\wrect.h"\
+	".\zone.h"\
+	{$(INCLUDE)}"\gl\GL.H"\
+	
+NODEP_CPP_PHYSI=\
+	".\cmdlib.h"\
+	".\lbmlib.h"\
+	".\scriplib.h"\
+	".\trilib.h"\
+	
+
+!IF  "$(CFG)" == "Quiver - Win32 Release"
+
+
+"$(INTDIR)\physics.obj" : $(SOURCE) $(DEP_CPP_PHYSI) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+
+"$(INTDIR)\physics.obj" : $(SOURCE) $(DEP_CPP_PHYSI) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+
+"$(INTDIR)\physics.obj" : $(SOURCE) $(DEP_CPP_PHYSI) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+
+"$(INTDIR)\physics.obj" : $(SOURCE) $(DEP_CPP_PHYSI) "$(INTDIR)"
+
+
+!ENDIF 
 
 # End Source File
 ################################################################################
@@ -4268,21 +7870,23 @@ DEP_CPP_PMOVE=\
 	".\cmd.h"\
 	".\color.h"\
 	".\common.h"\
-	".\Console.h"\
+	".\CONSOLE.H"\
 	".\const.h"\
 	".\crc.h"\
 	".\cshift.h"\
 	".\custom.h"\
 	".\cvar.h"\
 	".\cvardef.h"\
+	".\d_iface.h"\
 	".\draw.h"\
 	".\eiface.h"\
-	".\Gl_model.h"\
-	".\Glquake.h"\
+	".\GL_MODEL.H"\
+	".\GLQUAKE.H"\
 	".\host_cmd.h"\
 	".\input.h"\
 	".\keys.h"\
 	".\mathlib.h"\
+	".\model.h"\
 	".\modelgen.h"\
 	".\net.h"\
 	".\pmove.h"\
@@ -4293,8 +7897,10 @@ DEP_CPP_PMOVE=\
 	".\protocol.h"\
 	".\qgl.h"\
 	".\quakedef.h"\
+	".\r_local.h"\
 	".\r_shared.h"\
 	".\render.h"\
+	".\save.h"\
 	".\sbar.h"\
 	".\screen.h"\
 	".\server.h"\
@@ -4310,7 +7916,7 @@ DEP_CPP_PMOVE=\
 	".\world.h"\
 	".\wrect.h"\
 	".\zone.h"\
-	{$(INCLUDE)}"\GL\gl.h"\
+	{$(INCLUDE)}"\gl\GL.H"\
 	
 NODEP_CPP_PMOVE=\
 	".\cmdlib.h"\
@@ -4319,8 +7925,31 @@ NODEP_CPP_PMOVE=\
 	".\trilib.h"\
 	
 
+!IF  "$(CFG)" == "Quiver - Win32 Release"
+
+
 "$(INTDIR)\pmove.obj" : $(SOURCE) $(DEP_CPP_PMOVE) "$(INTDIR)"
 
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+
+"$(INTDIR)\pmove.obj" : $(SOURCE) $(DEP_CPP_PMOVE) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+
+"$(INTDIR)\pmove.obj" : $(SOURCE) $(DEP_CPP_PMOVE) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+
+"$(INTDIR)\pmove.obj" : $(SOURCE) $(DEP_CPP_PMOVE) "$(INTDIR)"
+
+
+!ENDIF 
 
 # End Source File
 ################################################################################
@@ -4331,6 +7960,10 @@ SOURCE=.\pmove.h
 !IF  "$(CFG)" == "Quiver - Win32 Release"
 
 !ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
 
 !ENDIF 
 
@@ -4351,21 +7984,23 @@ DEP_CPP_PMOVET=\
 	".\cmd.h"\
 	".\color.h"\
 	".\common.h"\
-	".\Console.h"\
+	".\CONSOLE.H"\
 	".\const.h"\
 	".\crc.h"\
 	".\cshift.h"\
 	".\custom.h"\
 	".\cvar.h"\
 	".\cvardef.h"\
+	".\d_iface.h"\
 	".\draw.h"\
 	".\eiface.h"\
-	".\Gl_model.h"\
-	".\Glquake.h"\
+	".\GL_MODEL.H"\
+	".\GLQUAKE.H"\
 	".\host_cmd.h"\
 	".\input.h"\
 	".\keys.h"\
 	".\mathlib.h"\
+	".\model.h"\
 	".\modelgen.h"\
 	".\net.h"\
 	".\pmove.h"\
@@ -4375,9 +8010,11 @@ DEP_CPP_PMOVET=\
 	".\protocol.h"\
 	".\qgl.h"\
 	".\quakedef.h"\
+	".\r_local.h"\
 	".\r_shared.h"\
 	".\r_studio.h"\
 	".\render.h"\
+	".\save.h"\
 	".\sbar.h"\
 	".\screen.h"\
 	".\server.h"\
@@ -4392,7 +8029,7 @@ DEP_CPP_PMOVET=\
 	".\world.h"\
 	".\wrect.h"\
 	".\zone.h"\
-	{$(INCLUDE)}"\GL\gl.h"\
+	{$(INCLUDE)}"\gl\GL.H"\
 	
 NODEP_CPP_PMOVET=\
 	".\cmdlib.h"\
@@ -4401,8 +8038,31 @@ NODEP_CPP_PMOVET=\
 	".\trilib.h"\
 	
 
+!IF  "$(CFG)" == "Quiver - Win32 Release"
+
+
 "$(INTDIR)\pmovetst.obj" : $(SOURCE) $(DEP_CPP_PMOVET) "$(INTDIR)"
 
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+
+"$(INTDIR)\pmovetst.obj" : $(SOURCE) $(DEP_CPP_PMOVET) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+
+"$(INTDIR)\pmovetst.obj" : $(SOURCE) $(DEP_CPP_PMOVET) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+
+"$(INTDIR)\pmovetst.obj" : $(SOURCE) $(DEP_CPP_PMOVET) "$(INTDIR)"
+
+
+!ENDIF 
 
 # End Source File
 ################################################################################
@@ -4422,22 +8082,24 @@ DEP_CPP_PR_CM=\
 	".\cmodel.h"\
 	".\color.h"\
 	".\common.h"\
-	".\Console.h"\
+	".\CONSOLE.H"\
 	".\const.h"\
 	".\crc.h"\
 	".\cshift.h"\
 	".\custom.h"\
 	".\cvar.h"\
 	".\cvardef.h"\
+	".\d_iface.h"\
 	".\decal.h"\
 	".\draw.h"\
 	".\eiface.h"\
-	".\Gl_model.h"\
-	".\Glquake.h"\
+	".\GL_MODEL.H"\
+	".\GLQUAKE.H"\
 	".\host_cmd.h"\
 	".\input.h"\
 	".\keys.h"\
 	".\mathlib.h"\
+	".\model.h"\
 	".\modelgen.h"\
 	".\net.h"\
 	".\pr_cmds.h"\
@@ -4447,8 +8109,10 @@ DEP_CPP_PR_CM=\
 	".\protocol.h"\
 	".\qgl.h"\
 	".\quakedef.h"\
+	".\r_local.h"\
 	".\r_shared.h"\
 	".\render.h"\
+	".\save.h"\
 	".\sbar.h"\
 	".\screen.h"\
 	".\server.h"\
@@ -4464,7 +8128,7 @@ DEP_CPP_PR_CM=\
 	".\world.h"\
 	".\wrect.h"\
 	".\zone.h"\
-	{$(INCLUDE)}"\GL\gl.h"\
+	{$(INCLUDE)}"\gl\GL.H"\
 	
 NODEP_CPP_PR_CM=\
 	".\cmdlib.h"\
@@ -4473,8 +8137,31 @@ NODEP_CPP_PR_CM=\
 	".\trilib.h"\
 	
 
+!IF  "$(CFG)" == "Quiver - Win32 Release"
+
+
 "$(INTDIR)\pr_cmds.obj" : $(SOURCE) $(DEP_CPP_PR_CM) "$(INTDIR)"
 
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+
+"$(INTDIR)\pr_cmds.obj" : $(SOURCE) $(DEP_CPP_PR_CM) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+
+"$(INTDIR)\pr_cmds.obj" : $(SOURCE) $(DEP_CPP_PR_CM) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+
+"$(INTDIR)\pr_cmds.obj" : $(SOURCE) $(DEP_CPP_PR_CM) "$(INTDIR)"
+
+
+!ENDIF 
 
 # End Source File
 ################################################################################
@@ -4485,6 +8172,10 @@ SOURCE=.\pr_cmds.h
 !IF  "$(CFG)" == "Quiver - Win32 Release"
 
 !ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
 
 !ENDIF 
 
@@ -4498,14 +8189,18 @@ SOURCE=.\pr_dlls.h
 
 !ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
 
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
 !ENDIF 
 
 # End Source File
 ################################################################################
 # Begin Source File
 
-SOURCE=.\profile.c
-DEP_CPP_PROFI=\
+SOURCE=.\pr_edict.c
+DEP_CPP_PR_ED=\
 	"..\common\dll_state.h"\
 	"..\common\platform.h"\
 	"..\common\qfont.h"\
@@ -4517,32 +8212,36 @@ DEP_CPP_PROFI=\
 	".\cmd.h"\
 	".\color.h"\
 	".\common.h"\
-	".\Console.h"\
+	".\CONSOLE.H"\
 	".\const.h"\
 	".\crc.h"\
 	".\cshift.h"\
 	".\custom.h"\
 	".\cvar.h"\
 	".\cvardef.h"\
+	".\d_iface.h"\
 	".\draw.h"\
 	".\eiface.h"\
-	".\Gl_model.h"\
-	".\Glquake.h"\
+	".\GL_MODEL.H"\
+	".\GLQUAKE.H"\
 	".\host_cmd.h"\
 	".\input.h"\
 	".\keys.h"\
 	".\mathlib.h"\
+	".\model.h"\
 	".\modelgen.h"\
 	".\net.h"\
 	".\pr_dlls.h"\
-	".\profile.h"\
+	".\pr_edict.h"\
 	".\progdefs.h"\
 	".\Progs.h"\
 	".\protocol.h"\
 	".\qgl.h"\
 	".\quakedef.h"\
+	".\r_local.h"\
 	".\r_shared.h"\
 	".\render.h"\
+	".\save.h"\
 	".\sbar.h"\
 	".\screen.h"\
 	".\server.h"\
@@ -4557,17 +8256,56 @@ DEP_CPP_PROFI=\
 	".\world.h"\
 	".\wrect.h"\
 	".\zone.h"\
-	{$(INCLUDE)}"\GL\gl.h"\
+	{$(INCLUDE)}"\gl\GL.H"\
 	
-NODEP_CPP_PROFI=\
+NODEP_CPP_PR_ED=\
 	".\cmdlib.h"\
 	".\lbmlib.h"\
 	".\scriplib.h"\
 	".\trilib.h"\
 	
 
-"$(INTDIR)\profile.obj" : $(SOURCE) $(DEP_CPP_PROFI) "$(INTDIR)"
+!IF  "$(CFG)" == "Quiver - Win32 Release"
 
+
+"$(INTDIR)\pr_edict.obj" : $(SOURCE) $(DEP_CPP_PR_ED) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+
+"$(INTDIR)\pr_edict.obj" : $(SOURCE) $(DEP_CPP_PR_ED) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+
+"$(INTDIR)\pr_edict.obj" : $(SOURCE) $(DEP_CPP_PR_ED) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+
+"$(INTDIR)\pr_edict.obj" : $(SOURCE) $(DEP_CPP_PR_ED) "$(INTDIR)"
+
+
+!ENDIF 
+
+# End Source File
+################################################################################
+# Begin Source File
+
+SOURCE=.\pr_edict.h
+
+!IF  "$(CFG)" == "Quiver - Win32 Release"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+!ENDIF 
 
 # End Source File
 ################################################################################
@@ -4578,6 +8316,10 @@ SOURCE=.\profile.h
 !IF  "$(CFG)" == "Quiver - Win32 Release"
 
 !ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
 
 !ENDIF 
 
@@ -4591,6 +8333,10 @@ SOURCE=.\progdefs.h
 
 !ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
 
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
 !ENDIF 
 
 # End Source File
@@ -4603,6 +8349,10 @@ SOURCE=.\Progs.h
 
 !ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
 
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
 !ENDIF 
 
 # End Source File
@@ -4614,6 +8364,10 @@ SOURCE=.\protocol.h
 !IF  "$(CFG)" == "Quiver - Win32 Release"
 
 !ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
 
 !ENDIF 
 
@@ -4634,21 +8388,23 @@ DEP_CPP_QGL_C=\
 	".\cmd.h"\
 	".\color.h"\
 	".\common.h"\
-	".\Console.h"\
+	".\CONSOLE.H"\
 	".\const.h"\
 	".\crc.h"\
 	".\cshift.h"\
 	".\custom.h"\
 	".\cvar.h"\
 	".\cvardef.h"\
+	".\d_iface.h"\
 	".\draw.h"\
 	".\eiface.h"\
-	".\Gl_model.h"\
-	".\Glquake.h"\
+	".\GL_MODEL.H"\
+	".\GLQUAKE.H"\
 	".\host_cmd.h"\
 	".\input.h"\
 	".\keys.h"\
 	".\mathlib.h"\
+	".\model.h"\
 	".\modelgen.h"\
 	".\net.h"\
 	".\pr_dlls.h"\
@@ -4657,8 +8413,10 @@ DEP_CPP_QGL_C=\
 	".\protocol.h"\
 	".\qgl.h"\
 	".\quakedef.h"\
+	".\r_local.h"\
 	".\r_shared.h"\
 	".\render.h"\
+	".\save.h"\
 	".\sbar.h"\
 	".\screen.h"\
 	".\server.h"\
@@ -4673,7 +8431,7 @@ DEP_CPP_QGL_C=\
 	".\world.h"\
 	".\wrect.h"\
 	".\zone.h"\
-	{$(INCLUDE)}"\GL\gl.h"\
+	{$(INCLUDE)}"\gl\GL.H"\
 	
 NODEP_CPP_QGL_C=\
 	".\cmdlib.h"\
@@ -4682,8 +8440,33 @@ NODEP_CPP_QGL_C=\
 	".\trilib.h"\
 	
 
-"$(INTDIR)\qgl.obj" : $(SOURCE) $(DEP_CPP_QGL_C) "$(INTDIR)"
+!IF  "$(CFG)" == "Quiver - Win32 Release"
 
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+
+"$(INTDIR)\qgl.obj" : $(SOURCE) $(DEP_CPP_QGL_C) "$(INTDIR)"
+   $(CPP) /nologo /MTd /W3 /Gm /GX /Zi /Od /I "..\common" /I\
+ "..\dx6sdk\include" /D "_DEBUG" /D "GLQUAKE" /D "__USEA3D" /D "__A3D_GEOM" /D\
+ "WIN32" /D "_WINDOWS" /Fo"$(INTDIR)/" /Fd"$(INTDIR)/" /c $(SOURCE)
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+
+"$(INTDIR)\qgl.obj" : $(SOURCE) $(DEP_CPP_QGL_C) "$(INTDIR)"
+   $(CPP) /nologo /MT /W3 /GR /GX /O2 /I "..\common" /I "..\dx6sdk\include" /D\
+ "NDEBUG" /D "GLQUAKE" /D "__USEA3D" /D "__A3D_GEOM" /D "WIN32" /D "_WINDOWS"\
+ /Fo"$(INTDIR)/" /c $(SOURCE)
+
+
+!ENDIF 
 
 # End Source File
 ################################################################################
@@ -4694,6 +8477,10 @@ SOURCE=.\qgl.h
 !IF  "$(CFG)" == "Quiver - Win32 Release"
 
 !ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
 
 !ENDIF 
 
@@ -4707,17 +8494,9 @@ SOURCE=.\quakedef.h
 
 !ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
 
-!ENDIF 
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
 
-# End Source File
-################################################################################
-# Begin Source File
-
-SOURCE=.\r_local.h
-
-!IF  "$(CFG)" == "Quiver - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
 
 !ENDIF 
 
@@ -4725,8 +8504,8 @@ SOURCE=.\r_local.h
 ################################################################################
 # Begin Source File
 
-SOURCE=.\R_part.c
-DEP_CPP_R_PAR=\
+SOURCE=.\R_ACLIP.C
+DEP_CPP_R_ACL=\
 	"..\common\dll_state.h"\
 	"..\common\platform.h"\
 	"..\common\qfont.h"\
@@ -4738,34 +8517,36 @@ DEP_CPP_R_PAR=\
 	".\cmd.h"\
 	".\color.h"\
 	".\common.h"\
-	".\Console.h"\
+	".\CONSOLE.H"\
 	".\const.h"\
 	".\crc.h"\
 	".\cshift.h"\
 	".\custom.h"\
-	".\customentity.h"\
 	".\cvar.h"\
 	".\cvardef.h"\
+	".\d_iface.h"\
+	".\d_local.h"\
 	".\draw.h"\
 	".\eiface.h"\
-	".\Gl_model.h"\
-	".\Glquake.h"\
+	".\GL_MODEL.H"\
+	".\GLQUAKE.H"\
 	".\host_cmd.h"\
 	".\input.h"\
 	".\keys.h"\
 	".\mathlib.h"\
+	".\model.h"\
 	".\modelgen.h"\
 	".\net.h"\
-	".\pr_cmds.h"\
 	".\pr_dlls.h"\
 	".\progdefs.h"\
 	".\Progs.h"\
 	".\protocol.h"\
 	".\qgl.h"\
 	".\quakedef.h"\
+	".\r_local.h"\
 	".\r_shared.h"\
-	".\r_triangle.h"\
 	".\render.h"\
+	".\save.h"\
 	".\sbar.h"\
 	".\screen.h"\
 	".\server.h"\
@@ -4780,7 +8561,916 @@ DEP_CPP_R_PAR=\
 	".\world.h"\
 	".\wrect.h"\
 	".\zone.h"\
-	{$(INCLUDE)}"\GL\gl.h"\
+	{$(INCLUDE)}"\gl\GL.H"\
+	
+NODEP_CPP_R_ACL=\
+	".\cmdlib.h"\
+	".\lbmlib.h"\
+	".\scriplib.h"\
+	".\trilib.h"\
+	
+
+!IF  "$(CFG)" == "Quiver - Win32 Release"
+
+
+"$(INTDIR)\R_ACLIP.OBJ" : $(SOURCE) $(DEP_CPP_R_ACL) "$(INTDIR)"
+   $(CPP) /nologo /MT /W3 /GR /GX /O2 /I "..\common" /I "..\dx6sdk\include" /D\
+ "NDEBUG" /D "__USEA3D" /D "__A3D_GEOM" /D "WIN32" /D "_WINDOWS" /Fo"$(INTDIR)/"\
+ /c $(SOURCE)
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+
+"$(INTDIR)\R_ACLIP.OBJ" : $(SOURCE) $(DEP_CPP_R_ACL) "$(INTDIR)"
+   $(CPP) /nologo /MTd /W3 /Gm /GX /Zi /Od /I "..\common" /I\
+ "..\dx6sdk\include" /D "_DEBUG" /D "__USEA3D" /D "__A3D_GEOM" /D "WIN32" /D\
+ "_WINDOWS" /Fo"$(INTDIR)/" /Fd"$(INTDIR)/" /c $(SOURCE)
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+# PROP Exclude_From_Build 1
+
+!ENDIF 
+
+# End Source File
+################################################################################
+# Begin Source File
+
+SOURCE=.\r_alias.c
+DEP_CPP_R_ALI=\
+	"..\common\dll_state.h"\
+	"..\common\platform.h"\
+	"..\common\qfont.h"\
+	".\anorms.h"\
+	".\beamdef.h"\
+	".\bothdefs.h"\
+	".\bspfile.h"\
+	".\cdll_int.h"\
+	".\client.h"\
+	".\cmd.h"\
+	".\color.h"\
+	".\common.h"\
+	".\CONSOLE.H"\
+	".\const.h"\
+	".\crc.h"\
+	".\cshift.h"\
+	".\custom.h"\
+	".\cvar.h"\
+	".\cvardef.h"\
+	".\d_iface.h"\
+	".\d_local.h"\
+	".\draw.h"\
+	".\eiface.h"\
+	".\GL_MODEL.H"\
+	".\GLQUAKE.H"\
+	".\host_cmd.h"\
+	".\input.h"\
+	".\keys.h"\
+	".\mathlib.h"\
+	".\model.h"\
+	".\modelgen.h"\
+	".\net.h"\
+	".\pr_dlls.h"\
+	".\progdefs.h"\
+	".\Progs.h"\
+	".\protocol.h"\
+	".\qgl.h"\
+	".\quakedef.h"\
+	".\r_local.h"\
+	".\r_shared.h"\
+	".\r_studio.h"\
+	".\render.h"\
+	".\save.h"\
+	".\sbar.h"\
+	".\screen.h"\
+	".\server.h"\
+	".\sound.h"\
+	".\spritegn.h"\
+	".\studio.h"\
+	".\sys.h"\
+	".\vid.h"\
+	".\view.h"\
+	".\vmodes.h"\
+	".\wad.h"\
+	".\world.h"\
+	".\wrect.h"\
+	".\zone.h"\
+	{$(INCLUDE)}"\gl\GL.H"\
+	
+NODEP_CPP_R_ALI=\
+	".\cmdlib.h"\
+	".\lbmlib.h"\
+	".\scriplib.h"\
+	".\trilib.h"\
+	
+
+!IF  "$(CFG)" == "Quiver - Win32 Release"
+
+
+"$(INTDIR)\r_alias.obj" : $(SOURCE) $(DEP_CPP_R_ALI) "$(INTDIR)"
+   $(CPP) /nologo /MT /W3 /GR /GX /O2 /I "..\common" /I "..\dx6sdk\include" /D\
+ "NDEBUG" /D "__USEA3D" /D "__A3D_GEOM" /D "WIN32" /D "_WINDOWS" /Fo"$(INTDIR)/"\
+ /c $(SOURCE)
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+
+"$(INTDIR)\r_alias.obj" : $(SOURCE) $(DEP_CPP_R_ALI) "$(INTDIR)"
+   $(CPP) /nologo /MTd /W3 /Gm /GX /Zi /Od /I "..\common" /I\
+ "..\dx6sdk\include" /D "_DEBUG" /D "__USEA3D" /D "__A3D_GEOM" /D "WIN32" /D\
+ "_WINDOWS" /Fo"$(INTDIR)/" /Fd"$(INTDIR)/" /c $(SOURCE)
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+# PROP Exclude_From_Build 1
+
+!ENDIF 
+
+# End Source File
+################################################################################
+# Begin Source File
+
+SOURCE=.\R_BSP.C
+DEP_CPP_R_BSP=\
+	"..\common\dll_state.h"\
+	"..\common\platform.h"\
+	"..\common\qfont.h"\
+	".\beamdef.h"\
+	".\bothdefs.h"\
+	".\bspfile.h"\
+	".\cdll_int.h"\
+	".\client.h"\
+	".\cmd.h"\
+	".\color.h"\
+	".\common.h"\
+	".\CONSOLE.H"\
+	".\const.h"\
+	".\crc.h"\
+	".\cshift.h"\
+	".\custom.h"\
+	".\cvar.h"\
+	".\cvardef.h"\
+	".\d_iface.h"\
+	".\draw.h"\
+	".\eiface.h"\
+	".\GL_MODEL.H"\
+	".\GLQUAKE.H"\
+	".\host_cmd.h"\
+	".\input.h"\
+	".\keys.h"\
+	".\mathlib.h"\
+	".\model.h"\
+	".\modelgen.h"\
+	".\net.h"\
+	".\pr_dlls.h"\
+	".\progdefs.h"\
+	".\Progs.h"\
+	".\protocol.h"\
+	".\qgl.h"\
+	".\quakedef.h"\
+	".\r_local.h"\
+	".\r_shared.h"\
+	".\render.h"\
+	".\save.h"\
+	".\sbar.h"\
+	".\screen.h"\
+	".\server.h"\
+	".\sound.h"\
+	".\spritegn.h"\
+	".\studio.h"\
+	".\sys.h"\
+	".\vid.h"\
+	".\view.h"\
+	".\vmodes.h"\
+	".\wad.h"\
+	".\world.h"\
+	".\wrect.h"\
+	".\zone.h"\
+	{$(INCLUDE)}"\gl\GL.H"\
+	
+NODEP_CPP_R_BSP=\
+	".\cmdlib.h"\
+	".\lbmlib.h"\
+	".\scriplib.h"\
+	".\trilib.h"\
+	
+
+!IF  "$(CFG)" == "Quiver - Win32 Release"
+
+
+"$(INTDIR)\R_BSP.OBJ" : $(SOURCE) $(DEP_CPP_R_BSP) "$(INTDIR)"
+   $(CPP) /nologo /MT /W3 /GR /GX /O2 /I "..\common" /I "..\dx6sdk\include" /D\
+ "NDEBUG" /D "__USEA3D" /D "__A3D_GEOM" /D "WIN32" /D "_WINDOWS" /Fo"$(INTDIR)/"\
+ /c $(SOURCE)
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+
+"$(INTDIR)\R_BSP.OBJ" : $(SOURCE) $(DEP_CPP_R_BSP) "$(INTDIR)"
+   $(CPP) /nologo /MTd /W3 /Gm /GX /Zi /Od /I "..\common" /I\
+ "..\dx6sdk\include" /D "_DEBUG" /D "__USEA3D" /D "__A3D_GEOM" /D "WIN32" /D\
+ "_WINDOWS" /Fo"$(INTDIR)/" /Fd"$(INTDIR)/" /c $(SOURCE)
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+# PROP Exclude_From_Build 1
+
+!ENDIF 
+
+# End Source File
+################################################################################
+# Begin Source File
+
+SOURCE=.\R_DRAW.C
+DEP_CPP_R_DRA=\
+	"..\common\dll_state.h"\
+	"..\common\platform.h"\
+	"..\common\qfont.h"\
+	".\beamdef.h"\
+	".\bothdefs.h"\
+	".\bspfile.h"\
+	".\cdll_int.h"\
+	".\client.h"\
+	".\cmd.h"\
+	".\color.h"\
+	".\common.h"\
+	".\CONSOLE.H"\
+	".\const.h"\
+	".\crc.h"\
+	".\cshift.h"\
+	".\custom.h"\
+	".\cvar.h"\
+	".\cvardef.h"\
+	".\d_iface.h"\
+	".\d_local.h"\
+	".\draw.h"\
+	".\eiface.h"\
+	".\GL_MODEL.H"\
+	".\GLQUAKE.H"\
+	".\host_cmd.h"\
+	".\input.h"\
+	".\keys.h"\
+	".\mathlib.h"\
+	".\model.h"\
+	".\modelgen.h"\
+	".\net.h"\
+	".\pr_dlls.h"\
+	".\progdefs.h"\
+	".\Progs.h"\
+	".\protocol.h"\
+	".\qgl.h"\
+	".\quakedef.h"\
+	".\r_local.h"\
+	".\r_shared.h"\
+	".\render.h"\
+	".\save.h"\
+	".\sbar.h"\
+	".\screen.h"\
+	".\server.h"\
+	".\sound.h"\
+	".\spritegn.h"\
+	".\studio.h"\
+	".\sys.h"\
+	".\vid.h"\
+	".\view.h"\
+	".\vmodes.h"\
+	".\wad.h"\
+	".\world.h"\
+	".\wrect.h"\
+	".\zone.h"\
+	{$(INCLUDE)}"\gl\GL.H"\
+	
+NODEP_CPP_R_DRA=\
+	".\cmdlib.h"\
+	".\lbmlib.h"\
+	".\scriplib.h"\
+	".\trilib.h"\
+	
+
+!IF  "$(CFG)" == "Quiver - Win32 Release"
+
+
+"$(INTDIR)\R_DRAW.OBJ" : $(SOURCE) $(DEP_CPP_R_DRA) "$(INTDIR)"
+   $(CPP) /nologo /MT /W3 /GR /GX /O2 /I "..\common" /I "..\dx6sdk\include" /D\
+ "NDEBUG" /D "__USEA3D" /D "__A3D_GEOM" /D "WIN32" /D "_WINDOWS" /Fo"$(INTDIR)/"\
+ /c $(SOURCE)
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+
+"$(INTDIR)\R_DRAW.OBJ" : $(SOURCE) $(DEP_CPP_R_DRA) "$(INTDIR)"
+   $(CPP) /nologo /MTd /W3 /Gm /GX /Zi /Od /I "..\common" /I\
+ "..\dx6sdk\include" /D "_DEBUG" /D "__USEA3D" /D "__A3D_GEOM" /D "WIN32" /D\
+ "_WINDOWS" /Fo"$(INTDIR)/" /Fd"$(INTDIR)/" /c $(SOURCE)
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+# PROP Exclude_From_Build 1
+
+!ENDIF 
+
+# End Source File
+################################################################################
+# Begin Source File
+
+SOURCE=.\R_EDGE.C
+DEP_CPP_R_EDG=\
+	"..\common\dll_state.h"\
+	"..\common\platform.h"\
+	"..\common\qfont.h"\
+	".\beamdef.h"\
+	".\bothdefs.h"\
+	".\bspfile.h"\
+	".\cdll_int.h"\
+	".\client.h"\
+	".\cmd.h"\
+	".\color.h"\
+	".\common.h"\
+	".\CONSOLE.H"\
+	".\const.h"\
+	".\crc.h"\
+	".\cshift.h"\
+	".\custom.h"\
+	".\cvar.h"\
+	".\cvardef.h"\
+	".\d_iface.h"\
+	".\draw.h"\
+	".\eiface.h"\
+	".\GL_MODEL.H"\
+	".\GLQUAKE.H"\
+	".\host_cmd.h"\
+	".\input.h"\
+	".\keys.h"\
+	".\mathlib.h"\
+	".\model.h"\
+	".\modelgen.h"\
+	".\net.h"\
+	".\pr_dlls.h"\
+	".\progdefs.h"\
+	".\Progs.h"\
+	".\protocol.h"\
+	".\qgl.h"\
+	".\quakedef.h"\
+	".\r_local.h"\
+	".\r_shared.h"\
+	".\render.h"\
+	".\save.h"\
+	".\sbar.h"\
+	".\screen.h"\
+	".\server.h"\
+	".\sound.h"\
+	".\spritegn.h"\
+	".\studio.h"\
+	".\sys.h"\
+	".\vid.h"\
+	".\view.h"\
+	".\vmodes.h"\
+	".\wad.h"\
+	".\winquake.h"\
+	".\world.h"\
+	".\wrect.h"\
+	".\zone.h"\
+	{$(INCLUDE)}"\gl\GL.H"\
+	
+NODEP_CPP_R_EDG=\
+	".\cmdlib.h"\
+	".\lbmlib.h"\
+	".\scriplib.h"\
+	".\trilib.h"\
+	
+
+!IF  "$(CFG)" == "Quiver - Win32 Release"
+
+
+"$(INTDIR)\R_EDGE.OBJ" : $(SOURCE) $(DEP_CPP_R_EDG) "$(INTDIR)"
+   $(CPP) /nologo /MT /W3 /GR /GX /O2 /I "..\common" /I "..\dx6sdk\include" /D\
+ "NDEBUG" /D "__USEA3D" /D "__A3D_GEOM" /D "WIN32" /D "_WINDOWS" /Fo"$(INTDIR)/"\
+ /c $(SOURCE)
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+
+"$(INTDIR)\R_EDGE.OBJ" : $(SOURCE) $(DEP_CPP_R_EDG) "$(INTDIR)"
+   $(CPP) /nologo /MTd /W3 /Gm /GX /Zi /Od /I "..\common" /I\
+ "..\dx6sdk\include" /D "_DEBUG" /D "__USEA3D" /D "__A3D_GEOM" /D "WIN32" /D\
+ "_WINDOWS" /Fo"$(INTDIR)/" /Fd"$(INTDIR)/" /c $(SOURCE)
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+# PROP Exclude_From_Build 1
+
+!ENDIF 
+
+# End Source File
+################################################################################
+# Begin Source File
+
+SOURCE=.\R_EFRAG.C
+DEP_CPP_R_EFR=\
+	"..\common\dll_state.h"\
+	"..\common\platform.h"\
+	"..\common\qfont.h"\
+	".\beamdef.h"\
+	".\bothdefs.h"\
+	".\bspfile.h"\
+	".\cdll_int.h"\
+	".\client.h"\
+	".\cmd.h"\
+	".\color.h"\
+	".\common.h"\
+	".\CONSOLE.H"\
+	".\const.h"\
+	".\crc.h"\
+	".\cshift.h"\
+	".\custom.h"\
+	".\cvar.h"\
+	".\cvardef.h"\
+	".\d_iface.h"\
+	".\draw.h"\
+	".\eiface.h"\
+	".\GL_MODEL.H"\
+	".\GLQUAKE.H"\
+	".\host_cmd.h"\
+	".\input.h"\
+	".\keys.h"\
+	".\mathlib.h"\
+	".\model.h"\
+	".\modelgen.h"\
+	".\net.h"\
+	".\pr_dlls.h"\
+	".\progdefs.h"\
+	".\Progs.h"\
+	".\protocol.h"\
+	".\qgl.h"\
+	".\quakedef.h"\
+	".\r_local.h"\
+	".\r_shared.h"\
+	".\render.h"\
+	".\save.h"\
+	".\sbar.h"\
+	".\screen.h"\
+	".\server.h"\
+	".\sound.h"\
+	".\spritegn.h"\
+	".\studio.h"\
+	".\sys.h"\
+	".\vid.h"\
+	".\view.h"\
+	".\vmodes.h"\
+	".\wad.h"\
+	".\world.h"\
+	".\wrect.h"\
+	".\zone.h"\
+	{$(INCLUDE)}"\gl\GL.H"\
+	
+NODEP_CPP_R_EFR=\
+	".\cmdlib.h"\
+	".\lbmlib.h"\
+	".\scriplib.h"\
+	".\trilib.h"\
+	
+
+!IF  "$(CFG)" == "Quiver - Win32 Release"
+
+
+"$(INTDIR)\R_EFRAG.OBJ" : $(SOURCE) $(DEP_CPP_R_EFR) "$(INTDIR)"
+   $(CPP) /nologo /MT /W3 /GR /GX /O2 /I "..\common" /I "..\dx6sdk\include" /D\
+ "NDEBUG" /D "__USEA3D" /D "__A3D_GEOM" /D "WIN32" /D "_WINDOWS" /Fo"$(INTDIR)/"\
+ /c $(SOURCE)
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+
+"$(INTDIR)\R_EFRAG.OBJ" : $(SOURCE) $(DEP_CPP_R_EFR) "$(INTDIR)"
+   $(CPP) /nologo /MTd /W3 /Gm /GX /Zi /Od /I "..\common" /I\
+ "..\dx6sdk\include" /D "_DEBUG" /D "__USEA3D" /D "__A3D_GEOM" /D "WIN32" /D\
+ "_WINDOWS" /Fo"$(INTDIR)/" /Fd"$(INTDIR)/" /c $(SOURCE)
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+# PROP Exclude_From_Build 1
+
+!ENDIF 
+
+# End Source File
+################################################################################
+# Begin Source File
+
+SOURCE=.\R_LIGHT.C
+DEP_CPP_R_LIG=\
+	"..\common\dll_state.h"\
+	"..\common\platform.h"\
+	"..\common\qfont.h"\
+	".\beamdef.h"\
+	".\bothdefs.h"\
+	".\bspfile.h"\
+	".\cdll_int.h"\
+	".\client.h"\
+	".\cmd.h"\
+	".\color.h"\
+	".\common.h"\
+	".\CONSOLE.H"\
+	".\const.h"\
+	".\crc.h"\
+	".\cshift.h"\
+	".\custom.h"\
+	".\cvar.h"\
+	".\cvardef.h"\
+	".\d_iface.h"\
+	".\draw.h"\
+	".\eiface.h"\
+	".\GL_MODEL.H"\
+	".\GLQUAKE.H"\
+	".\host_cmd.h"\
+	".\input.h"\
+	".\keys.h"\
+	".\mathlib.h"\
+	".\model.h"\
+	".\modelgen.h"\
+	".\net.h"\
+	".\pr_dlls.h"\
+	".\progdefs.h"\
+	".\Progs.h"\
+	".\protocol.h"\
+	".\qgl.h"\
+	".\quakedef.h"\
+	".\r_local.h"\
+	".\r_shared.h"\
+	".\render.h"\
+	".\save.h"\
+	".\sbar.h"\
+	".\screen.h"\
+	".\server.h"\
+	".\sound.h"\
+	".\spritegn.h"\
+	".\studio.h"\
+	".\sys.h"\
+	".\vid.h"\
+	".\view.h"\
+	".\vmodes.h"\
+	".\wad.h"\
+	".\world.h"\
+	".\wrect.h"\
+	".\zone.h"\
+	{$(INCLUDE)}"\gl\GL.H"\
+	
+NODEP_CPP_R_LIG=\
+	".\cmdlib.h"\
+	".\lbmlib.h"\
+	".\scriplib.h"\
+	".\trilib.h"\
+	
+
+!IF  "$(CFG)" == "Quiver - Win32 Release"
+
+
+"$(INTDIR)\R_LIGHT.OBJ" : $(SOURCE) $(DEP_CPP_R_LIG) "$(INTDIR)"
+   $(CPP) /nologo /MT /W3 /GR /GX /O2 /I "..\common" /I "..\dx6sdk\include" /D\
+ "NDEBUG" /D "__USEA3D" /D "__A3D_GEOM" /D "WIN32" /D "_WINDOWS" /Fo"$(INTDIR)/"\
+ /c $(SOURCE)
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+
+"$(INTDIR)\R_LIGHT.OBJ" : $(SOURCE) $(DEP_CPP_R_LIG) "$(INTDIR)"
+   $(CPP) /nologo /MTd /W3 /Gm /GX /Zi /Od /I "..\common" /I\
+ "..\dx6sdk\include" /D "_DEBUG" /D "__USEA3D" /D "__A3D_GEOM" /D "WIN32" /D\
+ "_WINDOWS" /Fo"$(INTDIR)/" /Fd"$(INTDIR)/" /c $(SOURCE)
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+# PROP Exclude_From_Build 1
+
+!ENDIF 
+
+# End Source File
+################################################################################
+# Begin Source File
+
+SOURCE=.\r_local.h
+
+!IF  "$(CFG)" == "Quiver - Win32 Release"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+# PROP Exclude_From_Build 1
+
+!ENDIF 
+
+# End Source File
+################################################################################
+# Begin Source File
+
+SOURCE=.\R_MAIN.C
+DEP_CPP_R_MAI=\
+	"..\common\dll_state.h"\
+	"..\common\platform.h"\
+	"..\common\qfont.h"\
+	".\beamdef.h"\
+	".\bothdefs.h"\
+	".\bspfile.h"\
+	".\cdll_int.h"\
+	".\client.h"\
+	".\cmd.h"\
+	".\cmodel.h"\
+	".\color.h"\
+	".\common.h"\
+	".\CONSOLE.H"\
+	".\const.h"\
+	".\crc.h"\
+	".\cshift.h"\
+	".\custom.h"\
+	".\cvar.h"\
+	".\cvardef.h"\
+	".\d_iface.h"\
+	".\d_local.h"\
+	".\draw.h"\
+	".\eiface.h"\
+	".\GL_MODEL.H"\
+	".\GLQUAKE.H"\
+	".\host_cmd.h"\
+	".\input.h"\
+	".\keys.h"\
+	".\mathlib.h"\
+	".\model.h"\
+	".\modelgen.h"\
+	".\net.h"\
+	".\pr_dlls.h"\
+	".\progdefs.h"\
+	".\Progs.h"\
+	".\protocol.h"\
+	".\qgl.h"\
+	".\quakedef.h"\
+	".\r_local.h"\
+	".\r_shared.h"\
+	".\r_studio.h"\
+	".\r_trans.h"\
+	".\render.h"\
+	".\save.h"\
+	".\sbar.h"\
+	".\screen.h"\
+	".\server.h"\
+	".\sound.h"\
+	".\spritegn.h"\
+	".\studio.h"\
+	".\sys.h"\
+	".\vid.h"\
+	".\view.h"\
+	".\vmodes.h"\
+	".\wad.h"\
+	".\winquake.h"\
+	".\world.h"\
+	".\wrect.h"\
+	".\zone.h"\
+	{$(INCLUDE)}"\gl\GL.H"\
+	
+NODEP_CPP_R_MAI=\
+	".\cmdlib.h"\
+	".\lbmlib.h"\
+	".\scriplib.h"\
+	".\trilib.h"\
+	
+
+!IF  "$(CFG)" == "Quiver - Win32 Release"
+
+
+"$(INTDIR)\R_MAIN.OBJ" : $(SOURCE) $(DEP_CPP_R_MAI) "$(INTDIR)"
+   $(CPP) /nologo /MT /W3 /GR /GX /O2 /I "..\common" /I "..\dx6sdk\include" /D\
+ "NDEBUG" /D "__USEA3D" /D "__A3D_GEOM" /D "WIN32" /D "_WINDOWS" /Fo"$(INTDIR)/"\
+ /c $(SOURCE)
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+
+"$(INTDIR)\R_MAIN.OBJ" : $(SOURCE) $(DEP_CPP_R_MAI) "$(INTDIR)"
+   $(CPP) /nologo /MTd /W3 /Gm /GX /Zi /Od /I "..\common" /I\
+ "..\dx6sdk\include" /D "_DEBUG" /D "__USEA3D" /D "__A3D_GEOM" /D "WIN32" /D\
+ "_WINDOWS" /Fo"$(INTDIR)/" /Fd"$(INTDIR)/" /c $(SOURCE)
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+# PROP Exclude_From_Build 1
+
+!ENDIF 
+
+# End Source File
+################################################################################
+# Begin Source File
+
+SOURCE=.\R_MISC.C
+DEP_CPP_R_MIS=\
+	"..\common\dll_state.h"\
+	"..\common\platform.h"\
+	"..\common\qfont.h"\
+	".\beamdef.h"\
+	".\bothdefs.h"\
+	".\bspfile.h"\
+	".\cdll_int.h"\
+	".\client.h"\
+	".\cmd.h"\
+	".\color.h"\
+	".\common.h"\
+	".\CONSOLE.H"\
+	".\const.h"\
+	".\crc.h"\
+	".\cshift.h"\
+	".\custom.h"\
+	".\cvar.h"\
+	".\cvardef.h"\
+	".\d_iface.h"\
+	".\draw.h"\
+	".\eiface.h"\
+	".\GL_MODEL.H"\
+	".\GLQUAKE.H"\
+	".\host_cmd.h"\
+	".\input.h"\
+	".\keys.h"\
+	".\mathlib.h"\
+	".\model.h"\
+	".\modelgen.h"\
+	".\net.h"\
+	".\pr_dlls.h"\
+	".\progdefs.h"\
+	".\Progs.h"\
+	".\protocol.h"\
+	".\qgl.h"\
+	".\quakedef.h"\
+	".\r_local.h"\
+	".\r_shared.h"\
+	".\render.h"\
+	".\save.h"\
+	".\sbar.h"\
+	".\screen.h"\
+	".\server.h"\
+	".\shake.h"\
+	".\sound.h"\
+	".\spritegn.h"\
+	".\studio.h"\
+	".\sys.h"\
+	".\vid.h"\
+	".\view.h"\
+	".\vmodes.h"\
+	".\wad.h"\
+	".\water.h"\
+	".\winquake.h"\
+	".\world.h"\
+	".\wrect.h"\
+	".\zone.h"\
+	{$(INCLUDE)}"\gl\GL.H"\
+	
+NODEP_CPP_R_MIS=\
+	".\cmdlib.h"\
+	".\lbmlib.h"\
+	".\scriplib.h"\
+	".\trilib.h"\
+	
+
+!IF  "$(CFG)" == "Quiver - Win32 Release"
+
+
+"$(INTDIR)\R_MISC.OBJ" : $(SOURCE) $(DEP_CPP_R_MIS) "$(INTDIR)"
+   $(CPP) /nologo /MT /W3 /GR /GX /O2 /I "..\common" /I "..\dx6sdk\include" /D\
+ "NDEBUG" /D "__USEA3D" /D "__A3D_GEOM" /D "WIN32" /D "_WINDOWS" /Fo"$(INTDIR)/"\
+ /c $(SOURCE)
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+
+"$(INTDIR)\R_MISC.OBJ" : $(SOURCE) $(DEP_CPP_R_MIS) "$(INTDIR)"
+   $(CPP) /nologo /MTd /W3 /Gm /GX /Zi /Od /I "..\common" /I\
+ "..\dx6sdk\include" /D "_DEBUG" /D "__USEA3D" /D "__A3D_GEOM" /D "WIN32" /D\
+ "_WINDOWS" /Fo"$(INTDIR)/" /Fd"$(INTDIR)/" /c $(SOURCE)
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+# PROP Exclude_From_Build 1
+
+!ENDIF 
+
+# End Source File
+################################################################################
+# Begin Source File
+
+SOURCE=.\R_PART.C
+DEP_CPP_R_PAR=\
+	"..\common\dll_state.h"\
+	"..\common\platform.h"\
+	"..\common\qfont.h"\
+	".\beamdef.h"\
+	".\bothdefs.h"\
+	".\bspfile.h"\
+	".\cdll_int.h"\
+	".\client.h"\
+	".\cmd.h"\
+	".\color.h"\
+	".\common.h"\
+	".\CONSOLE.H"\
+	".\const.h"\
+	".\crc.h"\
+	".\cshift.h"\
+	".\custom.h"\
+	".\customentity.h"\
+	".\cvar.h"\
+	".\cvardef.h"\
+	".\d_iface.h"\
+	".\draw.h"\
+	".\eiface.h"\
+	".\GL_MODEL.H"\
+	".\GLQUAKE.H"\
+	".\host_cmd.h"\
+	".\input.h"\
+	".\keys.h"\
+	".\mathlib.h"\
+	".\model.h"\
+	".\modelgen.h"\
+	".\net.h"\
+	".\pr_cmds.h"\
+	".\pr_dlls.h"\
+	".\progdefs.h"\
+	".\Progs.h"\
+	".\protocol.h"\
+	".\qgl.h"\
+	".\quakedef.h"\
+	".\r_local.h"\
+	".\r_shared.h"\
+	".\r_triangle.h"\
+	".\render.h"\
+	".\save.h"\
+	".\sbar.h"\
+	".\screen.h"\
+	".\server.h"\
+	".\sound.h"\
+	".\spritegn.h"\
+	".\studio.h"\
+	".\sys.h"\
+	".\vid.h"\
+	".\view.h"\
+	".\vmodes.h"\
+	".\wad.h"\
+	".\world.h"\
+	".\wrect.h"\
+	".\zone.h"\
+	{$(INCLUDE)}"\gl\GL.H"\
 	
 NODEP_CPP_R_PAR=\
 	".\cmdlib.h"\
@@ -4789,8 +9479,33 @@ NODEP_CPP_R_PAR=\
 	".\trilib.h"\
 	
 
-"$(INTDIR)\R_part.obj" : $(SOURCE) $(DEP_CPP_R_PAR) "$(INTDIR)"
+!IF  "$(CFG)" == "Quiver - Win32 Release"
 
+
+"$(INTDIR)\R_PART.OBJ" : $(SOURCE) $(DEP_CPP_R_PAR) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+
+"$(INTDIR)\R_PART.OBJ" : $(SOURCE) $(DEP_CPP_R_PAR) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+# PROP Exclude_From_Build 0
+
+"$(INTDIR)\R_PART.OBJ" : $(SOURCE) $(DEP_CPP_R_PAR) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+# PROP Exclude_From_Build 0
+
+"$(INTDIR)\R_PART.OBJ" : $(SOURCE) $(DEP_CPP_R_PAR) "$(INTDIR)"
+
+
+!ENDIF 
 
 # End Source File
 ################################################################################
@@ -4801,6 +9516,209 @@ SOURCE=.\r_shared.h
 !IF  "$(CFG)" == "Quiver - Win32 Release"
 
 !ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+# PROP Exclude_From_Build 1
+
+!ENDIF 
+
+# End Source File
+################################################################################
+# Begin Source File
+
+SOURCE=.\R_SKY.C
+DEP_CPP_R_SKY=\
+	"..\common\dll_state.h"\
+	"..\common\platform.h"\
+	"..\common\qfont.h"\
+	".\beamdef.h"\
+	".\bothdefs.h"\
+	".\bspfile.h"\
+	".\cdll_int.h"\
+	".\client.h"\
+	".\cmd.h"\
+	".\color.h"\
+	".\common.h"\
+	".\CONSOLE.H"\
+	".\const.h"\
+	".\crc.h"\
+	".\cshift.h"\
+	".\custom.h"\
+	".\cvar.h"\
+	".\cvardef.h"\
+	".\d_iface.h"\
+	".\draw.h"\
+	".\eiface.h"\
+	".\GL_MODEL.H"\
+	".\GLQUAKE.H"\
+	".\host_cmd.h"\
+	".\input.h"\
+	".\keys.h"\
+	".\mathlib.h"\
+	".\model.h"\
+	".\modelgen.h"\
+	".\net.h"\
+	".\pr_cmds.h"\
+	".\pr_dlls.h"\
+	".\progdefs.h"\
+	".\Progs.h"\
+	".\protocol.h"\
+	".\qgl.h"\
+	".\quakedef.h"\
+	".\r_local.h"\
+	".\r_shared.h"\
+	".\render.h"\
+	".\save.h"\
+	".\sbar.h"\
+	".\screen.h"\
+	".\server.h"\
+	".\sound.h"\
+	".\spritegn.h"\
+	".\studio.h"\
+	".\sys.h"\
+	".\vid.h"\
+	".\view.h"\
+	".\vmodes.h"\
+	".\wad.h"\
+	".\world.h"\
+	".\wrect.h"\
+	".\zone.h"\
+	{$(INCLUDE)}"\gl\GL.H"\
+	
+NODEP_CPP_R_SKY=\
+	".\cmdlib.h"\
+	".\lbmlib.h"\
+	".\scriplib.h"\
+	".\trilib.h"\
+	
+
+!IF  "$(CFG)" == "Quiver - Win32 Release"
+
+
+"$(INTDIR)\R_SKY.OBJ" : $(SOURCE) $(DEP_CPP_R_SKY) "$(INTDIR)"
+   $(CPP) /nologo /MT /W3 /GR /GX /O2 /I "..\common" /I "..\dx6sdk\include" /D\
+ "NDEBUG" /D "__USEA3D" /D "__A3D_GEOM" /D "WIN32" /D "_WINDOWS" /Fo"$(INTDIR)/"\
+ /c $(SOURCE)
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+
+"$(INTDIR)\R_SKY.OBJ" : $(SOURCE) $(DEP_CPP_R_SKY) "$(INTDIR)"
+   $(CPP) /nologo /MTd /W3 /Gm /GX /Zi /Od /I "..\common" /I\
+ "..\dx6sdk\include" /D "_DEBUG" /D "__USEA3D" /D "__A3D_GEOM" /D "WIN32" /D\
+ "_WINDOWS" /Fo"$(INTDIR)/" /Fd"$(INTDIR)/" /c $(SOURCE)
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+# PROP Exclude_From_Build 1
+
+!ENDIF 
+
+# End Source File
+################################################################################
+# Begin Source File
+
+SOURCE=.\R_SPRITE.C
+DEP_CPP_R_SPR=\
+	"..\common\dll_state.h"\
+	"..\common\platform.h"\
+	"..\common\qfont.h"\
+	".\beamdef.h"\
+	".\bothdefs.h"\
+	".\bspfile.h"\
+	".\cdll_int.h"\
+	".\client.h"\
+	".\cmd.h"\
+	".\color.h"\
+	".\common.h"\
+	".\CONSOLE.H"\
+	".\const.h"\
+	".\crc.h"\
+	".\cshift.h"\
+	".\custom.h"\
+	".\cvar.h"\
+	".\cvardef.h"\
+	".\d_iface.h"\
+	".\draw.h"\
+	".\eiface.h"\
+	".\GL_MODEL.H"\
+	".\GLQUAKE.H"\
+	".\host_cmd.h"\
+	".\input.h"\
+	".\keys.h"\
+	".\mathlib.h"\
+	".\model.h"\
+	".\modelgen.h"\
+	".\net.h"\
+	".\pr_dlls.h"\
+	".\progdefs.h"\
+	".\Progs.h"\
+	".\protocol.h"\
+	".\qgl.h"\
+	".\quakedef.h"\
+	".\r_local.h"\
+	".\r_shared.h"\
+	".\render.h"\
+	".\save.h"\
+	".\sbar.h"\
+	".\screen.h"\
+	".\server.h"\
+	".\sound.h"\
+	".\spritegn.h"\
+	".\studio.h"\
+	".\sys.h"\
+	".\vid.h"\
+	".\view.h"\
+	".\vmodes.h"\
+	".\wad.h"\
+	".\world.h"\
+	".\wrect.h"\
+	".\zone.h"\
+	{$(INCLUDE)}"\gl\GL.H"\
+	
+NODEP_CPP_R_SPR=\
+	".\cmdlib.h"\
+	".\lbmlib.h"\
+	".\scriplib.h"\
+	".\trilib.h"\
+	
+
+!IF  "$(CFG)" == "Quiver - Win32 Release"
+
+
+"$(INTDIR)\R_SPRITE.OBJ" : $(SOURCE) $(DEP_CPP_R_SPR) "$(INTDIR)"
+   $(CPP) /nologo /MT /W3 /GR /GX /O2 /I "..\common" /I "..\dx6sdk\include" /D\
+ "NDEBUG" /D "__USEA3D" /D "__A3D_GEOM" /D "WIN32" /D "_WINDOWS" /Fo"$(INTDIR)/"\
+ /c $(SOURCE)
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+
+"$(INTDIR)\R_SPRITE.OBJ" : $(SOURCE) $(DEP_CPP_R_SPR) "$(INTDIR)"
+   $(CPP) /nologo /MTd /W3 /Gm /GX /Zi /Od /I "..\common" /I\
+ "..\dx6sdk\include" /D "_DEBUG" /D "__USEA3D" /D "__A3D_GEOM" /D "WIN32" /D\
+ "_WINDOWS" /Fo"$(INTDIR)/" /Fd"$(INTDIR)/" /c $(SOURCE)
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+# PROP Exclude_From_Build 1
 
 !ENDIF 
 
@@ -4822,7 +9740,7 @@ DEP_CPP_R_STU=\
 	".\cmd.h"\
 	".\color.h"\
 	".\common.h"\
-	".\Console.h"\
+	".\CONSOLE.H"\
 	".\const.h"\
 	".\crc.h"\
 	".\cshift.h"\
@@ -4830,14 +9748,16 @@ DEP_CPP_R_STU=\
 	".\customentity.h"\
 	".\cvar.h"\
 	".\cvardef.h"\
+	".\d_iface.h"\
 	".\draw.h"\
 	".\eiface.h"\
-	".\Gl_model.h"\
-	".\Glquake.h"\
+	".\GL_MODEL.H"\
+	".\GLQUAKE.H"\
 	".\host_cmd.h"\
 	".\input.h"\
 	".\keys.h"\
 	".\mathlib.h"\
+	".\model.h"\
 	".\modelgen.h"\
 	".\net.h"\
 	".\pr_cmds.h"\
@@ -4852,6 +9772,7 @@ DEP_CPP_R_STU=\
 	".\r_studio.h"\
 	".\r_triangle.h"\
 	".\render.h"\
+	".\save.h"\
 	".\sbar.h"\
 	".\screen.h"\
 	".\server.h"\
@@ -4866,7 +9787,7 @@ DEP_CPP_R_STU=\
 	".\world.h"\
 	".\wrect.h"\
 	".\zone.h"\
-	{$(INCLUDE)}"\GL\gl.h"\
+	{$(INCLUDE)}"\gl\GL.H"\
 	
 NODEP_CPP_R_STU=\
 	".\cmdlib.h"\
@@ -4875,8 +9796,31 @@ NODEP_CPP_R_STU=\
 	".\trilib.h"\
 	
 
+!IF  "$(CFG)" == "Quiver - Win32 Release"
+
+
 "$(INTDIR)\r_studio.obj" : $(SOURCE) $(DEP_CPP_R_STU) "$(INTDIR)"
 
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+
+"$(INTDIR)\r_studio.obj" : $(SOURCE) $(DEP_CPP_R_STU) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+
+"$(INTDIR)\r_studio.obj" : $(SOURCE) $(DEP_CPP_R_STU) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+
+"$(INTDIR)\r_studio.obj" : $(SOURCE) $(DEP_CPP_R_STU) "$(INTDIR)"
+
+
+!ENDIF 
 
 # End Source File
 ################################################################################
@@ -4887,6 +9831,110 @@ SOURCE=.\r_studio.h
 !IF  "$(CFG)" == "Quiver - Win32 Release"
 
 !ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+!ENDIF 
+
+# End Source File
+################################################################################
+# Begin Source File
+
+SOURCE=.\R_SURF.C
+DEP_CPP_R_SUR=\
+	"..\common\dll_state.h"\
+	"..\common\platform.h"\
+	"..\common\qfont.h"\
+	".\beamdef.h"\
+	".\bothdefs.h"\
+	".\bspfile.h"\
+	".\cdll_int.h"\
+	".\client.h"\
+	".\cmd.h"\
+	".\color.h"\
+	".\common.h"\
+	".\CONSOLE.H"\
+	".\const.h"\
+	".\crc.h"\
+	".\cshift.h"\
+	".\custom.h"\
+	".\cvar.h"\
+	".\cvardef.h"\
+	".\d_iface.h"\
+	".\d_local.h"\
+	".\decal.h"\
+	".\draw.h"\
+	".\eiface.h"\
+	".\GL_MODEL.H"\
+	".\GLQUAKE.H"\
+	".\host_cmd.h"\
+	".\input.h"\
+	".\keys.h"\
+	".\mathlib.h"\
+	".\model.h"\
+	".\modelgen.h"\
+	".\net.h"\
+	".\pr_dlls.h"\
+	".\progdefs.h"\
+	".\Progs.h"\
+	".\protocol.h"\
+	".\qgl.h"\
+	".\quakedef.h"\
+	".\r_local.h"\
+	".\r_shared.h"\
+	".\render.h"\
+	".\save.h"\
+	".\sbar.h"\
+	".\screen.h"\
+	".\server.h"\
+	".\sound.h"\
+	".\spritegn.h"\
+	".\studio.h"\
+	".\sys.h"\
+	".\vid.h"\
+	".\view.h"\
+	".\vmodes.h"\
+	".\wad.h"\
+	".\winquake.h"\
+	".\world.h"\
+	".\wrect.h"\
+	".\zone.h"\
+	{$(INCLUDE)}"\gl\GL.H"\
+	
+NODEP_CPP_R_SUR=\
+	".\cmdlib.h"\
+	".\lbmlib.h"\
+	".\scriplib.h"\
+	".\trilib.h"\
+	
+
+!IF  "$(CFG)" == "Quiver - Win32 Release"
+
+
+"$(INTDIR)\R_SURF.OBJ" : $(SOURCE) $(DEP_CPP_R_SUR) "$(INTDIR)"
+   $(CPP) /nologo /MT /W3 /GR /GX /O2 /I "..\common" /I "..\dx6sdk\include" /D\
+ "NDEBUG" /D "__USEA3D" /D "__A3D_GEOM" /D "WIN32" /D "_WINDOWS" /Fo"$(INTDIR)/"\
+ /c $(SOURCE)
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+
+"$(INTDIR)\R_SURF.OBJ" : $(SOURCE) $(DEP_CPP_R_SUR) "$(INTDIR)"
+   $(CPP) /nologo /MTd /W3 /Gm /GX /Zi /Od /I "..\common" /I\
+ "..\dx6sdk\include" /D "_DEBUG" /D "__USEA3D" /D "__A3D_GEOM" /D "WIN32" /D\
+ "_WINDOWS" /Fo"$(INTDIR)/" /Fd"$(INTDIR)/" /c $(SOURCE)
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+# PROP Exclude_From_Build 1
 
 !ENDIF 
 
@@ -4907,21 +9955,24 @@ DEP_CPP_R_TRA=\
 	".\cmd.h"\
 	".\color.h"\
 	".\common.h"\
-	".\Console.h"\
+	".\CONSOLE.H"\
 	".\const.h"\
 	".\crc.h"\
 	".\cshift.h"\
 	".\custom.h"\
 	".\cvar.h"\
 	".\cvardef.h"\
+	".\d_iface.h"\
+	".\d_local.h"\
 	".\draw.h"\
 	".\eiface.h"\
-	".\Gl_model.h"\
-	".\Glquake.h"\
+	".\GL_MODEL.H"\
+	".\GLQUAKE.H"\
 	".\host_cmd.h"\
 	".\input.h"\
 	".\keys.h"\
 	".\mathlib.h"\
+	".\model.h"\
 	".\modelgen.h"\
 	".\net.h"\
 	".\pmove.h"\
@@ -4931,10 +9982,12 @@ DEP_CPP_R_TRA=\
 	".\protocol.h"\
 	".\qgl.h"\
 	".\quakedef.h"\
+	".\r_local.h"\
 	".\r_shared.h"\
 	".\r_studio.h"\
 	".\r_trans.h"\
 	".\render.h"\
+	".\save.h"\
 	".\sbar.h"\
 	".\screen.h"\
 	".\server.h"\
@@ -4949,7 +10002,7 @@ DEP_CPP_R_TRA=\
 	".\world.h"\
 	".\wrect.h"\
 	".\zone.h"\
-	{$(INCLUDE)}"\GL\gl.h"\
+	{$(INCLUDE)}"\gl\GL.H"\
 	
 NODEP_CPP_R_TRA=\
 	".\cmdlib.h"\
@@ -4958,8 +10011,33 @@ NODEP_CPP_R_TRA=\
 	".\trilib.h"\
 	
 
+!IF  "$(CFG)" == "Quiver - Win32 Release"
+
+
 "$(INTDIR)\r_trans.obj" : $(SOURCE) $(DEP_CPP_R_TRA) "$(INTDIR)"
 
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+
+"$(INTDIR)\r_trans.obj" : $(SOURCE) $(DEP_CPP_R_TRA) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+# PROP Exclude_From_Build 0
+
+"$(INTDIR)\r_trans.obj" : $(SOURCE) $(DEP_CPP_R_TRA) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+# PROP Exclude_From_Build 0
+
+"$(INTDIR)\r_trans.obj" : $(SOURCE) $(DEP_CPP_R_TRA) "$(INTDIR)"
+
+
+!ENDIF 
 
 # End Source File
 ################################################################################
@@ -4970,6 +10048,12 @@ SOURCE=.\r_trans.h
 !IF  "$(CFG)" == "Quiver - Win32 Release"
 
 !ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
 
 !ENDIF 
 
@@ -4990,21 +10074,24 @@ DEP_CPP_R_TRI=\
 	".\cmd.h"\
 	".\color.h"\
 	".\common.h"\
-	".\Console.h"\
+	".\CONSOLE.H"\
 	".\const.h"\
 	".\crc.h"\
 	".\cshift.h"\
 	".\custom.h"\
 	".\cvar.h"\
 	".\cvardef.h"\
+	".\d_iface.h"\
+	".\d_local.h"\
 	".\draw.h"\
 	".\eiface.h"\
-	".\Gl_model.h"\
-	".\Glquake.h"\
+	".\GL_MODEL.H"\
+	".\GLQUAKE.H"\
 	".\host_cmd.h"\
 	".\input.h"\
 	".\keys.h"\
 	".\mathlib.h"\
+	".\model.h"\
 	".\modelgen.h"\
 	".\net.h"\
 	".\pr_dlls.h"\
@@ -5013,9 +10100,11 @@ DEP_CPP_R_TRI=\
 	".\protocol.h"\
 	".\qgl.h"\
 	".\quakedef.h"\
+	".\r_local.h"\
 	".\r_shared.h"\
 	".\r_triangle.h"\
 	".\render.h"\
+	".\save.h"\
 	".\sbar.h"\
 	".\screen.h"\
 	".\server.h"\
@@ -5030,7 +10119,7 @@ DEP_CPP_R_TRI=\
 	".\world.h"\
 	".\wrect.h"\
 	".\zone.h"\
-	{$(INCLUDE)}"\GL\gl.h"\
+	{$(INCLUDE)}"\gl\GL.H"\
 	
 NODEP_CPP_R_TRI=\
 	".\cmdlib.h"\
@@ -5039,8 +10128,31 @@ NODEP_CPP_R_TRI=\
 	".\trilib.h"\
 	
 
+!IF  "$(CFG)" == "Quiver - Win32 Release"
+
+
 "$(INTDIR)\r_triangle.obj" : $(SOURCE) $(DEP_CPP_R_TRI) "$(INTDIR)"
 
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+
+"$(INTDIR)\r_triangle.obj" : $(SOURCE) $(DEP_CPP_R_TRI) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+
+"$(INTDIR)\r_triangle.obj" : $(SOURCE) $(DEP_CPP_R_TRI) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+
+"$(INTDIR)\r_triangle.obj" : $(SOURCE) $(DEP_CPP_R_TRI) "$(INTDIR)"
+
+
+!ENDIF 
 
 # End Source File
 ################################################################################
@@ -5051,6 +10163,107 @@ SOURCE=.\r_triangle.h
 !IF  "$(CFG)" == "Quiver - Win32 Release"
 
 !ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+!ENDIF 
+
+# End Source File
+################################################################################
+# Begin Source File
+
+SOURCE=.\R_VARS.C
+DEP_CPP_R_VAR=\
+	"..\common\dll_state.h"\
+	"..\common\platform.h"\
+	"..\common\qfont.h"\
+	".\beamdef.h"\
+	".\bothdefs.h"\
+	".\bspfile.h"\
+	".\cdll_int.h"\
+	".\client.h"\
+	".\cmd.h"\
+	".\color.h"\
+	".\common.h"\
+	".\CONSOLE.H"\
+	".\const.h"\
+	".\crc.h"\
+	".\cshift.h"\
+	".\custom.h"\
+	".\cvar.h"\
+	".\cvardef.h"\
+	".\d_iface.h"\
+	".\draw.h"\
+	".\eiface.h"\
+	".\GL_MODEL.H"\
+	".\GLQUAKE.H"\
+	".\host_cmd.h"\
+	".\input.h"\
+	".\keys.h"\
+	".\mathlib.h"\
+	".\model.h"\
+	".\modelgen.h"\
+	".\net.h"\
+	".\pr_dlls.h"\
+	".\progdefs.h"\
+	".\Progs.h"\
+	".\protocol.h"\
+	".\qgl.h"\
+	".\quakedef.h"\
+	".\r_local.h"\
+	".\r_shared.h"\
+	".\render.h"\
+	".\save.h"\
+	".\sbar.h"\
+	".\screen.h"\
+	".\server.h"\
+	".\sound.h"\
+	".\spritegn.h"\
+	".\studio.h"\
+	".\sys.h"\
+	".\vid.h"\
+	".\view.h"\
+	".\vmodes.h"\
+	".\wad.h"\
+	".\world.h"\
+	".\wrect.h"\
+	".\zone.h"\
+	{$(INCLUDE)}"\gl\GL.H"\
+	
+NODEP_CPP_R_VAR=\
+	".\cmdlib.h"\
+	".\lbmlib.h"\
+	".\scriplib.h"\
+	".\trilib.h"\
+	
+
+!IF  "$(CFG)" == "Quiver - Win32 Release"
+
+
+"$(INTDIR)\R_VARS.OBJ" : $(SOURCE) $(DEP_CPP_R_VAR) "$(INTDIR)"
+   $(CPP) /nologo /MT /W3 /GR /GX /O2 /I "..\common" /I "..\dx6sdk\include" /D\
+ "NDEBUG" /D "__USEA3D" /D "__A3D_GEOM" /D "WIN32" /D "_WINDOWS" /Fo"$(INTDIR)/"\
+ /c $(SOURCE)
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+
+"$(INTDIR)\R_VARS.OBJ" : $(SOURCE) $(DEP_CPP_R_VAR) "$(INTDIR)"
+   $(CPP) /nologo /MTd /W3 /Gm /GX /Zi /Od /I "..\common" /I\
+ "..\dx6sdk\include" /D "_DEBUG" /D "__USEA3D" /D "__A3D_GEOM" /D "WIN32" /D\
+ "_WINDOWS" /Fo"$(INTDIR)/" /Fd"$(INTDIR)/" /c $(SOURCE)
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+# PROP Exclude_From_Build 1
 
 !ENDIF 
 
@@ -5064,6 +10277,26 @@ SOURCE=.\render.h
 
 !ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
 
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+!ENDIF 
+
+# End Source File
+################################################################################
+# Begin Source File
+
+SOURCE=.\save.h
+
+!IF  "$(CFG)" == "Quiver - Win32 Release"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
 !ENDIF 
 
 # End Source File
@@ -5075,6 +10308,108 @@ SOURCE=.\sbar.h
 !IF  "$(CFG)" == "Quiver - Win32 Release"
 
 !ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+!ENDIF 
+
+# End Source File
+################################################################################
+# Begin Source File
+
+SOURCE=.\SCREEN.C
+DEP_CPP_SCREE=\
+	"..\common\dll_state.h"\
+	"..\common\platform.h"\
+	"..\common\qfont.h"\
+	".\beamdef.h"\
+	".\bothdefs.h"\
+	".\bspfile.h"\
+	".\cdll_int.h"\
+	".\client.h"\
+	".\cmd.h"\
+	".\color.h"\
+	".\common.h"\
+	".\CONSOLE.H"\
+	".\const.h"\
+	".\crc.h"\
+	".\cshift.h"\
+	".\custom.h"\
+	".\cvar.h"\
+	".\cvardef.h"\
+	".\d_iface.h"\
+	".\draw.h"\
+	".\eiface.h"\
+	".\GL_MODEL.H"\
+	".\GLQUAKE.H"\
+	".\host_cmd.h"\
+	".\input.h"\
+	".\keys.h"\
+	".\mathlib.h"\
+	".\model.h"\
+	".\modelgen.h"\
+	".\net.h"\
+	".\pr_dlls.h"\
+	".\progdefs.h"\
+	".\Progs.h"\
+	".\protocol.h"\
+	".\qgl.h"\
+	".\quakedef.h"\
+	".\r_local.h"\
+	".\r_shared.h"\
+	".\render.h"\
+	".\save.h"\
+	".\sbar.h"\
+	".\screen.h"\
+	".\server.h"\
+	".\sound.h"\
+	".\spritegn.h"\
+	".\studio.h"\
+	".\sys.h"\
+	".\vid.h"\
+	".\view.h"\
+	".\vmodes.h"\
+	".\wad.h"\
+	".\winquake.h"\
+	".\world.h"\
+	".\wrect.h"\
+	".\zone.h"\
+	{$(INCLUDE)}"\gl\GL.H"\
+	
+NODEP_CPP_SCREE=\
+	".\cmdlib.h"\
+	".\lbmlib.h"\
+	".\scriplib.h"\
+	".\trilib.h"\
+	
+
+!IF  "$(CFG)" == "Quiver - Win32 Release"
+
+
+"$(INTDIR)\SCREEN.OBJ" : $(SOURCE) $(DEP_CPP_SCREE) "$(INTDIR)"
+   $(CPP) /nologo /MT /W3 /GR /GX /O2 /I "..\common" /I "..\dx6sdk\include" /D\
+ "NDEBUG" /D "__USEA3D" /D "__A3D_GEOM" /D "WIN32" /D "_WINDOWS" /Fo"$(INTDIR)/"\
+ /c $(SOURCE)
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+
+"$(INTDIR)\SCREEN.OBJ" : $(SOURCE) $(DEP_CPP_SCREE) "$(INTDIR)"
+   $(CPP) /nologo /MTd /W3 /Gm /GX /Zi /Od /I "..\common" /I\
+ "..\dx6sdk\include" /D "_DEBUG" /D "__USEA3D" /D "__A3D_GEOM" /D "WIN32" /D\
+ "_WINDOWS" /Fo"$(INTDIR)/" /Fd"$(INTDIR)/" /c $(SOURCE)
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+# PROP Exclude_From_Build 1
 
 !ENDIF 
 
@@ -5088,6 +10423,12 @@ SOURCE=.\screen.h
 
 !ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
 
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+# PROP Exclude_From_Build 0
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
 !ENDIF 
 
 # End Source File
@@ -5099,6 +10440,12 @@ SOURCE=.\server.h
 !IF  "$(CFG)" == "Quiver - Win32 Release"
 
 !ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+# PROP Exclude_From_Build 0
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
 
 !ENDIF 
 
@@ -5112,18 +10459,42 @@ SOURCE=.\shake.h
 
 !ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
 
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+# PROP Exclude_From_Build 0
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
 !ENDIF 
 
 # End Source File
 ################################################################################
 # Begin Source File
 
-SOURCE=.\Snd_dma.c
+SOURCE=.\snd_a3d.h
+
+!IF  "$(CFG)" == "Quiver - Win32 Release"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+# PROP Exclude_From_Build 0
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+!ENDIF 
+
+# End Source File
+################################################################################
+# Begin Source File
+
+SOURCE=.\SND_DMA.C
 DEP_CPP_SND_D=\
+	"..\a3dwrapper\a3dwrapper.h"\
 	"..\common\dll_state.h"\
 	"..\common\platform.h"\
 	"..\common\qfont.h"\
-	".\a3d.h"\
 	".\beamdef.h"\
 	".\bothdefs.h"\
 	".\bspfile.h"\
@@ -5132,21 +10503,23 @@ DEP_CPP_SND_D=\
 	".\cmd.h"\
 	".\color.h"\
 	".\common.h"\
-	".\Console.h"\
+	".\CONSOLE.H"\
 	".\const.h"\
 	".\crc.h"\
 	".\cshift.h"\
 	".\custom.h"\
 	".\cvar.h"\
 	".\cvardef.h"\
+	".\d_iface.h"\
 	".\draw.h"\
 	".\eiface.h"\
-	".\Gl_model.h"\
-	".\Glquake.h"\
+	".\GL_MODEL.H"\
+	".\GLQUAKE.H"\
 	".\host_cmd.h"\
 	".\input.h"\
 	".\keys.h"\
 	".\mathlib.h"\
+	".\model.h"\
 	".\modelgen.h"\
 	".\net.h"\
 	".\pr_cmds.h"\
@@ -5157,11 +10530,14 @@ DEP_CPP_SND_D=\
 	".\protocol.h"\
 	".\qgl.h"\
 	".\quakedef.h"\
+	".\r_local.h"\
 	".\r_shared.h"\
 	".\render.h"\
+	".\save.h"\
 	".\sbar.h"\
 	".\screen.h"\
 	".\server.h"\
+	".\snd_a3d.h"\
 	".\sound.h"\
 	".\spritegn.h"\
 	".\studio.h"\
@@ -5174,7 +10550,7 @@ DEP_CPP_SND_D=\
 	".\world.h"\
 	".\wrect.h"\
 	".\zone.h"\
-	{$(INCLUDE)}"\GL\gl.h"\
+	{$(INCLUDE)}"\gl\GL.H"\
 	
 NODEP_CPP_SND_D=\
 	".\cmdlib.h"\
@@ -5183,14 +10559,38 @@ NODEP_CPP_SND_D=\
 	".\trilib.h"\
 	
 
-"$(INTDIR)\Snd_dma.obj" : $(SOURCE) $(DEP_CPP_SND_D) "$(INTDIR)"
+!IF  "$(CFG)" == "Quiver - Win32 Release"
 
+
+"$(INTDIR)\SND_DMA.OBJ" : $(SOURCE) $(DEP_CPP_SND_D) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+
+"$(INTDIR)\SND_DMA.OBJ" : $(SOURCE) $(DEP_CPP_SND_D) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+# PROP Exclude_From_Build 0
+
+"$(INTDIR)\SND_DMA.OBJ" : $(SOURCE) $(DEP_CPP_SND_D) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+
+"$(INTDIR)\SND_DMA.OBJ" : $(SOURCE) $(DEP_CPP_SND_D) "$(INTDIR)"
+
+
+!ENDIF 
 
 # End Source File
 ################################################################################
 # Begin Source File
 
-SOURCE=.\Snd_mem.c
+SOURCE=.\SND_MEM.C
 DEP_CPP_SND_M=\
 	"..\common\dll_state.h"\
 	"..\common\platform.h"\
@@ -5203,21 +10603,23 @@ DEP_CPP_SND_M=\
 	".\cmd.h"\
 	".\color.h"\
 	".\common.h"\
-	".\Console.h"\
+	".\CONSOLE.H"\
 	".\const.h"\
 	".\crc.h"\
 	".\cshift.h"\
 	".\custom.h"\
 	".\cvar.h"\
 	".\cvardef.h"\
+	".\d_iface.h"\
 	".\draw.h"\
 	".\eiface.h"\
-	".\Gl_model.h"\
-	".\Glquake.h"\
+	".\GL_MODEL.H"\
+	".\GLQUAKE.H"\
 	".\host_cmd.h"\
 	".\input.h"\
 	".\keys.h"\
 	".\mathlib.h"\
+	".\model.h"\
 	".\modelgen.h"\
 	".\net.h"\
 	".\pr_dlls.h"\
@@ -5226,8 +10628,10 @@ DEP_CPP_SND_M=\
 	".\protocol.h"\
 	".\qgl.h"\
 	".\quakedef.h"\
+	".\r_local.h"\
 	".\r_shared.h"\
 	".\render.h"\
+	".\save.h"\
 	".\sbar.h"\
 	".\screen.h"\
 	".\server.h"\
@@ -5242,7 +10646,7 @@ DEP_CPP_SND_M=\
 	".\world.h"\
 	".\wrect.h"\
 	".\zone.h"\
-	{$(INCLUDE)}"\GL\gl.h"\
+	{$(INCLUDE)}"\gl\GL.H"\
 	
 NODEP_CPP_SND_M=\
 	".\cmdlib.h"\
@@ -5251,19 +10655,43 @@ NODEP_CPP_SND_M=\
 	".\trilib.h"\
 	
 
-"$(INTDIR)\Snd_mem.obj" : $(SOURCE) $(DEP_CPP_SND_M) "$(INTDIR)"
+!IF  "$(CFG)" == "Quiver - Win32 Release"
 
+
+"$(INTDIR)\SND_MEM.OBJ" : $(SOURCE) $(DEP_CPP_SND_M) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+
+"$(INTDIR)\SND_MEM.OBJ" : $(SOURCE) $(DEP_CPP_SND_M) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+# PROP Exclude_From_Build 0
+
+"$(INTDIR)\SND_MEM.OBJ" : $(SOURCE) $(DEP_CPP_SND_M) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+
+"$(INTDIR)\SND_MEM.OBJ" : $(SOURCE) $(DEP_CPP_SND_M) "$(INTDIR)"
+
+
+!ENDIF 
 
 # End Source File
 ################################################################################
 # Begin Source File
 
-SOURCE=.\Snd_mix.c
+SOURCE=.\SND_MIX.C
 DEP_CPP_SND_MI=\
+	"..\a3dwrapper\a3dwrapper.h"\
 	"..\common\dll_state.h"\
 	"..\common\platform.h"\
 	"..\common\qfont.h"\
-	".\a3d.h"\
 	".\beamdef.h"\
 	".\bothdefs.h"\
 	".\bspfile.h"\
@@ -5272,21 +10700,23 @@ DEP_CPP_SND_MI=\
 	".\cmd.h"\
 	".\color.h"\
 	".\common.h"\
-	".\Console.h"\
+	".\CONSOLE.H"\
 	".\const.h"\
 	".\crc.h"\
 	".\cshift.h"\
 	".\custom.h"\
 	".\cvar.h"\
 	".\cvardef.h"\
+	".\d_iface.h"\
 	".\draw.h"\
 	".\eiface.h"\
-	".\Gl_model.h"\
-	".\Glquake.h"\
+	".\GL_MODEL.H"\
+	".\GLQUAKE.H"\
 	".\host_cmd.h"\
 	".\input.h"\
 	".\keys.h"\
 	".\mathlib.h"\
+	".\model.h"\
 	".\modelgen.h"\
 	".\net.h"\
 	".\pr_cmds.h"\
@@ -5296,11 +10726,14 @@ DEP_CPP_SND_MI=\
 	".\protocol.h"\
 	".\qgl.h"\
 	".\quakedef.h"\
+	".\r_local.h"\
 	".\r_shared.h"\
 	".\render.h"\
+	".\save.h"\
 	".\sbar.h"\
 	".\screen.h"\
 	".\server.h"\
+	".\snd_a3d.h"\
 	".\sound.h"\
 	".\spritegn.h"\
 	".\studio.h"\
@@ -5313,7 +10746,7 @@ DEP_CPP_SND_MI=\
 	".\world.h"\
 	".\wrect.h"\
 	".\zone.h"\
-	{$(INCLUDE)}"\GL\gl.h"\
+	{$(INCLUDE)}"\gl\GL.H"\
 	
 NODEP_CPP_SND_MI=\
 	".\cmdlib.h"\
@@ -5322,19 +10755,43 @@ NODEP_CPP_SND_MI=\
 	".\trilib.h"\
 	
 
-"$(INTDIR)\Snd_mix.obj" : $(SOURCE) $(DEP_CPP_SND_MI) "$(INTDIR)"
+!IF  "$(CFG)" == "Quiver - Win32 Release"
 
+
+"$(INTDIR)\SND_MIX.OBJ" : $(SOURCE) $(DEP_CPP_SND_MI) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+
+"$(INTDIR)\SND_MIX.OBJ" : $(SOURCE) $(DEP_CPP_SND_MI) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+# PROP Exclude_From_Build 0
+
+"$(INTDIR)\SND_MIX.OBJ" : $(SOURCE) $(DEP_CPP_SND_MI) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+
+"$(INTDIR)\SND_MIX.OBJ" : $(SOURCE) $(DEP_CPP_SND_MI) "$(INTDIR)"
+
+
+!ENDIF 
 
 # End Source File
 ################################################################################
 # Begin Source File
 
-SOURCE=.\Snd_win.c
+SOURCE=.\SND_WIN.C
 DEP_CPP_SND_W=\
+	"..\a3dwrapper\a3dwrapper.h"\
 	"..\common\dll_state.h"\
 	"..\common\platform.h"\
 	"..\common\qfont.h"\
-	".\a3d.h"\
 	".\beamdef.h"\
 	".\bothdefs.h"\
 	".\bspfile.h"\
@@ -5343,21 +10800,23 @@ DEP_CPP_SND_W=\
 	".\cmd.h"\
 	".\color.h"\
 	".\common.h"\
-	".\Console.h"\
+	".\CONSOLE.H"\
 	".\const.h"\
 	".\crc.h"\
 	".\cshift.h"\
 	".\custom.h"\
 	".\cvar.h"\
 	".\cvardef.h"\
+	".\d_iface.h"\
 	".\draw.h"\
 	".\eiface.h"\
-	".\Gl_model.h"\
-	".\Glquake.h"\
+	".\GL_MODEL.H"\
+	".\GLQUAKE.H"\
 	".\host_cmd.h"\
 	".\input.h"\
 	".\keys.h"\
 	".\mathlib.h"\
+	".\model.h"\
 	".\modelgen.h"\
 	".\net.h"\
 	".\pr_dlls.h"\
@@ -5366,11 +10825,14 @@ DEP_CPP_SND_W=\
 	".\protocol.h"\
 	".\qgl.h"\
 	".\quakedef.h"\
+	".\r_local.h"\
 	".\r_shared.h"\
 	".\render.h"\
+	".\save.h"\
 	".\sbar.h"\
 	".\screen.h"\
 	".\server.h"\
+	".\snd_a3d.h"\
 	".\sound.h"\
 	".\spritegn.h"\
 	".\studio.h"\
@@ -5383,7 +10845,7 @@ DEP_CPP_SND_W=\
 	".\world.h"\
 	".\wrect.h"\
 	".\zone.h"\
-	{$(INCLUDE)}"\GL\gl.h"\
+	{$(INCLUDE)}"\gl\GL.H"\
 	
 NODEP_CPP_SND_W=\
 	".\cmdlib.h"\
@@ -5392,8 +10854,32 @@ NODEP_CPP_SND_W=\
 	".\trilib.h"\
 	
 
-"$(INTDIR)\Snd_win.obj" : $(SOURCE) $(DEP_CPP_SND_W) "$(INTDIR)"
+!IF  "$(CFG)" == "Quiver - Win32 Release"
 
+
+"$(INTDIR)\SND_WIN.OBJ" : $(SOURCE) $(DEP_CPP_SND_W) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+
+"$(INTDIR)\SND_WIN.OBJ" : $(SOURCE) $(DEP_CPP_SND_W) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+# PROP Exclude_From_Build 0
+
+"$(INTDIR)\SND_WIN.OBJ" : $(SOURCE) $(DEP_CPP_SND_W) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+
+"$(INTDIR)\SND_WIN.OBJ" : $(SOURCE) $(DEP_CPP_SND_W) "$(INTDIR)"
+
+
+!ENDIF 
 
 # End Source File
 ################################################################################
@@ -5405,17 +10891,11 @@ SOURCE=.\sound.h
 
 !ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
 
-!ENDIF 
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
 
-# End Source File
-################################################################################
-# Begin Source File
+# PROP Exclude_From_Build 0
 
-SOURCE=.\spritegn.h
-
-!IF  "$(CFG)" == "Quiver - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
 
 !ENDIF 
 
@@ -5429,13 +10909,19 @@ SOURCE=.\studio.h
 
 !ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
 
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+# PROP Exclude_From_Build 0
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
 !ENDIF 
 
 # End Source File
 ################################################################################
 # Begin Source File
 
-SOURCE=.\sv_main.c
+SOURCE=.\SV_MAIN.C
 DEP_CPP_SV_MA=\
 	"..\common\dll_state.h"\
 	"..\common\platform.h"\
@@ -5449,34 +10935,40 @@ DEP_CPP_SV_MA=\
 	".\cmodel.h"\
 	".\color.h"\
 	".\common.h"\
-	".\Console.h"\
+	".\CONSOLE.H"\
 	".\const.h"\
 	".\crc.h"\
 	".\cshift.h"\
 	".\custom.h"\
+	".\customentity.h"\
 	".\cvar.h"\
 	".\cvardef.h"\
+	".\d_iface.h"\
 	".\decal.h"\
 	".\draw.h"\
 	".\eiface.h"\
-	".\Gl_model.h"\
-	".\Glquake.h"\
+	".\GL_MODEL.H"\
+	".\GLQUAKE.H"\
 	".\host_cmd.h"\
 	".\input.h"\
 	".\keys.h"\
 	".\mathlib.h"\
+	".\model.h"\
 	".\modelgen.h"\
 	".\net.h"\
 	".\pmove.h"\
 	".\pr_cmds.h"\
 	".\pr_dlls.h"\
+	".\pr_edict.h"\
 	".\progdefs.h"\
 	".\Progs.h"\
 	".\protocol.h"\
 	".\qgl.h"\
 	".\quakedef.h"\
+	".\r_local.h"\
 	".\r_shared.h"\
 	".\render.h"\
+	".\save.h"\
 	".\sbar.h"\
 	".\screen.h"\
 	".\server.h"\
@@ -5491,7 +10983,7 @@ DEP_CPP_SV_MA=\
 	".\world.h"\
 	".\wrect.h"\
 	".\zone.h"\
-	{$(INCLUDE)}"\GL\gl.h"\
+	{$(INCLUDE)}"\gl\GL.H"\
 	
 NODEP_CPP_SV_MA=\
 	".\cmdlib.h"\
@@ -5500,8 +10992,129 @@ NODEP_CPP_SV_MA=\
 	".\trilib.h"\
 	
 
-"$(INTDIR)\sv_main.obj" : $(SOURCE) $(DEP_CPP_SV_MA) "$(INTDIR)"
+!IF  "$(CFG)" == "Quiver - Win32 Release"
 
+
+"$(INTDIR)\SV_MAIN.OBJ" : $(SOURCE) $(DEP_CPP_SV_MA) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+
+"$(INTDIR)\SV_MAIN.OBJ" : $(SOURCE) $(DEP_CPP_SV_MA) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+# PROP Exclude_From_Build 0
+
+"$(INTDIR)\SV_MAIN.OBJ" : $(SOURCE) $(DEP_CPP_SV_MA) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+
+"$(INTDIR)\SV_MAIN.OBJ" : $(SOURCE) $(DEP_CPP_SV_MA) "$(INTDIR)"
+
+
+!ENDIF 
+
+# End Source File
+################################################################################
+# Begin Source File
+
+SOURCE=.\sv_move.c
+DEP_CPP_SV_MO=\
+	"..\common\dll_state.h"\
+	"..\common\platform.h"\
+	"..\common\qfont.h"\
+	".\beamdef.h"\
+	".\bothdefs.h"\
+	".\bspfile.h"\
+	".\cdll_int.h"\
+	".\client.h"\
+	".\cmd.h"\
+	".\color.h"\
+	".\common.h"\
+	".\CONSOLE.H"\
+	".\const.h"\
+	".\crc.h"\
+	".\cshift.h"\
+	".\custom.h"\
+	".\cvar.h"\
+	".\cvardef.h"\
+	".\d_iface.h"\
+	".\draw.h"\
+	".\eiface.h"\
+	".\GL_MODEL.H"\
+	".\GLQUAKE.H"\
+	".\host_cmd.h"\
+	".\input.h"\
+	".\keys.h"\
+	".\mathlib.h"\
+	".\model.h"\
+	".\modelgen.h"\
+	".\net.h"\
+	".\pr_cmds.h"\
+	".\pr_dlls.h"\
+	".\progdefs.h"\
+	".\Progs.h"\
+	".\protocol.h"\
+	".\qgl.h"\
+	".\quakedef.h"\
+	".\r_local.h"\
+	".\r_shared.h"\
+	".\render.h"\
+	".\save.h"\
+	".\sbar.h"\
+	".\screen.h"\
+	".\server.h"\
+	".\sound.h"\
+	".\spritegn.h"\
+	".\studio.h"\
+	".\sys.h"\
+	".\vid.h"\
+	".\view.h"\
+	".\vmodes.h"\
+	".\wad.h"\
+	".\world.h"\
+	".\wrect.h"\
+	".\zone.h"\
+	{$(INCLUDE)}"\gl\GL.H"\
+	
+NODEP_CPP_SV_MO=\
+	".\cmdlib.h"\
+	".\lbmlib.h"\
+	".\scriplib.h"\
+	".\trilib.h"\
+	
+
+!IF  "$(CFG)" == "Quiver - Win32 Release"
+
+
+"$(INTDIR)\sv_move.obj" : $(SOURCE) $(DEP_CPP_SV_MO) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+
+"$(INTDIR)\sv_move.obj" : $(SOURCE) $(DEP_CPP_SV_MO) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+# PROP Exclude_From_Build 0
+
+"$(INTDIR)\sv_move.obj" : $(SOURCE) $(DEP_CPP_SV_MO) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+
+"$(INTDIR)\sv_move.obj" : $(SOURCE) $(DEP_CPP_SV_MO) "$(INTDIR)"
+
+
+!ENDIF 
 
 # End Source File
 ################################################################################
@@ -5520,21 +11133,23 @@ DEP_CPP_SV_PH=\
 	".\cmd.h"\
 	".\color.h"\
 	".\common.h"\
-	".\Console.h"\
+	".\CONSOLE.H"\
 	".\const.h"\
 	".\crc.h"\
 	".\cshift.h"\
 	".\custom.h"\
 	".\cvar.h"\
 	".\cvardef.h"\
+	".\d_iface.h"\
 	".\draw.h"\
 	".\eiface.h"\
-	".\Gl_model.h"\
-	".\Glquake.h"\
+	".\GL_MODEL.H"\
+	".\GLQUAKE.H"\
 	".\host_cmd.h"\
 	".\input.h"\
 	".\keys.h"\
 	".\mathlib.h"\
+	".\model.h"\
 	".\modelgen.h"\
 	".\net.h"\
 	".\pmove.h"\
@@ -5545,8 +11160,10 @@ DEP_CPP_SV_PH=\
 	".\protocol.h"\
 	".\qgl.h"\
 	".\quakedef.h"\
+	".\r_local.h"\
 	".\r_shared.h"\
 	".\render.h"\
+	".\save.h"\
 	".\sbar.h"\
 	".\screen.h"\
 	".\server.h"\
@@ -5562,7 +11179,7 @@ DEP_CPP_SV_PH=\
 	".\world.h"\
 	".\wrect.h"\
 	".\zone.h"\
-	{$(INCLUDE)}"\GL\gl.h"\
+	{$(INCLUDE)}"\gl\GL.H"\
 	
 NODEP_CPP_SV_PH=\
 	".\cmdlib.h"\
@@ -5571,77 +11188,50 @@ NODEP_CPP_SV_PH=\
 	".\trilib.h"\
 	
 
+!IF  "$(CFG)" == "Quiver - Win32 Release"
+
+
 "$(INTDIR)\sv_phys.obj" : $(SOURCE) $(DEP_CPP_SV_PH) "$(INTDIR)"
 
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+
+"$(INTDIR)\sv_phys.obj" : $(SOURCE) $(DEP_CPP_SV_PH) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+# PROP Exclude_From_Build 0
+
+"$(INTDIR)\sv_phys.obj" : $(SOURCE) $(DEP_CPP_SV_PH) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+
+"$(INTDIR)\sv_phys.obj" : $(SOURCE) $(DEP_CPP_SV_PH) "$(INTDIR)"
+
+
+!ENDIF 
 
 # End Source File
 ################################################################################
 # Begin Source File
 
-SOURCE=.\sv_send.c
-DEP_CPP_SV_SE=\
-	"..\common\dll_state.h"\
-	"..\common\platform.h"\
-	"..\common\qfont.h"\
-	".\beamdef.h"\
-	".\bothdefs.h"\
-	".\bspfile.h"\
-	".\cdll_int.h"\
-	".\client.h"\
-	".\cmd.h"\
-	".\cmodel.h"\
-	".\color.h"\
-	".\common.h"\
-	".\Console.h"\
-	".\const.h"\
-	".\crc.h"\
-	".\cshift.h"\
-	".\custom.h"\
-	".\cvar.h"\
-	".\cvardef.h"\
-	".\draw.h"\
-	".\eiface.h"\
-	".\Gl_model.h"\
-	".\Glquake.h"\
-	".\host_cmd.h"\
-	".\input.h"\
-	".\keys.h"\
-	".\mathlib.h"\
-	".\modelgen.h"\
-	".\net.h"\
-	".\pr_dlls.h"\
-	".\progdefs.h"\
-	".\Progs.h"\
-	".\protocol.h"\
-	".\qgl.h"\
-	".\quakedef.h"\
-	".\r_shared.h"\
-	".\render.h"\
-	".\sbar.h"\
-	".\screen.h"\
-	".\server.h"\
-	".\sound.h"\
-	".\spritegn.h"\
-	".\studio.h"\
-	".\sys.h"\
-	".\vid.h"\
-	".\view.h"\
-	".\vmodes.h"\
-	".\wad.h"\
-	".\world.h"\
-	".\wrect.h"\
-	".\zone.h"\
-	{$(INCLUDE)}"\GL\gl.h"\
-	
-NODEP_CPP_SV_SE=\
-	".\cmdlib.h"\
-	".\lbmlib.h"\
-	".\scriplib.h"\
-	".\trilib.h"\
-	
+SOURCE=.\sv_proto.h
 
-"$(INTDIR)\sv_send.obj" : $(SOURCE) $(DEP_CPP_SV_SE) "$(INTDIR)"
+!IF  "$(CFG)" == "Quiver - Win32 Release"
 
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+# PROP Exclude_From_Build 0
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+!ENDIF 
 
 # End Source File
 ################################################################################
@@ -5660,23 +11250,25 @@ DEP_CPP_SV_UP=\
 	".\cmd.h"\
 	".\color.h"\
 	".\common.h"\
-	".\Console.h"\
+	".\CONSOLE.H"\
 	".\const.h"\
 	".\crc.h"\
 	".\cshift.h"\
 	".\custom.h"\
 	".\cvar.h"\
 	".\cvardef.h"\
+	".\d_iface.h"\
 	".\decal.h"\
 	".\draw.h"\
 	".\eiface.h"\
-	".\Gl_model.h"\
-	".\Glquake.h"\
+	".\GL_MODEL.H"\
+	".\GLQUAKE.H"\
 	".\hashpak.h"\
 	".\host_cmd.h"\
 	".\input.h"\
 	".\keys.h"\
 	".\mathlib.h"\
+	".\model.h"\
 	".\modelgen.h"\
 	".\net.h"\
 	".\pr_dlls.h"\
@@ -5685,8 +11277,10 @@ DEP_CPP_SV_UP=\
 	".\protocol.h"\
 	".\qgl.h"\
 	".\quakedef.h"\
+	".\r_local.h"\
 	".\r_shared.h"\
 	".\render.h"\
+	".\save.h"\
 	".\sbar.h"\
 	".\screen.h"\
 	".\server.h"\
@@ -5701,7 +11295,7 @@ DEP_CPP_SV_UP=\
 	".\world.h"\
 	".\wrect.h"\
 	".\zone.h"\
-	{$(INCLUDE)}"\GL\gl.h"\
+	{$(INCLUDE)}"\gl\GL.H"\
 	
 NODEP_CPP_SV_UP=\
 	".\cmdlib.h"\
@@ -5710,8 +11304,32 @@ NODEP_CPP_SV_UP=\
 	".\trilib.h"\
 	
 
+!IF  "$(CFG)" == "Quiver - Win32 Release"
+
+
 "$(INTDIR)\sv_upld.obj" : $(SOURCE) $(DEP_CPP_SV_UP) "$(INTDIR)"
 
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+
+"$(INTDIR)\sv_upld.obj" : $(SOURCE) $(DEP_CPP_SV_UP) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+# PROP Exclude_From_Build 0
+
+"$(INTDIR)\sv_upld.obj" : $(SOURCE) $(DEP_CPP_SV_UP) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+
+"$(INTDIR)\sv_upld.obj" : $(SOURCE) $(DEP_CPP_SV_UP) "$(INTDIR)"
+
+
+!ENDIF 
 
 # End Source File
 ################################################################################
@@ -5730,21 +11348,23 @@ DEP_CPP_SV_US=\
 	".\cmd.h"\
 	".\color.h"\
 	".\common.h"\
-	".\Console.h"\
+	".\CONSOLE.H"\
 	".\const.h"\
 	".\crc.h"\
 	".\cshift.h"\
 	".\custom.h"\
 	".\cvar.h"\
 	".\cvardef.h"\
+	".\d_iface.h"\
 	".\draw.h"\
 	".\eiface.h"\
-	".\Gl_model.h"\
-	".\Glquake.h"\
+	".\GL_MODEL.H"\
+	".\GLQUAKE.H"\
 	".\host_cmd.h"\
 	".\input.h"\
 	".\keys.h"\
 	".\mathlib.h"\
+	".\model.h"\
 	".\modelgen.h"\
 	".\net.h"\
 	".\pmove.h"\
@@ -5754,9 +11374,11 @@ DEP_CPP_SV_US=\
 	".\protocol.h"\
 	".\qgl.h"\
 	".\quakedef.h"\
+	".\r_local.h"\
 	".\r_shared.h"\
 	".\r_studio.h"\
 	".\render.h"\
+	".\save.h"\
 	".\sbar.h"\
 	".\screen.h"\
 	".\server.h"\
@@ -5771,7 +11393,7 @@ DEP_CPP_SV_US=\
 	".\world.h"\
 	".\wrect.h"\
 	".\zone.h"\
-	{$(INCLUDE)}"\GL\gl.h"\
+	{$(INCLUDE)}"\gl\GL.H"\
 	
 NODEP_CPP_SV_US=\
 	".\cmdlib.h"\
@@ -5780,8 +11402,32 @@ NODEP_CPP_SV_US=\
 	".\trilib.h"\
 	
 
+!IF  "$(CFG)" == "Quiver - Win32 Release"
+
+
 "$(INTDIR)\sv_user.obj" : $(SOURCE) $(DEP_CPP_SV_US) "$(INTDIR)"
 
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+
+"$(INTDIR)\sv_user.obj" : $(SOURCE) $(DEP_CPP_SV_US) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+# PROP Exclude_From_Build 0
+
+"$(INTDIR)\sv_user.obj" : $(SOURCE) $(DEP_CPP_SV_US) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+
+"$(INTDIR)\sv_user.obj" : $(SOURCE) $(DEP_CPP_SV_US) "$(INTDIR)"
+
+
+!ENDIF 
 
 # End Source File
 ################################################################################
@@ -5792,6 +11438,12 @@ SOURCE=.\sys.h
 !IF  "$(CFG)" == "Quiver - Win32 Release"
 
 !ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+# PROP Exclude_From_Build 0
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
 
 !ENDIF 
 
@@ -5814,21 +11466,23 @@ DEP_CPP_SYS_W=\
 	".\cmd.h"\
 	".\color.h"\
 	".\common.h"\
-	".\Console.h"\
+	".\CONSOLE.H"\
 	".\const.h"\
 	".\crc.h"\
 	".\cshift.h"\
 	".\custom.h"\
 	".\cvar.h"\
 	".\cvardef.h"\
+	".\d_iface.h"\
 	".\draw.h"\
 	".\eiface.h"\
-	".\Gl_model.h"\
-	".\Glquake.h"\
+	".\GL_MODEL.H"\
+	".\GLQUAKE.H"\
 	".\host_cmd.h"\
 	".\input.h"\
 	".\keys.h"\
 	".\mathlib.h"\
+	".\model.h"\
 	".\modelgen.h"\
 	".\net.h"\
 	".\pr_cmds.h"\
@@ -5840,9 +11494,11 @@ DEP_CPP_SYS_W=\
 	".\protocol.h"\
 	".\qgl.h"\
 	".\quakedef.h"\
+	".\r_local.h"\
 	".\r_shared.h"\
 	".\r_studio.h"\
 	".\render.h"\
+	".\save.h"\
 	".\sbar.h"\
 	".\screen.h"\
 	".\server.h"\
@@ -5858,7 +11514,7 @@ DEP_CPP_SYS_W=\
 	".\world.h"\
 	".\wrect.h"\
 	".\zone.h"\
-	{$(INCLUDE)}"\GL\gl.h"\
+	{$(INCLUDE)}"\gl\GL.H"\
 	
 NODEP_CPP_SYS_W=\
 	".\cmdlib.h"\
@@ -5867,8 +11523,32 @@ NODEP_CPP_SYS_W=\
 	".\trilib.h"\
 	
 
+!IF  "$(CFG)" == "Quiver - Win32 Release"
+
+
 "$(INTDIR)\sys_win.obj" : $(SOURCE) $(DEP_CPP_SYS_W) "$(INTDIR)"
 
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+
+"$(INTDIR)\sys_win.obj" : $(SOURCE) $(DEP_CPP_SYS_W) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+# PROP Exclude_From_Build 0
+
+"$(INTDIR)\sys_win.obj" : $(SOURCE) $(DEP_CPP_SYS_W) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+
+"$(INTDIR)\sys_win.obj" : $(SOURCE) $(DEP_CPP_SYS_W) "$(INTDIR)"
+
+
+!ENDIF 
 
 # End Source File
 ################################################################################
@@ -5887,21 +11567,23 @@ DEP_CPP_TEXTU=\
 	".\cmd.h"\
 	".\color.h"\
 	".\common.h"\
-	".\Console.h"\
+	".\CONSOLE.H"\
 	".\const.h"\
 	".\crc.h"\
 	".\cshift.h"\
 	".\custom.h"\
 	".\cvar.h"\
 	".\cvardef.h"\
+	".\d_iface.h"\
 	".\draw.h"\
 	".\eiface.h"\
-	".\Gl_model.h"\
-	".\Glquake.h"\
+	".\GL_MODEL.H"\
+	".\GLQUAKE.H"\
 	".\host_cmd.h"\
 	".\input.h"\
 	".\keys.h"\
 	".\mathlib.h"\
+	".\model.h"\
 	".\modelgen.h"\
 	".\net.h"\
 	".\pr_dlls.h"\
@@ -5910,8 +11592,10 @@ DEP_CPP_TEXTU=\
 	".\protocol.h"\
 	".\qgl.h"\
 	".\quakedef.h"\
+	".\r_local.h"\
 	".\r_shared.h"\
 	".\render.h"\
+	".\save.h"\
 	".\sbar.h"\
 	".\screen.h"\
 	".\server.h"\
@@ -5927,7 +11611,7 @@ DEP_CPP_TEXTU=\
 	".\world.h"\
 	".\wrect.h"\
 	".\zone.h"\
-	{$(INCLUDE)}"\GL\gl.h"\
+	{$(INCLUDE)}"\gl\GL.H"\
 	
 NODEP_CPP_TEXTU=\
 	".\cmdlib.h"\
@@ -5936,8 +11620,32 @@ NODEP_CPP_TEXTU=\
 	".\trilib.h"\
 	
 
+!IF  "$(CFG)" == "Quiver - Win32 Release"
+
+
 "$(INTDIR)\textures.obj" : $(SOURCE) $(DEP_CPP_TEXTU) "$(INTDIR)"
 
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+
+"$(INTDIR)\textures.obj" : $(SOURCE) $(DEP_CPP_TEXTU) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+# PROP Exclude_From_Build 0
+
+"$(INTDIR)\textures.obj" : $(SOURCE) $(DEP_CPP_TEXTU) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+
+"$(INTDIR)\textures.obj" : $(SOURCE) $(DEP_CPP_TEXTU) "$(INTDIR)"
+
+
+!ENDIF 
 
 # End Source File
 ################################################################################
@@ -5948,6 +11656,12 @@ SOURCE=.\textures.h
 !IF  "$(CFG)" == "Quiver - Win32 Release"
 
 !ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+# PROP Exclude_From_Build 0
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
 
 !ENDIF 
 
@@ -5969,21 +11683,23 @@ DEP_CPP_TMESS=\
 	".\cmd.h"\
 	".\color.h"\
 	".\common.h"\
-	".\Console.h"\
+	".\CONSOLE.H"\
 	".\const.h"\
 	".\crc.h"\
 	".\cshift.h"\
 	".\custom.h"\
 	".\cvar.h"\
 	".\cvardef.h"\
+	".\d_iface.h"\
 	".\draw.h"\
 	".\eiface.h"\
-	".\Gl_model.h"\
-	".\Glquake.h"\
+	".\GL_MODEL.H"\
+	".\GLQUAKE.H"\
 	".\host_cmd.h"\
 	".\input.h"\
 	".\keys.h"\
 	".\mathlib.h"\
+	".\model.h"\
 	".\modelgen.h"\
 	".\net.h"\
 	".\pr_dlls.h"\
@@ -5992,8 +11708,10 @@ DEP_CPP_TMESS=\
 	".\protocol.h"\
 	".\qgl.h"\
 	".\quakedef.h"\
+	".\r_local.h"\
 	".\r_shared.h"\
 	".\render.h"\
+	".\save.h"\
 	".\sbar.h"\
 	".\screen.h"\
 	".\server.h"\
@@ -6009,7 +11727,7 @@ DEP_CPP_TMESS=\
 	".\world.h"\
 	".\wrect.h"\
 	".\zone.h"\
-	{$(INCLUDE)}"\GL\gl.h"\
+	{$(INCLUDE)}"\gl\GL.H"\
 	
 NODEP_CPP_TMESS=\
 	".\cmdlib.h"\
@@ -6018,8 +11736,32 @@ NODEP_CPP_TMESS=\
 	".\trilib.h"\
 	
 
+!IF  "$(CFG)" == "Quiver - Win32 Release"
+
+
 "$(INTDIR)\tmessage.obj" : $(SOURCE) $(DEP_CPP_TMESS) "$(INTDIR)"
 
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+
+"$(INTDIR)\tmessage.obj" : $(SOURCE) $(DEP_CPP_TMESS) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+# PROP Exclude_From_Build 0
+
+"$(INTDIR)\tmessage.obj" : $(SOURCE) $(DEP_CPP_TMESS) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+
+"$(INTDIR)\tmessage.obj" : $(SOURCE) $(DEP_CPP_TMESS) "$(INTDIR)"
+
+
+!ENDIF 
 
 # End Source File
 ################################################################################
@@ -6030,6 +11772,12 @@ SOURCE=.\tmessage.h
 !IF  "$(CFG)" == "Quiver - Win32 Release"
 
 !ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+# PROP Exclude_From_Build 0
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
 
 !ENDIF 
 
@@ -6043,13 +11791,19 @@ SOURCE=.\vid.h
 
 !ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
 
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+# PROP Exclude_From_Build 0
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
 !ENDIF 
 
 # End Source File
 ################################################################################
 # Begin Source File
 
-SOURCE=.\vid_win.c
+SOURCE=.\VID_WIN.C
 DEP_CPP_VID_W=\
 	"..\common\dll_state.h"\
 	"..\common\platform.h"\
@@ -6062,21 +11816,24 @@ DEP_CPP_VID_W=\
 	".\cmd.h"\
 	".\color.h"\
 	".\common.h"\
-	".\Console.h"\
+	".\CONSOLE.H"\
 	".\const.h"\
 	".\crc.h"\
 	".\cshift.h"\
 	".\custom.h"\
 	".\cvar.h"\
 	".\cvardef.h"\
+	".\d_iface.h"\
+	".\d_local.h"\
 	".\draw.h"\
 	".\eiface.h"\
-	".\Gl_model.h"\
-	".\Glquake.h"\
+	".\GL_MODEL.H"\
+	".\GLQUAKE.H"\
 	".\host_cmd.h"\
 	".\input.h"\
 	".\keys.h"\
 	".\mathlib.h"\
+	".\model.h"\
 	".\modelgen.h"\
 	".\net.h"\
 	".\pr_dlls.h"\
@@ -6085,8 +11842,10 @@ DEP_CPP_VID_W=\
 	".\protocol.h"\
 	".\qgl.h"\
 	".\quakedef.h"\
+	".\r_local.h"\
 	".\r_shared.h"\
 	".\render.h"\
+	".\save.h"\
 	".\sbar.h"\
 	".\screen.h"\
 	".\server.h"\
@@ -6098,11 +11857,10 @@ DEP_CPP_VID_W=\
 	".\view.h"\
 	".\vmodes.h"\
 	".\wad.h"\
-	".\winquake.h"\
 	".\world.h"\
 	".\wrect.h"\
 	".\zone.h"\
-	{$(INCLUDE)}"\GL\gl.h"\
+	{$(INCLUDE)}"\gl\GL.H"\
 	
 NODEP_CPP_VID_W=\
 	".\cmdlib.h"\
@@ -6111,14 +11869,39 @@ NODEP_CPP_VID_W=\
 	".\trilib.h"\
 	
 
-"$(INTDIR)\vid_win.obj" : $(SOURCE) $(DEP_CPP_VID_W) "$(INTDIR)"
+!IF  "$(CFG)" == "Quiver - Win32 Release"
 
+
+"$(INTDIR)\VID_WIN.OBJ" : $(SOURCE) $(DEP_CPP_VID_W) "$(INTDIR)"
+   $(CPP) /nologo /MT /W3 /GR /GX /O2 /I "..\common" /I "..\dx6sdk\include" /D\
+ "NDEBUG" /D "__USEA3D" /D "__A3D_GEOM" /D "WIN32" /D "_WINDOWS" /Fo"$(INTDIR)/"\
+ /c $(SOURCE)
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+
+"$(INTDIR)\VID_WIN.OBJ" : $(SOURCE) $(DEP_CPP_VID_W) "$(INTDIR)"
+   $(CPP) /nologo /MTd /W3 /Gm /GX /Zi /Od /I "..\common" /I\
+ "..\dx6sdk\include" /D "_DEBUG" /D "__USEA3D" /D "__A3D_GEOM" /D "WIN32" /D\
+ "_WINDOWS" /Fo"$(INTDIR)/" /Fd"$(INTDIR)/" /c $(SOURCE)
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+# PROP Exclude_From_Build 1
+
+!ENDIF 
 
 # End Source File
 ################################################################################
 # Begin Source File
 
-SOURCE=.\View.c
+SOURCE=.\VIEW.C
 DEP_CPP_VIEW_=\
 	"..\common\dll_state.h"\
 	"..\common\platform.h"\
@@ -6131,21 +11914,23 @@ DEP_CPP_VIEW_=\
 	".\cmd.h"\
 	".\color.h"\
 	".\common.h"\
-	".\Console.h"\
+	".\CONSOLE.H"\
 	".\const.h"\
 	".\crc.h"\
 	".\cshift.h"\
 	".\custom.h"\
 	".\cvar.h"\
 	".\cvardef.h"\
+	".\d_iface.h"\
 	".\draw.h"\
 	".\eiface.h"\
-	".\Gl_model.h"\
-	".\Glquake.h"\
+	".\GL_MODEL.H"\
+	".\GLQUAKE.H"\
 	".\host_cmd.h"\
 	".\input.h"\
 	".\keys.h"\
 	".\mathlib.h"\
+	".\model.h"\
 	".\modelgen.h"\
 	".\net.h"\
 	".\pmove.h"\
@@ -6159,6 +11944,7 @@ DEP_CPP_VIEW_=\
 	".\r_local.h"\
 	".\r_shared.h"\
 	".\render.h"\
+	".\save.h"\
 	".\sbar.h"\
 	".\screen.h"\
 	".\server.h"\
@@ -6174,7 +11960,7 @@ DEP_CPP_VIEW_=\
 	".\world.h"\
 	".\wrect.h"\
 	".\zone.h"\
-	{$(INCLUDE)}"\GL\gl.h"\
+	{$(INCLUDE)}"\gl\GL.H"\
 	
 NODEP_CPP_VIEW_=\
 	".\cmdlib.h"\
@@ -6183,8 +11969,31 @@ NODEP_CPP_VIEW_=\
 	".\trilib.h"\
 	
 
-"$(INTDIR)\View.obj" : $(SOURCE) $(DEP_CPP_VIEW_) "$(INTDIR)"
+!IF  "$(CFG)" == "Quiver - Win32 Release"
 
+
+"$(INTDIR)\VIEW.OBJ" : $(SOURCE) $(DEP_CPP_VIEW_) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+
+"$(INTDIR)\VIEW.OBJ" : $(SOURCE) $(DEP_CPP_VIEW_) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+
+"$(INTDIR)\VIEW.OBJ" : $(SOURCE) $(DEP_CPP_VIEW_) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+
+"$(INTDIR)\VIEW.OBJ" : $(SOURCE) $(DEP_CPP_VIEW_) "$(INTDIR)"
+
+
+!ENDIF 
 
 # End Source File
 ################################################################################
@@ -6195,6 +12004,10 @@ SOURCE=.\view.h
 !IF  "$(CFG)" == "Quiver - Win32 Release"
 
 !ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
 
 !ENDIF 
 
@@ -6207,6 +12020,10 @@ SOURCE=.\vmodes.h
 !IF  "$(CFG)" == "Quiver - Win32 Release"
 
 !ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
 
 !ENDIF 
 
@@ -6227,21 +12044,23 @@ DEP_CPP_WAD_C=\
 	".\cmd.h"\
 	".\color.h"\
 	".\common.h"\
-	".\Console.h"\
+	".\CONSOLE.H"\
 	".\const.h"\
 	".\crc.h"\
 	".\cshift.h"\
 	".\custom.h"\
 	".\cvar.h"\
 	".\cvardef.h"\
+	".\d_iface.h"\
 	".\draw.h"\
 	".\eiface.h"\
-	".\Gl_model.h"\
-	".\Glquake.h"\
+	".\GL_MODEL.H"\
+	".\GLQUAKE.H"\
 	".\host_cmd.h"\
 	".\input.h"\
 	".\keys.h"\
 	".\mathlib.h"\
+	".\model.h"\
 	".\modelgen.h"\
 	".\net.h"\
 	".\pr_dlls.h"\
@@ -6250,8 +12069,10 @@ DEP_CPP_WAD_C=\
 	".\protocol.h"\
 	".\qgl.h"\
 	".\quakedef.h"\
+	".\r_local.h"\
 	".\r_shared.h"\
 	".\render.h"\
+	".\save.h"\
 	".\sbar.h"\
 	".\screen.h"\
 	".\server.h"\
@@ -6266,7 +12087,7 @@ DEP_CPP_WAD_C=\
 	".\world.h"\
 	".\wrect.h"\
 	".\zone.h"\
-	{$(INCLUDE)}"\GL\gl.h"\
+	{$(INCLUDE)}"\gl\GL.H"\
 	
 NODEP_CPP_WAD_C=\
 	".\cmdlib.h"\
@@ -6275,8 +12096,31 @@ NODEP_CPP_WAD_C=\
 	".\trilib.h"\
 	
 
+!IF  "$(CFG)" == "Quiver - Win32 Release"
+
+
 "$(INTDIR)\wad.obj" : $(SOURCE) $(DEP_CPP_WAD_C) "$(INTDIR)"
 
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+
+"$(INTDIR)\wad.obj" : $(SOURCE) $(DEP_CPP_WAD_C) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+
+"$(INTDIR)\wad.obj" : $(SOURCE) $(DEP_CPP_WAD_C) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+
+"$(INTDIR)\wad.obj" : $(SOURCE) $(DEP_CPP_WAD_C) "$(INTDIR)"
+
+
+!ENDIF 
 
 # End Source File
 ################################################################################
@@ -6287,6 +12131,26 @@ SOURCE=.\wad.h
 !IF  "$(CFG)" == "Quiver - Win32 Release"
 
 !ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+!ENDIF 
+
+# End Source File
+################################################################################
+# Begin Source File
+
+SOURCE=.\water.h
+
+!IF  "$(CFG)" == "Quiver - Win32 Release"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
 
 !ENDIF 
 
@@ -6299,6 +12163,10 @@ SOURCE=.\winquake.h
 !IF  "$(CFG)" == "Quiver - Win32 Release"
 
 !ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
 
 !ENDIF 
 
@@ -6319,21 +12187,23 @@ DEP_CPP_WORLD=\
 	".\cmd.h"\
 	".\color.h"\
 	".\common.h"\
-	".\Console.h"\
+	".\CONSOLE.H"\
 	".\const.h"\
 	".\crc.h"\
 	".\cshift.h"\
 	".\custom.h"\
 	".\cvar.h"\
 	".\cvardef.h"\
+	".\d_iface.h"\
 	".\draw.h"\
 	".\eiface.h"\
-	".\Gl_model.h"\
-	".\Glquake.h"\
+	".\GL_MODEL.H"\
+	".\GLQUAKE.H"\
 	".\host_cmd.h"\
 	".\input.h"\
 	".\keys.h"\
 	".\mathlib.h"\
+	".\model.h"\
 	".\modelgen.h"\
 	".\net.h"\
 	".\pr_dlls.h"\
@@ -6342,9 +12212,11 @@ DEP_CPP_WORLD=\
 	".\protocol.h"\
 	".\qgl.h"\
 	".\quakedef.h"\
+	".\r_local.h"\
 	".\r_shared.h"\
 	".\r_studio.h"\
 	".\render.h"\
+	".\save.h"\
 	".\sbar.h"\
 	".\screen.h"\
 	".\server.h"\
@@ -6360,7 +12232,7 @@ DEP_CPP_WORLD=\
 	".\world.h"\
 	".\wrect.h"\
 	".\zone.h"\
-	{$(INCLUDE)}"\GL\gl.h"\
+	{$(INCLUDE)}"\gl\GL.H"\
 	
 NODEP_CPP_WORLD=\
 	".\cmdlib.h"\
@@ -6369,8 +12241,31 @@ NODEP_CPP_WORLD=\
 	".\trilib.h"\
 	
 
+!IF  "$(CFG)" == "Quiver - Win32 Release"
+
+
 "$(INTDIR)\world.obj" : $(SOURCE) $(DEP_CPP_WORLD) "$(INTDIR)"
 
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+
+"$(INTDIR)\world.obj" : $(SOURCE) $(DEP_CPP_WORLD) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+
+"$(INTDIR)\world.obj" : $(SOURCE) $(DEP_CPP_WORLD) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+
+"$(INTDIR)\world.obj" : $(SOURCE) $(DEP_CPP_WORLD) "$(INTDIR)"
+
+
+!ENDIF 
 
 # End Source File
 ################################################################################
@@ -6381,6 +12276,10 @@ SOURCE=.\world.h
 !IF  "$(CFG)" == "Quiver - Win32 Release"
 
 !ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
 
 !ENDIF 
 
@@ -6393,6 +12292,10 @@ SOURCE=.\wrect.h
 !IF  "$(CFG)" == "Quiver - Win32 Release"
 
 !ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
 
 !ENDIF 
 
@@ -6413,21 +12316,23 @@ DEP_CPP_ZONE_=\
 	".\cmd.h"\
 	".\color.h"\
 	".\common.h"\
-	".\Console.h"\
+	".\CONSOLE.H"\
 	".\const.h"\
 	".\crc.h"\
 	".\cshift.h"\
 	".\custom.h"\
 	".\cvar.h"\
 	".\cvardef.h"\
+	".\d_iface.h"\
 	".\draw.h"\
 	".\eiface.h"\
-	".\Gl_model.h"\
-	".\Glquake.h"\
+	".\GL_MODEL.H"\
+	".\GLQUAKE.H"\
 	".\host_cmd.h"\
 	".\input.h"\
 	".\keys.h"\
 	".\mathlib.h"\
+	".\model.h"\
 	".\modelgen.h"\
 	".\net.h"\
 	".\pr_dlls.h"\
@@ -6436,8 +12341,10 @@ DEP_CPP_ZONE_=\
 	".\protocol.h"\
 	".\qgl.h"\
 	".\quakedef.h"\
+	".\r_local.h"\
 	".\r_shared.h"\
 	".\render.h"\
+	".\save.h"\
 	".\sbar.h"\
 	".\screen.h"\
 	".\server.h"\
@@ -6453,7 +12360,7 @@ DEP_CPP_ZONE_=\
 	".\world.h"\
 	".\wrect.h"\
 	".\zone.h"\
-	{$(INCLUDE)}"\GL\gl.h"\
+	{$(INCLUDE)}"\gl\GL.H"\
 	
 NODEP_CPP_ZONE_=\
 	".\cmdlib.h"\
@@ -6462,18 +12369,29 @@ NODEP_CPP_ZONE_=\
 	".\trilib.h"\
 	
 
+!IF  "$(CFG)" == "Quiver - Win32 Release"
+
+
 "$(INTDIR)\zone.obj" : $(SOURCE) $(DEP_CPP_ZONE_) "$(INTDIR)"
 
 
-# End Source File
-################################################################################
-# Begin Source File
-
-SOURCE=.\a3d.h
-
-!IF  "$(CFG)" == "Quiver - Win32 Release"
-
 !ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+
+"$(INTDIR)\zone.obj" : $(SOURCE) $(DEP_CPP_ZONE_) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+
+"$(INTDIR)\zone.obj" : $(SOURCE) $(DEP_CPP_ZONE_) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+
+"$(INTDIR)\zone.obj" : $(SOURCE) $(DEP_CPP_ZONE_) "$(INTDIR)"
+
 
 !ENDIF 
 
@@ -6481,29 +12399,15 @@ SOURCE=.\a3d.h
 ################################################################################
 # Begin Source File
 
-SOURCE=.\snd_mixa.asm
+SOURCE=.\zone.h
 
 !IF  "$(CFG)" == "Quiver - Win32 Release"
 
-# Begin Custom Build - snd_mixa
-IntDir=.\GLRelease
-InputPath=.\snd_mixa.asm
-
-"$(INTDIR)\snd_mixa.obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-   ml /c /Cp /coff /Fo"$(INTDIR)\snd_mixa.obj" /Zm /Zi .\snd_mixa.asm
-
-# End Custom Build
-
 !ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
 
-# Begin Custom Build - snd_mixa
-IntDir=.\GLDebug
-InputPath=.\snd_mixa.asm
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
 
-"$(INTDIR)\snd_mixa.obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-   ml /c /Cp /coff /Fo"$(INTDIR)\snd_mixa.obj" /Zm /Zi .\snd_mixa.asm
-
-# End Custom Build
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
 
 !ENDIF 
 
@@ -6511,29 +12415,227 @@ InputPath=.\snd_mixa.asm
 ################################################################################
 # Begin Source File
 
-SOURCE=.\sys_wina.asm
+SOURCE=.\d_draw.asm
 
 !IF  "$(CFG)" == "Quiver - Win32 Release"
 
-# Begin Custom Build - sys_wina
-IntDir=.\GLRelease
-InputPath=.\sys_wina.asm
+# Begin Custom Build - d_draw
+IntDir=.\SoftRelease
+InputPath=.\d_draw.asm
 
-"$(INTDIR)\sys_wina.obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-   ml /c /Cp /coff /Fo"$(INTDIR)\sys_wina.obj" /Zm /Zi .\sys_wina.asm
+"$(INTDIR)\d_draw.obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+   ml /c /Cp /coff /Fo"$(INTDIR)\d_draw.obj" /Zm /Zi .\d_draw.asm
 
 # End Custom Build
 
 !ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
 
-# Begin Custom Build - sys_wina
-IntDir=.\GLDebug
-InputPath=.\sys_wina.asm
+# Begin Custom Build - d_draw
+IntDir=.\SoftDebug
+InputPath=.\d_draw.asm
 
-"$(INTDIR)\sys_wina.obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-   ml /c /Cp /coff /Fo"$(INTDIR)\sys_wina.obj" /Zm /Zi .\sys_wina.asm
+"$(INTDIR)\d_draw.obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+   ml /c /Cp /coff /Fo"$(INTDIR)\d_draw.obj" /Zm /Zi .\d_draw.asm
 
 # End Custom Build
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+# PROP Exclude_From_Build 1
+
+!ENDIF 
+
+# End Source File
+################################################################################
+# Begin Source File
+
+SOURCE=.\d_draw16.asm
+
+!IF  "$(CFG)" == "Quiver - Win32 Release"
+
+# Begin Custom Build - d_draw16
+IntDir=.\SoftRelease
+InputPath=.\d_draw16.asm
+
+"$(INTDIR)\d_draw16.obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+   ml /c /Cp /coff /Fo"$(INTDIR)\d_draw16.obj" /Zm /Zi .\d_draw16.asm
+
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+# Begin Custom Build - d_draw16
+IntDir=.\SoftDebug
+InputPath=.\d_draw16.asm
+
+"$(INTDIR)\d_draw16.obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+   ml /c /Cp /coff /Fo"$(INTDIR)\d_draw16.obj" /Zm /Zi .\d_draw16.asm
+
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+# PROP Exclude_From_Build 1
+
+!ENDIF 
+
+# End Source File
+################################################################################
+# Begin Source File
+
+SOURCE=.\d_parta.asm
+
+!IF  "$(CFG)" == "Quiver - Win32 Release"
+
+# Begin Custom Build - d_parta
+IntDir=.\SoftRelease
+InputPath=.\d_parta.asm
+
+"$(INTDIR)\d_parta.obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+   ml /c /Cp /coff /Fo"$(INTDIR)\d_parta.obj" /Zm /Zi .\d_parta.asm
+
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+# Begin Custom Build - d_parta
+IntDir=.\SoftDebug
+InputPath=.\d_parta.asm
+
+"$(INTDIR)\d_parta.obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+   ml /c /Cp /coff /Fo"$(INTDIR)\d_parta.obj" /Zm /Zi .\d_parta.asm
+
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+# PROP Exclude_From_Build 1
+
+!ENDIF 
+
+# End Source File
+################################################################################
+# Begin Source File
+
+SOURCE=.\d_polysa.asm
+
+!IF  "$(CFG)" == "Quiver - Win32 Release"
+
+# Begin Custom Build - d_polysa
+IntDir=.\SoftRelease
+InputPath=.\d_polysa.asm
+
+"$(INTDIR)\d_polysa.obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+   ml /c /Cp /coff /Fo"$(INTDIR)\d_polysa.obj" /Zm /Zi .\d_polysa.asm
+
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+# Begin Custom Build - d_polysa
+IntDir=.\SoftDebug
+InputPath=.\d_polysa.asm
+
+"$(INTDIR)\d_polysa.obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+   ml /c /Cp /coff /Fo"$(INTDIR)\d_polysa.obj" /Zm /Zi .\d_polysa.asm
+
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+# PROP Exclude_From_Build 1
+
+!ENDIF 
+
+# End Source File
+################################################################################
+# Begin Source File
+
+SOURCE=.\d_spr8.asm
+
+!IF  "$(CFG)" == "Quiver - Win32 Release"
+
+# Begin Custom Build - d_spr8
+IntDir=.\SoftRelease
+InputPath=.\d_spr8.asm
+
+"$(INTDIR)\d_spr8.obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+   ml /c /Cp /coff /Fo"$(INTDIR)\d_spr8.obj" /Zm /Zi .\d_spr8.asm
+
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+# Begin Custom Build - d_spr8
+IntDir=.\SoftDebug
+InputPath=.\d_spr8.asm
+
+"$(INTDIR)\d_spr8.obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+   ml /c /Cp /coff /Fo"$(INTDIR)\d_spr8.obj" /Zm /Zi .\d_spr8.asm
+
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+# PROP Exclude_From_Build 1
+
+!ENDIF 
+
+# End Source File
+################################################################################
+# Begin Source File
+
+SOURCE=.\d_varsa.asm
+
+!IF  "$(CFG)" == "Quiver - Win32 Release"
+
+# Begin Custom Build - d_varsa
+IntDir=.\SoftRelease
+InputPath=.\d_varsa.asm
+
+"$(INTDIR)\d_varsa.obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+   ml /c /Cp /coff /Fo"$(INTDIR)\d_varsa.obj" /Zm /Zi .\d_varsa.asm
+
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+# Begin Custom Build - d_varsa
+IntDir=.\SoftDebug
+InputPath=.\d_varsa.asm
+
+"$(INTDIR)\d_varsa.obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+   ml /c /Cp /coff /Fo"$(INTDIR)\d_varsa.obj" /Zm /Zi .\d_varsa.asm
+
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+# PROP Exclude_From_Build 1
 
 !ENDIF 
 
@@ -6546,7 +12648,7 @@ SOURCE=.\math.asm
 !IF  "$(CFG)" == "Quiver - Win32 Release"
 
 # Begin Custom Build - math
-IntDir=.\GLRelease
+IntDir=.\SoftRelease
 InputPath=.\math.asm
 
 "$(INTDIR)\math.obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
@@ -6557,11 +12659,405 @@ InputPath=.\math.asm
 !ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
 
 # Begin Custom Build - math
+IntDir=.\SoftDebug
+InputPath=.\math.asm
+
+"$(INTDIR)\math.obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+   ml /c /Cp /coff /Fo"$(INTDIR)\math.obj" /Zm /Zi .\math.asm
+
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+# Begin Custom Build - math
 IntDir=.\GLDebug
 InputPath=.\math.asm
 
 "$(INTDIR)\math.obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
    ml /c /Cp /coff /Fo"$(INTDIR)\math.obj" /Zm /Zi .\math.asm
+
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+# Begin Custom Build - math
+IntDir=.\GLRelease
+InputPath=.\math.asm
+
+"$(INTDIR)\math.obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+   ml /c /Cp /coff /Fo"$(INTDIR)\math.obj" /Zm /Zi .\math.asm
+
+# End Custom Build
+
+!ENDIF 
+
+# End Source File
+################################################################################
+# Begin Source File
+
+SOURCE=.\r_aclipa.asm
+
+!IF  "$(CFG)" == "Quiver - Win32 Release"
+
+# Begin Custom Build - r_aclipa
+IntDir=.\SoftRelease
+InputPath=.\r_aclipa.asm
+
+"$(INTDIR)\r_aclipa.obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+   ml /c /Cp /coff /Fo"$(INTDIR)\r_aclipa.obj" /Zm /Zi .\r_aclipa.asm
+
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+# Begin Custom Build - r_aclipa
+IntDir=.\SoftDebug
+InputPath=.\r_aclipa.asm
+
+"$(INTDIR)\r_aclipa.obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+   ml /c /Cp /coff /Fo"$(INTDIR)\r_aclipa.obj" /Zm /Zi .\r_aclipa.asm
+
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+# PROP Exclude_From_Build 1
+
+!ENDIF 
+
+# End Source File
+################################################################################
+# Begin Source File
+
+SOURCE=.\r_aliasa.asm
+
+!IF  "$(CFG)" == "Quiver - Win32 Release"
+
+# Begin Custom Build - r_aliasa
+IntDir=.\SoftRelease
+InputPath=.\r_aliasa.asm
+
+"$(INTDIR)\r_aliasa.obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+   ml /c /Cp /coff /Fo"$(INTDIR)\r_aliasa.obj" /Zm /Zi .\r_aliasa.asm
+
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+# Begin Custom Build - r_aliasa
+IntDir=.\SoftDebug
+InputPath=.\r_aliasa.asm
+
+"$(INTDIR)\r_aliasa.obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+   ml /c /Cp /coff /Fo"$(INTDIR)\r_aliasa.obj" /Zm /Zi .\r_aliasa.asm
+
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+# PROP Exclude_From_Build 1
+
+!ENDIF 
+
+# End Source File
+################################################################################
+# Begin Source File
+
+SOURCE=.\r_drawa.asm
+
+!IF  "$(CFG)" == "Quiver - Win32 Release"
+
+# Begin Custom Build - r_drawa
+IntDir=.\SoftRelease
+InputPath=.\r_drawa.asm
+
+"$(INTDIR)\r_drawa.obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+   ml /c /Cp /coff /Fo"$(INTDIR)\r_drawa.obj" /Zm /Zi .\r_drawa.asm
+
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+# Begin Custom Build - r_drawa
+IntDir=.\SoftDebug
+InputPath=.\r_drawa.asm
+
+"$(INTDIR)\r_drawa.obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+   ml /c /Cp /coff /Fo"$(INTDIR)\r_drawa.obj" /Zm /Zi .\r_drawa.asm
+
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+# PROP Exclude_From_Build 1
+
+!ENDIF 
+
+# End Source File
+################################################################################
+# Begin Source File
+
+SOURCE=.\r_edgea.asm
+
+!IF  "$(CFG)" == "Quiver - Win32 Release"
+
+# Begin Custom Build - r_edgea
+IntDir=.\SoftRelease
+InputPath=.\r_edgea.asm
+
+"$(INTDIR)\r_edgea.obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+   ml /c /Cp /coff /Fo"$(INTDIR)\r_edgea.obj" /Zm /Zi .\r_edgea.asm
+
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+# Begin Custom Build - r_edgea
+IntDir=.\SoftDebug
+InputPath=.\r_edgea.asm
+
+"$(INTDIR)\r_edgea.obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+   ml /c /Cp /coff /Fo"$(INTDIR)\r_edgea.obj" /Zm /Zi .\r_edgea.asm
+
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+# PROP Exclude_From_Build 1
+
+!ENDIF 
+
+# End Source File
+################################################################################
+# Begin Source File
+
+SOURCE=.\r_varsa.asm
+
+!IF  "$(CFG)" == "Quiver - Win32 Release"
+
+# Begin Custom Build - r_varsa
+IntDir=.\SoftRelease
+InputPath=.\r_varsa.asm
+
+"$(INTDIR)\r_varsa.obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+   ml /c /Cp /coff /Fo"$(INTDIR)\r_varsa.obj" /Zm /Zi .\r_varsa.asm
+
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+# Begin Custom Build - r_varsa
+IntDir=.\SoftDebug
+InputPath=.\r_varsa.asm
+
+"$(INTDIR)\r_varsa.obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+   ml /c /Cp /coff /Fo"$(INTDIR)\r_varsa.obj" /Zm /Zi .\r_varsa.asm
+
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+# PROP Exclude_From_Build 1
+
+!ENDIF 
+
+# End Source File
+################################################################################
+# Begin Source File
+
+SOURCE=.\snd_mixa.asm
+
+!IF  "$(CFG)" == "Quiver - Win32 Release"
+
+# Begin Custom Build - snd_mixa
+IntDir=.\SoftRelease
+InputPath=.\snd_mixa.asm
+
+"$(INTDIR)\snd_mixa.obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+   ml /c /Cp /coff /Fo"$(INTDIR)\snd_mixa.obj" /Zm /Zi .\snd_mixa.asm
+
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+# Begin Custom Build - snd_mixa
+IntDir=.\SoftDebug
+InputPath=.\snd_mixa.asm
+
+"$(INTDIR)\snd_mixa.obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+   ml /c /Cp /coff /Fo"$(INTDIR)\snd_mixa.obj" /Zm /Zi .\snd_mixa.asm
+
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+# PROP Exclude_From_Build 0
+# Begin Custom Build - snd_mixa
+IntDir=.\GLDebug
+InputPath=.\snd_mixa.asm
+
+"$(INTDIR)\snd_mixa.obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+   ml /c /Cp /coff /Fo"$(INTDIR)\snd_mixa.obj" /Zm /Zi .\snd_mixa.asm
+
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+# Begin Custom Build - snd_mixa
+IntDir=.\GLRelease
+InputPath=.\snd_mixa.asm
+
+"$(INTDIR)\snd_mixa.obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+   ml /c /Cp /coff /Fo"$(INTDIR)\snd_mixa.obj" /Zm /Zi .\snd_mixa.asm
+
+# End Custom Build
+
+!ENDIF 
+
+# End Source File
+################################################################################
+# Begin Source File
+
+SOURCE=.\surf8.asm
+
+!IF  "$(CFG)" == "Quiver - Win32 Release"
+
+# Begin Custom Build - surf8
+IntDir=.\SoftRelease
+InputPath=.\surf8.asm
+
+"$(INTDIR)\surf8.obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+   ml /c /Cp /coff /Fo"$(INTDIR)\surf8.obj" /Zm /Zi .\surf8.asm
+
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+# Begin Custom Build - surf8
+IntDir=.\SoftDebug
+InputPath=.\surf8.asm
+
+"$(INTDIR)\surf8.obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+   ml /c /Cp /coff /Fo"$(INTDIR)\surf8.obj" /Zm /Zi .\surf8.asm
+
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+# PROP Exclude_From_Build 1
+
+!ENDIF 
+
+# End Source File
+################################################################################
+# Begin Source File
+
+SOURCE=.\surf16.asm
+
+!IF  "$(CFG)" == "Quiver - Win32 Release"
+
+# Begin Custom Build - surf16
+IntDir=.\SoftRelease
+InputPath=.\surf16.asm
+
+"$(INTDIR)\surf16.obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+   ml /c /Cp /coff /Fo"$(INTDIR)\surf16.obj" /Zm /Zi .\surf16.asm
+
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+# Begin Custom Build - surf16
+IntDir=.\SoftDebug
+InputPath=.\surf16.asm
+
+"$(INTDIR)\surf16.obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+   ml /c /Cp /coff /Fo"$(INTDIR)\surf16.obj" /Zm /Zi .\surf16.asm
+
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+# PROP Exclude_From_Build 1
+
+!ENDIF 
+
+# End Source File
+################################################################################
+# Begin Source File
+
+SOURCE=.\sys_wina.asm
+
+!IF  "$(CFG)" == "Quiver - Win32 Release"
+
+# Begin Custom Build - sys_wina
+IntDir=.\SoftRelease
+InputPath=.\sys_wina.asm
+
+"$(INTDIR)\sys_wina.obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+   ml /c /Cp /coff /Fo"$(INTDIR)\sys_wina.obj" /Zm /Zi .\sys_wina.asm
+
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
+
+# Begin Custom Build - sys_wina
+IntDir=.\SoftDebug
+InputPath=.\sys_wina.asm
+
+"$(INTDIR)\sys_wina.obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+   ml /c /Cp /coff /Fo"$(INTDIR)\sys_wina.obj" /Zm /Zi .\sys_wina.asm
+
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+# PROP Exclude_From_Build 0
+# Begin Custom Build - sys_wina
+IntDir=.\GLDebug
+InputPath=.\sys_wina.asm
+
+"$(INTDIR)\sys_wina.obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+   ml /c /Cp /coff /Fo"$(INTDIR)\sys_wina.obj" /Zm /Zi .\sys_wina.asm
+
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+# Begin Custom Build - sys_wina
+IntDir=.\GLRelease
+InputPath=.\sys_wina.asm
+
+"$(INTDIR)\sys_wina.obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+   ml /c /Cp /coff /Fo"$(INTDIR)\sys_wina.obj" /Zm /Zi .\sys_wina.asm
 
 # End Custom Build
 
@@ -6576,7 +13072,7 @@ SOURCE=.\worlda.asm
 !IF  "$(CFG)" == "Quiver - Win32 Release"
 
 # Begin Custom Build - worlda
-IntDir=.\GLRelease
+IntDir=.\SoftRelease
 InputPath=.\worlda.asm
 
 "$(INTDIR)\worlda.obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
@@ -6587,7 +13083,29 @@ InputPath=.\worlda.asm
 !ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
 
 # Begin Custom Build - worlda
+IntDir=.\SoftDebug
+InputPath=.\worlda.asm
+
+"$(INTDIR)\worlda.obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+   ml /c /Cp /coff /Fo"$(INTDIR)\worlda.obj" /Zm /Zi .\worlda.asm
+
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+# Begin Custom Build - worlda
 IntDir=.\GLDebug
+InputPath=.\worlda.asm
+
+"$(INTDIR)\worlda.obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+   ml /c /Cp /coff /Fo"$(INTDIR)\worlda.obj" /Zm /Zi .\worlda.asm
+
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+# Begin Custom Build - worlda
+IntDir=.\GLRelease
 InputPath=.\worlda.asm
 
 "$(INTDIR)\worlda.obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
@@ -6601,207 +13119,40 @@ InputPath=.\worlda.asm
 ################################################################################
 # Begin Source File
 
-SOURCE=.\pr_edict.c
-DEP_CPP_PR_ED=\
-	"..\common\dll_state.h"\
-	"..\common\platform.h"\
-	"..\common\qfont.h"\
-	".\beamdef.h"\
-	".\bothdefs.h"\
-	".\bspfile.h"\
-	".\cdll_int.h"\
-	".\client.h"\
-	".\cmd.h"\
-	".\color.h"\
-	".\common.h"\
-	".\Console.h"\
-	".\const.h"\
-	".\crc.h"\
-	".\cshift.h"\
-	".\custom.h"\
-	".\cvar.h"\
-	".\cvardef.h"\
-	".\draw.h"\
-	".\eiface.h"\
-	".\Gl_model.h"\
-	".\Glquake.h"\
-	".\host_cmd.h"\
-	".\input.h"\
-	".\keys.h"\
-	".\mathlib.h"\
-	".\modelgen.h"\
-	".\net.h"\
-	".\pr_dlls.h"\
-	".\pr_edict.h"\
-	".\progdefs.h"\
-	".\Progs.h"\
-	".\protocol.h"\
-	".\qgl.h"\
-	".\quakedef.h"\
-	".\r_shared.h"\
-	".\render.h"\
-	".\sbar.h"\
-	".\screen.h"\
-	".\server.h"\
-	".\sound.h"\
-	".\spritegn.h"\
-	".\studio.h"\
-	".\sys.h"\
-	".\vid.h"\
-	".\view.h"\
-	".\vmodes.h"\
-	".\wad.h"\
-	".\world.h"\
-	".\wrect.h"\
-	".\zone.h"\
-	{$(INCLUDE)}"\GL\gl.h"\
-	
-NODEP_CPP_PR_ED=\
-	".\cmdlib.h"\
-	".\lbmlib.h"\
-	".\scriplib.h"\
-	".\trilib.h"\
+SOURCE="\Stuff\GSDEV\half-life1_win32_722\a3dwrapper\a3dwrapper.cpp"
+DEP_CPP_A3DWR=\
+	"..\a3dwrapper\a3dwrapper.h"\
 	
 
-"$(INTDIR)\pr_edict.obj" : $(SOURCE) $(DEP_CPP_PR_ED) "$(INTDIR)"
+!IF  "$(CFG)" == "Quiver - Win32 Release"
 
 
-# End Source File
-################################################################################
-# Begin Source File
-
-SOURCE=.\sv_move.c
-DEP_CPP_SV_MO=\
-	"..\common\dll_state.h"\
-	"..\common\platform.h"\
-	"..\common\qfont.h"\
-	".\beamdef.h"\
-	".\bothdefs.h"\
-	".\bspfile.h"\
-	".\cdll_int.h"\
-	".\client.h"\
-	".\cmd.h"\
-	".\color.h"\
-	".\common.h"\
-	".\Console.h"\
-	".\const.h"\
-	".\crc.h"\
-	".\cshift.h"\
-	".\custom.h"\
-	".\cvar.h"\
-	".\cvardef.h"\
-	".\draw.h"\
-	".\eiface.h"\
-	".\Gl_model.h"\
-	".\Glquake.h"\
-	".\host_cmd.h"\
-	".\input.h"\
-	".\keys.h"\
-	".\mathlib.h"\
-	".\modelgen.h"\
-	".\net.h"\
-	".\pr_cmds.h"\
-	".\pr_dlls.h"\
-	".\progdefs.h"\
-	".\Progs.h"\
-	".\protocol.h"\
-	".\qgl.h"\
-	".\quakedef.h"\
-	".\r_shared.h"\
-	".\render.h"\
-	".\sbar.h"\
-	".\screen.h"\
-	".\server.h"\
-	".\sound.h"\
-	".\spritegn.h"\
-	".\studio.h"\
-	".\sys.h"\
-	".\vid.h"\
-	".\view.h"\
-	".\vmodes.h"\
-	".\wad.h"\
-	".\world.h"\
-	".\wrect.h"\
-	".\zone.h"\
-	{$(INCLUDE)}"\GL\gl.h"\
-	
-NODEP_CPP_SV_MO=\
-	".\cmdlib.h"\
-	".\lbmlib.h"\
-	".\scriplib.h"\
-	".\trilib.h"\
-	
-
-"$(INTDIR)\sv_move.obj" : $(SOURCE) $(DEP_CPP_SV_MO) "$(INTDIR)"
+"$(INTDIR)\a3dwrapper.obj" : $(SOURCE) $(DEP_CPP_A3DWR) "$(INTDIR)"
+   $(CPP) $(CPP_PROJ) $(SOURCE)
 
 
-# End Source File
-################################################################################
-# Begin Source File
+!ELSEIF  "$(CFG)" == "Quiver - Win32 Debug"
 
-SOURCE=.\GL_MESH.C
-DEP_CPP_GL_ME=\
-	"..\common\dll_state.h"\
-	"..\common\platform.h"\
-	"..\common\qfont.h"\
-	".\beamdef.h"\
-	".\bothdefs.h"\
-	".\bspfile.h"\
-	".\cdll_int.h"\
-	".\client.h"\
-	".\cmd.h"\
-	".\color.h"\
-	".\common.h"\
-	".\Console.h"\
-	".\const.h"\
-	".\crc.h"\
-	".\cshift.h"\
-	".\custom.h"\
-	".\cvar.h"\
-	".\cvardef.h"\
-	".\draw.h"\
-	".\eiface.h"\
-	".\Gl_model.h"\
-	".\Glquake.h"\
-	".\host_cmd.h"\
-	".\input.h"\
-	".\keys.h"\
-	".\mathlib.h"\
-	".\modelgen.h"\
-	".\net.h"\
-	".\pr_dlls.h"\
-	".\progdefs.h"\
-	".\Progs.h"\
-	".\protocol.h"\
-	".\qgl.h"\
-	".\quakedef.h"\
-	".\r_shared.h"\
-	".\render.h"\
-	".\sbar.h"\
-	".\screen.h"\
-	".\server.h"\
-	".\sound.h"\
-	".\spritegn.h"\
-	".\studio.h"\
-	".\sys.h"\
-	".\vid.h"\
-	".\view.h"\
-	".\vmodes.h"\
-	".\wad.h"\
-	".\world.h"\
-	".\wrect.h"\
-	".\zone.h"\
-	{$(INCLUDE)}"\GL\gl.h"\
-	
-NODEP_CPP_GL_ME=\
-	".\cmdlib.h"\
-	".\lbmlib.h"\
-	".\scriplib.h"\
-	".\trilib.h"\
-	
 
-"$(INTDIR)\GL_MESH.OBJ" : $(SOURCE) $(DEP_CPP_GL_ME) "$(INTDIR)"
+"$(INTDIR)\a3dwrapper.obj" : $(SOURCE) $(DEP_CPP_A3DWR) "$(INTDIR)"
+   $(CPP) $(CPP_PROJ) $(SOURCE)
 
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
+
+
+"$(INTDIR)\a3dwrapper.obj" : $(SOURCE) $(DEP_CPP_A3DWR) "$(INTDIR)"
+   $(CPP) $(CPP_PROJ) $(SOURCE)
+
+
+!ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
+
+
+"$(INTDIR)\a3dwrapper.obj" : $(SOURCE) $(DEP_CPP_A3DWR) "$(INTDIR)"
+   $(CPP) $(CPP_PROJ) $(SOURCE)
+
+
+!ENDIF 
 
 # End Source File
 # End Target

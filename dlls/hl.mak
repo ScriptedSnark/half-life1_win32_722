@@ -31,9 +31,9 @@ NULL=nul
 ################################################################################
 # Begin Project
 # PROP Target_Last_Scanned "hl - Win32 Debug"
-RSC=rc.exe
-CPP=cl.exe
 MTL=mktyplib.exe
+CPP=cl.exe
+RSC=rc.exe
 
 !IF  "$(CFG)" == "hl - Win32 Release"
 
@@ -56,7 +56,6 @@ CLEAN :
 	-@erase "$(INTDIR)\aflock.obj"
 	-@erase "$(INTDIR)\agrunt.obj"
 	-@erase "$(INTDIR)\airtank.obj"
-	-@erase "$(INTDIR)\animating.obj"
 	-@erase "$(INTDIR)\animation.obj"
 	-@erase "$(INTDIR)\apache.obj"
 	-@erase "$(INTDIR)\barnacle.obj"
@@ -124,7 +123,6 @@ CLEAN :
 	-@erase "$(INTDIR)\roach.obj"
 	-@erase "$(INTDIR)\rpg.obj"
 	-@erase "$(INTDIR)\satchel.obj"
-	-@erase "$(INTDIR)\schedule.obj"
 	-@erase "$(INTDIR)\scientist.obj"
 	-@erase "$(INTDIR)\scripted.obj"
 	-@erase "$(INTDIR)\shotgun.obj"
@@ -190,7 +188,6 @@ LINK32_OBJS= \
 	"$(INTDIR)\aflock.obj" \
 	"$(INTDIR)\agrunt.obj" \
 	"$(INTDIR)\airtank.obj" \
-	"$(INTDIR)\animating.obj" \
 	"$(INTDIR)\animation.obj" \
 	"$(INTDIR)\apache.obj" \
 	"$(INTDIR)\barnacle.obj" \
@@ -258,7 +255,6 @@ LINK32_OBJS= \
 	"$(INTDIR)\roach.obj" \
 	"$(INTDIR)\rpg.obj" \
 	"$(INTDIR)\satchel.obj" \
-	"$(INTDIR)\schedule.obj" \
 	"$(INTDIR)\scientist.obj" \
 	"$(INTDIR)\scripted.obj" \
 	"$(INTDIR)\shotgun.obj" \
@@ -308,7 +304,6 @@ CLEAN :
 	-@erase "$(INTDIR)\aflock.obj"
 	-@erase "$(INTDIR)\agrunt.obj"
 	-@erase "$(INTDIR)\airtank.obj"
-	-@erase "$(INTDIR)\animating.obj"
 	-@erase "$(INTDIR)\animation.obj"
 	-@erase "$(INTDIR)\apache.obj"
 	-@erase "$(INTDIR)\barnacle.obj"
@@ -376,7 +371,6 @@ CLEAN :
 	-@erase "$(INTDIR)\roach.obj"
 	-@erase "$(INTDIR)\rpg.obj"
 	-@erase "$(INTDIR)\satchel.obj"
-	-@erase "$(INTDIR)\schedule.obj"
 	-@erase "$(INTDIR)\scientist.obj"
 	-@erase "$(INTDIR)\scripted.obj"
 	-@erase "$(INTDIR)\shotgun.obj"
@@ -444,7 +438,6 @@ LINK32_OBJS= \
 	"$(INTDIR)\aflock.obj" \
 	"$(INTDIR)\agrunt.obj" \
 	"$(INTDIR)\airtank.obj" \
-	"$(INTDIR)\animating.obj" \
 	"$(INTDIR)\animation.obj" \
 	"$(INTDIR)\apache.obj" \
 	"$(INTDIR)\barnacle.obj" \
@@ -512,7 +505,6 @@ LINK32_OBJS= \
 	"$(INTDIR)\roach.obj" \
 	"$(INTDIR)\rpg.obj" \
 	"$(INTDIR)\satchel.obj" \
-	"$(INTDIR)\schedule.obj" \
 	"$(INTDIR)\scientist.obj" \
 	"$(INTDIR)\scripted.obj" \
 	"$(INTDIR)\shotgun.obj" \
@@ -605,6 +597,7 @@ DEP_CPP_AFLOC=\
 	"..\dlls\cdll_dll.h"\
 	"..\engine\custom.h"\
 	"..\engine\cvardef.h"\
+	".\../common\platform.h"\
 	".\../engine\const.h"\
 	".\../engine\eiface.h"\
 	".\../engine\progdefs.h"\
@@ -622,9 +615,6 @@ DEP_CPP_AFLOC=\
 	".\squadmonster.h"\
 	".\util.h"\
 	".\vector.h"\
-	
-NODEP_CPP_AFLOC=\
-	".\platform.h"\
 	
 
 "$(INTDIR)\aflock.obj" : $(SOURCE) $(DEP_CPP_AFLOC) "$(INTDIR)"
@@ -703,38 +693,8 @@ DEP_CPP_AIRTA=\
 ################################################################################
 # Begin Source File
 
-SOURCE=.\animating.cpp
-DEP_CPP_ANIMA=\
-	"..\dlls\cdll_dll.h"\
-	"..\engine\custom.h"\
-	"..\engine\cvardef.h"\
-	".\../common\platform.h"\
-	".\../engine\const.h"\
-	".\../engine\eiface.h"\
-	".\../engine\progdefs.h"\
-	".\../engine\progs.h"\
-	".\activity.h"\
-	".\animation.h"\
-	".\basemonster.h"\
-	".\cbase.h"\
-	".\enginecallback.h"\
-	".\extdll.h"\
-	".\monsterevent.h"\
-	".\saverestore.h"\
-	".\schedule.h"\
-	".\util.h"\
-	".\vector.h"\
-	
-
-"$(INTDIR)\animating.obj" : $(SOURCE) $(DEP_CPP_ANIMA) "$(INTDIR)"
-
-
-# End Source File
-################################################################################
-# Begin Source File
-
 SOURCE=.\animation.cpp
-DEP_CPP_ANIMAT=\
+DEP_CPP_ANIMA=\
 	"..\engine\custom.h"\
 	"..\engine\cvardef.h"\
 	"..\engine\studio.h"\
@@ -752,7 +712,7 @@ DEP_CPP_ANIMAT=\
 	".\scriptevent.h"\
 	
 
-"$(INTDIR)\animation.obj" : $(SOURCE) $(DEP_CPP_ANIMAT) "$(INTDIR)"
+"$(INTDIR)\animation.obj" : $(SOURCE) $(DEP_CPP_ANIMA) "$(INTDIR)"
 
 
 # End Source File
@@ -890,6 +850,7 @@ DEP_CPP_BIGMO=\
 	"..\dlls\cdll_dll.h"\
 	"..\engine\custom.h"\
 	"..\engine\cvardef.h"\
+	".\../common\platform.h"\
 	".\../engine\const.h"\
 	".\../engine\eiface.h"\
 	".\../engine\progdefs.h"\
@@ -909,9 +870,6 @@ DEP_CPP_BIGMO=\
 	".\vector.h"\
 	".\weapons.h"\
 	
-NODEP_CPP_BIGMO=\
-	".\platform.h"\
-	
 
 "$(INTDIR)\bigmomma.obj" : $(SOURCE) $(DEP_CPP_BIGMO) "$(INTDIR)"
 
@@ -925,6 +883,7 @@ DEP_CPP_BLOAT=\
 	"..\dlls\cdll_dll.h"\
 	"..\engine\custom.h"\
 	"..\engine\cvardef.h"\
+	".\../common\platform.h"\
 	".\../engine\const.h"\
 	".\../engine\eiface.h"\
 	".\../engine\progdefs.h"\
@@ -941,9 +900,6 @@ DEP_CPP_BLOAT=\
 	".\skill.h"\
 	".\util.h"\
 	".\vector.h"\
-	
-NODEP_CPP_BLOAT=\
-	".\platform.h"\
 	
 
 "$(INTDIR)\bloater.obj" : $(SOURCE) $(DEP_CPP_BLOAT) "$(INTDIR)"
@@ -988,6 +944,7 @@ DEP_CPP_BULLS=\
 	"..\dlls\cdll_dll.h"\
 	"..\engine\custom.h"\
 	"..\engine\cvardef.h"\
+	".\../common\platform.h"\
 	".\../engine\const.h"\
 	".\../engine\eiface.h"\
 	".\../engine\progdefs.h"\
@@ -1009,9 +966,6 @@ DEP_CPP_BULLS=\
 	".\util.h"\
 	".\vector.h"\
 	
-NODEP_CPP_BULLS=\
-	".\platform.h"\
-	
 
 "$(INTDIR)\bullsquid.obj" : $(SOURCE) $(DEP_CPP_BULLS) "$(INTDIR)"
 
@@ -1025,6 +979,7 @@ DEP_CPP_BUTTO=\
 	"..\dlls\cdll_dll.h"\
 	"..\engine\custom.h"\
 	"..\engine\cvardef.h"\
+	".\../common\platform.h"\
 	".\../engine\const.h"\
 	".\../engine\eiface.h"\
 	".\../engine\progdefs.h"\
@@ -1040,9 +995,6 @@ DEP_CPP_BUTTO=\
 	".\schedule.h"\
 	".\util.h"\
 	".\vector.h"\
-	
-NODEP_CPP_BUTTO=\
-	".\platform.h"\
 	
 
 "$(INTDIR)\buttons.obj" : $(SOURCE) $(DEP_CPP_BUTTO) "$(INTDIR)"
@@ -1218,6 +1170,7 @@ DEP_CPP_CROWB=\
 	"..\dlls\cdll_dll.h"\
 	"..\engine\custom.h"\
 	"..\engine\cvardef.h"\
+	".\../common\platform.h"\
 	".\../engine\const.h"\
 	".\../engine\eiface.h"\
 	".\../engine\progdefs.h"\
@@ -1238,9 +1191,6 @@ DEP_CPP_CROWB=\
 	".\util.h"\
 	".\vector.h"\
 	".\weapons.h"\
-	
-NODEP_CPP_CROWB=\
-	".\platform.h"\
 	
 
 "$(INTDIR)\crowbar.obj" : $(SOURCE) $(DEP_CPP_CROWB) "$(INTDIR)"
@@ -1267,6 +1217,7 @@ DEP_CPP_DEFAU=\
 	"..\dlls\cdll_dll.h"\
 	"..\engine\custom.h"\
 	"..\engine\cvardef.h"\
+	".\../common\platform.h"\
 	".\../engine\const.h"\
 	".\../engine\eiface.h"\
 	".\../engine\progdefs.h"\
@@ -1288,9 +1239,6 @@ DEP_CPP_DEFAU=\
 	".\soundent.h"\
 	".\util.h"\
 	".\vector.h"\
-	
-NODEP_CPP_DEFAU=\
-	".\platform.h"\
 	
 
 "$(INTDIR)\defaultai.obj" : $(SOURCE) $(DEP_CPP_DEFAU) "$(INTDIR)"
@@ -1317,6 +1265,7 @@ DEP_CPP_DOORS=\
 	"..\dlls\cdll_dll.h"\
 	"..\engine\custom.h"\
 	"..\engine\cvardef.h"\
+	".\../common\platform.h"\
 	".\../engine\const.h"\
 	".\../engine\eiface.h"\
 	".\../engine\progdefs.h"\
@@ -1332,9 +1281,6 @@ DEP_CPP_DOORS=\
 	".\schedule.h"\
 	".\util.h"\
 	".\vector.h"\
-	
-NODEP_CPP_DOORS=\
-	".\platform.h"\
 	
 
 "$(INTDIR)\doors.obj" : $(SOURCE) $(DEP_CPP_DOORS) "$(INTDIR)"
@@ -1680,6 +1626,7 @@ DEP_CPP_GARGA=\
 	"..\dlls\cdll_dll.h"\
 	"..\engine\custom.h"\
 	"..\engine\cvardef.h"\
+	".\../common\platform.h"\
 	".\../engine\const.h"\
 	".\../engine\customentity.h"\
 	".\../engine\eiface.h"\
@@ -1704,9 +1651,6 @@ DEP_CPP_GARGA=\
 	".\util.h"\
 	".\vector.h"\
 	".\weapons.h"\
-	
-NODEP_CPP_GARGA=\
-	".\platform.h"\
 	
 
 "$(INTDIR)\gargantua.obj" : $(SOURCE) $(DEP_CPP_GARGA) "$(INTDIR)"
@@ -1854,6 +1798,7 @@ DEP_CPP_GLOCK=\
 	"..\dlls\cdll_dll.h"\
 	"..\engine\custom.h"\
 	"..\engine\cvardef.h"\
+	".\../common\platform.h"\
 	".\../engine\const.h"\
 	".\../engine\eiface.h"\
 	".\../engine\progdefs.h"\
@@ -1873,9 +1818,6 @@ DEP_CPP_GLOCK=\
 	".\util.h"\
 	".\vector.h"\
 	".\weapons.h"\
-	
-NODEP_CPP_GLOCK=\
-	".\platform.h"\
 	
 
 "$(INTDIR)\glock.obj" : $(SOURCE) $(DEP_CPP_GLOCK) "$(INTDIR)"
@@ -1922,6 +1864,7 @@ DEP_CPP_H_AI_=\
 	"..\dlls\cdll_dll.h"\
 	"..\engine\custom.h"\
 	"..\engine\cvardef.h"\
+	".\../common\platform.h"\
 	".\../engine\const.h"\
 	".\../engine\eiface.h"\
 	".\../engine\progdefs.h"\
@@ -1939,9 +1882,6 @@ DEP_CPP_H_AI_=\
 	".\util.h"\
 	".\vector.h"\
 	
-NODEP_CPP_H_AI_=\
-	".\platform.h"\
-	
 
 "$(INTDIR)\h_ai.obj" : $(SOURCE) $(DEP_CPP_H_AI_) "$(INTDIR)"
 
@@ -1955,6 +1895,7 @@ DEP_CPP_H_BAT=\
 	"..\dlls\cdll_dll.h"\
 	"..\engine\custom.h"\
 	"..\engine\cvardef.h"\
+	".\../common\platform.h"\
 	".\../engine\const.h"\
 	".\../engine\eiface.h"\
 	".\../engine\progdefs.h"\
@@ -1971,9 +1912,6 @@ DEP_CPP_H_BAT=\
 	".\skill.h"\
 	".\util.h"\
 	".\vector.h"\
-	
-NODEP_CPP_H_BAT=\
-	".\platform.h"\
 	
 
 "$(INTDIR)\h_battery.obj" : $(SOURCE) $(DEP_CPP_H_BAT) "$(INTDIR)"
@@ -2020,6 +1958,7 @@ DEP_CPP_H_CYC=\
 	"..\dlls\cdll_dll.h"\
 	"..\engine\custom.h"\
 	"..\engine\cvardef.h"\
+	".\../common\platform.h"\
 	".\../engine\const.h"\
 	".\../engine\eiface.h"\
 	".\../engine\progdefs.h"\
@@ -2040,9 +1979,6 @@ DEP_CPP_H_CYC=\
 	".\vector.h"\
 	".\weapons.h"\
 	
-NODEP_CPP_H_CYC=\
-	".\platform.h"\
-	
 
 "$(INTDIR)\h_cycler.obj" : $(SOURCE) $(DEP_CPP_H_CYC) "$(INTDIR)"
 
@@ -2056,6 +1992,7 @@ DEP_CPP_H_EXP=\
 	"..\dlls\cdll_dll.h"\
 	"..\engine\custom.h"\
 	"..\engine\cvardef.h"\
+	".\../common\platform.h"\
 	".\../engine\const.h"\
 	".\../engine\eiface.h"\
 	".\../engine\progdefs.h"\
@@ -2070,9 +2007,6 @@ DEP_CPP_H_EXP=\
 	".\schedule.h"\
 	".\util.h"\
 	".\vector.h"\
-	
-NODEP_CPP_H_EXP=\
-	".\platform.h"\
 	
 
 "$(INTDIR)\h_export.obj" : $(SOURCE) $(DEP_CPP_H_EXP) "$(INTDIR)"
@@ -2186,6 +2120,7 @@ DEP_CPP_HEALT=\
 	"..\dlls\cdll_dll.h"\
 	"..\engine\custom.h"\
 	"..\engine\cvardef.h"\
+	".\../common\platform.h"\
 	".\../engine\const.h"\
 	".\../engine\eiface.h"\
 	".\../engine\progdefs.h"\
@@ -2208,9 +2143,6 @@ DEP_CPP_HEALT=\
 	".\vector.h"\
 	".\weapons.h"\
 	
-NODEP_CPP_HEALT=\
-	".\platform.h"\
-	
 
 "$(INTDIR)\healthkit.obj" : $(SOURCE) $(DEP_CPP_HEALT) "$(INTDIR)"
 
@@ -2224,6 +2156,7 @@ DEP_CPP_HGRUN=\
 	"..\dlls\cdll_dll.h"\
 	"..\engine\custom.h"\
 	"..\engine\cvardef.h"\
+	".\../common\platform.h"\
 	".\../engine\const.h"\
 	".\../engine\customentity.h"\
 	".\../engine\eiface.h"\
@@ -2248,9 +2181,6 @@ DEP_CPP_HGRUN=\
 	".\util.h"\
 	".\vector.h"\
 	".\weapons.h"\
-	
-NODEP_CPP_HGRUN=\
-	".\platform.h"\
 	
 
 "$(INTDIR)\hgrunt.obj" : $(SOURCE) $(DEP_CPP_HGRUN) "$(INTDIR)"
@@ -2312,6 +2242,7 @@ DEP_CPP_HORNET=\
 	"..\dlls\cdll_dll.h"\
 	"..\engine\custom.h"\
 	"..\engine\cvardef.h"\
+	".\../common\platform.h"\
 	".\../engine\const.h"\
 	".\../engine\eiface.h"\
 	".\../engine\progdefs.h"\
@@ -2333,9 +2264,6 @@ DEP_CPP_HORNET=\
 	".\util.h"\
 	".\vector.h"\
 	".\weapons.h"\
-	
-NODEP_CPP_HORNET=\
-	".\platform.h"\
 	
 
 "$(INTDIR)\hornetgun.obj" : $(SOURCE) $(DEP_CPP_HORNET) "$(INTDIR)"
@@ -2385,6 +2313,7 @@ DEP_CPP_ICHTH=\
 	"..\dlls\cdll_dll.h"\
 	"..\engine\custom.h"\
 	"..\engine\cvardef.h"\
+	".\../common\platform.h"\
 	".\../engine\const.h"\
 	".\../engine\eiface.h"\
 	".\../engine\progdefs.h"\
@@ -2407,9 +2336,6 @@ DEP_CPP_ICHTH=\
 	".\util.h"\
 	".\vector.h"\
 	".\weapons.h"\
-	
-NODEP_CPP_ICHTH=\
-	".\platform.h"\
 	
 
 "$(INTDIR)\ichthyosaur.obj" : $(SOURCE) $(DEP_CPP_ICHTH) "$(INTDIR)"
@@ -2459,6 +2385,7 @@ DEP_CPP_ITEMS=\
 	"..\dlls\cdll_dll.h"\
 	"..\engine\custom.h"\
 	"..\engine\cvardef.h"\
+	".\../common\platform.h"\
 	".\../engine\const.h"\
 	".\../engine\eiface.h"\
 	".\../engine\progdefs.h"\
@@ -2478,9 +2405,6 @@ DEP_CPP_ITEMS=\
 	".\util.h"\
 	".\vector.h"\
 	".\weapons.h"\
-	
-NODEP_CPP_ITEMS=\
-	".\platform.h"\
 	
 
 "$(INTDIR)\items.obj" : $(SOURCE) $(DEP_CPP_ITEMS) "$(INTDIR)"
@@ -2507,6 +2431,7 @@ DEP_CPP_LEECH=\
 	"..\dlls\cdll_dll.h"\
 	"..\engine\custom.h"\
 	"..\engine\cvardef.h"\
+	".\../common\platform.h"\
 	".\../engine\const.h"\
 	".\../engine\eiface.h"\
 	".\../engine\progdefs.h"\
@@ -2525,9 +2450,6 @@ DEP_CPP_LEECH=\
 	".\util.h"\
 	".\vector.h"\
 	
-NODEP_CPP_LEECH=\
-	".\platform.h"\
-	
 
 "$(INTDIR)\leech.obj" : $(SOURCE) $(DEP_CPP_LEECH) "$(INTDIR)"
 
@@ -2541,6 +2463,7 @@ DEP_CPP_LIGHT=\
 	"..\dlls\cdll_dll.h"\
 	"..\engine\custom.h"\
 	"..\engine\cvardef.h"\
+	".\../common\platform.h"\
 	".\../engine\const.h"\
 	".\../engine\eiface.h"\
 	".\../engine\progdefs.h"\
@@ -2555,9 +2478,6 @@ DEP_CPP_LIGHT=\
 	".\schedule.h"\
 	".\util.h"\
 	".\vector.h"\
-	
-NODEP_CPP_LIGHT=\
-	".\platform.h"\
 	
 
 "$(INTDIR)\lights.obj" : $(SOURCE) $(DEP_CPP_LIGHT) "$(INTDIR)"
@@ -2625,6 +2545,7 @@ DEP_CPP_MONSTE=\
 	".\basemonster.h"\
 	".\cbase.h"\
 	".\decals.h"\
+	".\defaultai.h"\
 	".\enginecallback.h"\
 	".\extdll.h"\
 	".\gamerules.h"\
@@ -2733,6 +2654,7 @@ DEP_CPP_MP5_C=\
 	"..\dlls\cdll_dll.h"\
 	"..\engine\custom.h"\
 	"..\engine\cvardef.h"\
+	".\../common\platform.h"\
 	".\../engine\const.h"\
 	".\../engine\eiface.h"\
 	".\../engine\progdefs.h"\
@@ -2754,9 +2676,6 @@ DEP_CPP_MP5_C=\
 	".\util.h"\
 	".\vector.h"\
 	".\weapons.h"\
-	
-NODEP_CPP_MP5_C=\
-	".\platform.h"\
 	
 
 "$(INTDIR)\mp5.obj" : $(SOURCE) $(DEP_CPP_MP5_C) "$(INTDIR)"
@@ -2805,6 +2724,7 @@ DEP_CPP_NIHIL=\
 	"..\dlls\cdll_dll.h"\
 	"..\engine\custom.h"\
 	"..\engine\cvardef.h"\
+	".\../common\platform.h"\
 	".\../engine\const.h"\
 	".\../engine\eiface.h"\
 	".\../engine\progdefs.h"\
@@ -2825,9 +2745,6 @@ DEP_CPP_NIHIL=\
 	".\vector.h"\
 	".\weapons.h"\
 	
-NODEP_CPP_NIHIL=\
-	".\platform.h"\
-	
 
 "$(INTDIR)\nihilanth.obj" : $(SOURCE) $(DEP_CPP_NIHIL) "$(INTDIR)"
 
@@ -2841,6 +2758,7 @@ DEP_CPP_NODES=\
 	"..\dlls\cdll_dll.h"\
 	"..\engine\custom.h"\
 	"..\engine\cvardef.h"\
+	".\../common\platform.h"\
 	".\../engine\const.h"\
 	".\../engine\eiface.h"\
 	".\../engine\progdefs.h"\
@@ -2860,9 +2778,6 @@ DEP_CPP_NODES=\
 	".\skill.h"\
 	".\util.h"\
 	".\vector.h"\
-	
-NODEP_CPP_NODES=\
-	".\platform.h"\
 	
 
 "$(INTDIR)\nodes.obj" : $(SOURCE) $(DEP_CPP_NODES) "$(INTDIR)"
@@ -3070,6 +2985,7 @@ DEP_CPP_PYTHO=\
 	"..\dlls\cdll_dll.h"\
 	"..\engine\custom.h"\
 	"..\engine\cvardef.h"\
+	".\../common\platform.h"\
 	".\../engine\const.h"\
 	".\../engine\eiface.h"\
 	".\../engine\progdefs.h"\
@@ -3089,9 +3005,6 @@ DEP_CPP_PYTHO=\
 	".\util.h"\
 	".\vector.h"\
 	".\weapons.h"\
-	
-NODEP_CPP_PYTHO=\
-	".\platform.h"\
 	
 
 "$(INTDIR)\python.obj" : $(SOURCE) $(DEP_CPP_PYTHO) "$(INTDIR)"
@@ -3170,6 +3083,7 @@ DEP_CPP_RPG_C=\
 	"..\dlls\cdll_dll.h"\
 	"..\engine\custom.h"\
 	"..\engine\cvardef.h"\
+	".\../common\platform.h"\
 	".\../engine\const.h"\
 	".\../engine\eiface.h"\
 	".\../engine\progdefs.h"\
@@ -3190,9 +3104,6 @@ DEP_CPP_RPG_C=\
 	".\util.h"\
 	".\vector.h"\
 	".\weapons.h"\
-	
-NODEP_CPP_RPG_C=\
-	".\platform.h"\
 	
 
 "$(INTDIR)\rpg.obj" : $(SOURCE) $(DEP_CPP_RPG_C) "$(INTDIR)"
@@ -3207,6 +3118,7 @@ DEP_CPP_SATCH=\
 	"..\dlls\cdll_dll.h"\
 	"..\engine\custom.h"\
 	"..\engine\cvardef.h"\
+	".\../common\platform.h"\
 	".\../engine\const.h"\
 	".\../engine\eiface.h"\
 	".\../engine\progdefs.h"\
@@ -3227,9 +3139,6 @@ DEP_CPP_SATCH=\
 	".\util.h"\
 	".\vector.h"\
 	".\weapons.h"\
-	
-NODEP_CPP_SATCH=\
-	".\platform.h"\
 	
 
 "$(INTDIR)\satchel.obj" : $(SOURCE) $(DEP_CPP_SATCH) "$(INTDIR)"
@@ -3246,43 +3155,6 @@ SOURCE=.\saverestore.h
 !ELSEIF  "$(CFG)" == "hl - Win32 Debug"
 
 !ENDIF 
-
-# End Source File
-################################################################################
-# Begin Source File
-
-SOURCE=.\schedule.cpp
-DEP_CPP_SCHED=\
-	"..\dlls\cdll_dll.h"\
-	"..\engine\custom.h"\
-	"..\engine\cvardef.h"\
-	".\../common\platform.h"\
-	".\../engine\const.h"\
-	".\../engine\eiface.h"\
-	".\../engine\progdefs.h"\
-	".\../engine\progs.h"\
-	".\activity.h"\
-	".\animation.h"\
-	".\basemonster.h"\
-	".\cbase.h"\
-	".\defaultai.h"\
-	".\enginecallback.h"\
-	".\extdll.h"\
-	".\monsterevent.h"\
-	".\monsters.h"\
-	".\nodes.h"\
-	".\saverestore.h"\
-	".\schedule.h"\
-	".\scripted.h"\
-	".\scriptevent.h"\
-	".\skill.h"\
-	".\soundent.h"\
-	".\util.h"\
-	".\vector.h"\
-	
-
-"$(INTDIR)\schedule.obj" : $(SOURCE) $(DEP_CPP_SCHED) "$(INTDIR)"
-
 
 # End Source File
 ################################################################################
@@ -3342,6 +3214,7 @@ DEP_CPP_SCRIP=\
 	"..\dlls\cdll_dll.h"\
 	"..\engine\custom.h"\
 	"..\engine\cvardef.h"\
+	".\../common\platform.h"\
 	".\../engine\const.h"\
 	".\../engine\eiface.h"\
 	".\../engine\progdefs.h"\
@@ -3362,9 +3235,6 @@ DEP_CPP_SCRIP=\
 	".\skill.h"\
 	".\util.h"\
 	".\vector.h"\
-	
-NODEP_CPP_SCRIP=\
-	".\platform.h"\
 	
 
 "$(INTDIR)\scripted.obj" : $(SOURCE) $(DEP_CPP_SCRIP) "$(INTDIR)"
@@ -3472,6 +3342,7 @@ DEP_CPP_SKILL=\
 	"..\dlls\cdll_dll.h"\
 	"..\engine\custom.h"\
 	"..\engine\cvardef.h"\
+	".\../common\platform.h"\
 	".\../engine\const.h"\
 	".\../engine\eiface.h"\
 	".\../engine\progdefs.h"\
@@ -3482,9 +3353,6 @@ DEP_CPP_SKILL=\
 	".\skill.h"\
 	".\util.h"\
 	".\vector.h"\
-	
-NODEP_CPP_SKILL=\
-	".\platform.h"\
 	
 
 "$(INTDIR)\skill.obj" : $(SOURCE) $(DEP_CPP_SKILL) "$(INTDIR)"
@@ -3546,6 +3414,7 @@ DEP_CPP_SOUNDE=\
 	"..\dlls\cdll_dll.h"\
 	"..\engine\custom.h"\
 	"..\engine\cvardef.h"\
+	".\../common\platform.h"\
 	".\../engine\const.h"\
 	".\../engine\eiface.h"\
 	".\../engine\progdefs.h"\
@@ -3563,9 +3432,6 @@ DEP_CPP_SOUNDE=\
 	".\soundent.h"\
 	".\util.h"\
 	".\vector.h"\
-	
-NODEP_CPP_SOUNDE=\
-	".\platform.h"\
 	
 
 "$(INTDIR)\soundent.obj" : $(SOURCE) $(DEP_CPP_SOUNDE) "$(INTDIR)"
@@ -3719,6 +3585,7 @@ DEP_CPP_SUBS_=\
 	"..\dlls\cdll_dll.h"\
 	"..\engine\custom.h"\
 	"..\engine\cvardef.h"\
+	".\../common\platform.h"\
 	".\../engine\const.h"\
 	".\../engine\eiface.h"\
 	".\../engine\progdefs.h"\
@@ -3735,9 +3602,6 @@ DEP_CPP_SUBS_=\
 	".\schedule.h"\
 	".\util.h"\
 	".\vector.h"\
-	
-NODEP_CPP_SUBS_=\
-	".\platform.h"\
 	
 
 "$(INTDIR)\subs.obj" : $(SOURCE) $(DEP_CPP_SUBS_) "$(INTDIR)"
@@ -4123,6 +3987,7 @@ DEP_CPP_XEN_C=\
 	"..\dlls\cdll_dll.h"\
 	"..\engine\custom.h"\
 	"..\engine\cvardef.h"\
+	".\../common\platform.h"\
 	".\../engine\const.h"\
 	".\../engine\eiface.h"\
 	".\../engine\progdefs.h"\
@@ -4139,9 +4004,6 @@ DEP_CPP_XEN_C=\
 	".\schedule.h"\
 	".\util.h"\
 	".\vector.h"\
-	
-NODEP_CPP_XEN_C=\
-	".\platform.h"\
 	
 
 "$(INTDIR)\xen.obj" : $(SOURCE) $(DEP_CPP_XEN_C) "$(INTDIR)"

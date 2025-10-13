@@ -362,7 +362,7 @@ void R_DrawSurface( void )
 			decals = NULL;
 			break;
 		default:
-#if defined( _WIN32 )
+#if defined( _WIN32 ) && (_MSC_VER != 1020)
 			if (r_mmx.value)
 			{
 				pblockdrawer = R_DrawSurfaceBlock16MMX;
@@ -669,7 +669,8 @@ void R_DrawSurfaceBlock16( void )
 	__asm fldcw fpu_cw
 }
 
-#if defined( _WIN32 )
+// ScriptedSnark: FIXME: MSVC++ 4.2 can't handle this yet.
+#if defined( _WIN32 ) && (_MSC_VER != 1020)
 #include <xmmintrin.h>
 
 /*
