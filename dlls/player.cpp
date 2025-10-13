@@ -3474,7 +3474,7 @@ void CSprayCan::Think( void )
 	{
 		UTIL_PlayerDecalTrace(&tr, playernum, pev->frame + 5, FALSE);
 
-		if ( pev->frame >= 5 )
+		if ( pev->frame++ >= 5 )
 			UTIL_Remove( this );
 	}
 	else
