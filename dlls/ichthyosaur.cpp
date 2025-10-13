@@ -615,6 +615,8 @@ void CIchthyosaur::StartTask(Task_t *pTask)
 	}
 }
 
+extern Vector CrossProduct( const Vector& a, const Vector& b );
+
 void CIchthyosaur :: RunTask ( Task_t *pTask )
 {
 	switch ( pTask->iTask )

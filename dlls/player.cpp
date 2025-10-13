@@ -2184,7 +2184,7 @@ void CBasePlayer::PreThink(void)
 						velocity = (forward * gpGlobals->v_forward) + (right * gpGlobals->v_right);
 
 						// Perpendicular in the ladder plane
-						perp = CrossProduct( Vector(0,0,1), trace.vecPlaneNormal );
+						perp = _CrossProduct( Vector(0,0,1), trace.vecPlaneNormal );
 						perp = perp.Normalize();
 
 						// decompose velocity into ladder plane
@@ -2195,7 +2195,7 @@ void CBasePlayer::PreThink(void)
 						// This is the player's additional velocity
 						lateral = velocity - cross;
 
-						pev->velocity = lateral - (CrossProduct( trace.vecPlaneNormal, perp ) * normal);
+						pev->velocity = lateral - (_CrossProduct( trace.vecPlaneNormal, perp ) * normal);
 					}
 					else
 					{

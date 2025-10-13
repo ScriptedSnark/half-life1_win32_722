@@ -770,7 +770,7 @@ void D_PolysetDrawSpansTrans( spanpackage_t* pspanpackage )
 D_PolysetDrawSpansTransAdd
 ================
 */
-void D_PolysetDrawSpansTransAdd(spanpackage_t* pspanpackage)
+void D_PolysetDrawSpansTransAdd( spanpackage_t* pspanpackage )
 {
 	int		lcount;
 	unsigned short* lpdest;

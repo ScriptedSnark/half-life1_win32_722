@@ -323,7 +323,7 @@ public:
 	virtual int Illumination( ) { return GETENTITYILLUM( ENT( pev ) ); };
 
 	virtual	BOOL FVisible ( CBaseEntity *pEntity );
-	virtual	BOOL FVisible ( Vector &vecOrigin );
+	virtual	BOOL FVisible ( const Vector &vecOrigin );
 };
 
 
@@ -451,8 +451,6 @@ public:
 	void GetAttachment ( int iAttachment, Vector &origin, Vector &angles );
 	void SetBodygroup( int iGroup, int iValue );
 	int GetBodygroup( int iGroup );
-	int ExtractBbox( int sequence, float *mins, float *maxs );
-	void SetSequenceBox( void );
 
 	// animation needs
 	float				m_flFrameRate;		// computed FPS for current sequence

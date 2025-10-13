@@ -362,11 +362,13 @@ void R_DrawSurface( void )
 			decals = NULL;
 			break;
 		default:
+#if defined( _WIN32 )
 			if (r_mmx.value)
 			{
 				pblockdrawer = R_DrawSurfaceBlock16MMX;
 			}
 			else
+#endif
 			{
 				pblockdrawer = R_DrawSurfaceBlock16;
 			}
@@ -667,6 +669,9 @@ void R_DrawSurfaceBlock16( void )
 	__asm fldcw fpu_cw
 }
 
+#if defined( _WIN32 )
+#include <xmmintrin.h>
+
 /*
 ================
 R_DrawSurfaceBlock16MMX
@@ -682,14 +687,14 @@ void R_DrawSurfaceBlock16MMX( void )
     int             v;
     byte* texture;
 
-    static unsigned long long mm_mul = 0x555555555555;          // 0.33333 in 16.16 fixed point
-
-	static unsigned long long mm1_and1 = 0x0F800F800F800F8;     // red and blue (low byte)
-	static unsigned long long mm3_and1 = 0x0FC000000FC00;       // green (high byte)
-	static unsigned long long mm3_and2 = 0x0F8000000F800;       // red and blue (high byte)
-	static unsigned long long mm1_and2 = 0x2000000420000004;    // mask to check for overflow (red and blue)
-	static unsigned long long mm1_and3 = 0x2000000820000008;    // mask to check for overflow (green)
-	static unsigned long long mm6_last = 0ull, mm7_last = 0ull;	// last light values (left/right)
+	static __m64 MMX_BLOCKMULTIPLIER = { 0x555555555555 };	// 0.33333 in 16.16 fixed point
+	static __m64 MMX_REDBLUE1516 = { 0x00F800F800F800F8 };	// red and blue masks for both RGB555 and RGB565
+	static __m64 MMX_GREEN15 = { 0x0000F8000000F800 };		// green mask for RGB555
+	static __m64 MMX_GREEN16 = { 0x0000FC000000FC00 };		// green mask for RGB565
+	static __m64 MMX_LIGHTMULTIPLIER15 = { 0x2000000820000008 };	// light multiplier for RGB555
+	static __m64 MMX_LIGHTMULTIPLIER16 = { 0x2000000420000004 };	// light multiplier for RGB565
+	static __m64 MMX_LIGHTLEFT = { 0 };						// left light values
+	static __m64 MMX_LIGHTRIGHT = { 0 };					// right light values
     
 	if (!gHasMMXTechnology)
 		return;
@@ -722,11 +727,11 @@ void R_DrawSurfaceBlock16MMX( void )
 		movd        mm5, DWORD PTR[esi + 24]                ; blue (lightptr[6])
 
 		psrlw       mm4, 1
-		pmulhw      mm4, mm_mul                             ; apply the block multiplier
+		pmulhw      mm4, MMX_BLOCKMULTIPLIER                ; apply the block multiplier
 		punpcklwd   mm5, mm3
 		punpckldq   mm5, mm1
 		psrlw       mm5, 1
-		pmulhw      mm5, mm_mul                             ; apply the block multiplier
+		pmulhw      mm5, MMX_BLOCKMULTIPLIER                ; apply the block multiplier
 
 		mov         ecx, r_numvblocks
 		mov         v, eax
@@ -763,17 +768,17 @@ BITSCAN15:                                                  ; 15-bit scan of all
 		movd        mm7, DWORD PTR[esi + 24]                ; blue left (lightptr[6])
 
 		psrlw       mm6, 1
-		pmulhw      mm6, mm_mul                             ; apply the block multiplier
+		pmulhw      mm6, MMX_BLOCKMULTIPLIER                ; apply the block multiplier
 		punpcklwd   mm7, mm3
 		punpckldq   mm7, mm1
 		mov         ebx, texture
 		movd        mm1, blockdivshift
 		psrlw       mm7, 1
-		pmulhw      mm7, mm_mul                             ; apply the block multiplier
+		pmulhw      mm7, MMX_BLOCKMULTIPLIER                ; apply the block multiplier
 
-		movq        mm6_last, mm6                           ; copy
+		movq        MMX_LIGHTLEFT, mm6                      ; copy
 		psubw       mm6, mm4
-		movq        mm7_last, mm7                           ; copy
+		movq        MMX_LIGHTRIGHT, mm7                           ; copy
 		psubw       mm7, mm5
 		psraw       mm6, mm1
 		psraw       mm7, mm1
@@ -807,9 +812,9 @@ BLOCKSIZESCAN15:                                            ; start scanning
 		paddw       mm2, mm0
 		packuswb    mm1, mm3
 		movq        mm3, mm1                                ; copy
-		pand        mm1, mm1_and1
-		pand        mm3, mm3_and2
-		pmaddwd     mm1, mm1_and3
+		pand        mm1, MMX_REDBLUE1516
+		pand        mm3, MMX_GREEN15
+		pmaddwd     mm1, MMX_LIGHTMULTIPLIER15
 		por         mm1, mm3
 		pslld       mm1, 0Bh
 		psrad       mm1, 10h
@@ -828,8 +833,8 @@ BLOCKSIZESCAN15:                                            ; start scanning
 		inc         ecx
 		cmp         ecx, edx
 		jl          BLOCKSIZEINIT15
-		movq        mm4, mm6_last                           ; copy
-		movq        mm5, mm7_last                           ; copy
+		movq        mm4, MMX_LIGHTLEFT                      ; copy
+		movq        mm5, MMX_LIGHTRIGHT                     ; copy
 		mov         ecx, r_offset
 		mov         esi, sourcevstep
 		mov         eax, r_stepback
@@ -866,11 +871,11 @@ IS16BIT:
 		movd        mm5, DWORD PTR[esi + 24]                ; blue (lightptr[6])
 
 		psrlw       mm4, 1
-		pmulhw      mm4, mm_mul                             ; apply the block multiplier
+		pmulhw      mm4, MMX_BLOCKMULTIPLIER                ; apply the block multiplier
 		punpcklwd   mm5, mm3
 		punpckldq   mm5, mm1
 		psrlw       mm5, 1
-		pmulhw      mm5, mm_mul                             ; apply the block multiplier
+		pmulhw      mm5, MMX_BLOCKMULTIPLIER                ; apply the block multiplier
 		mov         ecx, r_numvblocks
 		mov         v, eax
 		cmp         ecx, eax
@@ -907,17 +912,17 @@ BITSCAN16:                                                  ; 16-bit scan of all
 		movd        mm7, DWORD PTR[esi + 24]                ; blue left (lightptr[6])
 
 		psrlw       mm6, 1
-		pmulhw      mm6, mm_mul                             ; apply the block multiplier
+		pmulhw      mm6, MMX_BLOCKMULTIPLIER                ; apply the block multiplier
 		punpcklwd   mm7, mm3
 		punpckldq   mm7, mm1
 		mov         ebx, texture
 		movd        mm1, blockdivshift
 		psrlw       mm7, 1
-		pmulhw      mm7, mm_mul                             ; apply the block multiplier
+		pmulhw      mm7, MMX_BLOCKMULTIPLIER                ; apply the block multiplier
 
-		movq        mm6_last, mm6                           ; copy
+		movq        MMX_LIGHTLEFT, mm6                      ; copy
 		psubw       mm6, mm4
-		movq        mm7_last, mm7                           ; copy
+		movq        MMX_LIGHTRIGHT, mm7                     ; copy
 		psubw       mm7, mm5
 		psraw       mm6, mm1
 		psraw       mm7, mm1
@@ -951,9 +956,9 @@ BLOCKSIZESCAN16:                                            ; start scanning
 		paddw       mm2, mm0
 		packuswb    mm1, mm3
 		movq        mm3, mm1                                ; copy
-		pand        mm1, mm1_and1
-		pand        mm3, mm3_and1
-		pmaddwd     mm1, mm1_and2
+		pand        mm1, MMX_REDBLUE1516
+		pand        mm3, MMX_GREEN16
+		pmaddwd     mm1, MMX_LIGHTMULTIPLIER16
 		por         mm1, mm3
         pslld       mm1, 11
         psrad       mm1, 16
@@ -972,8 +977,8 @@ BLOCKSIZESCAN16:                                            ; start scanning
 		inc         ecx
 		cmp         ecx, edx
 		jl          BLOCKSIZEINIT16
-		movq        mm4, mm6_last                           ; copy
-		movq        mm5, mm7_last                           ; copy
+		movq        mm4, MMX_LIGHTLEFT                      ; copy
+		movq        mm5, MMX_LIGHTRIGHT                     ; copy
 		mov         ecx, r_offset
 		mov         esi, sourcevstep
 		mov         eax, r_stepback
@@ -996,7 +1001,7 @@ END:
 		emms
 	}
 }
-
+#endif
 
 void R_DrawSurfaceBlock16Holes( void )
 {
