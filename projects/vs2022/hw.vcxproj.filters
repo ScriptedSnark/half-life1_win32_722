@@ -99,7 +99,7 @@
     <ClCompile Include="..\..\engine\in_win.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\engine\opengl2d3d.cpp">
+    <ClCompile Include="..\..\engine\opengl32.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\engine\conproc.c">
@@ -365,7 +365,7 @@
     <ClInclude Include="..\..\engine\input.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\engine\opengl2d3d.h">
+    <ClInclude Include="..\..\engine\opengl32.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\engine\conproc.h">

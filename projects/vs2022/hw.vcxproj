@@ -60,7 +60,7 @@
     <ClCompile Include="..\..\engine\mathlib.c" />
     <ClCompile Include="..\..\engine\net_chan.c" />
     <ClCompile Include="..\..\engine\net_ws.c" />
-    <ClCompile Include="..\..\engine\opengl2d3d.cpp" />
+    <ClCompile Include="..\..\engine\opengl32.cpp" />
     <ClCompile Include="..\..\engine\pe_win32.c" />
     <ClCompile Include="..\..\engine\physics.c" />
     <ClCompile Include="..\..\engine\pmove.c" />
@@ -139,7 +139,7 @@
     <ClInclude Include="..\..\engine\mathlib.h" />
     <ClInclude Include="..\..\engine\modelgen.h" />
     <ClInclude Include="..\..\engine\net.h" />
-    <ClInclude Include="..\..\engine\opengl2d3d.h" />
+    <ClInclude Include="..\..\engine\opengl32.h" />
     <ClInclude Include="..\..\engine\pmove.h" />
     <ClInclude Include="..\..\engine\profile.h" />
     <ClInclude Include="..\..\engine\progdefs.h" />

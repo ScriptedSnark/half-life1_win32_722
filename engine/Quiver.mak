@@ -648,7 +648,7 @@ CLEAN :
 	-@erase "$(INTDIR)\mathlib.obj"
 	-@erase "$(INTDIR)\net_chan.obj"
 	-@erase "$(INTDIR)\net_ws.obj"
-	-@erase "$(INTDIR)\opengl2d3d.obj"
+	-@erase "$(INTDIR)\opengl32.obj"
 	-@erase "$(INTDIR)\pe_win32.obj"
 	-@erase "$(INTDIR)\physics.obj"
 	-@erase "$(INTDIR)\pmove.obj"
@@ -765,7 +765,7 @@ LINK32_OBJS= \
 	"$(INTDIR)\mathlib.obj" \
 	"$(INTDIR)\net_chan.obj" \
 	"$(INTDIR)\net_ws.obj" \
-	"$(INTDIR)\opengl2d3d.obj" \
+	"$(INTDIR)\opengl32.obj" \
 	"$(INTDIR)\pe_win32.obj" \
 	"$(INTDIR)\physics.obj" \
 	"$(INTDIR)\pmove.obj" \
@@ -867,7 +867,7 @@ CLEAN :
 	-@erase "$(INTDIR)\mathlib.obj"
 	-@erase "$(INTDIR)\net_chan.obj"
 	-@erase "$(INTDIR)\net_ws.obj"
-	-@erase "$(INTDIR)\opengl2d3d.obj"
+	-@erase "$(INTDIR)\opengl32.obj"
 	-@erase "$(INTDIR)\pe_win32.obj"
 	-@erase "$(INTDIR)\physics.obj"
 	-@erase "$(INTDIR)\pmove.obj"
@@ -980,7 +980,7 @@ LINK32_OBJS= \
 	"$(INTDIR)\mathlib.obj" \
 	"$(INTDIR)\net_chan.obj" \
 	"$(INTDIR)\net_ws.obj" \
-	"$(INTDIR)\opengl2d3d.obj" \
+	"$(INTDIR)\opengl32.obj" \
 	"$(INTDIR)\pe_win32.obj" \
 	"$(INTDIR)\physics.obj" \
 	"$(INTDIR)\pmove.obj" \
@@ -4711,7 +4711,7 @@ DEP_CPP_GL_DR=\
 	".\model.h"\
 	".\modelgen.h"\
 	".\net.h"\
-	".\opengl2d3d.h"\
+	".\opengl32.h"\
 	".\pr_cmds.h"\
 	".\pr_dlls.h"\
 	".\progdefs.h"\
@@ -5640,7 +5640,7 @@ DEP_CPP_GL_VI=\
 	".\model.h"\
 	".\modelgen.h"\
 	".\net.h"\
-	".\opengl2d3d.h"\
+	".\opengl32.h"\
 	".\pr_dlls.h"\
 	".\progdefs.h"\
 	".\Progs.h"\
@@ -7551,7 +7551,7 @@ NODEP_CPP_NONIN=\
 ################################################################################
 # Begin Source File
 
-SOURCE=.\opengl2d3d.cpp
+SOURCE=.\opengl32.cpp
 DEP_CPP_OPENG=\
 	"..\common\dll_state.h"\
 	"..\common\platform.h"\
@@ -7583,7 +7583,7 @@ DEP_CPP_OPENG=\
 	".\model.h"\
 	".\modelgen.h"\
 	".\net.h"\
-	".\opengl2d3d.h"\
+	".\opengl32.h"\
 	".\pr_dlls.h"\
 	".\progdefs.h"\
 	".\Progs.h"\
@@ -7629,7 +7629,7 @@ NODEP_CPP_OPENG=\
 !ELSEIF  "$(CFG)" == "Quiver - Win32 GL Debug"
 
 
-"$(INTDIR)\opengl2d3d.obj" : $(SOURCE) $(DEP_CPP_OPENG) "$(INTDIR)"
+"$(INTDIR)\opengl32.obj" : $(SOURCE) $(DEP_CPP_OPENG) "$(INTDIR)"
    $(CPP) /nologo /MTd /W3 /Gm /GX /Zi /Od /I "..\common" /I\
  "..\dx6sdk\include" /D "_DEBUG" /D "GLQUAKE" /D "__USEA3D" /D "__A3D_GEOM" /D\
  "WIN32" /D "_WINDOWS" /Fo"$(INTDIR)/" /Fd"$(INTDIR)/" /c $(SOURCE)
@@ -7638,7 +7638,7 @@ NODEP_CPP_OPENG=\
 !ELSEIF  "$(CFG)" == "Quiver - Win32 GL Release"
 
 
-"$(INTDIR)\opengl2d3d.obj" : $(SOURCE) $(DEP_CPP_OPENG) "$(INTDIR)"
+"$(INTDIR)\opengl32.obj" : $(SOURCE) $(DEP_CPP_OPENG) "$(INTDIR)"
    $(CPP) /nologo /MT /W3 /GR /GX /O2 /I "..\common" /I "..\dx6sdk\include" /D\
  "NDEBUG" /D "GLQUAKE" /D "__USEA3D" /D "__A3D_GEOM" /D "WIN32" /D "_WINDOWS"\
  /Fo"$(INTDIR)/" /c $(SOURCE)
@@ -7650,7 +7650,7 @@ NODEP_CPP_OPENG=\
 ################################################################################
 # Begin Source File
 
-SOURCE=.\opengl2d3d.h
+SOURCE=.\opengl32.h
 
 !IF  "$(CFG)" == "Quiver - Win32 Release"
 

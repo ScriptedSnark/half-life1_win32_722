@@ -4,7 +4,7 @@
 
 #include "quakedef.h"
 #include "winquake.h"
-#include "opengl2d3d.h"
+#include "opengl32.h"
 
 void Download4444( void )
 {
