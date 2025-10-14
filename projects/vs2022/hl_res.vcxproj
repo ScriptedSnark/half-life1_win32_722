@@ -85,7 +85,7 @@
     <Link>
       <SubSystem>NotSet</SubSystem>
       <GenerateDebugInformation>false</GenerateDebugInformation>
-      <NoEntryPoint>false</NoEntryPoint>
+      <NoEntryPoint>true</NoEntryPoint>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug - Address Sanitizer|Win32'">
@@ -99,7 +99,7 @@
     <Link>
       <SubSystem>NotSet</SubSystem>
       <GenerateDebugInformation>false</GenerateDebugInformation>
-      <NoEntryPoint>false</NoEntryPoint>
+      <NoEntryPoint>true</NoEntryPoint>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
