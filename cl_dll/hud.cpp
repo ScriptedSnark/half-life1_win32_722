@@ -227,6 +227,7 @@ int CHud::MsgFunc_SetFOV(const char *pszName,  int iSize, void *pbuf)
 	}
 	else
 	{
+		m_iFOV = newfov;
 		m_flOldSensitivity = CVAR_GET_FLOAT( "sensitivity" );
 		// set a new sensitivity that is proportional to the change from the FOV default
 		flSensitivity = m_flOldSensitivity * ((float)newfov / (float)def_fov) * CVAR_GET_FLOAT("zoom_sensitivity_ratio");
