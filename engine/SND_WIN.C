@@ -75,7 +75,7 @@ S_GetWAVPointer
 Returns a pointer to pDS, if it exists, NULL otherwise
 ==================
 */
-void* S_GetWAVPointer( void )
+DLL_EXPORT void* S_GetWAVPointer( void )
 {
 	if (hWaveOut)
 		return (void*)&hWaveOut;
@@ -90,7 +90,7 @@ LPDIRECTSOUND S_GetDSPointer
 Returns a pointer to pDS, if it exists, NULL otherwise
 ==================
 */
-void S_GetDSPointer( LPDIRECTSOUND* lpDS, LPDIRECTSOUNDBUFFER* lpDSBuf )
+DLL_EXPORT void S_GetDSPointer( LPDIRECTSOUND* lpDS, LPDIRECTSOUNDBUFFER* lpDSBuf )
 {
 #if defined (__USEA3D)
 	if (snd_isa3d)
