@@ -13119,7 +13119,7 @@ InputPath=.\worlda.asm
 ################################################################################
 # Begin Source File
 
-SOURCE="\Stuff\GSDEV\half-life1_win32_722\a3dwrapper\a3dwrapper.cpp"
+SOURCE="..\a3dwrapper\a3dwrapper.cpp"
 DEP_CPP_A3DWR=\
 	"..\a3dwrapper\a3dwrapper.h"\
 	
