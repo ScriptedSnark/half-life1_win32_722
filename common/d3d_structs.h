@@ -6,22 +6,19 @@
 extern "C" {
 #endif // __cplusplus
 
-struct LPDIRECT3D3;
-
 typedef struct tagD3DGlobals
 {
 	BOOL bCalled;
 	BOOL bFullscreen;
 	BOOL bSecondary;
-	LPDIRECTDRAW4           lpDD4;          // DirectDraw object
+	LPDIRECTDRAW            lpDD4;          // DirectDraw object
 	LPDIRECTDRAWSURFACE     lpDDSPrimary;   // DirectDraw primary surface
 	LPDIRECTDRAWSURFACE     lpDDSBack;      // DirectDraw back surface
 	LPDIRECTDRAWSURFACE     lpDDSMem;		// DirectDraw mem surface
 	LPDIRECT3D3				lpD3D;
 }D3DGLOBALS;
 
-//D3DGLOBALS d3dG;
-//
+extern D3DGLOBALS d3dG;
 
 #ifdef __cplusplus
 }

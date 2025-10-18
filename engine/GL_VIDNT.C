@@ -3,7 +3,6 @@
 #include "quakedef.h"
 #include "winquake.h"
 #include "gl_hw.h"
-#include "opengl32.h"
 
 BOOL gfMiniDriver = FALSE;
 

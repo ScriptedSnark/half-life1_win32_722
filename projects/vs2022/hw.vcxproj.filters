@@ -497,6 +497,9 @@
     <ClInclude Include="..\..\common\clientid.h">
       <Filter>Header Files\common</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\common\d3d_structs.h">
+      <Filter>Header Files\common</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <MASM Include="..\..\engine\sys_wina.asm">

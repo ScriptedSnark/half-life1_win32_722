@@ -17,7 +17,11 @@ void GLimp_EnableLogging( void );
 void GLimp_LogNewFrame( void );
 
 void GL_Config( void );
+
 DLL_EXPORT void GL_Init( void );
+DLL_EXPORT void Download4444( void );
+DLL_EXPORT void QGL_D3DShared( struct tagD3DGlobals* d3dGShared );
+DLL_EXPORT HINSTANCE QGL_D3DInit( void );
 
 #define GL_SHARED_TEXTURE_PALETTE_EXT 0x81FB
 
@@ -370,41 +374,44 @@ extern	void ( APIENTRY * qglColorTableEXT )( int, int, int, int, int, const void
 extern	void ( APIENTRY * qglSelectTextureSGIS )( GLenum );
 extern	void ( APIENTRY * qglMTexCoord2fSGIS )( GLenum, GLfloat, GLfloat );
 
+extern	void ( APIENTRY * dllVertexPointer )( GLint size, GLenum type, GLsizei stride, const GLvoid* pointer );
+extern	void ( APIENTRY * dllViewport )( GLint x, GLint y, GLsizei width, GLsizei height );
+
 #ifdef _WIN32
 
-extern	int   ( WINAPI * qwglChoosePixelFormat )( HDC, CONST PIXELFORMATDESCRIPTOR * );
-extern	int   ( WINAPI * qwglDescribePixelFormat )( HDC, int, UINT, LPPIXELFORMATDESCRIPTOR );
-extern	int   ( WINAPI * qwglGetPixelFormat )( HDC );
-extern	BOOL ( WINAPI * qwglSetPixelFormat )( HDC, int, CONST PIXELFORMATDESCRIPTOR* );
-DLL_EXPORT BOOL ( WINAPI * qwglSwapBuffers )( HDC );
+extern	int   ( APIENTRY * qwglChoosePixelFormat )( HDC, CONST PIXELFORMATDESCRIPTOR * );
+extern	int   ( APIENTRY * qwglDescribePixelFormat )( HDC, int, UINT, LPPIXELFORMATDESCRIPTOR );
+extern	int   ( APIENTRY * qwglGetPixelFormat )( HDC );
+extern	BOOL ( APIENTRY * qwglSetPixelFormat )( HDC, int, CONST PIXELFORMATDESCRIPTOR* );
+DLL_EXPORT BOOL ( APIENTRY * qwglSwapBuffers )( HDC );
 
-extern	BOOL ( WINAPI * qwglCopyContext )( HGLRC, HGLRC, UINT );
-extern	HGLRC ( WINAPI * qwglCreateContext )( HDC );
-extern	HGLRC ( WINAPI * qwglCreateLayerContext )( HDC, int );
-extern	BOOL ( WINAPI * qwglDeleteContext )( HGLRC );
-extern	HGLRC ( WINAPI * qwglGetCurrentContext )( VOID );
-extern	HDC ( WINAPI * qwglGetCurrentDC )( VOID );
-extern	PROC ( WINAPI * qwglGetProcAddress )( LPCSTR );
-extern	BOOL ( WINAPI * qwglMakeCurrent )( HDC, HGLRC );
-extern	BOOL ( WINAPI * qwglShareLists )( HGLRC, HGLRC );
-extern	BOOL ( WINAPI * qwglUseFontBitmaps )( HDC, DWORD, DWORD, DWORD );
+extern	BOOL ( APIENTRY * qwglCopyContext )( HGLRC, HGLRC, UINT );
+extern	HGLRC ( APIENTRY * qwglCreateContext )( HDC );
+extern	HGLRC ( APIENTRY * qwglCreateLayerContext )( HDC, int );
+extern	BOOL ( APIENTRY * qwglDeleteContext )( HGLRC );
+extern	HGLRC ( APIENTRY * qwglGetCurrentContext )( VOID );
+extern	HDC ( APIENTRY * qwglGetCurrentDC )( VOID );
+extern	PROC ( APIENTRY * qwglGetProcAddress )( LPCSTR );
+extern	BOOL ( APIENTRY * qwglMakeCurrent )( HDC, HGLRC );
+extern	BOOL ( APIENTRY * qwglShareLists )( HGLRC, HGLRC );
+extern	BOOL ( APIENTRY * qwglUseFontBitmaps )( HDC, DWORD, DWORD, DWORD );
 
-extern	BOOL ( WINAPI * qwglUseFontOutlines )( HDC, DWORD, DWORD, DWORD, FLOAT,
+extern	BOOL ( APIENTRY * qwglUseFontOutlines )( HDC, DWORD, DWORD, DWORD, FLOAT,
 										   FLOAT, int, LPGLYPHMETRICSFLOAT );
 
-extern	BOOL ( WINAPI * qwglDescribeLayerPlane )( HDC, int, int, UINT,
+extern	BOOL ( APIENTRY * qwglDescribeLayerPlane )( HDC, int, int, UINT,
 											LPLAYERPLANEDESCRIPTOR );
-extern	int  ( WINAPI * qwglSetLayerPaletteEntries )( HDC, int, int, int,
+extern	int  ( APIENTRY * qwglSetLayerPaletteEntries )( HDC, int, int, int,
 												CONST COLORREF* );
-extern	int  ( WINAPI * qwglGetLayerPaletteEntries )(HDC, int, int, int,
+extern	int  ( APIENTRY * qwglGetLayerPaletteEntries )(HDC, int, int, int,
 												COLORREF* );
-extern	BOOL( WINAPI * qwglRealizeLayerPalette )( HDC, int, BOOL );
-extern	BOOL( WINAPI * qwglSwapLayerBuffers )( HDC, UINT );
+extern	BOOL( APIENTRY * qwglRealizeLayerPalette )( HDC, int, BOOL );
+extern	BOOL( APIENTRY * qwglSwapLayerBuffers )( HDC, UINT );
 
-extern	BOOL ( WINAPI * qwglSwapIntervalEXT )( int interval );
+extern	BOOL ( APIENTRY * qwglSwapIntervalEXT )( int interval );
 
-extern	BOOL ( WINAPI * qwglGetDeviceGammaRampEXT )( unsigned char* , unsigned char* , unsigned char* );
-extern	BOOL ( WINAPI * qwglSetDeviceGammaRampEXT )( const unsigned char* , const unsigned char* , const unsigned char* );
+extern	BOOL ( APIENTRY * qwglGetDeviceGammaRampEXT )( unsigned char* , unsigned char* , unsigned char* );
+extern	BOOL ( APIENTRY * qwglSetDeviceGammaRampEXT )( const unsigned char* , const unsigned char* , const unsigned char* );
 
 #endif
 

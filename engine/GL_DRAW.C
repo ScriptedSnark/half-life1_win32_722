@@ -5,7 +5,6 @@
 #include "winquake.h"
 #include "decal.h"
 #include "pr_cmds.h"
-#include "opengl32.h"
 
 cvar_t		gl_nobind = { "gl_nobind", "0" };
 cvar_t		gl_max_size = { "gl_max_size", "256" };
