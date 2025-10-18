@@ -2,9 +2,17 @@
 // Quake GL to DirectX wrapper
 //-----------------------------------------------------------------------------
 
+#ifdef DECLSPEC_IMPORT
+#undef DECLSPEC_IMPORT
+#endif
+#define DECLSPEC_IMPORT __declspec(dllexport)
+
 #define CINTERFACE
 #include <../dx6sdk/include/ddraw.h>
 #include <../dx6sdk/include/d3d.h>
+
+#undef DECLSPEC_IMPORT
+#define DECLSPEC_IMPORT __declspec(dllimport)
 
 #include "d3d_structs.h"
 #include "opengl32.h"

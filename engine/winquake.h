@@ -3,10 +3,6 @@
 #pragma warning( disable : 4229 )  // mgraph gets this
 #pragma warning( disable : 4996 )  // GetVersionExA
 
-#ifndef NOGDI
-#define NOGDI 1
-#endif // NOGDI
-
 #include <windows.h>
 #include <direct.h>
 
