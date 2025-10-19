@@ -2,20 +2,8 @@
 // Quake GL to DirectX wrapper
 //-----------------------------------------------------------------------------
 
-#ifdef DECLSPEC_IMPORT
-#undef DECLSPEC_IMPORT
-#endif
-#define DECLSPEC_IMPORT __declspec(dllexport)
-
-#define CINTERFACE
-#include <../dx6sdk/include/ddraw.h>
-#include <../dx6sdk/include/d3d.h>
-
-#undef DECLSPEC_IMPORT
-#define DECLSPEC_IMPORT __declspec(dllimport)
-
-#include "d3d_structs.h"
 #include "opengl32.h"
+#include "d3d_structs.h"
 
 #ifdef _WIN32
 #define DLL_EXPORT extern "C" __declspec(dllexport)
@@ -45,16 +33,6 @@ DLL_EXPORT void APIENTRY glMTexCoord2fSGIS( GLenum target, GLfloat s, GLfloat t 
 }
 
 
-DLL_EXPORT void APIENTRY glVertexPointer( GLint size, GLenum type, GLsizei stride, const GLvoid* pointer )
-{
-}
-
-DLL_EXPORT void APIENTRY glViewport( GLint x, GLint y, GLsizei width, GLsizei height )
-{
-	// TODO: Implement
-}
-
-
 
 // TODO: Implement
 
@@ -68,8 +46,79 @@ DLL_EXPORT void APIENTRY glViewport( GLint x, GLint y, GLsizei width, GLsizei he
 
 
 
+DLL_EXPORT void APIENTRY glVertexPointer( GLint size, GLenum type, GLsizei stride, const GLvoid* pointer )
+{
+}
 
+DLL_EXPORT void APIENTRY glViewport( GLint x, GLint y, GLsizei width, GLsizei height )
+{
+	// TODO: Implement
+}
 
+DLL_EXPORT BOOL WINAPI wglCopyContext( HGLRC hglrcSrc, HGLRC hglrcDst, UINT mask )
+{
+	return FALSE;
+}
+
+DLL_EXPORT HGLRC WINAPI wglCreateContext( HDC hdc )
+{
+	// TODO: Implement
+	return (HGLRC)1;
+}
+
+DLL_EXPORT HGLRC WINAPI wglCreateLayerContext( HDC hdc, int iLayerPlan )
+{
+	return (HGLRC)1;
+}
+
+DLL_EXPORT BOOL WINAPI wglDeleteContext( HGLRC hglrc )
+{
+	// TODO: Implement
+
+	CoUninitialize();
+
+	return TRUE;
+}
+
+DLL_EXPORT BOOL WINAPI wglDescribeLayerPlane( HDC hdc, int iPixelFormat, int iLayerPlane, UINT nBytes, LPLAYERPLANEDESCRIPTOR plpd )
+{
+	return FALSE;
+}
+
+DLL_EXPORT HGLRC WINAPI wglGetCurrentContext( void )
+{
+	return (HGLRC)1;
+}
+
+DLL_EXPORT HDC WINAPI wglGetCurrentDC( void )
+{
+	return gD3D.hDC;
+}
+
+DLL_EXPORT int WINAPI wglGetLayerPaletteEntries( HDC hdc, int iLayerPlane, int iStart, int cEntries, COLORREF* pcr )
+{
+	return 0;
+}
+
+DLL_EXPORT PROC WINAPI wglGetProcAddress( LPCSTR lpszProc )
+{
+	if (!strcmp(lpszProc, "glMTexCoord2fSGIS"))
+		return (PROC)glMTexCoord2fSGIS;
+	else if (!strcmp(lpszProc, "glSelectTextureSGIS"))
+		return (PROC)glSelectTextureSGIS;
+
+	return NULL;
+}
+
+DLL_EXPORT BOOL WINAPI wglMakeCurrent( HDC hdc, HGLRC hglrc )
+{
+	return TRUE;
+}
+
+DLL_EXPORT BOOL WINAPI wglRealizeLayerPalette( HDC hdc, int iLayerPlane, BOOL bRealize )
+{
+	return FALSE;
+}
 
 DLL_EXPORT int WINAPI wglSetLayerPaletteEntries( HDC, int, int, int, CONST COLORREF* )
 {
@@ -183,46 +232,25 @@ DLL_EXPORT HINSTANCE QGL_D3DInit( void )
 {
 	// TODO: Implement
 
-
-
-	
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 	qglVertexPointer			= dllVertexPointer				= glVertexPointer;
 	qglViewport					= dllViewport					= glViewport;
 
-//	qwglCopyContext				= wglCopyContext;
-//	qwglCreateContext			= wglCreateContext;
-//	qwglCreateLayerContext		= wglCreateLayerContext;
-//	qwglDeleteContext			= wglDeleteContext;
-//	qwglDescribeLayerPlane		= wglDescribeLayerPlane;
-//	qwglGetCurrentContext		= wglGetCurrentContext;
-//	qwglGetCurrentDC			= wglGetCurrentDC;
-//	qwglGetLayerPaletteEntries	= wglGetLayerPaletteEntries;
-//	qwglGetProcAddress			= wglGetProcAddress;
-//	qwglMakeCurrent				= wglMakeCurrent;
-//	qwglRealizeLayerPalette		= wglRealizeLayerPalette;
-//	qwglSetLayerPaletteEntries	= wglSetLayerPaletteEntries;
-//	qwglShareLists				= wglShareLists;
-//	qwglSwapLayerBuffers		= wglSwapLayerBuffers;
-//	qwglUseFontBitmaps			= wglUseFontBitmaps;
-//	qwglUseFontOutlines			= wglUseFontOutlines;
+	qwglCopyContext				= wglCopyContext;
+	qwglCreateContext			= wglCreateContext;
+	qwglCreateLayerContext		= wglCreateLayerContext;
+	qwglDeleteContext			= wglDeleteContext;
+	qwglDescribeLayerPlane		= wglDescribeLayerPlane;
+	qwglGetCurrentContext		= wglGetCurrentContext;
+	qwglGetCurrentDC			= wglGetCurrentDC;
+	qwglGetLayerPaletteEntries	= wglGetLayerPaletteEntries;
+	qwglGetProcAddress			= wglGetProcAddress;
+	qwglMakeCurrent				= wglMakeCurrent;
+	qwglRealizeLayerPalette		= wglRealizeLayerPalette;
+	qwglSetLayerPaletteEntries	= wglSetLayerPaletteEntries;
+	qwglShareLists				= wglShareLists;
+	qwglSwapLayerBuffers		= wglSwapLayerBuffers;
+	qwglUseFontBitmaps			= wglUseFontBitmaps;
+	qwglUseFontOutlines			= wglUseFontOutlines;
 	qwglChoosePixelFormat		= wglChoosePixelFormat;
 	qwglDescribePixelFormat		= wglDescribePixelFormat;
 	qwglGetPixelFormat			= wglGetPixelFormat;

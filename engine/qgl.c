@@ -29,32 +29,26 @@ typedef struct glwstate_s
 
 glwstate_t glw_state;
 
-int   ( APIENTRY * qwglChoosePixelFormat )( HDC hdc, CONST PIXELFORMATDESCRIPTOR* ppfd );
-int   ( APIENTRY * qwglDescribePixelFormat )( HDC hdc, int iPixelFormat, UINT nBytes, LPPIXELFORMATDESCRIPTOR ppfd );
-int   ( APIENTRY * qwglGetPixelFormat )( HDC hdc );
+int  ( APIENTRY * qwglChoosePixelFormat )( HDC hdc, CONST PIXELFORMATDESCRIPTOR* ppfd );
+int  ( APIENTRY * qwglDescribePixelFormat )( HDC hdc, int iPixelFormat, UINT nBytes, LPPIXELFORMATDESCRIPTOR ppfd );
+int  ( APIENTRY * qwglGetPixelFormat )( HDC hdc );
 BOOL ( APIENTRY * qwglSetPixelFormat )( HDC hdc, int iPixelFormat, CONST PIXELFORMATDESCRIPTOR* ppfd );
 BOOL ( APIENTRY * qwglSwapBuffers )( HDC hdc );
 
-BOOL ( APIENTRY * qwglCopyContext )( HGLRC, HGLRC, UINT );
-HGLRC ( APIENTRY * qwglCreateContext )( HDC );
-HGLRC ( APIENTRY * qwglCreateLayerContext )( HDC, int );
-BOOL ( APIENTRY * qwglDeleteContext )( HGLRC );
+BOOL ( APIENTRY * qwglCopyContext )( HGLRC hglrcSrc, HGLRC hglrcDst, UINT mask );
+HGLRC ( APIENTRY * qwglCreateContext )( HDC hdc );
+HGLRC ( APIENTRY * qwglCreateLayerContext )( HDC hdc, int iLayerPlan );
+BOOL ( APIENTRY * qwglDeleteContext )( HGLRC hglrc );
 HGLRC ( APIENTRY * qwglGetCurrentContext )( VOID );
 HDC ( APIENTRY * qwglGetCurrentDC )( VOID );
-PROC ( APIENTRY * qwglGetProcAddress )( LPCSTR );
+PROC ( APIENTRY * qwglGetProcAddress )( LPCSTR lpszProc );
 BOOL ( APIENTRY * qwglMakeCurrent )( HDC, HGLRC );
 BOOL ( APIENTRY * qwglShareLists )( HGLRC, HGLRC );
 BOOL ( APIENTRY * qwglUseFontBitmaps )( HDC, DWORD, DWORD, DWORD );
-
-BOOL ( APIENTRY * qwglUseFontOutlines )( HDC, DWORD, DWORD, DWORD, FLOAT,
-										   FLOAT, int, LPGLYPHMETRICSFLOAT );
-
-BOOL ( APIENTRY * qwglDescribeLayerPlane )( HDC, int, int, UINT,
-											LPLAYERPLANEDESCRIPTOR );
-int  ( APIENTRY * qwglSetLayerPaletteEntries )( HDC, int, int, int,
-												CONST COLORREF* );
-int  ( APIENTRY * qwglGetLayerPaletteEntries )(HDC, int, int, int,
-												COLORREF* );
+BOOL ( APIENTRY * qwglUseFontOutlines )( HDC, DWORD, DWORD, DWORD, FLOAT, FLOAT, int, LPGLYPHMETRICSFLOAT );
+BOOL ( APIENTRY * qwglDescribeLayerPlane )( HDC, int, int, UINT, LPLAYERPLANEDESCRIPTOR );
+int  ( APIENTRY * qwglSetLayerPaletteEntries )( HDC, int, int, int, CONST COLORREF* );
+int  ( APIENTRY * qwglGetLayerPaletteEntries )(HDC, int, int, int, COLORREF* );
 BOOL( APIENTRY * qwglRealizeLayerPalette )( HDC, int, BOOL );
 BOOL( APIENTRY * qwglSwapLayerBuffers )( HDC, UINT );
 

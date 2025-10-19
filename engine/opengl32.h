@@ -5,6 +5,18 @@
 #ifndef _OPENGL32_H_
 #define _OPENGL32_H_
 
+#ifdef DECLSPEC_IMPORT
+#undef DECLSPEC_IMPORT
+#endif
+#define DECLSPEC_IMPORT __declspec(dllexport)
+
+#define CINTERFACE
+#include <../dx6sdk/include/ddraw.h>
+#include <../dx6sdk/include/d3d.h>
+
+#undef DECLSPEC_IMPORT
+#define DECLSPEC_IMPORT __declspec(dllimport)
+
 typedef unsigned int GLenum;
 typedef unsigned char GLboolean;
 typedef unsigned int GLbitfield;
@@ -25,6 +37,22 @@ extern "C" {
 extern	void ( APIENTRY * qglVertexPointer )( GLint size, GLenum type, GLsizei stride, const GLvoid* pointer );
 extern	void ( APIENTRY * qglViewport )( GLint x, GLint y, GLsizei width, GLsizei height );
 
+extern	BOOL ( APIENTRY * qwglCopyContext )( HGLRC hglrcSrc, HGLRC hglrcDst, UINT mask );
+extern	HGLRC ( APIENTRY * qwglCreateContext )( HDC hdc );
+extern	HGLRC ( APIENTRY * qwglCreateLayerContext )( HDC hdc, int iLayerPlan );
+extern	BOOL ( APIENTRY * qwglDeleteContext )( HGLRC hglrc );
+extern	BOOL ( APIENTRY * qwglDescribeLayerPlane )( HDC hdc, int iPixelFormat, int iLayerPlane, UINT nBytes, LPLAYERPLANEDESCRIPTOR plpd );
+extern	HGLRC ( APIENTRY * qwglGetCurrentContext )( VOID );
+extern	HDC  ( APIENTRY * qwglGetCurrentDC )( VOID );
+extern	int  ( APIENTRY * qwglGetLayerPaletteEntries )( HDC hdc, int iLayerPlane, int iStart, int cEntries, COLORREF* pcr );
+extern	PROC ( APIENTRY * qwglGetProcAddress )( LPCSTR lpszProc );
+extern	BOOL ( APIENTRY * qwglMakeCurrent )( HDC hdc, HGLRC hglrc );
+extern	BOOL ( APIENTRY * qwglRealizeLayerPalette )( HDC hdc, int iLayerPlane, BOOL bRealize );
+extern	int  ( APIENTRY * qwglSetLayerPaletteEntries )( HDC hdc, int iLayerPlane, int iStart, int cEntries, CONST COLORREF* pcr );
+extern	BOOL ( APIENTRY * qwglShareLists )( HGLRC hglrc1, HGLRC hglrc2 );
+extern	BOOL ( APIENTRY * qwglSwapLayerBuffers )( HDC hdc, UINT fuPlanes );
+extern	BOOL ( APIENTRY * qwglUseFontBitmaps )( HDC hdc, DWORD first, DWORD count, DWORD listBase );
+extern	BOOL ( APIENTRY * qwglUseFontOutlines )( HDC hdc, DWORD first, DWORD count, DWORD listBase, FLOAT deviation, FLOAT extrusion, int format, LPGLYPHMETRICSFLOAT lpgmf );
 extern	int  ( APIENTRY * qwglChoosePixelFormat )( HDC hdc, CONST PIXELFORMATDESCRIPTOR* ppfd );
 extern	int  ( APIENTRY * qwglDescribePixelFormat )( HDC hdc, int iPixelFormat, UINT nBytes, LPPIXELFORMATDESCRIPTOR ppfd );
 extern	int  ( APIENTRY * qwglGetPixelFormat )( HDC hdc );
@@ -44,6 +72,8 @@ extern	void ( APIENTRY * dllViewport )( GLint x, GLint y, GLsizei width, GLsizei
 
 typedef struct D3D_s
 {
+	HWND			hWnd;	// Window handle
+	HDC				hDC;	// Device context
 	void*			lpDD4;
 	int				bFullscreen;
 	BOOL			f4444; // RGBA4444 format
