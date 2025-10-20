@@ -15,13 +15,6 @@ D3D_t gD3D;
 
 // TODO: Implement
 
-DLL_EXPORT void APIENTRY glTexImage2D( GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const GLvoid* pixels )
-{
-	// TODO: Implement
-}
-
-// TODO: Implement
-
 DLL_EXPORT void APIENTRY glSelectTextureSGIS( GLenum target )
 {
 	// TODO: Implement
@@ -46,6 +39,190 @@ DLL_EXPORT void APIENTRY glMTexCoord2fSGIS( GLenum target, GLfloat s, GLfloat t 
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+DLL_EXPORT void APIENTRY glTexGend( GLenum coord, GLenum pname, GLdouble param )
+{
+}
+
+DLL_EXPORT void APIENTRY glTexGendv( GLenum coord, GLenum pname, const GLdouble* params )
+{
+}
+
+DLL_EXPORT void APIENTRY glTexGenf( GLenum coord, GLenum pname, GLfloat param )
+{
+}
+
+DLL_EXPORT void APIENTRY glTexGenfv( GLenum coord, GLenum pname, const GLfloat* params )
+{
+}
+
+DLL_EXPORT void APIENTRY glTexGeni( GLenum coord, GLenum pname, GLint param )
+{
+}
+
+DLL_EXPORT void APIENTRY glTexGeniv( GLenum coord, GLenum pname, const GLint* params )
+{
+}
+
+DLL_EXPORT void APIENTRY glTexImage1D( GLenum target, GLint level, GLint internalformat, GLsizei width, GLint border, GLenum format, GLenum type, const GLvoid* pixels )
+{
+}
+
+DLL_EXPORT void APIENTRY glTexImage2D( GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const GLvoid* pixels )
+{
+	// TODO: Implement
+}
+
+DLL_EXPORT void APIENTRY glTexParameterf( GLenum target, GLenum pname, GLfloat param )
+{
+	// TODO: Implement
+}
+
+DLL_EXPORT void APIENTRY glTexParameterfv( GLenum target, GLenum pname, const GLfloat* params )
+{
+}
+
+DLL_EXPORT void APIENTRY glTexParameteri( GLenum target, GLenum pname, GLint param )
+{
+}
+
+DLL_EXPORT void APIENTRY glTexParameteriv( GLenum target, GLenum pname, const GLint* params )
+{
+}
+
+DLL_EXPORT void APIENTRY glTexSubImage1D( GLenum target, GLint level, GLint xoffset, GLsizei width, GLenum format, GLenum type, const GLvoid* pixels )
+{
+}
+
+DLL_EXPORT void APIENTRY glTexSubImage2D( GLenum target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum format, GLenum type, const GLvoid* pixels )
+{
+	// TODO: Implement
+}
+
+DLL_EXPORT void APIENTRY glTranslated( GLdouble x, GLdouble y, GLdouble z )
+{
+}
+
+DLL_EXPORT void APIENTRY glTranslatef( GLfloat x, GLfloat y, GLfloat z )
+{
+	// TODO: Implement
+}
+
+DLL_EXPORT void APIENTRY glVertex2d( GLdouble x, GLdouble y )
+{
+}
+
+DLL_EXPORT void APIENTRY glVertex2dv( const GLdouble* v )
+{
+}
+
+DLL_EXPORT void APIENTRY glVertex2f( GLfloat x, GLfloat y )
+{
+	// TODO: Implement
+}
+
+DLL_EXPORT void APIENTRY glVertex2fv( const GLfloat* v )
+{
+}
+
+DLL_EXPORT void APIENTRY glVertex2i( GLint x, GLint y )
+{
+}
+
+DLL_EXPORT void APIENTRY glVertex2iv( const GLint* v )
+{
+}
+
+DLL_EXPORT void APIENTRY glVertex2s( GLshort x, GLshort y )
+{
+}
+
+DLL_EXPORT void APIENTRY glVertex2sv( const GLshort* v )
+{
+}
+
+DLL_EXPORT void APIENTRY glVertex3d( GLdouble x, GLdouble y, GLdouble z )
+{
+}
+
+DLL_EXPORT void APIENTRY glVertex3dv( const GLdouble* v )
+{
+}
+
+DLL_EXPORT void APIENTRY glVertex3f( GLfloat x, GLfloat y, GLfloat z )
+{
+	// TODO: Implement
+}
+
+DLL_EXPORT void APIENTRY glVertex3fv( const GLfloat* v )
+{
+	// TODO: Implement
+}
+
+DLL_EXPORT void APIENTRY glVertex3i( GLint x, GLint y, GLint z )
+{
+}
+
+DLL_EXPORT void APIENTRY glVertex3iv( const GLint* v )
+{
+}
+
+DLL_EXPORT void APIENTRY glVertex3s( GLshort x, GLshort y, GLshort z )
+{
+}
+
+DLL_EXPORT void APIENTRY glVertex3sv( const GLshort* v )
+{
+}
+
+DLL_EXPORT void APIENTRY glVertex4d( GLdouble x, GLdouble y, GLdouble z, GLdouble w )
+{
+}
+
+DLL_EXPORT void APIENTRY glVertex4dv( const GLdouble* v )
+{
+}
+
+DLL_EXPORT void APIENTRY glVertex4f( GLfloat x, GLfloat y, GLfloat z, GLfloat w )
+{
+}
+
+DLL_EXPORT void APIENTRY glVertex4fv( const GLfloat* v )
+{
+}
+
+DLL_EXPORT void APIENTRY glVertex4i( GLint x, GLint y, GLint z, GLint w )
+{
+}
+
+DLL_EXPORT void APIENTRY glVertex4iv( const GLint* v )
+{
+}
+
+DLL_EXPORT void APIENTRY glVertex4s( GLshort x, GLshort y, GLshort z, GLshort w )
+{
+}
+
+DLL_EXPORT void APIENTRY glVertex4sv( const GLshort* v )
+{
+}
+
 DLL_EXPORT void APIENTRY glVertexPointer( GLint size, GLenum type, GLsizei stride, const GLvoid* pointer )
 {
 }
@@ -62,7 +239,39 @@ DLL_EXPORT BOOL WINAPI wglCopyContext( HGLRC hglrcSrc, HGLRC hglrcDst, UINT mask
 
 DLL_EXPORT HGLRC WINAPI wglCreateContext( HDC hdc )
 {
+	LPDIRECTDRAW lpDD;
+	DDSURFACEDESC ddsd;
+	RECT rect;
+
+	gD3D.hDC = hdc;
+	gD3D.hWnd = WindowFromDC(hdc);
+
+	GetClientRect(gD3D.hWnd, &rect);
+
+	gD3D.wndWidth = (USHORT)rect.right;
+	gD3D.wndHeight = (USHORT)rect.bottom;
+
+	if (FAILED(CoInitialize(NULL)))
+		return NULL;
+
+	if (FAILED(DirectDrawCreate(NULL, &lpDD, NULL)))
+	{
+		CoUninitialize();
+		return NULL;
+	}
+
+	ddsd.dwSize = sizeof(ddsd);
+	if (FAILED(lpDD->lpVtbl->GetDisplayMode(lpDD, &ddsd)))
+	{
+		lpDD->lpVtbl->Release(lpDD);
+		CoUninitialize();
+		return NULL;
+	}
+
+	lpDD->lpVtbl->Release(lpDD);
+
 	// TODO: Implement
+
 	return (HGLRC)1;
 }
 
@@ -232,6 +441,46 @@ DLL_EXPORT HINSTANCE QGL_D3DInit( void )
 {
 	// TODO: Implement
 
+	qglTexGend					= dllTexGend					= glTexGend;
+	qglTexGendv					= dllTexGendv					= glTexGendv;
+	qglTexGenf					= dllTexGenf					= glTexGenf;
+	qglTexGenfv					= dllTexGenfv					= glTexGenfv;
+	qglTexGeni					= dllTexGeni					= glTexGeni;
+	qglTexGeniv					= dllTexGeniv					= glTexGeniv;
+	qglTexImage1D				= dllTexImage1D					= glTexImage1D;
+	qglTexImage2D				= dllTexImage2D					= glTexImage2D;
+	qglTexParameterf			= dllTexParameterf				= glTexParameterf;
+	qglTexParameterfv			= dllTexParameterfv				= glTexParameterfv;
+	qglTexParameteri			= dllTexParameteri				= glTexParameteri;
+	qglTexParameteriv			= dllTexParameteriv				= glTexParameteriv;
+	qglTexSubImage1D			= dllTexSubImage1D				= glTexSubImage1D;
+	qglTexSubImage2D			= dllTexSubImage2D				= glTexSubImage2D;
+	qglTranslated				= dllTranslated					= glTranslated;
+	qglTranslatef				= dllTranslatef					= glTranslatef;
+	qglVertex2d					= dllVertex2d					= glVertex2d;
+	qglVertex2dv				= dllVertex2dv					= glVertex2dv;
+	qglVertex2f					= dllVertex2f					= glVertex2f;
+	qglVertex2fv				= dllVertex2fv					= glVertex2fv;
+	qglVertex2i					= dllVertex2i					= glVertex2i;
+	qglVertex2iv				= dllVertex2iv					= glVertex2iv;
+	qglVertex2s					= dllVertex2s					= glVertex2s;
+	qglVertex2sv				= dllVertex2sv					= glVertex2sv;
+	qglVertex3d					= dllVertex3d					= glVertex3d;
+	qglVertex3dv				= dllVertex3dv					= glVertex3dv;
+	qglVertex3f					= dllVertex3f					= glVertex3f;
+	qglVertex3fv				= dllVertex3fv					= glVertex3fv;
+	qglVertex3i					= dllVertex3i					= glVertex3i;
+	qglVertex3iv				= dllVertex3iv					= glVertex3iv;
+	qglVertex3s					= dllVertex3s					= glVertex3s;
+	qglVertex3sv				= dllVertex3sv					= glVertex3sv;
+	qglVertex4d					= dllVertex4d					= glVertex4d;
+	qglVertex4dv				= dllVertex4dv					= glVertex4dv;
+	qglVertex4f					= dllVertex4f					= glVertex4f;
+	qglVertex4fv				= dllVertex4fv					= glVertex4fv;
+	qglVertex4i					= dllVertex4i					= glVertex4i;
+	qglVertex4iv				= dllVertex4iv					= glVertex4iv;
+	qglVertex4s					= dllVertex4s					= glVertex4s;
+	qglVertex4sv				= dllVertex4sv					= glVertex4sv;
 	qglVertexPointer			= dllVertexPointer				= glVertexPointer;
 	qglViewport					= dllViewport					= glViewport;
 
