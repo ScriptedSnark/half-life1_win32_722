@@ -641,7 +641,7 @@ int Draw_MessageCharacterAdd( int x, int y, int num, int rr, int gg, int bb )
 			for (col = 0; col < charwidth; col++)
 			{
 				unsigned short newcolor, oldcolor;
-				unsigned short r, g, b;
+				int r, g, b;
 
 				if (source[col] != TRANSPARENT_COLOR)
 				{
@@ -675,7 +675,7 @@ int Draw_MessageCharacterAdd( int x, int y, int num, int rr, int gg, int bb )
 			for (col = 0; col < charwidth; col++)
 			{
 				unsigned short newcolor, oldcolor;
-				unsigned short r, g, b;
+				int r, g, b;
 
 				if (source[col] != TRANSPARENT_COLOR)
 				{
