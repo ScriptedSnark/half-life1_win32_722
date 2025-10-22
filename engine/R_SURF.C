@@ -1843,7 +1843,7 @@ int R_DecalUnProject( decal_t* pdecal, vec_t* position )
 			VectorCopy(position, temp);
             position[0] = DotProduct(temp, forward);
             position[1] = DotProduct(temp, right);
-            position[1] = DotProduct(temp, up);
+            position[2] = DotProduct(temp, up);
         }
 
 		if (pModel->firstmodelsurface)
