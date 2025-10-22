@@ -1840,9 +1840,10 @@ int R_DecalUnProject( decal_t* pdecal, vec_t* position )
             vec3_t forward, right, up;
 			AngleVectorsTranspose(pEdict->v.angles, forward, right, up);
 
-            position[0] = DotProduct(position, forward);
-            position[1] = DotProduct(position, right);
-            position[1] = DotProduct(position, up);
+			VectorCopy(position, temp);
+            position[0] = DotProduct(temp, forward);
+            position[1] = DotProduct(temp, right);
+            position[1] = DotProduct(temp, up);
         }
 
 		if (pModel->firstmodelsurface)
