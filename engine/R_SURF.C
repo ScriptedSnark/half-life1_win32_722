@@ -2154,9 +2154,7 @@ void R_DrawDecals( decal_t* list, byte* decalbuffer, int s, int t )
 					if (pix != TRANSPARENT_COLOR)
 					{
 						pColor = &ppalette[pix * 3];
-						pdest[0] = pColor[2];
-						pdest[1] = pColor[1];
-						pdest[2] = pColor[0];
+						*(int *)pdest = *(int *)pColor;
 						pdest[3] = 0;
 					}
 					pdest += 4;
@@ -2269,9 +2267,7 @@ void R_DrawScaledDecal( decal_t* list, byte* decalbuffer, int s, int t )
 				if (pix != TRANSPARENT_COLOR)
 				{
 					pColor = &ppalette[pix * 3];
-					pdest[0] = pColor[2];
-					pdest[1] = pColor[1];
-					pdest[2] = pColor[0];
+					*(int *)pdest = *(int *)pColor;
 					pdest[3] = 0;
 				}
 				pdest += 4;
