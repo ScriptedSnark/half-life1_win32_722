@@ -11,7 +11,7 @@ typedef struct tagD3DGlobals
 	BOOL bCalled;
 	BOOL bFullscreen;
 	BOOL bSecondary;
-	LPDIRECTDRAW            lpDD4;          // DirectDraw object
+	LPDIRECTDRAW4           lpDD4;          // DirectDraw object
 	LPDIRECTDRAWSURFACE     lpDDSPrimary;   // DirectDraw primary surface
 	LPDIRECTDRAWSURFACE     lpDDSBack;      // DirectDraw back surface
 	LPDIRECTDRAWSURFACE     lpDDSMem;		// DirectDraw mem surface
