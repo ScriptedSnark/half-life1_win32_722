@@ -1,7 +1,3 @@
-//-----------------------------------------------------------------------------
-// Quake GL to DirectX wrapper
-//-----------------------------------------------------------------------------
-
 #ifndef _OPENGL32_H_
 #define _OPENGL32_H_
 
@@ -1830,23 +1826,61 @@ extern	void ( APIENTRY * dllVertexPointer )( GLint size, GLenum type, GLsizei st
 extern	void ( APIENTRY * dllViewport )( GLint x, GLint y, GLsizei width, GLsizei height );
 }
 
-// Multitexture
+// Multitexture stages
 #define    TEXTURE0_SGIS				0x835E
 #define    TEXTURE1_SGIS				0x835F
 
-typedef struct D3D_STATE_s
+typedef struct tagD3D_Vertex
 {
-	int				wndWidth;
-	int				wndHeight;
-	HWND			hWnd;	// Window handle
-	HDC				hDC;	// Device context
-	void*			lpDD4;
-	BOOL			bFullscreen;
-	BOOL			f4444; // RGBA4444 format
-	int				textureLayer;
-	D3DCOLOR		color;
-	D3DCOLOR		clearColor;
-	const GLvoid*	colorPointer;
-} D3D_STATE_t;
+	D3DVALUE	x, y, z;	// Vertex coordinates
+	D3DCOLOR	color;		// Vertex color
+	D3DVALUE	tu, tv;		// Texture coordinates for stage 0
+	D3DVALUE	tu2, tv2;	// Texture coordinates for stage 1
+} D3D_VERTEX;
+
+// D3D global state structure
+typedef struct tagD3D_Globals
+{
+	int						vertCount;			// Total number of vertices
+	int						vertStart;			// Starting vertex index
+	int						indexCount;			// Total number of indices
+	int						primVertCount;		// Number of vertices per primitive
+	int						wndWidth;			// Window width
+	int						wndHeight;			// Window height
+	HWND					hWnd;				// Window handle
+	HDC						hDC;				// Device context
+	void*					pDirectDrawMgr;		// DirectDraw manager
+	DDPIXELFORMAT			DDPF5551;			// 16bit pixel format (RGBA5551)
+	DDPIXELFORMAT			DDPF4444;			// 16bit pixel format (RGBA4444)
+	DDPIXELFORMAT			DDPF555_565;		// 16bit pixel format (RGB555/RGB565)
+	DDPIXELFORMAT			DDPF8888;			// 32bit pixel format (RGBA8888)
+	D3DDEVICEDESC			D3DDeviceDesc;		// Direct3D device description
+	LPDIRECTDRAW4			lpDD4;				// DirectDraw object
+	LPDIRECT3DDEVICE3		lpD3DD3;			// Direct3D device
+	LPDIRECT3DVIEWPORT3		lpD3DVP3;			// Direct3D viewport
+	LPDIRECT3DVERTEXBUFFER	lpD3DVBSrc;			// Direct3D source vertex buffer
+	LPDIRECT3DVERTEXBUFFER	lpD3DVB;			// Direct3D rendering vertex buffer
+	int						cullMode;			// Current culling mode
+	D3DTRANSFORMSTATETYPE	transformState;		// Current transform state
+	int						primMode;			// Current primitive drawing mode
+	BOOL					normalTexture;		// 
+	BOOL					useSubsample;		// TRUE if using subsampled textures
+	BOOL					useSubStage;		// TRUE if using subsample texture stage
+	BOOL					useMultitexture;	// TRUE if using multitexturing
+	BOOL					useMipmap;			// TRUE if using mipmapped textures
+	BOOL					doFlip;				// TRUE if need to flip the backbuffer
+	BOOL					isFullscreen;		// TRUE if in fullscreen mode
+	BOOL					bLoad4444;			// TRUE if loading 16bit textures as f4444
+	int						textureStage;		// Current texture stage for multitexture
+	int						texEnvMode[2];		// Texture environment mode for each stage
+	D3DCOLOR				color;				// Current color
+	D3DCOLOR				clearColor;			// Clear color
+	D3DVALUE				tu, tv;				// Texture uv coords for stage 0
+	D3DVALUE				tu2, tv2;			// Texture uv coords for stage 1
+	const GLvoid*			vertexPointer;		// Pointer to vertex array
+	const GLvoid*			colorPointer;		// Pointer to color array
+	D3D_VERTEX*				verts;				// Pointer to vertex buffer data
+	WORD					indexBuffer[10];	// Temporary index buffer
+} D3D_GLOBALS;
 
 #endif // _OPENGL32_H_

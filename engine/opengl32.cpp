@@ -1,7 +1,3 @@
-//-----------------------------------------------------------------------------
-// Quake GL to DirectX wrapper
-//-----------------------------------------------------------------------------
-
 #include "opengl32.h"
 #include "d3d_structs.h"
 
@@ -11,7 +7,7 @@
 #define DLL_EXPORT
 #endif
 
-D3D_STATE_t gD3D;
+D3D_GLOBALS gD3D;
 
 // TODO: Implement
 
@@ -63,7 +59,49 @@ DLL_EXPORT void APIENTRY glCallLists( GLsizei n, GLenum type, const GLvoid* list
 
 DLL_EXPORT void APIENTRY glClear( GLbitfield mask )
 {
-	// TODO: Implement
+	D3DRECT	screenRect;
+	DWORD	flags;
+	DWORD	dummy;
+
+	if (gD3D.indexCount)
+	{
+		// Flush any remaining primitives
+		if (gD3D.vertStart != gD3D.vertCount)
+		{
+			gD3D.lpD3DVB->lpVtbl->ProcessVertices(gD3D.lpD3DVB, 5, gD3D.vertStart, gD3D.vertCount - gD3D.vertStart, gD3D.lpD3DVBSrc, gD3D.vertStart, gD3D.lpD3DD3, 0);
+			gD3D.vertStart = gD3D.vertCount;
+		}
+
+		gD3D.lpD3DVBSrc->lpVtbl->Unlock(gD3D.lpD3DVBSrc);
+		gD3D.lpD3DD3->lpVtbl->DrawIndexedPrimitiveVB(gD3D.lpD3DD3, D3DPT_TRIANGLELIST, gD3D.lpD3DVB, gD3D.indexBuffer, gD3D.indexCount, 8);
+		gD3D.lpD3DVBSrc->lpVtbl->Lock(gD3D.lpD3DVBSrc, 2081, (LPVOID*)&gD3D.verts, &dummy);
+
+		gD3D.vertStart = 0;
+		gD3D.vertCount = 0;
+		gD3D.indexCount = 0;
+	}
+
+	flags = 0;
+	if (mask & GL_COLOR_BUFFER_BIT)
+	{
+		flags = D3DCLEAR_TARGET;
+	}
+	else if (mask & GL_DEPTH_BUFFER_BIT)
+	{
+		flags = D3DCLEAR_ZBUFFER;
+	}
+	else if (mask & GL_STENCIL_BUFFER_BIT)
+	{
+		flags = D3DCLEAR_STENCIL;
+	}
+
+	// Set the rectangle to clear
+	screenRect.x1 = 0;
+	screenRect.y1 = 0;
+	screenRect.x2 = gD3D.wndWidth;
+	screenRect.y2 = gD3D.wndHeight;
+
+	gD3D.lpD3DVP3->lpVtbl->Clear2(gD3D.lpD3DVP3, 1, &screenRect, flags, gD3D.clearColor, 1.0, 0);
 }
 
 DLL_EXPORT void APIENTRY glClearAccum( GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha )
@@ -136,7 +174,7 @@ DLL_EXPORT void APIENTRY glColor3f( GLfloat red, GLfloat green, GLfloat blue )
 	r = (unsigned int)(red * scale);
 	if (r > 255)
 		r = 255;
-	gD3D.color = (r << 16) | 0xFF000000 | (g << 8) | b;
+	gD3D.color = RGBA_MAKE(r, g, b, 255);
 }
 
 DLL_EXPORT void APIENTRY glColor3fv( const GLfloat* v )
@@ -161,12 +199,12 @@ DLL_EXPORT void APIENTRY glColor3sv( const GLshort* v )
 
 DLL_EXPORT void APIENTRY glColor3ub( GLubyte red, GLubyte green, GLubyte blue )
 {
-	gD3D.color = blue | (green << 8) | ((red | ~0xFFu) << 16);
+	gD3D.color = RGBA_MAKE(red, green, blue, 255);
 }
 
 DLL_EXPORT void APIENTRY glColor3ubv( const GLubyte* v )
 {
-	gD3D.color = v[2] | (v[1] << 8) | ((*v | ~0xFFu) << 16);
+	gD3D.color = RGBA_MAKE(v[0], v[1], v[2], 255);
 }
 
 DLL_EXPORT void APIENTRY glColor3ui( GLuint red, GLuint green, GLuint blue )
@@ -544,7 +582,15 @@ DLL_EXPORT GLenum APIENTRY glGetError( void )
 
 DLL_EXPORT void APIENTRY glGetFloatv( GLenum pname, GLfloat* params )
 {
-	// TODO: Implement
+	switch (pname)
+	{
+	case GL_MODELVIEW_MATRIX:
+		gD3D.lpD3DD3->lpVtbl->GetTransform(gD3D.lpD3DD3, D3DTRANSFORMSTATE_WORLD, (LPD3DMATRIX)params);
+		break;
+	case GL_PROJECTION_MATRIX:
+		gD3D.lpD3DD3->lpVtbl->GetTransform(gD3D.lpD3DD3, D3DTRANSFORMSTATE_PROJECTION, (LPD3DMATRIX)params);
+		break;
+	}
 }
 
 DLL_EXPORT void APIENTRY glGetIntegerv( GLenum pname, GLint* params )
@@ -601,8 +647,30 @@ DLL_EXPORT void APIENTRY glGetPolygonStipple( GLubyte* mask )
 
 DLL_EXPORT const GLubyte* APIENTRY glGetString( GLenum name )
 {
-	// TODO: Implement
-	return (const GLubyte*)"";
+	const char* string;
+
+	switch (name)
+	{
+	case GL_VENDOR:
+		string = "Microsoft Corp.";
+		break;
+	case GL_RENDERER:
+		string = "Direct3D";
+		break;
+	case GL_VERSION:
+		string = "6.0";
+		break;
+	case GL_EXTENSIONS:
+		if (gD3D.useMultitexture)
+			string = "GL_SGIS_multitexture";
+		else
+			string = "";
+		break;
+	default:
+		string = "";
+		break;
+	}
+	return (const GLubyte*)string;
 }
 
 DLL_EXPORT void APIENTRY glGetTexEnvfv( GLenum target, GLenum pname, GLfloat* params )
@@ -836,7 +904,14 @@ DLL_EXPORT void APIENTRY glMaterialiv( GLenum face, GLenum pname, const GLint* p
 
 DLL_EXPORT void APIENTRY glMatrixMode( GLenum mode )
 {
-	// TODO: Implement
+	if (mode == GL_MODELVIEW)
+	{
+		gD3D.transformState = D3DTRANSFORMSTATE_WORLD;
+	}
+	else
+	{
+		gD3D.transformState = D3DTRANSFORMSTATE_PROJECTION;
+	}
 }
 
 DLL_EXPORT void APIENTRY glMultMatrixd( const GLdouble* m )
@@ -1219,7 +1294,8 @@ DLL_EXPORT void APIENTRY glTexCoord2dv( const GLdouble* v )
 
 DLL_EXPORT void APIENTRY glTexCoord2f( GLfloat s, GLfloat t )
 {
-	// TODO: Implement
+	gD3D.tu = s;
+	gD3D.tv = t;
 }
 
 DLL_EXPORT void APIENTRY glTexCoord2fv( const GLfloat* v )
@@ -1312,7 +1388,16 @@ DLL_EXPORT void APIENTRY glTexCoordPointer( GLint size, GLenum type, GLsizei str
 
 DLL_EXPORT void APIENTRY glTexEnvf( GLenum target, GLenum pname, GLfloat param )
 {
-	// TODO: Implement
+	switch (pname)
+	{
+	case GL_TEXTURE_ENV_MODE:
+		gD3D.texEnvMode[gD3D.textureStage] = (int)param;
+		gD3D.normalTexture = FALSE;
+		break;
+	default:
+		OutputDebugString("Wrapper: GL_TEXTURE_ENV_COLOR not implemented\n");
+		break;
+	}
 }
 
 DLL_EXPORT void APIENTRY glTexEnvfv( GLenum target, GLenum pname, const GLfloat* params )
@@ -1496,28 +1581,79 @@ DLL_EXPORT void APIENTRY glVertex4sv( const GLshort* v )
 
 DLL_EXPORT void APIENTRY glVertexPointer( GLint size, GLenum type, GLsizei stride, const GLvoid* pointer )
 {
+	gD3D.vertexPointer = pointer;
+
+	if (size == 3 || type == GL_FLOAT || stride == 16)
+	{
+	}
+	else
+	{
+		OutputDebugString("Wrapper: unsupported vertex array\n");
+	}
 }
 
 DLL_EXPORT void APIENTRY glViewport( GLint x, GLint y, GLsizei width, GLsizei height )
 {
-	// TODO: Implement
+	D3DVIEWPORT2	vport2;
+	DWORD	dummy;
+
+	if (gD3D.indexCount)
+	{
+		// Flush any remaining primitives
+		if (gD3D.vertStart != gD3D.vertCount)
+		{
+			gD3D.lpD3DVB->lpVtbl->ProcessVertices(gD3D.lpD3DVB, 5, gD3D.vertStart, gD3D.vertCount - gD3D.vertStart, gD3D.lpD3DVBSrc, gD3D.vertStart, gD3D.lpD3DD3, 0);
+			gD3D.vertStart = gD3D.vertCount;
+		}
+
+		gD3D.lpD3DVBSrc->lpVtbl->Unlock(gD3D.lpD3DVBSrc);
+		gD3D.lpD3DD3->lpVtbl->DrawIndexedPrimitiveVB(gD3D.lpD3DD3, D3DPT_TRIANGLELIST, gD3D.lpD3DVB, gD3D.indexBuffer, gD3D.indexCount, 8);
+		gD3D.lpD3DVBSrc->lpVtbl->Lock(gD3D.lpD3DVBSrc, 2081, (LPVOID*)&gD3D.verts, &dummy);
+
+		gD3D.vertStart = 0;
+		gD3D.vertCount = 0;
+		gD3D.indexCount = 0;
+	}
+
+	// Set viewport
+	vport2.dwSize = sizeof(vport2);
+	gD3D.lpD3DVP3->lpVtbl->GetViewport2(gD3D.lpD3DVP3, &vport2);
+	vport2.dwX = x;
+	vport2.dwY = gD3D.wndHeight - height - y;
+	vport2.dwWidth = width;
+	vport2.dwHeight = height;
+	vport2.dvClipX = -1.0;
+	vport2.dvClipY = 1.0;
+	vport2.dvClipWidth = 2.0;
+	vport2.dvClipHeight = 2.0;
+
+	gD3D.lpD3DVP3->lpVtbl->SetViewport2(gD3D.lpD3DVP3, &vport2);
 }
 
 DLL_EXPORT void APIENTRY glSelectTextureSGIS( GLenum target )
 {
 	if (target == TEXTURE0_SGIS)
 	{
-		gD3D.textureLayer = 0;
+		gD3D.textureStage = 0;
 	}
 	else
 	{
-		gD3D.textureLayer = 1;
+		gD3D.textureStage = 1;
 	}
 }
 
 DLL_EXPORT void APIENTRY glMTexCoord2fSGIS( GLenum target, GLfloat s, GLfloat t )
 {
-	// TODO: Implement
+	if (target == TEXTURE0_SGIS)
+	{
+		gD3D.tu = s;
+		gD3D.tv = t;
+	}
+	else
+	{
+		gD3D.tu2 = s;
+		gD3D.tv2 = t;
+	}
 }
 
 DLL_EXPORT BOOL WINAPI wglCopyContext( HGLRC hglrcSrc, HGLRC hglrcDst, UINT mask )
@@ -1712,13 +1848,13 @@ DLL_EXPORT BOOL APIENTRY wglSwapBuffers( HDC hdc )
 
 DLL_EXPORT void Download4444( void )
 {
-	gD3D.f4444 = TRUE;
+	gD3D.bLoad4444 = TRUE;
 }
 
 DLL_EXPORT void QGL_D3DShared( D3DGLOBALS* d3dGShared )
 {
 	gD3D.lpDD4 = d3dGShared->lpDD4;
-	gD3D.bFullscreen = d3dGShared->bFullscreen;
+	gD3D.isFullscreen = d3dGShared->bFullscreen;
 	OutputDebugString("setting dd ipntr in dll\n");
 }
 
