@@ -4162,6 +4162,7 @@ void CBasePlayer :: UpdateClientData( void )
 		MESSAGE_END();
 
 		// cache FOV change at end of function, so weapon updates can see that FOV has changed
+		m_iClientFOV = m_iFOV;
 	}
 
 	// HACKHACK -- send the message to display the game title
