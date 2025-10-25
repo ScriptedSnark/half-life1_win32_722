@@ -214,6 +214,7 @@ int CHud::MsgFunc_SetFOV(const char *pszName,  int iSize, void *pbuf)
 	BEGIN_READ( pbuf, iSize );
 
 	int newfov = READ_BYTE();
+	int oldfov = m_iFOV;
 	int def_fov = CVAR_GET_FLOAT( "default_fov" );
 	float flSensitivity;
 
@@ -230,7 +231,7 @@ int CHud::MsgFunc_SetFOV(const char *pszName,  int iSize, void *pbuf)
 	{
 		m_flOldSensitivity = CVAR_GET_FLOAT( "sensitivity" );
 		// set a new sensitivity that is proportional to the change from the FOV default
-		flSensitivity = m_flOldSensitivity * ((float)newfov / (float)m_iFOV) * CVAR_GET_FLOAT("zoom_sensitivity_ratio");
+		flSensitivity = m_flOldSensitivity * ((float)newfov / (float)oldfov) * CVAR_GET_FLOAT("zoom_sensitivity_ratio");
 	}
 
 	if ( flSensitivity != 0 )
