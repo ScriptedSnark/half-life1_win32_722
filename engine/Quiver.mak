@@ -38,8 +38,8 @@ NULL=nul
 # Begin Project
 # PROP Target_Last_Scanned "Quiver - Win32 Debug"
 MTL=mktyplib.exe
-CPP=cl.exe
 RSC=rc.exe
+CPP=cl.exe
 
 !IF  "$(CFG)" == "Quiver - Win32 Release"
 
@@ -711,12 +711,14 @@ BSC32_SBRS= \
 	
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib winmm.lib ws2_32.lib /nologo /subsystem:windows /dll /debug /machine:I386 /out:"GLDebug/hw.dll"
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib winmm.lib ws2_32.lib /nologo /subsystem:windows /dll /debug /machine:I386 /out:"GLDebug/hw.dll"
-LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib\
- advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib\
- odbccp32.lib winmm.lib ws2_32.lib /nologo /subsystem:windows /dll\
- /incremental:yes /pdb:"$(OUTDIR)/hw.pdb" /debug /machine:I386\
- /out:"$(OUTDIR)/hw.dll" /implib:"$(OUTDIR)/hw.lib" 
+# ADD LINK32 ddraw.lib dxguid.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib winmm.lib ws2_32.lib /nologo /subsystem:windows /dll /debug /machine:I386 /out:"GLDebug/hw.dll" /libpath:"..\dx6sdk\lib"
+# SUBTRACT LINK32 /pdb:none
+LINK32_FLAGS=ddraw.lib dxguid.lib kernel32.lib user32.lib gdi32.lib\
+ winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib\
+ uuid.lib odbc32.lib odbccp32.lib winmm.lib ws2_32.lib /nologo\
+ /subsystem:windows /dll /incremental:yes /pdb:"$(OUTDIR)/hw.pdb" /debug\
+ /machine:I386 /out:"$(OUTDIR)/hw.dll" /implib:"$(OUTDIR)/hw.lib"\
+ /libpath:"..\dx6sdk\lib" 
 LINK32_OBJS= \
 	"$(INTDIR)\a3dwrapper.obj" \
 	"$(INTDIR)\buildnum.obj" \
@@ -926,12 +928,13 @@ BSC32_SBRS= \
 	
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib winmm.lib ws2_32.lib /nologo /subsystem:windows /dll /machine:I386 /out:"GLRelease/hw.dll"
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib winmm.lib ws2_32.lib /nologo /subsystem:windows /dll /machine:I386 /out:"GLRelease/hw.dll"
-LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib\
- advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib\
- odbccp32.lib winmm.lib ws2_32.lib /nologo /subsystem:windows /dll\
- /incremental:no /pdb:"$(OUTDIR)/hw.pdb" /machine:I386 /out:"$(OUTDIR)/hw.dll"\
- /implib:"$(OUTDIR)/hw.lib" 
+# ADD LINK32 ddraw.lib dxguid.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib winmm.lib ws2_32.lib /nologo /subsystem:windows /dll /machine:I386 /out:"GLRelease/hw.dll" /libpath:"..\dx6sdk\lib"
+# SUBTRACT LINK32 /pdb:none
+LINK32_FLAGS=ddraw.lib dxguid.lib kernel32.lib user32.lib gdi32.lib\
+ winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib\
+ uuid.lib odbc32.lib odbccp32.lib winmm.lib ws2_32.lib /nologo\
+ /subsystem:windows /dll /incremental:no /pdb:"$(OUTDIR)/hw.pdb" /machine:I386\
+ /out:"$(OUTDIR)/hw.dll" /implib:"$(OUTDIR)/hw.lib" /libpath:"..\dx6sdk\lib" 
 LINK32_OBJS= \
 	"$(INTDIR)\a3dwrapper.obj" \
 	"$(INTDIR)\buildnum.obj" \
@@ -4711,7 +4714,6 @@ DEP_CPP_GL_DR=\
 	".\model.h"\
 	".\modelgen.h"\
 	".\net.h"\
-	".\opengl32.h"\
 	".\pr_cmds.h"\
 	".\pr_dlls.h"\
 	".\progdefs.h"\
@@ -5640,7 +5642,6 @@ DEP_CPP_GL_VI=\
 	".\model.h"\
 	".\modelgen.h"\
 	".\net.h"\
-	".\opengl32.h"\
 	".\pr_dlls.h"\
 	".\progdefs.h"\
 	".\Progs.h"\
@@ -7553,69 +7554,13 @@ NODEP_CPP_NONIN=\
 
 SOURCE=.\opengl32.cpp
 DEP_CPP_OPENG=\
-	"..\common\dll_state.h"\
-	"..\common\platform.h"\
-	"..\common\qfont.h"\
-	".\beamdef.h"\
-	".\bothdefs.h"\
-	".\bspfile.h"\
-	".\cdll_int.h"\
-	".\client.h"\
-	".\cmd.h"\
-	".\color.h"\
-	".\common.h"\
-	".\CONSOLE.H"\
-	".\const.h"\
-	".\crc.h"\
-	".\cshift.h"\
-	".\custom.h"\
-	".\cvar.h"\
-	".\cvardef.h"\
-	".\d_iface.h"\
-	".\draw.h"\
-	".\eiface.h"\
-	".\GL_MODEL.H"\
-	".\GLQUAKE.H"\
-	".\host_cmd.h"\
-	".\input.h"\
-	".\keys.h"\
-	".\mathlib.h"\
-	".\model.h"\
-	".\modelgen.h"\
-	".\net.h"\
+	"..\common\../dx6sdk/include/d3d.h"\
+	"..\common\../dx6sdk/include/ddraw.h"\
+	"..\common\d3d_structs.h"\
+	"..\dx6sdk\include\d3dcaps.h"\
+	"..\dx6sdk\include\d3dtypes.h"\
+	"..\dx6sdk\include\d3dvec.inl"\
 	".\opengl32.h"\
-	".\pr_dlls.h"\
-	".\progdefs.h"\
-	".\Progs.h"\
-	".\protocol.h"\
-	".\qgl.h"\
-	".\quakedef.h"\
-	".\r_local.h"\
-	".\r_shared.h"\
-	".\render.h"\
-	".\save.h"\
-	".\sbar.h"\
-	".\screen.h"\
-	".\server.h"\
-	".\sound.h"\
-	".\spritegn.h"\
-	".\studio.h"\
-	".\sys.h"\
-	".\vid.h"\
-	".\view.h"\
-	".\vmodes.h"\
-	".\wad.h"\
-	".\winquake.h"\
-	".\world.h"\
-	".\wrect.h"\
-	".\zone.h"\
-	{$(INCLUDE)}"\gl\GL.H"\
-	
-NODEP_CPP_OPENG=\
-	".\cmdlib.h"\
-	".\lbmlib.h"\
-	".\scriplib.h"\
-	".\trilib.h"\
 	
 
 !IF  "$(CFG)" == "Quiver - Win32 Release"
@@ -13119,7 +13064,8 @@ InputPath=.\worlda.asm
 ################################################################################
 # Begin Source File
 
-SOURCE="..\a3dwrapper\a3dwrapper.cpp"
+SOURCE=\
+"..\a3dwrapper\a3dwrapper.cpp"
 DEP_CPP_A3DWR=\
 	"..\a3dwrapper\a3dwrapper.h"\
 	
