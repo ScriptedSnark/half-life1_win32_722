@@ -1,6 +1,11 @@
 #ifndef _OPENGL32_H_
 #define _OPENGL32_H_
 
+// ScriptedSnark: MSVC++ 4.2 doesn't understand DECLSPEC hacks
+// Let's ignore warnings then
+#pragma warning( disable : 4273 )  // inconsistent dll linkage
+#pragma warning( disable : 4005 )  // macro redefinition
+
 #ifdef DECLSPEC_IMPORT
 #undef DECLSPEC_IMPORT
 #endif
