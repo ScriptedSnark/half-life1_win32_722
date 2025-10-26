@@ -2403,7 +2403,7 @@ void VOX_ParseString( char* psz )
 	{
 		// scan up to next word
 		c = *pszscan;
-		while (c && !(c == ' ' || c == '.' || c == ','))
+		while (c && !(c == ' ' || c == '.' || c == ',' || c == '('))
 			c = *(++pszscan);
 
 		// if '(' then scan for matching ')'
