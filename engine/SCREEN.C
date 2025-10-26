@@ -1026,14 +1026,14 @@ void SCR_DrawDownloadText( void )
 
 	if (speed != 0)
 	{
-		w = min(scr_vrect.width - 2, 250);
-		h = min(scr_vrect.height - 2, 10);
+		w = V_min(scr_vrect.width - 2, 250);
+		h = V_min(scr_vrect.height - 2, 10);
 
 		x = scr_vrect.x + (scr_vrect.width - w) / 2 + 1;
 		y = scr_vrect.y + scr_vrect.height - 12;
 		if (cls.state != ca_active)
 			y = scr_vrect.y + scr_vrect.height - 92;
-		y = max(y, 22);
+		y = V_max(y, 22);
 
 		rcFill.x = x;
 		rcFill.y = y;
@@ -1073,16 +1073,16 @@ void SCR_DrawDownloadInfo( void )
 	}
 
 	percent = (int)scr_downloading.value;
-	percent = min(100, max(0, percent));
+	percent = V_min(100, V_max(0, percent));
 
-	w = min(scr_vrect.width - 2, 250);
-	h = min(scr_vrect.height - 2, 10);
+	w = V_min(scr_vrect.width - 2, 250);
+	h = V_min(scr_vrect.height - 2, 10);
 
 	x = scr_vrect.x + (scr_vrect.width - w) / 2 + 1;
 	y = scr_vrect.y + (scr_vrect.height - 22);
 	if (cls.state != ca_active)
 		y = scr_vrect.y + scr_vrect.height - 102;
-	y = max(y, 2);
+	y = V_max(y, 2);
 
 	// Background
 	rcFill.x = x;
@@ -1146,7 +1146,7 @@ void SCR_DrawDownloadProgress( void )
 	}
 
 	percent = (int)downloadpercent;
-	percent = min(100, max(0, percent));
+	percent = V_min(100, V_max(0, percent));
 
 	scale = scr_vrect.height / 240.0;
 	if (scale < 1.0)
@@ -1156,7 +1156,7 @@ void SCR_DrawDownloadProgress( void )
 	h = scale * 8;
 
 	offset = h / 4;
-	offset = max(offset, 2);
+	offset = V_max(offset, 2);
 
 	x = scr_vrect.x + w / 2;
 	y = scr_vrect.height * 0.6;

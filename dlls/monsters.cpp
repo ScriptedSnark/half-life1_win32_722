@@ -1232,7 +1232,7 @@ int CBaseMonster :: CheckEnemy ( CBaseEntity *pEnemy )
 //=========================================================
 // PushEnemy - remember the last few enemies, always remember the player
 //=========================================================
-void CBaseMonster :: PushEnemy( CBaseEntity *pEnemy, Vector &vecLastKnownPos )
+void CBaseMonster :: PushEnemy( CBaseEntity *pEnemy, const Vector &vecLastKnownPos )
 {
 	int i;
 
@@ -1361,7 +1361,7 @@ void CBaseMonster :: SetSequenceByName ( char *szSequence )
 // DON"T USE SETORIGIN! 
 //=========================================================
 #define	LOCAL_STEP_SIZE	16
-int CBaseMonster :: CheckLocalMove ( Vector &vecStart, const Vector &vecEnd, CBaseEntity *pTarget, float *pflDist )
+int CBaseMonster :: CheckLocalMove ( const Vector &vecStart, const Vector &vecEnd, CBaseEntity *pTarget, float *pflDist )
 {
 	Vector	vecStartPos;// record monster's position before trying the move
 	float	flYaw;
@@ -2058,7 +2058,7 @@ void CBaseMonster::MoveExecute( CBaseEntity *pTargetEnt, const Vector &vecDir, f
 	while (flTotal > 0.001)
 	{
 		// don't walk more than 16 units or stairs stop working
-		flStep = min( 16.0, flTotal );
+		flStep = V_min( 16.0, flTotal );
 		UTIL_MoveToOrigin ( ENT(pev), m_Route[ m_iRouteIndex ].vecLocation, flStep, MOVE_NORMAL );
 		flTotal -= flStep;
 	}
@@ -3029,14 +3029,14 @@ float CBaseAnimating :: SetBlending ( int iBlender, float flValue )
 
 //=========================================================
 //=========================================================
-void CBaseAnimating :: GetBonePosition ( int iBone, Vector &origin, Vector &angles )
+void CBaseAnimating :: GetBonePosition ( int iBone, const Vector &origin, const Vector &angles )
 {
 	GET_BONE_POSITION( ENT(pev), iBone, origin, angles );
 }
 
 //=========================================================
 //=========================================================
-void CBaseAnimating :: GetAttachment ( int iAttachment, Vector &origin, Vector &angles )
+void CBaseAnimating :: GetAttachment ( int iAttachment, const Vector &origin, const Vector &angles )
 {
 	GET_ATTACHMENT( ENT(pev), iAttachment, origin, angles );
 }
@@ -3062,7 +3062,7 @@ int CBaseAnimating :: FindTransition( int iEndingSequence, int iGoalSequence, in
 
 //=========================================================
 //=========================================================
-void CBaseAnimating :: GetAutomovement( Vector &origin, Vector &angles, float flInterval )
+void CBaseAnimating :: GetAutomovement( const Vector &origin, const Vector &angles, float flInterval )
 {
 
 }

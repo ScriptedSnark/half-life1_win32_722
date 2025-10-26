@@ -11,7 +11,7 @@
 
 #include "cbase.h"
 
-
+#ifdef _WIN32
 // Required DLL entry point
 BOOL WINAPI DllMain(
    HINSTANCE hinstDLL,
@@ -26,12 +26,13 @@ BOOL WINAPI DllMain(
     }
 	return TRUE;
 }
+#endif
 
 // Holds engine functionality callbacks
 enginefuncs_t g_engfuncs;
 globalvars_t  *gpGlobals;
 
-void DLLEXPORT GiveFnptrsToDll(	enginefuncs_t* pengfuncsFromEngine, globalvars_t *pGlobals )
+extern "C" void DLLEXPORT GiveFnptrsToDll(	enginefuncs_t* pengfuncsFromEngine, globalvars_t *pGlobals )
 {
 	memcpy(&g_engfuncs, pengfuncsFromEngine, sizeof(enginefuncs_t));
 	gpGlobals = pGlobals;

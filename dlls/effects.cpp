@@ -178,7 +178,7 @@ void CBeam::SetEndEntity( int entityIndex )
 
 
 // These don't take attachments into account
-Vector &CBeam::GetStartPos( void )
+const Vector &CBeam::GetStartPos( void )
 {
 	if ( GetType() == BEAM_ENTS )
 	{
@@ -189,7 +189,7 @@ Vector &CBeam::GetStartPos( void )
 }
 
 
-Vector &CBeam::GetEndPos( void )
+const Vector &CBeam::GetEndPos( void )
 {
 	int type = GetType();
 	if ( type == BEAM_POINTS || type == BEAM_HOSE )
@@ -280,12 +280,12 @@ void CBeam::RelinkBeam( void )
 {
 	const Vector &startPos = GetStartPos(), &endPos = GetEndPos();
 
-	pev->mins.x = min( startPos.x, endPos.x );
-	pev->mins.y = min( startPos.y, endPos.y );
-	pev->mins.z = min( startPos.z, endPos.z );
-	pev->maxs.x = max( startPos.x, endPos.x );
-	pev->maxs.y = max( startPos.y, endPos.y );
-	pev->maxs.z = max( startPos.z, endPos.z );
+	pev->mins.x = V_min( startPos.x, endPos.x );
+	pev->mins.y = V_min( startPos.y, endPos.y );
+	pev->mins.z = V_min( startPos.z, endPos.z );
+	pev->maxs.x = V_max( startPos.x, endPos.x );
+	pev->maxs.y = V_max( startPos.y, endPos.y );
+	pev->maxs.z = V_max( startPos.z, endPos.z );
 	pev->mins = pev->mins - pev->origin;
 	pev->maxs = pev->maxs - pev->origin;
 
@@ -298,12 +298,12 @@ void CBeam::SetObjectCollisionBox( void )
 {
 	const Vector &startPos = GetStartPos(), &endPos = GetEndPos();
 
-	pev->absmin.x = min( startPos.x, endPos.x );
-	pev->absmin.y = min( startPos.y, endPos.y );
-	pev->absmin.z = min( startPos.z, endPos.z );
-	pev->absmax.x = max( startPos.x, endPos.x );
-	pev->absmax.y = max( startPos.y, endPos.y );
-	pev->absmax.z = max( startPos.z, endPos.z );
+	pev->absmin.x = V_min( startPos.x, endPos.x );
+	pev->absmin.y = V_min( startPos.y, endPos.y );
+	pev->absmin.z = V_min( startPos.z, endPos.z );
+	pev->absmax.x = V_max( startPos.x, endPos.x );
+	pev->absmax.y = V_max( startPos.y, endPos.y );
+	pev->absmax.z = V_max( startPos.z, endPos.z );
 }
 #endif
 
@@ -338,7 +338,7 @@ CBaseEntity *CBeam::RandomTargetname( char *szName )
 }
 
 
-void CBeam::DoSparks( Vector &start, Vector &end )
+void CBeam::DoSparks( const Vector &start, const Vector &end )
 {
 	if ( pev->spawnflags & (SF_BEAM_SPARKSTART|SF_BEAM_SPARKEND) )
 	{
@@ -365,8 +365,8 @@ public:
 	void	EXPORT StrikeThink( void );
 	void	EXPORT DamageThink( void );
 	void	RandomArea( void );
-	void	RandomPoint( Vector &vecSrc );
-	void	Zap( Vector &vecSrc, Vector &vecDest );
+	void	RandomPoint( const Vector &vecSrc );
+	void	Zap( const Vector &vecSrc, const Vector &vecDest );
 	void	EXPORT StrikeUse( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value );
 	void	EXPORT ToggleUse( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value );
 	
@@ -755,7 +755,7 @@ void CLightning::DamageThink( void )
 
 
 
-void CLightning::Zap( Vector &vecSrc, Vector &vecDest )
+void CLightning::Zap( const Vector &vecSrc, const Vector &vecDest )
 {
 #if 1
 	MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
@@ -838,7 +838,7 @@ void CLightning::RandomArea( void )
 }
 
 
-void CLightning::RandomPoint( Vector &vecSrc )
+void CLightning::RandomPoint( const Vector &vecSrc )
 {
 	int iLoops = 0;
 

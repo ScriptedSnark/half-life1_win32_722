@@ -879,8 +879,8 @@ void Draw_AlphaSubPic( int xDest, int yDest, int xSrc, int ySrc, int iWidth, int
 
 	palette = &pPic->data[pPic->width * pPic->height + 2];
 
-	width = min(xSrc + iWidth, pPic->width);
-	height = min(ySrc + iHeight, pPic->height);
+	width = V_min(xSrc + iWidth, pPic->width);
+	height = V_min(ySrc + iHeight, pPic->height);
 
 	iDestDelta = xSrc + (vid.rowbytes >> 1) - width;
 
@@ -1119,22 +1119,22 @@ void EnableScissorTest( int x, int y, int width, int height )
 	if (x > (int)vid.width)
 		scissor_x = vid.width;
 	else
-		scissor_x = max(0, x);	
+		scissor_x = V_max(0, x);	
 
 	if (y > (int)vid.height)
 		scissor_y = vid.height;
 	else
-		scissor_y = max(0, y);
+		scissor_y = V_max(0, y);
 
 	if (x + width > (int)vid.width)
 		scissor_x2 = vid.width;
 	else
-		scissor_x2 = max(0, x + width);
+		scissor_x2 = V_max(0, x + width);
 
 	if (y + height > (int)vid.height)
 		scissor_y2 = vid.height;
 	else
-		scissor_y2 = max(0, y + height);
+		scissor_y2 = V_max(0, y + height);
 
 	giScissorTest = TRUE;
 }
@@ -1185,13 +1185,13 @@ int IntersectWRect( const wrect_t* prc1, const wrect_t* prc2, wrect_t* prc )
 	if (!prc)
 		prc = &rc;
 
-	prc->left = max(prc1->left, prc2->left);
-	prc->right = min(prc1->right, prc2->right);
+	prc->left = V_max(prc1->left, prc2->left);
+	prc->right = V_min(prc1->right, prc2->right);
 
 	if (prc->left < prc->right)
 	{
-		prc->top = max(prc1->top, prc2->top);
-		prc->bottom = min(prc1->bottom, prc2->bottom);
+		prc->top = V_max(prc1->top, prc2->top);
+		prc->bottom = V_min(prc1->bottom, prc2->bottom);
 
 		if (prc->top < prc->bottom)
 			return 1;
@@ -1258,7 +1258,7 @@ int SpriteFrameClip( mspriteframe_t* pFrame, int* x, int* y, int* w, int* h, con
 		if (*x < scissor_x)
 		{
 			dx = scissor_x - *x;
-			dx = min(dx, pFrame->width);
+			dx = V_min(dx, pFrame->width);
 			offset = scissor_x - *x;
 			*w = pFrame->width - dx;
 			*x = scissor_x;
@@ -1267,7 +1267,7 @@ int SpriteFrameClip( mspriteframe_t* pFrame, int* x, int* y, int* w, int* h, con
 		if (*y < scissor_y)
 		{
 			dy = scissor_y - *y;
-			dy = min(dy, pFrame->height);
+			dy = V_min(dy, pFrame->height);
 			offset += (pFrame->width * (scissor_y - *y));
 			*h = pFrame->height - dy;
 			*y = scissor_y;

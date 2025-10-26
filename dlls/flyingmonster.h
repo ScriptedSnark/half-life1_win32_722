@@ -6,7 +6,7 @@
 class CFlyingMonster : public CBaseMonster
 {
 public:
-	int 		CheckLocalMove ( Vector &vecStart, Vector &vecEnd, CBaseEntity *pTarget, float *pflDist );// check validity of a straight move through space
+	int 		CheckLocalMove ( const Vector &vecStart, Vector &vecEnd, CBaseEntity *pTarget, float *pflDist );// check validity of a straight move through space
 	BOOL		FTriangulate ( const Vector &vecStart , const Vector &vecEnd, float flDist, CBaseEntity *pTargetEnt, Vector *pApex );
 	Activity	GetStoppedActivity( void );
 	void		Killed( entvars_t *pevAttacker, int iGib );
@@ -20,9 +20,9 @@ public:
 	inline void	SetFlyingMomentum( float momentum ) { m_momentum = momentum; }
 	inline void	SetFlyingFlapSound( char *pFlapSound ) { m_pFlapSound = pFlapSound; }
 	inline void	SetFlyingSpeed( float speed ) { m_flightSpeed = speed; }
-	float		CeilingZ( Vector &position );
-	float		FloorZ( Vector &position );
-	BOOL		ProbeZ( Vector &position, Vector &probe, float *pFraction );
+	float		CeilingZ( const Vector &position );
+	float		FloorZ( const Vector &position );
+	BOOL		ProbeZ( const Vector &position, const Vector &probe, float *pFraction );
 	
 	
 	// UNDONE:  Save/restore this stuff!!!

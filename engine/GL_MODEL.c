@@ -1519,7 +1519,7 @@ void Mod_LoadAliasModel( model_t* mod, void* buffer )
 		Sys_Error("Mod_LoadAliasModel: Invalid # of frames: %d\n", numframes);
 
 	pheader->size = LittleFloat(pinmodel->size) * ALIAS_BASE_SIZE_RATIO;
-	mod->synctype = LittleLong(pinmodel->synctype);
+	mod->synctype = (synctype_t)LittleLong(pinmodel->synctype);
 	mod->numframes = pheader->numframes;
 
 	for (i = 0; i < 3; i++)
@@ -1574,7 +1574,7 @@ void Mod_LoadAliasModel( model_t* mod, void* buffer )
 	{
 		aliasframetype_t	frametype;
 
-		frametype = LittleLong(pframetype->type);
+		frametype = (aliasframetype_t)LittleLong(pframetype->type);
 
 		if (frametype == ALIAS_SINGLE)
 		{

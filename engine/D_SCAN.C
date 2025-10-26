@@ -259,14 +259,14 @@ void D_WarpScreen( void )
 
 		for (v = 0; v < scr_vrect.height; v++)
 		{
-			h = min(r_refdef.vrect.height - 1, v * hratio + 0.5);
+			h = V_min(r_refdef.vrect.height - 1, v * hratio + 0.5);
 			rowptr[v] = (unsigned short*)(d_viewbuffer + (r_refdef.vrect.y + h) * WARP_WIDTH * 2);
 			zrowptr[v] = (unsigned short*)zspantable[r_refdef.vrect.y + h];
 		}
 
 		for (u = 0; u < scr_vrect.width; u++)
 		{
-			w = min(r_refdef.vrect.width - 1, u * wratio + 0.5);
+			w = V_min(r_refdef.vrect.width - 1, u * wratio + 0.5);
 			column[u] = r_refdef.vrect.x + w;
 		}
 	}

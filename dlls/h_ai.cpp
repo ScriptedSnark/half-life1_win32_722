@@ -61,7 +61,7 @@ BOOL FBoxVisible ( entvars_t *pevLooker, entvars_t *pevTarget, Vector &vecTarget
 // VecCheckToss - returns the velocity at which an object should be lobbed from vecspot1 to land near vecspot2.
 // returns g_vecZero if toss is not feasible.
 // 
-Vector VecCheckToss ( entvars_t *pev, Vector &vecSpot1, Vector vecSpot2, float flGravityAdj )
+Vector VecCheckToss ( entvars_t *pev, const Vector &vecSpot1, Vector vecSpot2, float flGravityAdj )
 {
 	TraceResult		tr;
 	Vector			vecMidPoint;// halfway point between Spot1 and Spot2
@@ -147,7 +147,7 @@ Vector VecCheckToss ( entvars_t *pev, Vector &vecSpot1, Vector vecSpot2, float f
 // VecCheckThrow - returns the velocity vector at which an object should be thrown from vecspot1 to hit vecspot2.
 // returns g_vecZero if throw is not feasible.
 // 
-Vector VecCheckThrow ( entvars_t *pev, Vector &vecSpot1, Vector vecSpot2, float flSpeed, float flGravityAdj )
+Vector VecCheckThrow ( entvars_t *pev, const Vector &vecSpot1, Vector vecSpot2, float flSpeed, float flGravityAdj )
 {
 	float			flGravity = CVAR_GET_FLOAT( "sv_gravity" ) * flGravityAdj;
 

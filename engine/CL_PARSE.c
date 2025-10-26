@@ -982,7 +982,8 @@ void CL_RegisterResources( void )
 
 		// check to see that our copy of the client side dll matches the server's
 		// client side DLL  CRC check
-		sprintf(szDllName, "cl_dlls\\client.dll");
+		sprintf(szDllName, "cl_dlls\\client" DLL_FORMAT);
+		COM_FixSlashes(szDllName);
 
 		CRC32_Init(&clientdllCRC);
 		if (!CRC_File(&clientdllCRC, szDllName))
@@ -1409,7 +1410,7 @@ void CL_ParseResourceList( void )
 		resource = (resource_t*)malloc(sizeof(resource_t));
 		memset(resource, 0, sizeof(resource_t));
 
-		resource->type = MSG_ReadByte();
+		resource->type = (resourcetype_t)MSG_ReadByte();
 		strcpy(resource->szFileName, MSG_ReadString());
 		resource->nIndex = MSG_ReadShort();
 		resource->nDownloadSize = MSG_ReadLong();
@@ -1539,7 +1540,7 @@ void CL_ParseCustomization( void )
 
 	resource = (resource_t*)malloc(sizeof(resource_t));
 	memset(resource, 0, sizeof(resource_t));
-	resource->type = MSG_ReadByte();
+	resource->type = (resourcetype_t)MSG_ReadByte();
 	strcpy(resource->szFileName, MSG_ReadString());
 	resource->nIndex = MSG_ReadShort();
 	resource->nDownloadSize = MSG_ReadLong();

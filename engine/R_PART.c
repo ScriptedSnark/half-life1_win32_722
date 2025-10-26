@@ -33,7 +33,7 @@ particle_t* active_particles, * free_particles, * gpActiveTracers;
 
 particle_t* particles;
 int			r_numparticles;
-int			cl_numbeamentities;
+extern int			cl_numbeamentities;
 cl_entity_t* cl_beamentities[MAX_BEAMENTS];
 
 vec3_t			r_pright, r_pup, r_ppn;

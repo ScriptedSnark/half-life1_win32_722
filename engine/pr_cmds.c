@@ -1151,6 +1151,20 @@ edict_t* PF_find_Shared( int eStartSearchAfter, int iFieldToMatch, const char* s
 	return &sv.edicts[0];
 }
 
+
+#ifndef _WIN32
+char* _strlwr(char* str)
+{
+    char* p = str;
+    while (*p)
+    {
+        *p = tolower((unsigned char)*p);
+        p++;
+    }
+    return str;
+}
+#endif
+
 int iGetIndex( const char* pszField )
 {
 	char sz[512];

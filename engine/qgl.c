@@ -12,6 +12,7 @@
 #include <time.h>
 
 #include "quakedef.h"
+#include <SDL2/SDL.h>
 
 typedef struct glwstate_s
 {
@@ -29,6 +30,7 @@ typedef struct glwstate_s
 
 glwstate_t glw_state;
 
+#ifdef _WIN32
 int  ( APIENTRY * qwglChoosePixelFormat )( HDC hdc, CONST PIXELFORMATDESCRIPTOR* ppfd );
 int  ( APIENTRY * qwglDescribePixelFormat )( HDC hdc, int iPixelFormat, UINT nBytes, LPPIXELFORMATDESCRIPTOR ppfd );
 int  ( APIENTRY * qwglGetPixelFormat )( HDC hdc );
@@ -51,6 +53,7 @@ int  ( APIENTRY * qwglSetLayerPaletteEntries )( HDC, int, int, int, CONST COLORR
 int  ( APIENTRY * qwglGetLayerPaletteEntries )(HDC, int, int, int, COLORREF* );
 BOOL( APIENTRY * qwglRealizeLayerPalette )( HDC, int, BOOL );
 BOOL( APIENTRY * qwglSwapLayerBuffers )( HDC, UINT );
+#endif
 
 void ( APIENTRY * qglAccum )( GLenum op, GLfloat value );
 void ( APIENTRY * qglAlphaFunc )( GLenum func, GLclampf ref );
@@ -2631,7 +2634,7 @@ static void APIENTRY logViewport( GLint x, GLint y, GLsizei width, GLsizei heigh
 void QGL_Shutdown( void )
 {
 	if (glw_state.hinstOpenGL)
-		FreeLibrary(glw_state.hinstOpenGL);
+		Sys_FreeLibrary(glw_state.hinstOpenGL);
 
 	glw_state.hinstOpenGL = NULL;
 
@@ -2972,6 +2975,7 @@ void QGL_Shutdown( void )
 	qglVertexPointer			= NULL;
 	qglViewport					= NULL;
 
+#ifdef _WIN32
 	qwglCopyContext				= NULL;
 	qwglCreateContext			= NULL;
 	qwglCreateLayerContext		= NULL;
@@ -2993,13 +2997,18 @@ void QGL_Shutdown( void )
 	qwglGetPixelFormat			= NULL;
 	qwglSetPixelFormat			= NULL;
 	qwglSwapBuffers				= NULL;
+#endif // _WIN32
 	qwglSwapIntervalEXT			= NULL;
 	qwglGetDeviceGammaRampEXT	= NULL;
 	qwglSetDeviceGammaRampEXT	= NULL;
 }
 
 #pragma warning (disable : 4113 4133 4047 )
+#ifdef _WIN32
 #define GPA( a ) GetProcAddress( glw_state.hinstOpenGL, a )
+#else
+#define GPA( a ) SDL_GL_GetProcAddress( a )
+#endif
 
 #if (_MSC_VER == 1020)
 #pragma optimize( "", off )
@@ -3017,6 +3026,7 @@ void QGL_Shutdown( void )
 */
 HINSTANCE QGL_Init( char* pdllname )
 {
+#ifdef _WIN32
 	if (!pdllname)
 	{
 		pdllname = "opengl32.dll";
@@ -3037,7 +3047,7 @@ HINSTANCE QGL_Init( char* pdllname )
 		_putenv("FX_GLIDE_NO_SPLASH=1");
 	}
 
-	if ((glw_state.hinstOpenGL = LoadLibrary(pdllname)) == 0)
+	if ((glw_state.hinstOpenGL = Sys_LoadLibrary(pdllname)) == 0)
 	{
 		char* buf = NULL;
 
@@ -3045,6 +3055,9 @@ HINSTANCE QGL_Init( char* pdllname )
 		Con_Printf("%s\n", buf);
 		return NULL;
 	}
+#else
+	glw_state.hinstOpenGL = (HINSTANCE)1;
+#endif
 
 	qglAccum					= dllAccum						= GPA("glAccum");
 	qglAlphaFunc				= dllAlphaFunc					= GPA("glAlphaFunc");
@@ -3383,6 +3396,7 @@ HINSTANCE QGL_Init( char* pdllname )
 	qglVertexPointer			= dllVertexPointer				= GPA("glVertexPointer");
 	qglViewport					= dllViewport					= GPA("glViewport");
 
+#ifdef _WIN32
 	qwglCopyContext				= GPA("wglCopyContext");
 	qwglCreateContext			= GPA("wglCreateContext");
 	qwglCreateLayerContext		= GPA("wglCreateLayerContext");
@@ -3404,6 +3418,7 @@ HINSTANCE QGL_Init( char* pdllname )
 	qwglGetPixelFormat			= GPA("wglGetPixelFormat");
 	qwglSetPixelFormat			= GPA("wglSetPixelFormat");
 	qwglSwapBuffers				= GPA("wglSwapBuffers");
+#endif
 	qwglSwapIntervalEXT			= NULL;
 
 	qglPointParameterfEXT		= NULL;
@@ -3433,6 +3448,7 @@ void GLimp_EnableLogging( void )
 		asctime(newtime);
 
 		sprintf(buffer, "\\gl.log");
+		COM_FixSlashes(buffer);
 		glw_state.log_fp = fopen(buffer, "wt");
 
 		fprintf(glw_state.log_fp, "%s\n", asctime(newtime));

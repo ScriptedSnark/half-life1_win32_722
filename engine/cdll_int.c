@@ -67,9 +67,9 @@ typedef struct
 cldll_func_t cl_funcs;
 
 #define LOAD_IFACE_FUNC(func, hModule, pszName)							\
-	func = DECLTYPE(func)(GetProcAddress(hModule, pszName));			\
+	func = DECLTYPE(func)(Sys_GetProcAddress(hModule, pszName));			\
 	if (!func)												\
-		Sys_Error("could not link client.dll function " pszName "\n")
+		Sys_Error("could not link client." DLL_FORMAT " function " pszName "\n")
 
 /*
 ==============
@@ -89,11 +89,12 @@ void ClientDLL_Init( void )
 
 	pszGameDir = com_argv[i + 1];
 	if (i && pszGameDir && pszGameDir[0])
-		sprintf(szDllName, "%s\\cl_dlls\\client.dll", pszGameDir);
+		sprintf(szDllName, "%s\\%s\\cl_dlls\\client" DLL_FORMAT, host_parms.basedir, pszGameDir);
 	else
-		sprintf(szDllName, "valve\\cl_dlls\\client.dll");
+		sprintf(szDllName, "%s\\valve\\cl_dlls\\client" DLL_FORMAT, host_parms.basedir);
 
-	hModule = LoadLibrary(szDllName);
+	COM_FixSlashes(szDllName);
+	hModule = Sys_LoadLibrary(szDllName);
 	if (!hModule)
 		Sys_Error("could not load library %s", szDllName);
 

@@ -837,13 +837,13 @@ int IntersectWRect( const wrect_t* prc1, const wrect_t* prc2, wrect_t* prc )
 	if (!prc)
 		prc = &rc;
 
-	prc->left = max(prc1->left, prc2->left);
-	prc->right = min(prc1->right, prc2->right);
+	prc->left = V_max(prc1->left, prc2->left);
+	prc->right = V_min(prc1->right, prc2->right);
 
 	if (prc->left < prc->right)
 	{
-		prc->top = max(prc1->top, prc2->top);
-		prc->bottom = min(prc1->bottom, prc2->bottom);
+		prc->top = V_max(prc1->top, prc2->top);
+		prc->bottom = V_min(prc1->bottom, prc2->bottom);
 
 		if (prc->top < prc->bottom)
 			return TRUE;
@@ -1116,9 +1116,9 @@ void ComputeScaledSize( int* wscale, int* hscale, int width, int height )
 		scaled_height >>= 1;
 
 	if (wscale)
-		*wscale = min(scaled_width >> (int)gl_picmip.value, (int)gl_max_size.value);
+		*wscale = V_min(scaled_width >> (int)gl_picmip.value, (int)gl_max_size.value);
 	if (hscale)
-		*hscale = min(scaled_height >> (int)gl_picmip.value, (int)gl_max_size.value);
+		*hscale = V_min(scaled_height >> (int)gl_picmip.value, (int)gl_max_size.value);
 }
 
 //====================================================================
@@ -1347,8 +1347,10 @@ void GL_Upload32( unsigned int* data, int width, int height, qboolean mipmap, in
 	int			scaled_width, scaled_height;
 	qboolean	f4444 = FALSE;
 
+#ifdef _WIN32
 	if (vid_d3d.value && TEX_IS_ALPHA(iType))
 		f4444 = TRUE;
+#endif
 
 	giTotalTexBytes += height * width;
 
@@ -1415,10 +1417,12 @@ void GL_Upload32( unsigned int* data, int width, int height, qboolean mipmap, in
 
 	texels += scaled_width * scaled_height;
 
+#ifdef _WIN32
 	if (f4444)
 	{
 		Download4444();
 	}
+#endif
 
 	qglTexImage2D(GL_TEXTURE_2D, GL_ZERO, iComponent, scaled_width, scaled_height, GL_ZERO, iFormat, GL_UNSIGNED_BYTE, scaled);
 	
@@ -1439,10 +1443,12 @@ void GL_Upload32( unsigned int* data, int width, int height, qboolean mipmap, in
 
 			texels += scaled_width * scaled_height;
 
+#ifdef _WIN32
 			if (f4444)
 			{
 				Download4444();
 			}
+#endif
 
 			miplevel++;
 			qglTexImage2D(GL_TEXTURE_2D, miplevel, iComponent, scaled_width, scaled_height, GL_ZERO, iFormat, GL_UNSIGNED_BYTE, scaled);

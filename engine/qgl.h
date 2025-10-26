@@ -8,7 +8,11 @@
 
 #include <GL/gl.h>
 
+struct tagD3DGlobals;
+
+#ifdef _WIN32
 extern cvar_t	vid_d3d;
+#endif
 
 HINSTANCE QGL_Init( char* pdllname );
 void QGL_Shutdown( void );

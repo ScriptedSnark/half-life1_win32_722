@@ -883,7 +883,7 @@ void CL_SendConnectPacket( void )
 	strncpy(szServerName, cls.servername, sizeof(szServerName));
 
 	// Deal with local connection
-	if (!_strcmpi(cls.servername, "local"))
+	if (!stricmp(cls.servername, "local"))
 	{
 		sprintf(szServerName, "%s", "localhost");
 	}
@@ -2169,7 +2169,7 @@ void CL_AllowUpload_f( void )
 	if (!cl_allowupload.value)
 		Con_Printf("Client uploading disabled.\n");
 	else
-		Con_Printf("Client uploading enabled.\nMax. upload size is %i", (unsigned int)(__int64)cl_upload_max.value);
+		Con_Printf("Client uploading enabled.\nMax. upload size is %i", (unsigned int)(int64_t)cl_upload_max.value);
 }
 
 char* CL_HashedClientID( unsigned char* hash, int size )

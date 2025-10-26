@@ -247,12 +247,12 @@ sfxcache_t* S_LoadStreamSound( sfx_t* s, channel_t* ch )
 		info = wavstreams[i].info;
 	}
 
-	wavstreams[i].csamplesinmem = min(info.samples - wavstreams[i].csamplesplayed, wavstreams[i].csamplesinmem);
+	wavstreams[i].csamplesinmem = V_min(info.samples - wavstreams[i].csamplesplayed, wavstreams[i].csamplesinmem);
 	wavstreams[i].info = info;
 
 	if (!sc)
 	{
-		sc = (sfxcache_t*)Cache_Alloc(&s->cache, min(cbread, 0x8000) + sizeof(sfxcache_t), wavname);
+		sc = (sfxcache_t*)Cache_Alloc(&s->cache, V_min(cbread, 0x8000) + sizeof(sfxcache_t), wavname);
 		if (!sc)
 			return sc;
 	}
@@ -331,7 +331,7 @@ void FindNextChunk( char* name )
 //			Sys_Error("FindNextChunk: %i length is past the 1 meg sanity limit", iff_chunk_len);
 		data_p -= 8;
 		last_chunk = data_p + 8 + ((iff_chunk_len + 1) & ~1);
-		if (!Q_strncmp(data_p, name, 4))
+		if (!Q_strncmp((char*)(data_p), name, 4))
 			return;
 	}
 }
@@ -381,7 +381,7 @@ wavinfo_t GetWavinfo( char* name, byte* wav, int wavlength )
 
 // find "RIFF" chunk
 	FindChunk("RIFF");
-	if (!data_p || Q_strncmp(data_p + 8, "WAVE", 4))
+	if (!data_p || Q_strncmp((char*)(data_p + 8), "WAVE", 4))
 	{
 		Con_Printf("Missing RIFF/WAVE chunks\n");
 		return info;
@@ -422,7 +422,7 @@ wavinfo_t GetWavinfo( char* name, byte* wav, int wavlength )
 		FindNextChunk("LIST");
 		if (data_p)
 		{
-			if (!strncmp(data_p + 28, "mark", 4))
+			if (!strncmp((char*)(data_p + 28), "mark", 4))
 			{	// this is not a proper parse, but it works with cooledit...
 				data_p += 24;
 				i = GetLittleLong();	// samples in loop

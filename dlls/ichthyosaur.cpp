@@ -72,7 +72,7 @@ public:
 	void  MonsterThink( void );
 	void  Stop( void );
 	void  Swim( void );
-	Vector DoProbe(Vector &Probe);
+	Vector DoProbe(const Vector &Probe);
 
 	void  Vector2String( const Vector &vec, char *str );
 	float VectorToPitch( const Vector &vec);
@@ -1055,7 +1055,7 @@ void CIchthyosaur::Swim( )
 }
 
 
-Vector CIchthyosaur::DoProbe(Vector &Probe)
+Vector CIchthyosaur::DoProbe(const Vector &Probe)
 {
 	Vector WallNormal = Vector(0,0,-1); // WATER normal is Straight Down for fish.
 	float frac;
@@ -1096,6 +1096,8 @@ Vector CIchthyosaur::DoProbe(Vector &Probe)
 
 void CIchthyosaur::Vector2String( const Vector &vec, char *str )
 {
+	// ScriptedSnark: useless anyway
+#ifdef _WIN32
 	char strx[30];
 	char stry[30];
 	char strz[30];
@@ -1111,6 +1113,7 @@ void CIchthyosaur::Vector2String( const Vector &vec, char *str )
 	strcat(str, ", ");
 	strcat(str, strz);
 	strcat(str, " )");
+#endif
 }
 
 #endif

@@ -4,6 +4,8 @@
 #include "cdll_int.h"
 #include "cshift.h"
 
+struct msprite_s;
+
 typedef struct
 {
 	int		length;

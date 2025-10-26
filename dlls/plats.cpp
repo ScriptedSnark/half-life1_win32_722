@@ -509,7 +509,7 @@ public:
 	virtual void	HitTop( void );
 	virtual void	HitBottom( void );
 	
-	void			RotMove( Vector &destAngle, float time );
+	void			RotMove( const Vector &destAngle, float time );
 	virtual int		Save( CSave &save );
 	virtual int		Restore( CRestore &restore );
 	static	TYPEDESCRIPTION m_SaveData[];
@@ -591,7 +591,7 @@ void CFuncPlatRot :: HitTop( void )
 }
 
 
-void CFuncPlatRot :: RotMove( Vector &destAngle, float time )
+void CFuncPlatRot :: RotMove( const Vector &destAngle, float time )
 {
 	// set destdelta to the vector needed to move
 	Vector vecDestDelta = destAngle - pev->angles;
@@ -1588,7 +1588,7 @@ public:
 	void			Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value );
 	void			EXPORT Find( void );
 	TRAIN_CODE		EvaluateTrain( CPathTrack *pcurrent );
-	void			UpdateTrain( Vector &dest );
+	void			UpdateTrain( const Vector &dest );
 	virtual void	HitBottom( void );
 	virtual void	HitTop( void );
 	void			Touch( CBaseEntity *pOther );
@@ -1784,7 +1784,7 @@ TRAIN_CODE CFuncTrackChange :: EvaluateTrain( CPathTrack *pcurrent )
 }
 
 
-void CFuncTrackChange :: UpdateTrain( Vector &dest )
+void CFuncTrackChange :: UpdateTrain( const Vector &dest )
 {
 	float time = (pev->nextthink - pev->ltime);
 

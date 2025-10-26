@@ -351,14 +351,14 @@ void CAmbientGeneric :: RampThink( void )
 		if (m_dpv.lfofrac < 0)
 		{
 			m_dpv.lfofrac = 0;
-			m_dpv.lforate = abs(m_dpv.lforate);
+			m_dpv.lforate = fabs(m_dpv.lforate);
 			pos = 0;
 		}
 		else if (pos > 255)
 		{
 			pos = 255;
 			m_dpv.lfofrac = (255 << 8);
-			m_dpv.lforate = -abs(m_dpv.lforate);
+			m_dpv.lforate = -fabs(m_dpv.lforate);
 		}
 
 		switch(m_dpv.lfotype)
@@ -491,7 +491,7 @@ void CAmbientGeneric :: InitModulationParms(void)
 	m_dpv.volfrac = m_dpv.vol << 8;
 
 	m_dpv.lfofrac = 0;
-	m_dpv.lforate = abs(m_dpv.lforate);
+	m_dpv.lforate = fabs(m_dpv.lforate);
 
 	m_dpv.cspincount = 1;
 	
@@ -1048,11 +1048,15 @@ int USENTENCEG_PickSequential(int isentenceg, char *szfound, int ipick, int fres
 	if (ipick >= count)
 		ipick = count-1;
 
+#ifdef _WIN32
 	strcpy(szfound, "!");
 	strcat(szfound, szgroupname);
 	itoa(ipick, sznum, 10);
 	strcat(szfound, sznum);
-	
+#else
+	sprintf( szfound, "!%s%d", szgroupname, ipick );
+#endif
+
 	if (ipick >= count)
 	{
 		if (freset)
@@ -1110,10 +1114,14 @@ int USENTENCEG_Pick(int isentenceg, char *szfound)
 			USENTENCEG_InitLRU(plru, count);
 		else
 		{
+#ifdef _WIN32
 			strcpy(szfound, "!");
 			strcat(szfound, szgroupname);
 			itoa(ipick, sznum, 10);
 			strcat(szfound, sznum);
+#else
+			sprintf( szfound, "!%s%d", szgroupname, ipick );
+#endif
 			return ipick;
 		}
 	}
@@ -1233,11 +1241,15 @@ void SENTENCEG_Stop(edict_t *entity, int isentenceg, int ipick)
 
 	if (isentenceg < 0 || ipick < 0)
 		return;
-	
+
+#ifdef _WIN32
 	strcpy(buffer, "!");
 	strcat(buffer, rgsentenceg[isentenceg].szgroupname);
 	itoa(ipick, sznum, 10);
 	strcat(buffer, sznum);
+#else
+	sprintf( buffer, "!%s%d", rgsentenceg[isentenceg].szgroupname, ipick );
+#endif
 
 	STOP_SOUND(entity, CHAN_VOICE, buffer);
 }
@@ -1385,9 +1397,13 @@ int SENTENCEG_Lookup(const char *sample, char *sentencenum)
 		{
 			if (sentencenum)
 			{
+#ifdef _WIN32
 				strcpy(sentencenum, "!");
 				itoa(i, sznum, 10);
 				strcat(sentencenum, sznum);
+#else
+				sprintf(sentencenum, "!%d", i);
+#endif
 			}
 			return i;
 		}
@@ -1577,7 +1593,7 @@ void TEXTURETYPE_Init()
 			continue;
 
 		// null-terminate name and save in sentences array
-		j = min (j, CBTEXTURENAMEMAX-1+i);
+		j = V_min (j, CBTEXTURENAMEMAX-1+i);
 		buffer[j] = 0;
 		strcpy(&(grgszTextureName[gcTextures++][0]), &(buffer[i]));
 	}

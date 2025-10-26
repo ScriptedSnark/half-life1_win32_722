@@ -443,11 +443,11 @@ class CXenSporeLarge : public CXenSpore
 class CXenHull : public CPointEntity
 {
 public:
-	static CXenHull	*CreateHull( CBaseEntity *source, Vector &mins, Vector &maxs, const Vector &offset );
+	static CXenHull	*CreateHull( CBaseEntity *source, const Vector &mins, const Vector &maxs, const Vector &offset );
 	int			Classify( void ) { return CLASS_BARNACLE; }
 };
 
-CXenHull *CXenHull :: CreateHull( CBaseEntity *source, Vector &mins, Vector &maxs, const Vector &offset )
+CXenHull *CXenHull :: CreateHull( CBaseEntity *source, const Vector &mins, const Vector &maxs, const Vector &offset )
 {
 	CXenHull *pHull = GetClassPtr( (CXenHull *)NULL );
 

@@ -675,7 +675,11 @@ void CAM_Think( void )
 	if (cam_mousemove)
 	{
 		//get windows cursor position
+#ifdef _WIN32
 		GetCursorPos(&cam_mouse);
+#else
+		SDL_GetGlobalMouseState(&cam_mouse.x, &cam_mouse.y);
+#endif
 		//check for X delta values and adjust accordingly
 		//eventually adjust YAW based on amount of movement
 	  //don't do any movement of the cam using YAW/PITCH if we are zooming in/out the camera	
@@ -742,7 +746,11 @@ void CAM_Think( void )
 
 			cam_old_mouse_x = cam_mouse.x * sensitivity.value;
 			cam_old_mouse_y = cam_mouse.y * sensitivity.value;
+#ifdef _WIN32
 			SetCursorPos(window_center_x, window_center_y);
+#else
+        	SDL_WarpMouseGlobal(window_center_x, window_center_y);
+#endif
 		}
 	}
 
@@ -800,7 +808,11 @@ void CAM_Think( void )
 		//since we are done with the mouse
 		cam_old_mouse_x = cam_mouse.x * sensitivity.value;
 		cam_old_mouse_y = cam_mouse.y * sensitivity.value;
+#ifdef _WIN32
 		SetCursorPos(window_center_x, window_center_y);
+#else
+        SDL_WarpMouseGlobal(window_center_x, window_center_y);
+#endif
 	}
 	if (cam_contain.value)
 	{
@@ -986,7 +998,11 @@ void CAM_StartMouseMove( void )
 		{
 			cam_mousemove = 1;
 			iMouseInUse = 1;
+#ifdef _WIN32
 			GetCursorPos(&cam_mouse);
+#else
+			SDL_GetGlobalMouseState(&cam_mouse.x, &cam_mouse.y);
+#endif
 			cam_old_mouse_x = cam_mouse.x * sensitivity.value;
 			cam_old_mouse_y = cam_mouse.y * sensitivity.value;
 		}
@@ -1024,7 +1040,11 @@ void CAM_StartDistance( void )
 			cam_distancemove = 1;
 			cam_mousemove = 1;
 			iMouseInUse = 1;
+#ifdef _WIN32
 			GetCursorPos(&cam_mouse);
+#else
+			SDL_GetGlobalMouseState(&cam_mouse.x, &cam_mouse.y);
+#endif
 			cam_old_mouse_x = cam_mouse.x * sensitivity.value;
 			cam_old_mouse_y = cam_mouse.y * sensitivity.value;
 		}

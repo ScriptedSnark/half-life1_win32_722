@@ -625,7 +625,7 @@ void R_LoadSkys( void )
 
 	if (!gLoadSky)
 	{
-		int skytexture;
+		GLuint skytexture;
 		for (i = 0; i < 6; i++)
 		{
 			skytexture = 2000 + i;

@@ -4,7 +4,50 @@
 #define COMMON_H
 #pragma once
 
+#ifdef _WIN32
 typedef int qboolean;
+#else
+#include "platform.h"
+
+#define BI_RGB 0
+
+typedef struct
+{
+	uint16 bfType;
+	uint32 bfSize;
+	uint16 bfReserved1;
+	uint16 bfReserved2;
+	uint32 bfOffBits;
+} __attribute__((packed)) BITMAPFILEHEADER;
+
+typedef struct
+{
+	uint32 biSize;
+	int32  biWidth;
+	int32  biHeight;
+	uint16 biPlanes;
+	uint16 biBitCount;
+	uint32 biCompression;
+	uint32 biSizeImage;
+	int32  biXPelsPerMeter;
+	int32  biYPelsPerMeter;
+	uint32 biClrUsed;
+	uint32 biClrImportant;
+} __attribute__((packed)) BITMAPINFOHEADER;
+
+typedef struct
+{
+	uint8 rgbBlue;
+	uint8 rgbGreen;
+	uint8 rgbRed;
+	uint8 rgbReserved;
+} RGBQUAD;
+
+struct usercmd_s;
+struct customization_s;
+struct cache_user_s;
+#endif
+
 
 //============================================================================
 
@@ -183,7 +226,7 @@ byte* LoadBMP16( FILE* fin, qboolean is15bit );
 
 // Additional shared functions
 int COM_EntsForPlayerSlots( int nPlayers );
-
+extern void COM_FixSlashes( char* pname );
 int build_number( void );
 
 extern qboolean		standard_quake, rogue, hipnotic;

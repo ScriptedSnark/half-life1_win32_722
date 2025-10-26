@@ -54,7 +54,7 @@ public:
 	void Holster( void );
 
 	void CreateEffect( void );
-	void UpdateEffect( const Vector &startPoint, Vector &endPoint, float timeBlend );
+	void UpdateEffect( const Vector &startPoint, const Vector &endPoint, float timeBlend );
 	void DestroyEffect( void );
 
 	void EndAttack( void );
@@ -69,7 +69,7 @@ public:
 	float GetPulseInterval( void );
 	float GetDischargeInterval( void );
 
-	void Fire( Vector &vecOrigSrc, const Vector &vecDir );
+	void Fire( const Vector &vecOrigSrc, const Vector &vecDir );
 
 	BOOL HasAmmo( void )
 	{
@@ -342,7 +342,7 @@ void CEgon::SecondaryAttack( void )
 	}
 }
 
-void CEgon::Fire( Vector &vecOrigSrc, const Vector &vecDir )
+void CEgon::Fire( const Vector &vecOrigSrc, const Vector &vecDir )
 {
 	Vector vecDest = vecOrigSrc + vecDir * 2048;
 	edict_t		*pentIgnore;
@@ -462,7 +462,7 @@ void CEgon::Fire( Vector &vecOrigSrc, const Vector &vecDir )
 }
 
 
-void CEgon::UpdateEffect( const Vector &startPoint, Vector &endPoint, float timeBlend )
+void CEgon::UpdateEffect( const Vector &startPoint, const Vector &endPoint, float timeBlend )
 {
 	if ( !m_pBeam )
 	{

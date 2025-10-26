@@ -1,7 +1,7 @@
 // cmodel.c -- model loading
 
 #include "quakedef.h"
-#include "console.h"
+#include "CONSOLE.H"
 #include "common.h"
 #include "cmodel.h"
 

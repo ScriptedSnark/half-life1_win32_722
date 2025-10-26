@@ -148,7 +148,7 @@ void CStomp::Think( void )
 }
 
 
-void StreakSplash( Vector &origin, const Vector &direction, int color, int count, int speed, int velocityRange )
+void StreakSplash( const Vector &origin, const Vector &direction, int color, int count, int speed, int velocityRange )
 {
 	MESSAGE_BEGIN( MSG_PVS, SVC_TEMPENTITY, origin );
 		WRITE_BYTE( TE_STREAK_SPLASH );

@@ -1,4 +1,23 @@
 // sys.h -- non-portable functions
+#ifndef SYS_H
+#define SYS_H
+
+struct clientid_s;
+
+#ifdef _WIN32
+typedef HMODULE dllhandle_t;
+typedef FARPROC farproc_t;
+#define DLL_FORMAT ".dll"
+#else 
+typedef void* dllhandle_t;
+typedef void* farproc_t;
+#define DLL_FORMAT ".so"
+
+#endif
+
+farproc_t Sys_GetProcAddress(dllhandle_t handle, const char* name);
+dllhandle_t Sys_LoadLibrary(const char* name);
+void Sys_FreeLibrary(dllhandle_t handle);
 
 //
 // file IO
@@ -73,7 +92,9 @@ uint32 FunctionFromName( char* pName );
 
 typedef long LONG;
 
+#ifdef _WIN32
 void BuildExportTable( extensiondll_t* pextdll, const char* pszDllFilename );
+#endif
 
 void Sys_LowFPPrecision( void );
 void Sys_HighFPPrecision( void );
@@ -104,3 +125,5 @@ extern void	(*Launcher_InitCmds)( void );
 extern void	(*Launcher_GetCDKey)( char* pszCDKey, int* nLength, int* bDedicated );
 extern int	(*Launcher_GetClientID)( struct clientid_s* pID );
 extern char* (*Launcher_VerifyMessage)( int nLength, byte* pKey, int nMsgLength, char* pMsg, int nSignLength, byte* pSign );
+
+#endif // SYS_H

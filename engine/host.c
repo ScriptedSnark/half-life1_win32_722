@@ -1691,6 +1691,7 @@ Sets the master server settings in the registry
 */
 void Master_SetRegKeyValue( char* pszSubKey, char* pszElement, char* pszReturnString, int nReturnLength, char* pszDefaultValue )
 {
+#ifdef _WIN32
 	LONG lResult;           // Registry function result code
 	HKEY hKey;              // Handle of opened/created key
 	char szBuff[128];		// Temp. buffer
@@ -1745,6 +1746,7 @@ void Master_SetRegKeyValue( char* pszSubKey, char* pszElement, char* pszReturnSt
 
 	// Always close this key before exiting.
 	RegCloseKey(hKey);
+#endif
 }
 
 /*
@@ -1756,6 +1758,7 @@ Initializes the default master server address
 */
 void Master_Init( void )
 {
+#ifdef _WIN32
 	char szRegistryPath[128];
 
 	sprintf(gszMasterAddress, DEFAULT_MASTER_ADDRESS);
@@ -1764,6 +1767,7 @@ void Master_Init( void )
 
 	Master_SetRegKeyValue(szRegistryPath, "MasterServerAddress", gszMasterAddress, sizeof(gszMasterAddress) - 1, gszMasterAddress);
 	Master_SetRegKeyValue(szRegistryPath, "DefaultRoom", gszDefaultRoom, sizeof(gszDefaultRoom) - 1, gszDefaultRoom);
+#endif
 }
 
 /*

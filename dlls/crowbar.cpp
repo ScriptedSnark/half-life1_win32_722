@@ -98,7 +98,7 @@ void CCrowbar::Holster( )
 }
 
 
-void FindHullIntersection( Vector &vecSrc, TraceResult &tr, float *mins, float *maxs, edict_t *pEntity )
+void FindHullIntersection( const Vector &vecSrc, TraceResult &tr, float *mins, float *maxs, edict_t *pEntity )
 {
 	int			i, j, k;
 	float		distance;

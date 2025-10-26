@@ -3,7 +3,7 @@
 #include "quakedef.h"
 #include "pr_cmds.h"
 #include "view.h"
-#include "CL_TENT.H"
+#include "cl_tent.h"
 #include "customentity.h"
 #include "r_triangle.h"
 #include "r_studio.h"
@@ -2799,7 +2799,7 @@ void R_StudioDynamicLight( cl_entity_t* ent, alight_t* plight )
 	color[2] = down.b;
 
 	// intentsity
-	floor = max(max(color[0], color[1]), color[2]);
+	floor = V_max(V_max(color[0], color[1]), color[2]);
 	if (floor == 0.0)
 		floor = 1.0;
 
@@ -2849,7 +2849,7 @@ void R_StudioDynamicLight( cl_entity_t* ent, alight_t* plight )
 	plight->shadelight = Length(light);
 	plight->ambientlight = (floor - plight->shadelight);
 
-	floor = max(max(color[0], color[1]), color[2]);
+	floor = V_max(V_max(color[0], color[1]), color[2]);
 	if (floor == 0.0)
 	{
 		plight->color[0] = 1.0;

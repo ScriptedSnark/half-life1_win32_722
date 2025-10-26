@@ -1,7 +1,7 @@
 // gl_mesh.c: triangle model functions
 
 #include "quakedef.h"
-#include "gl_model.h"
+#include "GL_MODEL.H"
 
 /*
 =================================================================

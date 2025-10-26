@@ -27,7 +27,6 @@
 #define NOSERVICE
 #define NOMCX
 #define NOIME
-#include "WINDOWS.H"
 
 #include "platform.h"
 
@@ -39,9 +38,12 @@
 #endif
 
 // Misc C-runtime library headers
-#include "STDIO.H"
-#include "STDLIB.H"
-#include "MATH.H"
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+#include <string.h>
+#include <ctype.h>
+#include <stdarg.h>
 
 // Header file containing definition of globalvars_t and entvars_t
 typedef int	func_t;					//
@@ -56,7 +58,7 @@ typedef float vec_t;				// needed before including progdefs.h
 
 // Shared engine/DLL constants
 #include "const.h"
-#include "progs.h"
+#include "Progs.h"
 
 // Shared header describing protocol between engine and DLLs
 #include "eiface.h"

@@ -20,7 +20,9 @@
 //
 
 
+#ifndef DLLEXPORT
 #define DLLEXPORT __stdcall
+#endif
 
 typedef enum
 {
@@ -84,8 +86,8 @@ typedef struct enginefuncs_s
 	void		(*pfnGetSpawnParms)			( edict_t* ent );
 	void		(*pfnSaveSpawnParms)		( edict_t* ent );
 	float		(*pfnVecToYaw)				( const float* rgflVector );
-	void		(*pfnVecToAngles)			( const float* rgflVectorIn, float* rgflVectorOut );
-	void		(*pfnMoveToOrigin)			( edict_t* ent, float* pflGoal, float dist, int iMoveType );
+	void		(*pfnVecToAngles)			( const float* rgflVectorIn, const float* rgflVectorOut );
+	void		(*pfnMoveToOrigin)			( edict_t* ent, const float* pflGoal, float dist, int iMoveType );
 	void		(*pfnChangeYaw)				( edict_t* ent );
 	void		(*pfnChangePitch)			( edict_t* ent );
 	edict_t*	(*pfnFindEntityByString)	( edict_t* pEdictStartSearchAfter, char* pszField, char* pszValue );
@@ -94,7 +96,7 @@ typedef struct enginefuncs_s
 	edict_t*	(*pfnFindClientInPVS)		( edict_t* pEdict );
 	edict_t*	(*pfnEntitiesInPVS)			( edict_t* pplayer );
 	void		(*pfnMakeVectors)			( const float* rgflVector );
-	void		(*pfnAngleVectors)			( float* rgflVector, float* forward, float* right, float* up );
+	void		(*pfnAngleVectors)			( const float* rgflVector, const float* forward, const float* right, const float* up );
 	edict_t*	(*pfnCreateEntity)			( void );
 	void		(*pfnRemoveEntity)			( edict_t* e );
 	edict_t*	(*pfnCreateNamedEntity)		( int className );
@@ -104,15 +106,15 @@ typedef struct enginefuncs_s
 	int			(*pfnWalkMove)				( edict_t* ent, float yaw, float dist, int iMode );
 	void		(*pfnSetOrigin)				( edict_t* e, const float* rgflOrigin );
 	void		(*pfnEmitSound)				( edict_t* entity, int channel, char* sample, /*int*/float volume, float attenuation, int fFlags, int pitch );
-	void		(*pfnEmitAmbientSound)		( edict_t* entity, float* pos, char* samp, float vol, float attenuation, int fFlags, int pitch );
+	void		(*pfnEmitAmbientSound)		( edict_t* entity, const float* pos, char* samp, float vol, float attenuation, int fFlags, int pitch );
 	void		(*pfnTraceLine)				( const float* v1, const float* v2, int fNoMonsters, edict_t* pentToSkip, TraceResult* ptr );
 	void		(*pfnTraceToss)				( edict_t* pent, edict_t* pentToIgnore, TraceResult* ptr );
-	int			(*pfnTraceMonsterHull)		( edict_t*, float*, float*, int, edict_t*, TraceResult*);
+	int			(*pfnTraceMonsterHull)		( edict_t*, const float*, const float*, int, edict_t*, TraceResult*);
 	void		(*pfnTraceHull)				( const float* v1, const float* v2, int fNoMonsters, int hullNumber, edict_t* pentToSkip, TraceResult* ptr );
 	void		(*pfnTraceModel)			( const float* v1, const float* v2, edict_t* pent, TraceResult* ptr );
 	const char*	(*pfnTraceTexture)			( edict_t* pTextureEntity, const float* v1, const float* v2 );
-	void		(*pfnTraceSphere)			( float* v1, float* v2, int fNoMonsters, float radius, edict_t* pentToSkip, TraceResult* ptr );
-	void		(*pfnGetAimVector)			( edict_t* ent, float speed, float* rgflReturn );
+	void		(*pfnTraceSphere)			( float* v1, const float* v2, int fNoMonsters, float radius, edict_t* pentToSkip, TraceResult* ptr );
+	void		(*pfnGetAimVector)			( edict_t* ent, float speed, const float* rgflReturn );
 	void		(*pfnServerCommand)			( char* str );
 	void		(*pfnClientCommand)			( edict_t* pEdict, char* szFmt, ... );
 	void		(*pfnParticleEffect)		( const float* org, const float* dir, float color, float count );
@@ -149,14 +151,14 @@ typedef struct enginefuncs_s
 	void*		(*pfnGetModelPtr)			( edict_t* pEdict );
 	int			(*pfnRegUserMsg)			( const char* pszName, int iSize);
 	void		(*pfnAnimationAutomove)		( const edict_t* pEdict, float flTime );
-	void		(*pfnGetBonePosition)		( const edict_t* pEdict, int iBone, float* rgflOrigin, float* rgflAngles );
+	void		(*pfnGetBonePosition)		( const edict_t* pEdict, int iBone, const float* rgflOrigin, const float* rgflAngles );
 	uint32		(*pfnFunctionFromName)		( char* pName );
 	char*		(*pfnNameForFunction)		( uint32 function );
 	void		(*pfnClientPrintf)			( edict_t* pEdict, PRINT_TYPE ptype, char* szMsg ); // JOHN: engine callbacks so game DLL can print messages to individual clients
 	char*		(*pfnCmd_Args)				( void );		// these 3 added 
 	char*		(*pfnCmd_Argv)				( int argc );	// so game DLL can easily 
 	int			(*pfnCmd_Argc)				( void );		// access client 'cmd' strings
-	void		(*pfnGetAttachment)			( const edict_t* pEdict, int iAttachment, float* rgflOrigin, float* rgflAngles );
+	void		(*pfnGetAttachment)			( const edict_t* pEdict, int iAttachment, const float* rgflOrigin, const float* rgflAngles );
 	void		(*pfnCRC32_Init)			( CRC32_t* pulCRC );
 	void		(*pfnCRC32_ProcessBuffer)	( CRC32_t* pulCRC, void* p, int len );
 	void		(*pfnCRC32_ProcessByte)		( CRC32_t* pulCRC, unsigned char ch );
@@ -175,7 +177,7 @@ typedef struct enginefuncs_s
 	void		(*pfnFadeClientVolume)		( const edict_t* pEdict, int fadePercent, int fadeOutSeconds, int holdTime, int fadeInSeconds );
 	void		(*pfnSetClientMaxspeed)		( const edict_t* pEdict, float fNewMaxspeed );
 	edict_t*	(*pfnCreateFakeClient)		( const char* netname );	// returns NULL if fake client can't be created
-	void		(*pfnRunPlayerMove)			( edict_t* fakeclient, float* viewangles, float forwardmove, float sidemove, float upmove, unsigned short buttons, byte impulse, byte msec );
+	void		(*pfnRunPlayerMove)			( edict_t* fakeclient, const float* viewangles, float forwardmove, float sidemove, float upmove, unsigned short buttons, byte impulse, byte msec );
 	int			(*pfnNumberOfEntities)		( void );
 	int			(*pfnIsMapValid)			( char* filename );
 } enginefuncs_t;

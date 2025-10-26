@@ -125,8 +125,8 @@ public:
 	inline int	GetStartEntity( void ) { return pev->sequence & 0xFFF; }
 	inline int	GetEndEntity( void ) { return pev->skin & 0xFFF; }
 
-	Vector &GetStartPos( void );
-	Vector &GetEndPos( void );
+	const Vector &GetStartPos( void );
+	const Vector &GetEndPos( void );
 
 	Vector Center( void ) { return (GetStartPos() + GetEndPos()) * 0.5; }; // center point of beam
 
@@ -142,7 +142,7 @@ public:
 	void		RelinkBeam( void );
 //	void		SetObjectCollisionBox( void );
 
-	void		DoSparks( Vector &start, Vector &end );
+	void		DoSparks( const Vector &start, const Vector &end );
 	CBaseEntity *RandomTargetname( char *szName );
 	void		BeamDamage( TraceResult *ptr );
 	// Init after BeamCreate()

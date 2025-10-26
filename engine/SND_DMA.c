@@ -275,6 +275,7 @@ void S_Init( void )
 		char szPath[256];
 		char szValue[256];
 		sprintf(szPath, "Software\\Valve\\Half-Life\\Player Profiles");
+		COM_FixSlashes(szPath);
 		Sys_GetProfileRegKeyValue(g_szProfileName, szPath, "CVAR", "a3d", szValue, sizeof(szValue), "0.0");
 		Cvar_Set("a3d", szValue);
 	}
@@ -986,7 +987,11 @@ void S_StartDynamicSound( int entnum, int entchannel, sfx_t* sfx, vec_t* origin,
 		return;
 	}
 
+#if defined (__USEA3D)
 	target_chan = SND_PickDynamicChannel(entnum, entchannel, FALSE, sfx);
+#else
+	target_chan = SND_PickDynamicChannel(entnum, entchannel, sfx);
+#endif
 
 	if (!target_chan)
 		return;
@@ -1145,7 +1150,11 @@ void S_StartStaticSound( int entnum, int entchannel, sfx_t* sfxin, vec_t* origin
 		return;
 	}
 
+#ifdef __USEA3D
 	ch = SND_PickStaticChannel(entnum, entchannel, TRUE, sfx); // Autolooping sounds are always fixed origin(?)
+#else
+	ch = SND_PickStaticChannel(entnum, entchannel, sfx); // Autolooping sounds are always fixed origin(?)
+#endif
 
 	if (!ch)
 		return;
@@ -1686,6 +1695,10 @@ void S_LocalSound( char* sound )
 // speak a sentence from console; works by passing in "!sentencename"
 // or "sentence"
 
+#ifndef _WIN32
+#define timeGetTime() time(0)
+#endif
+
 void S_Say( void )
 {
 	sfx_t* sfx;
@@ -1702,7 +1715,7 @@ void S_Say( void )
 	// DEBUG - test performance of dsp code
 	if (!Q_strcmp(sound, "dsp"))
 	{
-		unsigned time;
+		unsigned _time;
 		int i;
 		int count = 10000;
 
@@ -1716,19 +1729,19 @@ void S_Say( void )
 
 		// get system time
 
-		time = timeGetTime();
+		_time = timeGetTime();
 
 		for (i = 0; i < count; i++)
 		{
 			SX_RoomFX(PAINTBUFFER_SIZE, TRUE, TRUE);
 		}
 		// display system time delta 
-		Con_Printf("%d milliseconds \n", timeGetTime() - time);
+		Con_Printf("%d milliseconds \n", timeGetTime() - __time_t_defined);
 		return;
 	}
 	else if (!Q_strcmp(sound, "paint"))
 	{
-		unsigned time;
+		unsigned _time;
 		int count = 10000;
 		static int hash = 543;
 		sfx_t* sfx;
@@ -1740,14 +1753,14 @@ void S_Say( void )
 		S_StartDynamicSound(hash++, CHAN_AUTO, sfx, listener_origin, VOL_NORM, 1.0, 0, PITCH_NORM);
 
 		// get system time
-		time = timeGetTime();
+		_time = timeGetTime();
 
 		// paint a boatload of sound
 
 		S_PaintChannels(paintedtime + 512 * count);
 
 		// display system time delta 
-		Con_Printf("%d milliseconds \n", timeGetTime() - time);
+		Con_Printf("%d milliseconds \n", timeGetTime() - _time);
 		paintedtime = psav;
 		return;
 	}

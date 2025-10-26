@@ -274,7 +274,7 @@ void Key_Console( int key )
 
 	if (key == K_PGUP)
 	{
-		con_backscroll += max(con_rows / 2, 4);
+		con_backscroll += V_max(con_rows / 2, 4);
 		if (con_backscroll > con_totallines - (vid.height >> 3) - 1)
 			con_backscroll = con_totallines - (vid.height >> 3) - 1;
 		return;
@@ -282,7 +282,7 @@ void Key_Console( int key )
 
 	if (key == K_PGDN)
 	{
-		con_backscroll -= max(con_rows / 2, 4);
+		con_backscroll -= V_max(con_rows / 2, 4);
 		if (con_backscroll < 0)
 			con_backscroll = 0;
 		return;
@@ -300,7 +300,8 @@ void Key_Console( int key )
 		return;
 	}
 
-	if ((key == 86 || key == 118))
+#ifdef _WIN32
+	if ((key == 'v' || key == 'V'))
 	{
 		if ((GetKeyState(VK_CONTROL) & 0x8000) && OpenClipboard(NULL))
 		{
@@ -318,7 +319,7 @@ void Key_Console( int key )
 					strcpy(textCopied, clipText);
 					strtok(textCopied, "\n\r\b");
 
-					nLength = min(strlen(textCopied), 256 - key_linepos);
+					nLength = V_min(strlen(textCopied), 256 - key_linepos);
 					if (nLength > 0)
 					{
 						textCopied[nLength] = 0;
@@ -333,6 +334,7 @@ void Key_Console( int key )
 			return;
 		}
 	}
+#endif
 
 	if (key < 32 || key > 127)
 		return;	// non printable
@@ -462,7 +464,7 @@ Key_SetBinding
 */
 void Key_SetBinding( int keynum, char* binding )
 {
-	char* new;
+	char*  _new;
 	int		l;
 
 	if (keynum == -1)
@@ -477,10 +479,10 @@ void Key_SetBinding( int keynum, char* binding )
 			
 // allocate memory for new binding
 	l = Q_strlen(binding);
-	new = Z_Malloc(l + 1);
-	Q_strcpy(new, binding);
-	new[l] = 0;
-	keybindings[keynum] = new;
+	_new = Z_Malloc(l + 1);
+	Q_strcpy(_new, binding);
+	_new[l] = 0;
+	keybindings[keynum] = _new;
 }
 
 /*

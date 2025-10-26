@@ -11,7 +11,7 @@
 
 extern DLL_GLOBAL edict_t		*g_pBodyQueueHead;
 
-int CFlyingMonster :: CheckLocalMove ( Vector &vecStart, Vector &vecEnd, CBaseEntity *pTarget, float *pflDist )
+int CFlyingMonster :: CheckLocalMove ( const Vector &vecStart, Vector &vecEnd, CBaseEntity *pTarget, float *pflDist )
 {
 	// UNDONE: need to check more than the endpoint
 	if (FBitSet(pev->flags, FL_SWIM) && (UTIL_PointContents(vecEnd) != CONTENTS_WATER))
@@ -185,7 +185,7 @@ void CFlyingMonster::MoveExecute( CBaseEntity *pTargetEnt, const Vector &vecDir,
 }
 
 
-float CFlyingMonster::CeilingZ( Vector &position )
+float CFlyingMonster::CeilingZ( const Vector &position )
 {
 	TraceResult tr;
 
@@ -204,7 +204,7 @@ float CFlyingMonster::CeilingZ( Vector &position )
 	return maxUp.z;
 }
 
-BOOL CFlyingMonster::ProbeZ( Vector &position, Vector &probe, float *pFraction)
+BOOL CFlyingMonster::ProbeZ( const Vector &position, const Vector &probe, float *pFraction)
 {
 	int conPosition = UTIL_PointContents(position);
 	if ( (((pev->flags) & FL_SWIM) == FL_SWIM) ^ (conPosition == CONTENTS_WATER))
@@ -250,7 +250,7 @@ BOOL CFlyingMonster::ProbeZ( Vector &position, Vector &probe, float *pFraction)
 	return TRUE;
 }
 
-float CFlyingMonster::FloorZ( Vector &position )
+float CFlyingMonster::FloorZ( const Vector &position )
 {
 	TraceResult tr;
 

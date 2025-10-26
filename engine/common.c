@@ -1592,6 +1592,7 @@ Sets com_filesize and one of handle or file
 ===========
 */
 FILETIME gFileTime;
+#ifdef _WIN32
 int COM_FindFile( char* filename, int* phFile, FILE** file )
 {
 	searchpath_t*	search;
@@ -1693,6 +1694,93 @@ int COM_FindFile( char* filename, int* phFile, FILE** file )
 	com_filesize = -1;
 	return -1;
 }
+#else
+int COM_FindFile(char* filename, int* phFile, FILE** file)
+{
+	searchpath_t* search;
+	char netpath[MAX_OSPATH];
+	pack_t* pak;
+	int i = -1;
+	struct stat fileStat;
+
+	if (file && phFile)
+		Sys_Error("COM_FindFile: both phFile and file set");
+	if (!file && !phFile)
+		Sys_Error("COM_FindFile: neither phFile or file set");
+
+	search = com_searchpaths;
+
+	for (; search; search = search->next)
+	{
+		if (search->pack)
+		{
+			pak = search->pack;
+			for (i = 0; i < pak->numfiles; i++)
+			{
+				if (!Q_FileNameCmp(pak->files[i].name, filename))
+				{
+					Sys_Printf("PackFile: %s : %s\n", pak->filename, filename);
+					if (phFile)
+					{
+						phFile[0] = pak->files[i].filepos;
+						phFile[1] = pak->files[i].filelen;
+						phFile[2] = pak->handle;
+						Sys_FileSeek(pak->handle, pak->files[i].filepos);
+					}
+					else
+					{
+						// No FILETIME on Linux, optionally store timestamp with stat below if needed
+						*file = fopen(pak->filename, "rb");
+						setvbuf(*file, NULL, _IOFBF, 0x4000);
+						if (*file)
+							fseek(*file, pak->files[i].filepos, SEEK_SET);
+					}
+					com_filesize = pak->files[i].filelen;
+					return com_filesize;
+				}
+			}
+		}
+		else
+		{
+			if (!static_registered)
+			{
+				if (strchr(filename, '/') || strchr(filename, '\\'))
+					continue;
+			}
+
+			sprintf(netpath, "%s/%s", search->filename, filename);
+
+			if (stat(netpath, &fileStat) == -1)
+				continue;
+
+			// Optional: if you want to store timestamp, copy `fileStat.st_mtime`
+
+			com_filesize = Sys_FileOpenRead(netpath, &i);
+			if (phFile)
+			{
+				phFile[0] = 0;
+				phFile[2] = i;
+			}
+			else
+			{
+				Sys_FileClose(i);
+				*file = fopen(netpath, "rb");
+			}
+			return com_filesize;
+		}
+	}
+
+	if (filename && filename[0] != '*')
+		Sys_Printf("FindFile: can't find %s\n", filename);
+
+	if (phFile)
+		phFile[2] = -1;
+	else
+		*file = NULL;
+	com_filesize = -1;
+	return -1;
+}
+#endif
 
 
 /*
@@ -1978,7 +2066,11 @@ void COM_AddGameDirectory( char* dir )
 	searchpath_t*			search;
 	pack_t*					pak;
 	char                    pakfile[MAX_OSPATH];
+#ifdef _WIN32
 	HANDLE					hfile;
+#else
+	struct stat				st;
+#endif
 	strcpy(com_gamedir, dir);
 
 //
@@ -1986,6 +2078,9 @@ void COM_AddGameDirectory( char* dir )
 //
 	search = Hunk_Alloc(sizeof(searchpath_t));
 	strcpy(search->filename, dir);
+#ifndef _WIN32
+	search->filetime = 0;
+#endif
 	search->next = com_searchpaths;
 	com_searchpaths = search;
 
@@ -2000,15 +2095,23 @@ void COM_AddGameDirectory( char* dir )
 			break;
 		search = Hunk_Alloc(sizeof(searchpath_t));
 		search->pack = pak;
+#ifndef _WIN32
+	search->filetime = 0;
+#endif
 		search->next = com_searchpaths;
 		com_searchpaths = search;
 
+#ifdef _WIN32
 		hfile = CreateFile(pakfile, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, 128, NULL);
 		if (hfile != INVALID_HANDLE_VALUE)
 		{
 			GetFileTime(hfile, NULL, NULL, &search->filetime);
 			CloseHandle(hfile);
 		}
+#else
+		if (stat(pakfile, &st) == 0)
+			search->filetime = st.st_mtime;
+#endif
 	}
 
 //
@@ -2122,6 +2225,49 @@ int COM_FileTell( int filepos, int filelen, int handle )
 	return Sys_FileTell(handle) - filepos;
 }
 
+#ifndef _WIN32
+#include <dirent.h>
+#include <sys/types.h>
+#include <string.h>
+
+void _splitpath(const char* path, char* dir, char* fname, char* ext)
+{
+    const char* slash = strrchr(path, '/');
+    const char* dot = strrchr(path, '.');
+
+    // Handle extension
+    if (dot && (!slash || dot > slash))
+    {
+        strcpy(ext, dot);
+    }
+    else
+    {
+        ext[0] = '\0';
+        dot = NULL; // treat whole name as filename
+    }
+
+    // Handle filename
+    const char* filename_start = slash ? slash + 1 : path;
+    size_t name_len = dot ? (size_t)(dot - filename_start) : strlen(filename_start);
+    strncpy(fname, filename_start, name_len);
+    fname[name_len] = '\0';
+
+    // Handle directory
+    if (slash)
+    {
+        size_t dir_len = slash - path + 1;
+        strncpy(dir, path, dir_len);
+        dir[dir_len] = '\0';
+    }
+    else
+    {
+        dir[0] = '\0';
+    }
+}
+
+
+#endif
+
 /*
 ================
 COM_ListMaps
@@ -2130,6 +2276,7 @@ Lists all maps matching the substring
 If the substring is empty, or "*", then lists all maps
 ================
 */
+#ifdef _WIN32
 int COM_ListMaps( char* pszFileName, char* pszSubString )
 {
 	int		i;
@@ -2270,6 +2417,142 @@ int COM_ListMaps( char* pszFileName, char* pszSubString )
 
 	return FALSE;
 }
+#else
+int COM_ListMaps( char* pszFileName, char* pszSubString )
+{
+	int		i;
+	int		nSubStringLen;
+	char	szSearchPath[MAX_PATH];
+	char	szFilePath[MAX_OSPATH];
+	char	szExt[MAX_OSPATH];
+	searchpath_t* search;
+	pack_t* pak;
+	static DIR* dir = NULL;
+	static struct dirent* entry = NULL;
+	static char	filename[MAX_PATH];
+	static qboolean	bUseDirectorySearch = FALSE;
+
+	// Get substring length so we can filter the maps
+	nSubStringLen = 0;
+	if (pszSubString && pszSubString[0])
+		nSubStringLen = strlen(pszSubString);
+
+	// Search through all search paths
+	for (search = com_searchpaths; search; search = search->next)
+	{
+		pak = search->pack;
+
+		// Search in .pak files
+		if (pak)
+		{
+			for (i = 0; i < pak->numfiles; i++)
+			{
+				if (!_stricmp(pak->files[i].name, filename))
+					break;
+				if (!filename[0])
+					break;
+			}
+
+			i++;
+			if (i < pak->numfiles)
+			{
+				// Search for maps in pak
+				while (1)
+				{
+					if (!_strnicmp("maps/", pak->files[i].name, 4))
+					{
+#ifdef _WIN32
+						_splitpath(pak->files[i].name, NULL, szSearchPath, szFilePath, szExt);
+#else
+						_splitpath(pak->files[i].name, szSearchPath, szFilePath, szExt);
+#endif
+						if (!_stricmp(szExt, ".bsp") && (!nSubStringLen || !_strnicmp(szFilePath, pszSubString, nSubStringLen)))
+						{
+							strcpy(filename, pak->files[i].name);
+							strcpy(pszFileName, pak->files[i].name + sizeof("maps/") - 1);  // Skip "maps/"
+							return TRUE;
+						}
+					}
+
+					i++;
+					if (i >= pak->numfiles)
+					{
+						bUseDirectorySearch = TRUE;
+						break;
+					}
+				}
+			}
+			else
+			{
+				bUseDirectorySearch = TRUE;
+			}
+		}
+
+		// Search in the game directory
+		if (!pak || bUseDirectorySearch)
+		{
+			if (!dir)
+			{
+				qboolean bFoundMatch = FALSE;
+
+				sprintf(szSearchPath, "%s/maps", com_gamedir);
+				dir = opendir(szSearchPath);
+				if (!dir)
+					break;
+
+				while ((entry = readdir(dir)) != NULL)
+				{
+					if (!strstr(entry->d_name, ".bsp"))
+						continue;
+
+					if (!nSubStringLen || !_strnicmp(entry->d_name, pszSubString, nSubStringLen))
+					{
+						bFoundMatch = TRUE;
+						break;
+					}
+				}
+
+				if (!bFoundMatch)
+					break;
+			}
+			else
+			{
+				qboolean bFoundMatch = FALSE;
+
+				while ((entry = readdir(dir)) != NULL)
+				{
+					if (!strstr(entry->d_name, ".bsp"))
+						continue;
+
+					if (!nSubStringLen || !_strnicmp(entry->d_name, pszSubString, nSubStringLen))
+					{
+						bFoundMatch = TRUE;
+						break;
+					}
+				}
+
+				if (!bFoundMatch)
+					break;
+			}
+
+			// Found the last map
+			strcpy(pszFileName, entry->d_name);
+			return TRUE;
+		}
+	}
+
+	// No more maps found
+	if (dir)
+	{
+		closedir(dir);
+	}
+	filename[0] = 0;
+	bUseDirectorySearch = FALSE;
+	dir = NULL;
+
+	return FALSE;
+}
+#endif
 
 #define DIB_HEADER_MARKER   ((WORD) ('M' << 8) | 'B')
 
@@ -2809,8 +3092,16 @@ int COM_CompareFileTime( char* filename1, char* filename2, int* iCompare )
 			{
 				fclose(pFile);
 				ft2 = gFileTime;
-				
+#ifdef _WIN32
 				*iCompare = CompareFileTime(&ft1, &ft2);
+#else
+				if (ft1 < ft2)
+					*iCompare = -1;
+				else if (ft1 > ft2)
+					*iCompare = 1;
+				else
+					*iCompare = 0;
+#endif
 				bRet = 1;
 			}
 		}

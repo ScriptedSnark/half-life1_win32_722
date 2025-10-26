@@ -4,6 +4,10 @@
 #include "winquake.h"
 #include "studio.h"
 
+#ifndef _WIN32
+void _splitpath(const char* path, char* dir, char* fname, char* ext);
+#endif
+
 #define	DYNAMIC_SIZE	0xc000
 
 #define	ZONEID	0x1d4a11
@@ -1179,7 +1183,11 @@ void Cache_Print_Sounds_And_Totals( void )
 		if (j + 1 == i || ComparePath1(sortarray[j]->name, sortarray[j + 1]->name) == 0)
 		{
 			char pathbuf[512];
+#ifdef _WIN32
 			_splitpath(sortarray[j]->name, NULL, pathbuf, NULL, NULL);
+#else
+			_splitpath(sortarray[j]->name, pathbuf, NULL, NULL);
+#endif
 			fprintf(file, "\tTotal Bytes used in \"%s\": %s\n", pathbuf, CommatizeNumber(totalsndbytes - subtot, buf));
 			subtot = totalsndbytes;
 		}

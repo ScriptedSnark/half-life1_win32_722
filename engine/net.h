@@ -6,6 +6,26 @@
 #pragma once
 #endif
 
+struct sockaddr;
+
+#ifndef _WIN32
+
+#define WSAEWOULDBLOCK		EWOULDBLOCK	// Operation would block EAGAIN (11)
+#define WSAEMSGSIZE		EMSGSIZE	// Message too long (90)
+#define WSAEADDRNOTAVAIL	EADDRNOTAVAIL	// Cannot assign requested address (99)
+#define WSAEAFNOSUPPORT		EAFNOSUPPORT	// Address family not supported by protocol (97)
+#define WSAECONNRESET		ECONNRESET	// Connection reset by peer (104)
+#define WSAECONNREFUSED		ECONNREFUSED	// Connection refused (111)
+#define WSAEADDRINUSE		EADDRINUSE	// Address already in use (98)
+#define WSAENOBUFS		ENOBUFS		// No buffer space available (105)
+
+#define SOCKET_FIONBIO(s, m) ioctlsocket(s, FIONBIO, (u_long*)&m)
+
+#define ioctlsocket ioctl
+#define closesocket close
+
+#endif // _WIN32
+
 #define	PORT_ANY	-1
 
 #define	MIN_RATE		100

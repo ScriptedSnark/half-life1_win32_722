@@ -60,7 +60,7 @@ public:
 	// Acquire a target.  pPlayer is a player in the PVS
 	edict_t		*FindTarget( edict_t *pPlayer );
 
-	void		TankTrace( Vector &vecStart, const Vector &vecForward, const Vector &vecSpread, TraceResult &tr );
+	void		TankTrace( const Vector &vecStart, const Vector &vecForward, const Vector &vecSpread, TraceResult &tr );
 
 	Vector		BarrelPosition( void )
 	{
@@ -645,7 +645,7 @@ void CFuncTank::Fire( const Vector &barrelEnd, const Vector &forward, entvars_t 
 }
 
 
-void CFuncTank::TankTrace( Vector &vecStart, const Vector &vecForward, const Vector &vecSpread, TraceResult &tr )
+void CFuncTank::TankTrace( const Vector &vecStart, const Vector &vecForward, const Vector &vecSpread, TraceResult &tr )
 {
 	// get circular gaussian spread
 	float x, y, z;
@@ -734,7 +734,7 @@ class CFuncTankLaser : public CFuncTank
 public:
 	void	Activate( void );
 	void	KeyValue( KeyValueData *pkvd );
-	void	Fire( Vector &barrelEnd, const Vector &forward, entvars_t *pevAttacker );
+	void	Fire( const Vector &barrelEnd, const Vector &forward, entvars_t *pevAttacker );
 	void	Think( void );
 	CLaser *GetLaser( void );
 
@@ -815,7 +815,7 @@ void CFuncTankLaser::Think( void )
 }
 
 
-void CFuncTankLaser::Fire( Vector &barrelEnd, const Vector &forward, entvars_t *pevAttacker )
+void CFuncTankLaser::Fire( const Vector &barrelEnd, const Vector &forward, entvars_t *pevAttacker )
 {
 	int i;
 	TraceResult tr;
@@ -889,7 +889,7 @@ class CFuncTankMortar : public CFuncTank
 {
 public:
 	void KeyValue( KeyValueData *pkvd );
-	void Fire( Vector &barrelEnd, const Vector &forward, entvars_t *pevAttacker );
+	void Fire( const Vector &barrelEnd, const Vector &forward, entvars_t *pevAttacker );
 };
 LINK_ENTITY_TO_CLASS( func_tankmortar, CFuncTankMortar );
 
@@ -906,7 +906,7 @@ void CFuncTankMortar::KeyValue( KeyValueData *pkvd )
 }
 
 
-void CFuncTankMortar::Fire( Vector &barrelEnd, const Vector &forward, entvars_t *pevAttacker )
+void CFuncTankMortar::Fire( const Vector &barrelEnd, const Vector &forward, entvars_t *pevAttacker )
 {
 	if ( m_fireLast != 0 )
 	{

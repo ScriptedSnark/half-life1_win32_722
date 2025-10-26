@@ -85,7 +85,7 @@ public:
 	// other functions
 	void SetTurretAnim(TURRET_ANIM anim);
 	int MoveTurret(void);
-	virtual void Shoot(Vector &vecSrc, Vector &vecDirToEnemy) { };
+	virtual void Shoot(const Vector &vecSrc, Vector &vecDirToEnemy) { };
 
 	float m_flMaxSpin;		// Max time to spin the barrel w/o a target
 	int m_iSpin;
@@ -168,7 +168,7 @@ public:
 	static	TYPEDESCRIPTION m_SaveData[];
 
 	// other functions
-	void Shoot(Vector &vecSrc, Vector &vecDirToEnemy);
+	void Shoot(const Vector &vecSrc, Vector &vecDirToEnemy);
 
 private:
 	int m_iStartSpin;
@@ -188,7 +188,7 @@ public:
 	void Spawn( );
 	void Precache(void);
 	// other functions
-	void Shoot(Vector &vecSrc, Vector &vecDirToEnemy);
+	void Shoot(const Vector &vecSrc, Vector &vecDirToEnemy);
 };
 
 
@@ -437,7 +437,7 @@ void CBaseTurret::EyeOff( )
 	{
 		if (m_eyeBrightness > 0)
 		{
-			m_eyeBrightness = max( 0, m_eyeBrightness - 30 );
+			m_eyeBrightness = V_max( 0, m_eyeBrightness - 30 );
 			m_pEyeGlow->SetBrightness( m_eyeBrightness );
 		}
 	}
@@ -600,7 +600,7 @@ void CBaseTurret::ActiveThink(void)
 }
 
 
-void CTurret::Shoot(Vector &vecSrc, Vector &vecDirToEnemy)
+void CTurret::Shoot(const Vector &vecSrc, Vector &vecDirToEnemy)
 {
 	FireBullets( 1, vecSrc, vecDirToEnemy, TURRET_SPREAD, TURRET_RANGE, BULLET_MONSTER_12MM, 1 );
 	EMIT_SOUND(ENT(pev), CHAN_WEAPON, "turret/tu_fire1.wav", 1, 0.6);
@@ -608,7 +608,7 @@ void CTurret::Shoot(Vector &vecSrc, Vector &vecDirToEnemy)
 }
 
 
-void CMiniTurret::Shoot(Vector &vecSrc, Vector &vecDirToEnemy)
+void CMiniTurret::Shoot(const Vector &vecSrc, Vector &vecDirToEnemy)
 {
 	FireBullets( 1, vecSrc, vecDirToEnemy, TURRET_SPREAD, TURRET_RANGE, BULLET_MONSTER_9MM, 1 );
 
@@ -1132,7 +1132,7 @@ public:
 	void Spawn( );
 	void Precache(void);
 	// other functions
-	void Shoot(Vector &vecSrc, Vector &vecDirToEnemy);
+	void Shoot(const Vector &vecSrc, Vector &vecDirToEnemy);
 	int TakeDamage(entvars_t *pevInflictor, entvars_t *pevAttacker, float flDamage, int bitsDamageType);
 	void EXPORT SentryTouch( CBaseEntity *pOther );
 	void EXPORT SentryDeath( void );
@@ -1168,7 +1168,7 @@ void CSentry::Spawn()
 	pev->nextthink = gpGlobals->time + 0.3; 
 }
 
-void CSentry::Shoot(Vector &vecSrc, Vector &vecDirToEnemy)
+void CSentry::Shoot(const Vector &vecSrc, Vector &vecDirToEnemy)
 {
 	FireBullets( 1, vecSrc, vecDirToEnemy, TURRET_SPREAD, TURRET_RANGE, BULLET_MONSTER_MP5, 1 );
 	

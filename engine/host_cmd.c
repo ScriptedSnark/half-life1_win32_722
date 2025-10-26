@@ -7,6 +7,11 @@
 #include "r_studio.h"
 #include "pr_edict.h"
 
+#ifndef _WIN32
+#include <dirent.h>
+#include <fnmatch.h>
+#endif
+
 int	current_skill;
 int	gHostSpawnCount = 0;
 
@@ -750,6 +755,7 @@ void Host_Changelevel_f( void )
 	SV_ActivateServer(TRUE);
 }
 
+#ifdef _WIN32
 char* Host_FindRecentSave( char* pNameBuf )
 {
 	HANDLE		findfn;
@@ -791,6 +797,54 @@ char* Host_FindRecentSave( char* pNameBuf )
 
 	return NULL;
 }
+#else
+char* Host_FindRecentSave(char* pNameBuf)
+{
+    DIR* dir;
+    struct dirent* entry;
+    char saveDir[MAX_PATH];
+    char filePath[MAX_PATH];
+    time_t newestTime = 0;
+    int found = 0;
+
+    // Build path to directory
+    snprintf(saveDir, sizeof(saveDir), "%s", Host_SaveGameDirectory());
+
+    dir = opendir(saveDir);
+    if (!dir)
+        return NULL;
+
+    while ((entry = readdir(dir)) != NULL)
+    {
+        // Skip non-.sav files
+        if (!strstr(entry->d_name, ".sav"))
+            continue;
+
+        // Skip HLSave.sav
+        if (strcasecmp(entry->d_name, "HLSave.sav") == 0)
+            continue;
+
+        snprintf(filePath, sizeof(filePath), "%s/%s", saveDir, entry->d_name);
+        COM_FixSlashes(filePath);
+
+        struct stat st;
+        if (stat(filePath, &st) == 0)
+        {
+            if (!found || st.st_mtime > newestTime)
+            {
+                newestTime = st.st_mtime;
+                strncpy(pNameBuf, entry->d_name, MAX_PATH);
+                found = 1;
+            }
+        }
+    }
+
+    closedir(dir);
+
+    return found ? pNameBuf : NULL;
+}
+#endif
+
 
 /*
 ==================
@@ -2286,6 +2340,7 @@ int FileSize( FILE* pFile )
 
 #define FILECOPYBUFSIZE 1024
 
+#ifdef _WIN32
 void FileCopy( FILE* pOutput, FILE* pInput, int fileSize )
 {
 	char	buf[FILECOPYBUFSIZE];		// A small buffer for the copy
@@ -2400,6 +2455,184 @@ void DirectoryClear( const char* pPath )
 	} while (nextfile);
 	FindClose(findfn);
 }
+#else
+void FileCopy( FILE* pOutput, FILE* pInput, int fileSize )
+{
+	char	buf[FILECOPYBUFSIZE];		// A small buffer for the copy
+	int		size;
+
+	while (fileSize > 0)
+	{
+		if (fileSize > FILECOPYBUFSIZE)
+			size = FILECOPYBUFSIZE;
+		else
+			size = fileSize;
+		fread(buf, size, 1, pInput);
+		fwrite(buf, size, 1, pOutput);
+
+		fileSize -= size;
+	}
+}
+
+void DirectoryCopy( const char* pPath, FILE* pFile )
+{
+	DIR* dir;
+	struct dirent* entry;
+	struct stat fileStat;
+	int fileSize;
+	FILE* pCopy;
+	char szName[MAX_PATH];
+	char dirPath[MAX_PATH];
+	char pattern[MAX_PATH];
+	
+	// Extract directory path and pattern from pPath
+	strcpy(pattern, pPath);
+	char* lastSlash = strrchr(pattern, '/');
+	if (lastSlash) {
+		*lastSlash = '\0';
+		strcpy(dirPath, pattern);
+		strcpy(pattern, lastSlash + 1);
+	} else {
+		strcpy(dirPath, ".");
+	}
+	
+	dir = opendir(dirPath);
+	if (!dir)
+		return;
+
+	while ((entry = readdir(dir)) != NULL)
+	{
+		// Check if filename matches the pattern (*.HL?)
+		if (fnmatch(pattern, entry->d_name, 0) == 0)
+		{
+			snprintf(szName, sizeof(szName), "%s/%s", dirPath, entry->d_name);
+			COM_FixSlashes(szName);
+			
+			if (stat(szName, &fileStat) == 0 && S_ISREG(fileStat.st_mode))
+			{
+				pCopy = fopen(szName, "rb");
+				if (pCopy)
+				{
+					fileSize = FileSize(pCopy);
+					fwrite(entry->d_name, sizeof(char), MAX_PATH, pFile);
+					fwrite(&fileSize, sizeof(int), 1, pFile);
+					FileCopy(pFile, pCopy, fileSize);
+					fclose(pCopy);
+				}
+			}
+		}
+	}
+
+	closedir(dir);
+}
+
+void DirectoryExtract( FILE* pFile, int fileCount )
+{
+    int i, fileSize;
+    FILE* pCopy;
+    char szName[MAX_PATH], fileName[MAX_PATH];
+
+	for (i = 0; i < fileCount; i++)
+	{
+		fread(fileName, sizeof(char), MAX_PATH, pFile);
+		fread(&fileSize, sizeof(int), 1, pFile);
+		snprintf(szName, sizeof(szName), "%s%s", Host_SaveGameDirectory(), fileName);
+		COM_FixSlashes(szName);
+		pCopy = fopen(szName, "wb");
+		if (pCopy)
+		{
+			FileCopy(pCopy, pFile, fileSize);
+			fclose(pCopy);
+		}
+	}
+}
+
+int DirectoryCount( const char* pPath )
+{
+	int count = 0;
+	DIR* dir;
+	struct dirent* entry;
+	struct stat fileStat;
+	char dirPath[MAX_PATH];
+	char pattern[MAX_PATH];
+	
+	// Extract directory path and pattern from pPath
+	strcpy(pattern, pPath);
+	char* lastSlash = strrchr(pattern, '/');
+	if (lastSlash) {
+		*lastSlash = '\0';
+		strcpy(dirPath, pattern);
+		strcpy(pattern, lastSlash + 1);
+	} else {
+		strcpy(dirPath, ".");
+	}
+	
+	dir = opendir(dirPath);
+	if (!dir)
+		return count;
+
+	while ((entry = readdir(dir)) != NULL)
+	{
+		// Check if filename matches the pattern (*.HL?)
+		if (fnmatch(pattern, entry->d_name, 0) == 0)
+		{
+			char fullPath[MAX_PATH];
+			snprintf(fullPath, sizeof(fullPath), "%s/%s", dirPath, entry->d_name);
+			
+			if (stat(fullPath, &fileStat) == 0 && S_ISREG(fileStat.st_mode))
+			{
+				count++;
+			}
+		}
+	}
+
+	closedir(dir);
+	return count;
+}
+
+void DirectoryClear( const char* pPath )
+{
+	char szName[MAX_PATH];
+	DIR* dir;
+	struct dirent* entry;
+	struct stat fileStat;
+	char dirPath[MAX_PATH];
+	char pattern[MAX_PATH];
+	
+	// Extract directory path and pattern from pPath
+	strcpy(pattern, pPath);
+	char* lastSlash = strrchr(pattern, '/');
+	if (lastSlash) {
+		*lastSlash = '\0';
+		strcpy(dirPath, pattern);
+		strcpy(pattern, lastSlash + 1);
+	} else {
+		strcpy(dirPath, ".");
+	}
+	
+	dir = opendir(dirPath);
+	if (!dir)
+		return;
+
+	while ((entry = readdir(dir)) != NULL)
+	{
+		// Check if filename matches the pattern (*.HL?)
+		if (fnmatch(pattern, entry->d_name, 0) == 0)
+		{
+			snprintf(szName, sizeof(szName), "%s/%s", dirPath, entry->d_name);
+			COM_FixSlashes(szName);
+			
+			if (stat(szName, &fileStat) == 0 && S_ISREG(fileStat.st_mode))
+			{
+				// Delete the file
+				unlink(szName);
+			}
+		}
+	}
+
+	closedir(dir);
+}
+#endif
 
 /*
 ==================
@@ -4008,6 +4241,7 @@ Switch the main window to worldcraft
 */
 void Host_WC_f( void )
 {
+#ifdef _WIN32
 	Con_DPrintf("Switching to worldcraft\n");
 
 	if (!FindWindow("VALVEWORLDCRAFT", NULL))
@@ -4015,6 +4249,7 @@ void Host_WC_f( void )
 
 	giActive = DLL_PAUSED;
 	giStateInfo = STATE_WORLDCRAFT;
+#endif
 }
 
 /*
@@ -4035,8 +4270,8 @@ void Host_Soundfade_f( void )
 	}
 
 	percent = atoi(Cmd_Argv(1));
-	percent = min(percent, 100);
-	percent = max(percent, 0);
+	percent = V_min(percent, 100);
+	percent = V_max(percent, 0);
 
 	holdTime = atoi(Cmd_Argv(2));
 	if (holdTime > 255)

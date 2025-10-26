@@ -2289,11 +2289,11 @@ void CL_TempEntPlaySound( TEMPENTITY* pTemp, float damp )
 
 		if (fShell)
 		{
-			fvol *= min(1.0, ((float)zvel) / 350.0);
+			fvol *= V_min(1.0, ((float)zvel) / 350.0);
 		}
 		else
 		{
-			fvol *= min(1.0, ((float)zvel) / 450.0);
+			fvol *= V_min(1.0, ((float)zvel) / 450.0);
 		}
 
 		if (!RandomLong(0, 3) && !fShell)

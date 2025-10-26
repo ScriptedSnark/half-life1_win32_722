@@ -985,7 +985,7 @@ void SV_ConnectClient( void )
 	Netchan_OutOfBandPrint(NS_SERVER, adr, "%c", S2C_CONNECTION);
 
 	// Display debug message.
-	if (!_stricmp(NET_AdrToString(client->netchan.remote_address), adr.ip))
+	if (!stricmp(NET_AdrToString(client->netchan.remote_address), (const char*)adr.ip))
 	{
 		Con_DPrintf("Local connection.\n");
 	}
@@ -1352,7 +1352,7 @@ void SVC_MasterPrint( void )
 		return;
 
 	// Verify the message
-	pMsg = Launcher_VerifyMessage(g_iMasterMsgSize, g_szMasterMsg, nSize, pBuf, nSignSize, pSign);
+	pMsg = Launcher_VerifyMessage(g_iMasterMsgSize, (byte*)g_szMasterMsg, nSize, pBuf, nSignSize, pSign);
 	if (!pMsg)
 		return;
 
@@ -3454,7 +3454,7 @@ void SV_BroadcastCommand( char* fmt, ... )
 	int			i;
 	client_t* cl;
 
-	msg.data = data;
+	msg.data = (byte*)data;
 	msg.maxsize = sizeof(data);
 	msg.cursize = 0;
 
@@ -3528,7 +3528,7 @@ SV_ActivateServer
 
 ================
 */
-void SV_ActivateServer( int runPhysics )
+void SV_ActivateServer( qboolean runPhysics )
 {
 	int i;
 
@@ -3731,7 +3731,8 @@ int SV_SpawnServer( qboolean bIsDemo, char* server, char* startspot )
 		}
 
 		// DLL CRC check.
-		sprintf(szDllName, "cl_dlls\\client.dll");
+		sprintf(szDllName, "cl_dlls\\client" DLL_FORMAT);
+		COM_FixSlashes(szDllName);
 		CRC32_Init(&sv.clientSideDllCRC);
 
 		if (!CRC_File(&sv.clientSideDllCRC, szDllName))

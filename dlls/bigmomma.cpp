@@ -150,8 +150,8 @@ IMPLEMENT_SAVERESTORE( CBMortar, CBaseEntity );
 #define bits_MEMORY_FIRED_NODE		(bits_MEMORY_CUSTOM4)
 
 int gSpitSprite, gSpitDebrisSprite;
-Vector VecCheckSplatToss( entvars_t *pev, Vector &vecSpot1, Vector vecSpot2, float maxHeight );
-void MortarSpray( Vector &position, const Vector &direction, int spriteModel, int count );
+Vector VecCheckSplatToss( entvars_t *pev, const Vector &vecSpot1, Vector vecSpot2, float maxHeight );
+void MortarSpray( const Vector &position, const Vector &direction, int spriteModel, int count );
 
 
 // UNDONE:	
@@ -1068,7 +1068,7 @@ void CBigMomma::RunTask( Task_t *pTask )
 
 
 
-Vector VecCheckSplatToss( entvars_t *pev, Vector &vecSpot1, Vector vecSpot2, float maxHeight )
+Vector VecCheckSplatToss( entvars_t *pev, const Vector &vecSpot1, Vector vecSpot2, float maxHeight )
 {
 	TraceResult		tr;
 	Vector			vecMidPoint;// halfway point between Spot1 and Spot2
@@ -1119,7 +1119,7 @@ Vector VecCheckSplatToss( entvars_t *pev, Vector &vecSpot1, Vector vecSpot2, flo
 // Mortar
 //
 // ---------------------------------
-void MortarSpray( Vector &position, const Vector &direction, int spriteModel, int count )
+void MortarSpray( const Vector &position, const Vector &direction, int spriteModel, int count )
 {
 	MESSAGE_BEGIN( MSG_PVS, SVC_TEMPENTITY, position );
 		WRITE_BYTE( TE_SPRITE_SPRAY );

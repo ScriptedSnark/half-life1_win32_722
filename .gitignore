@@ -420,3 +420,5 @@ FodyWeavers.xsd
 /dlls/Releasehl
 /engine/SoftDebug
 /engine/SoftRelease
+/.vscode
+/build

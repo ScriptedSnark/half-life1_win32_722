@@ -71,7 +71,7 @@ void Con_SetTimes_f( void )
 	if (con_times)
 		free(con_times);
 
-	con_times = malloc(sizeof(float) * newtimes);
+	con_times = (float*)malloc(sizeof(float) * newtimes);
 	if (!con_times)
 		Sys_Error("Couldn't allocate space for %i console overlays.", newtimes);
 
@@ -266,11 +266,11 @@ void Con_Init( void )
 		}
 	}
 
-	con_text = Hunk_AllocName(CON_TEXTSIZE, "context");
+	con_text = (char*)Hunk_AllocName(CON_TEXTSIZE, "context");
 	Q_memset(con_text, ' ', CON_TEXTSIZE);
 	con_linewidth = -1;
 
-	con_times = malloc(sizeof(float) * con_num_times);
+	con_times = (float*)malloc(sizeof(float) * con_num_times);
 	if (!con_times)
 		Sys_Error("Couldn't allocate space for %i console overlays.", con_num_times);
 
@@ -405,6 +405,15 @@ void Con_Print( char* txt )
 	}
 }
 
+#ifndef _WIN32
+#define _open open
+#define _write write
+#define _close close
+
+#define _O_WRONLY O_WRONLY
+#define _O_CREAT O_CREAT
+#define _O_APPEND O_APPEND
+#endif
 
 /*
 ================
@@ -435,7 +444,7 @@ Handles cursor positioning, line wrapping, etc
 */
 #define	MAXPRINTMSG	4096
 extern char		outputbuf[8000];
-#include "console.h"
+#include "CONSOLE.H"
 qboolean 	g_fIsDebugPrint = FALSE;
 // FIXME: make a buffer size safe vsprintf?
 void Con_Printf( char* fmt, ... )

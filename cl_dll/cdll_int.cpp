@@ -8,8 +8,6 @@
 #include "util.h"
 #include <string.h>
 
-#define DLLEXPORT __declspec( dllexport )
-
 cl_enginefunc_t gEngfuncs;
 CHud gHUD;
 

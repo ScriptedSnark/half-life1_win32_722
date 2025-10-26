@@ -11,6 +11,9 @@
 #include "r_shared.h"
 #endif
 
+struct mspriteframe_s;
+struct wrect_s;
+
 typedef struct
 {
 	char			name[64];

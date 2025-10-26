@@ -2,23 +2,28 @@
 // util.h
 //
 
-#include <windows.h>
+#include <stdio.h>
+#include <string.h>
+#include "cvardef.h"
 
-#include "../engine/cvardef.h"
+#if !defined(TRUE)
+#define TRUE 1
+#define FALSE 0
+#endif
 
 // Macros to hook function calls into the HUD object
 #define HOOK_MESSAGE(x) gEngfuncs.pfnHookUserMsg(#x, __MsgFunc_##x );
 
 #define DECLARE_MESSAGE(y, x) int __MsgFunc_##x(const char *pszName, int iSize, void *pbuf) \
 							{ \
-							return gHUD.##y.MsgFunc_##x(pszName, iSize, pbuf ); \
+							return gHUD.y.MsgFunc_##x(pszName, iSize, pbuf ); \
 							}
 
 
 #define HOOK_COMMAND(x, y) gEngfuncs.pfnAddCommand( x, __CmdFunc_##y );
 #define DECLARE_COMMAND(y, x) void __CmdFunc_##x( void ) \
 							{ \
-								gHUD.##y.UserCmd_##x( ); \
+								gHUD.y.UserCmd_##x( ); \
 							}
 
 inline float CVAR_GET_FLOAT( const char *x ) {	return gEngfuncs.pfnGetCvarFloat( (char*)x ); }

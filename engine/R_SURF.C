@@ -1431,7 +1431,7 @@ void R_DrawInitLut( void )
 		for (j = 0; j < 256; j++)
 		{
 			k = i + j * 256;
-			r_lut[k] = min((i * j) / 192, 255);
+			r_lut[k] = V_min((i * j) / 192, 255);
 
 			if (is15bit)
 			{

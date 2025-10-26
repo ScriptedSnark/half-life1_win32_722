@@ -58,8 +58,8 @@
 // spawn flags 256 and above are already taken by the engine
 extern void UTIL_MoveToOrigin( edict_t* pent, const Vector &vecGoal, float flDist, int iMoveType ); 
 
-Vector VecCheckToss ( entvars_t *pev, Vector &vecSpot1, Vector vecSpot2, float flGravityAdj = 1.0 );
-Vector VecCheckThrow ( entvars_t *pev, Vector &vecSpot1, Vector vecSpot2, float flSpeed, float flGravityAdj = 1.0 );
+extern Vector VecCheckToss ( entvars_t *pev, const Vector &vecSpot1, Vector vecSpot2, float flGravityAdj = 1.0 );
+extern Vector VecCheckThrow ( entvars_t *pev, const Vector &vecSpot1, Vector vecSpot2, float flSpeed, float flGravityAdj = 1.0 );
 extern DLL_GLOBAL Vector		g_vecAttackDir;
 extern DLL_GLOBAL CONSTANT float g_flMeleeRange;
 extern DLL_GLOBAL CONSTANT float g_flMediumRange;

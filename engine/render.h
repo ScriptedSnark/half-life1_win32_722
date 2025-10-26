@@ -6,6 +6,8 @@
 
 //=============================================================================
 
+struct msurface_s;
+
 typedef struct efrag_s
 {
 	struct mleaf_s* leaf;

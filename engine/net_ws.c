@@ -10,7 +10,11 @@
 #include <WSipx.h> // For ipx socket
 
 typedef int socklen_t;
+#else
 
+#include <arpa/inet.h>
+#include <netdb.h>
+#include <errno.h>
 #endif
 
 cvar_t host_name = { "hostname", "Half-Life" };
@@ -451,8 +455,11 @@ void NET_AddToLagged( netsrc_t sock, packetlag_t* pList, packetlag_t* pPacket, n
 	pList->pPrev = pPacket;
 	pPacket->pNext = pList;
 
+#ifdef _WIN32
 	sprintf(szDumpFile, "%s%i_%i.tmp", "c:\\temp\\N_", sock, losscount[sock]);
-
+#else
+	sprintf(szDumpFile, "%s%i_%i.tmp", "/tmp/N_", sock, losscount[sock]);
+#endif
 	losscount[sock]++;
 
 	if (losscount[sock] > 8192)
@@ -550,9 +557,10 @@ qboolean NET_GetPacket( netsrc_t sock )
 	{
 		if (protocol == 0)
 			net_socket = ip_sockets[sock];
+#if defined( _WIN32 )
 		else
 			net_socket = ipx_sockets[sock];
-
+#endif
 		if (net_socket)
 		{
 			fromlen = sizeof(from);
@@ -641,7 +649,7 @@ void NET_SendPacket( netsrc_t sock, int length, void* data, netadr_t to )
 		if (!net_socket)
 			return;
 	}
-#ifdef _WIN32
+#if defined( _WIN32 )
 	else if (to.type == NA_IPX)
 	{
 		net_socket = ipx_sockets[sock];
@@ -732,7 +740,11 @@ int NET_IPSocket( char* net_interface, int port )
 	}
 
 	// make it non-blocking
+#if defined( _WIN32 )
 	if (ioctlsocket(newsocket, FIONBIO, (unsigned long*)&_true) == -1)
+#else
+	if (SOCKET_FIONBIO(newsocket, _true) == -1)
+#endif
 	{
 #if defined( _WIN32 )
 		err = WSAGetLastError();
@@ -1164,21 +1176,28 @@ void NET_Init( void )
 	int		r;
 	int		hPort;
 
+
+#if defined( _WIN32 )
 	r = WSAStartup(MAKEWORD(1, 1), &winsockdata);
 
 	if (r)
 		Sys_Error("Winsock initialization failed.");
+#endif
 
 	Cmd_AddCommand("maxplayers", MaxPlayers_f);
 	Cmd_AddCommand("netbad", Net_BadConnection_f);
 
+#if defined( _WIN32 )
 	Cvar_RegisterVariable(&noipx);
+#endif
 	Cvar_RegisterVariable(&noip);
 
+#if defined( _WIN32 )
 	if (COM_CheckParm("-noipx"))
 	{
 		Cvar_SetValue("noipx", 1.0);
 	}
+#endif
 
 	if (COM_CheckParm("-noip"))
 	{
@@ -1191,8 +1210,10 @@ void NET_Init( void )
 	Cvar_RegisterVariable(&defport);
 	Cvar_RegisterVariable(&ip_clientport);
 	Cvar_RegisterVariable(&clientport);
+#if defined( _WIN32 )
 	Cvar_RegisterVariable(&ipx_hostport);
 	Cvar_RegisterVariable(&ipx_clientport);
+#endif
 
 	// Parameters.
 
@@ -1255,7 +1276,9 @@ void NET_Shutdown( void )
 
 	NET_Config(FALSE);
 
+#if defined( _WIN32 )
 	WSACleanup();
+#endif
 }
 
 #define MAX_GRAPH_WIDTH	256
@@ -1294,7 +1317,7 @@ SCR_ClampHigh
 */
 float SCR_ClampHigh( float value )
 {
-	return max(0.0, min(sqrt(value) / sqrt(scr_graphhigh.value), 1.0));
+	return V_max(0.0, V_min(sqrt(value) / sqrt(scr_graphhigh.value), 1.0));
 }
 
 /*
@@ -1378,7 +1401,7 @@ SCR_ClampHeight
 */
 int SCR_ClampHeight( float value )
 {
-	return max(0.0, min(scr_graphheight.value * value, scr_graphheight.value));
+	return V_max(0.0, V_min(scr_graphheight.value * value, scr_graphheight.value));
 }
 
 /*
@@ -1698,5 +1721,10 @@ char* NET_ErrorString( int code )
 	case WSANO_DATA: return "WSANO_DATA";
 	default: return "NO ERROR";
 	}
+}
+#else
+char* NET_ErrorString( int code )
+{
+	return strerror(code);
 }
 #endif

@@ -1,5 +1,7 @@
 // mathlib.h
 
+struct mplane_s;
+
 typedef float vec_t;
 typedef vec_t vec3_t[3];
 typedef vec_t vec4_t[4];	// x,y,z,w

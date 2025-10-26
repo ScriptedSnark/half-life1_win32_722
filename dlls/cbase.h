@@ -37,7 +37,9 @@ CBaseEntity
 
 // C functions for external declarations that call the appropriate C++ methods
 
+#ifndef EXPORT
 #define EXPORT	_declspec( dllexport )
+#endif
 
 extern "C" EXPORT int GetEntityAPI( DLL_FUNCTIONS *pFunctionTable, int interfaceVersion );
 
@@ -390,7 +392,7 @@ public:
 	void KeyValue( KeyValueData *pkvd );
 	void Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value );
 	int	ObjectCaps( void ) { return (CPointEntity::ObjectCaps() | FCAP_MASTER); }
-	BOOL IsTriggered( CBaseEntity *pActivator );
+	BOOL IsTriggered( void );
 	void EXPORT Register( void );
 	virtual int		Save( CSave &save );
 	virtual int		Restore( CRestore &restore );
@@ -445,10 +447,10 @@ public:
 	float SetBoneController ( int iController, float flValue );
 	void InitBoneControllers ( void );
 	float SetBlending ( int iBlender, float flValue );
-	void GetBonePosition ( int iBone, Vector &origin, Vector &angles );
-	void GetAutomovement( Vector &origin, Vector &angles, float flInterval = 0.1 );
+	void GetBonePosition ( int iBone, const Vector &origin, const Vector &angles );
+	void GetAutomovement( const Vector &origin, const Vector &angles, float flInterval = 0.1 );
 	int  FindTransition( int iEndingSequence, int iGoalSequence, int *piDir );
-	void GetAttachment ( int iAttachment, Vector &origin, Vector &angles );
+	void GetAttachment ( int iAttachment, const Vector &origin, const Vector &angles );
 	void SetBodygroup( int iGroup, int iValue );
 	int GetBodygroup( int iGroup );
 

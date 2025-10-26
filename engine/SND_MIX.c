@@ -4,8 +4,10 @@
 #include "winquake.h"
 #include "pr_cmds.h"
 
+#ifdef _WIN32
 extern LPDIRECTSOUND pDS;
 extern LPDIRECTSOUNDBUFFER pDSBuf, pDSPBuf;
+#endif
 
 extern DWORD gSndBufSize;
 
@@ -1156,8 +1158,12 @@ qboolean SXDLY_Init( int idelay, float delay ) {
 		delay = SXDLY_MAX;
 
 	if (pdly->lpdelayline) {
+	#ifdef _WIN32
 		GlobalUnlock(pdly->hdelayline);
 		GlobalFree(pdly->hdelayline);
+	#else
+		free(pdly->hdelayline);
+	#endif
 		pdly->hdelayline = NULL;
 		pdly->lpdelayline = NULL;
 	}
@@ -1170,13 +1176,18 @@ qboolean SXDLY_Init( int idelay, float delay ) {
 	pdly->cdelaysamplesmax += 1;
 
 	cbsamples = pdly->cdelaysamplesmax * sizeof(sample_t);
+#ifdef _WIN32
 	hData = GlobalAlloc(GMEM_MOVEABLE | GMEM_SHARE, cbsamples);
+#else
+	hData = malloc(cbsamples);
+#endif
 	if (!hData)
 	{
 		Con_SafePrintf("Sound FX: Out of memory.\n");
 		return FALSE;
 	}
 
+#ifdef _WIN32
 	lpData = (HPSTR)GlobalLock(hData);
 	if (!lpData)
 	{
@@ -1184,6 +1195,9 @@ qboolean SXDLY_Init( int idelay, float delay ) {
 		GlobalFree(hData);
 		return FALSE;
 	}
+#else
+	lpData = (char*)hData;
+#endif
 
 	memset(lpData, 0, cbsamples);
 
@@ -1215,8 +1229,12 @@ void SXDLY_Free( int idelay ) {
 	dlyline_t* pdly = &(rgsxdly[idelay]);
 
 	if (pdly->lpdelayline) {
+#ifdef _WIN32
 		GlobalUnlock(pdly->hdelayline);
 		GlobalFree(pdly->hdelayline);
+#else
+		free(pdly->hdelayline);
+#endif
 		pdly->hdelayline = NULL;
 		pdly->lpdelayline = NULL;				// this deactivates the delay
 	}
@@ -1241,7 +1259,7 @@ void SXDLY_CheckNewStereoDelayVal() {
 
 		} else {
 
-			delaysamples = (int)(min(sxste_delay.value, SXSTE_MAX) * shm->speed)
+			delaysamples = (int)(V_min(sxste_delay.value, SXSTE_MAX) * shm->speed)
 				<< sxhires; // << 1 for hires
 
 			// init delay line if not active
@@ -1396,7 +1414,7 @@ void SXDLY_CheckNewDelayVal() {
 		} else {
 			// init delay line if not active
 
-			pdly->delaysamples = (int)(min(sxdly_delay.value, SXDLY_MAX) * shm->speed)
+			pdly->delaysamples = (int)(V_min(sxdly_delay.value, SXDLY_MAX) * shm->speed)
 				<< sxhires; // << 1 for hires
 			
 			if (pdly->lpdelayline == NULL)
@@ -1558,11 +1576,11 @@ void SXRVB_CheckNewReverbVal() {
 
 				switch (i) {
 					case ISXRVB:
-						delaysamples = (int)(min(sxrvb_size.value, SXRVB_MAX) * shm->speed) << sxhires; // << 1 for hires
+						delaysamples = (int)(V_min(sxrvb_size.value, SXRVB_MAX) * shm->speed) << sxhires; // << 1 for hires
 						pdly->mod = RVB_MODRATE1 << sxhires; // << 1 for hires
 						break;
 					case ISXRVB + 1:
-						delaysamples = (int)(min(sxrvb_size.value * 0.71, SXRVB_MAX) * shm->speed) << sxhires; // << 1 for hires
+						delaysamples = (int)(V_min(sxrvb_size.value * 0.71, SXRVB_MAX) * shm->speed) << sxhires; // << 1 for hires
 						pdly->mod = RVB_MODRATE2 << sxhires; // << 1 for hires
 						break;
 					default:
@@ -3196,7 +3214,6 @@ int PaintToA3D( int iChannel, channel_t* ch, sfxcache_t* sc, int count, int feed
 
 	return TRUE;
 }
-#endif
 
 int hA3D_FeedBuffer( void* pA3D, int iChannel, channel_t* ch, sfxcache_t* sc, int count, int feedStart, float flPitch )
 {
@@ -3505,3 +3522,4 @@ void S_A3DFinishChannel( int iChannel )
 		}
 	}
 }
+#endif

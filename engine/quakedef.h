@@ -31,7 +31,7 @@
 #define DECLTYPE(func) (void*)
 #endif
 
-#if defined(_M_IX86)
+#if defined(_M_IX86) && defined(_WIN32)
 #define __i386__	1
 #endif
 
@@ -43,7 +43,7 @@
 
 #endif
 
-#if defined __i386__ // && !defined __sun__
+#if defined __i386__ && defined(_WIN32) // && !defined __sun__
 #define id386	1
 #else
 #define id386	0
@@ -135,7 +135,7 @@ typedef struct _UserMsg
 #include "bothdefs.h"
 #include "mathlib.h"
 #include "const.h"
-#include "progs.h"
+#include "Progs.h"
 #include "common.h"
 #include "modelgen.h"
 #include "bspfile.h"
@@ -161,7 +161,7 @@ typedef struct _UserMsg
 #include "host_cmd.h"
 
 #ifdef GLQUAKE
-#include "gl_model.h"
+#include "GL_MODEL.H"
 #else
 #include "model.h"
 #include "d_iface.h"
@@ -170,7 +170,7 @@ typedef struct _UserMsg
 #include "input.h"
 #include "world.h"
 #include "keys.h"
-#include "console.h"
+#include "CONSOLE.H"
 #include "save.h"
 #include "view.h"
 #include "crc.h"
@@ -186,7 +186,7 @@ typedef void* HGLRC;
 
 #ifdef GLQUAKE
 #include "qgl.h"
-#include "glquake.h"
+#include "GLQUAKE.H"
 #endif
 
 //=============================================================================
