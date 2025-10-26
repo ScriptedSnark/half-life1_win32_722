@@ -1826,9 +1826,12 @@ extern	void ( APIENTRY * dllVertexPointer )( GLint size, GLenum type, GLsizei st
 extern	void ( APIENTRY * dllViewport )( GLint x, GLint y, GLsizei width, GLsizei height );
 }
 
-// Multitexture stages
-#define    TEXTURE0_SGIS				0x835E
-#define    TEXTURE1_SGIS				0x835F
+// Multitexture layers
+#define		TEXTURE0_SGIS		0x835E
+#define		TEXTURE1_SGIS		0x835F
+
+#define		MAX_D3D_STAGES		2
+#define		MAX_D3D_TEXTURES	4096
 
 typedef struct tagD3D_Vertex
 {
@@ -1838,13 +1841,29 @@ typedef struct tagD3D_Vertex
 	D3DVALUE	tu2, tv2;	// Texture coordinates for stage 1
 } D3D_VERTEX;
 
+typedef struct tagD3D_Texture
+{
+	GLint					internalFormat;	// Internal format (GL_RGB, GL_RGBA, etc.)
+	GLsizei					width;			// Width and height (may be adjusted to power of two)
+	GLsizei					height;			// Width and height (may be adjusted to power of two)
+	GLsizei					oldWidth;		// Original width and height before power of two adjustment
+	GLsizei					oldHeight;		// Original width and height before power of two adjustment
+	LPDIRECTDRAWSURFACE4	lpDDS4;			// DirectDraw surface
+	D3DTEXTUREMINFILTER		minFilter;		// Minification filter
+	D3DTEXTUREMAGFILTER		magFilter;		// Magnification filter
+	D3DTEXTUREMIPFILTER		mipFilter;		// Mipmapping filter
+	D3DTEXTUREADDRESS		addressU;		// Texture addressing mode U
+	D3DTEXTUREADDRESS		addressV;		// Texture addressing mode V
+	LPDIRECT3DTEXTURE2		lpD3DT2;		// Direct3D texture interface
+} D3D_TEXTURE;
+
 // D3D global state structure
 typedef struct tagD3D_Globals
 {
-	int						vertCount;			// Total number of vertices
-	int						vertStart;			// Starting vertex index
-	int						indexCount;			// Total number of indices
-	int						primVertCount;		// Number of vertices per primitive
+	DWORD					vertCount;			// Total number of vertices
+	DWORD					vertStart;			// Starting vertex index
+	DWORD					indexCount;			// Total number of indices
+	DWORD					primVertCount;		// Number of vertices per primitive
 	int						wndWidth;			// Window width
 	int						wndHeight;			// Window height
 	HWND					hWnd;				// Window handle
@@ -1860,10 +1879,12 @@ typedef struct tagD3D_Globals
 	LPDIRECT3DVIEWPORT3		lpD3DVP3;			// Direct3D viewport
 	LPDIRECT3DVERTEXBUFFER	lpD3DVBSrc;			// Direct3D source vertex buffer
 	LPDIRECT3DVERTEXBUFFER	lpD3DVB;			// Direct3D rendering vertex buffer
-	int						cullMode;			// Current culling mode
+	GLenum					cullFaceMode;		// Current cull face mode
 	D3DTRANSFORMSTATETYPE	transformState;		// Current transform state
 	int						primMode;			// Current primitive drawing mode
-	BOOL					normalTexture;		// 
+	D3DVALUE				dvMaxZ;				// Maximum Z value
+	BOOL					cullEnabled;		//
+	BOOL					textureValid;		// TRUE if the texture doesn't need to be updated
 	BOOL					useSubsample;		// TRUE if using subsampled textures
 	BOOL					useSubStage;		// TRUE if using subsample texture stage
 	BOOL					useMultitexture;	// TRUE if using multitexturing
@@ -1871,8 +1892,9 @@ typedef struct tagD3D_Globals
 	BOOL					doFlip;				// TRUE if need to flip the backbuffer
 	BOOL					isFullscreen;		// TRUE if in fullscreen mode
 	BOOL					bLoad4444;			// TRUE if loading 16bit textures as f4444
-	int						textureStage;		// Current texture stage for multitexture
-	int						texEnvMode[2];		// Texture environment mode for each stage
+	DWORD					currentTexture[MAX_D3D_STAGES];	// Current texture for each stage
+	DWORD					textureStage;		// Current texture stage for multitexture
+	DWORD					texEnvMode[MAX_D3D_STAGES];	// Texture environment mode for each stage
 	D3DCOLOR				color;				// Current color
 	D3DCOLOR				clearColor;			// Clear color
 	D3DVALUE				tu, tv;				// Texture uv coords for stage 0
@@ -1880,6 +1902,16 @@ typedef struct tagD3D_Globals
 	const GLvoid*			vertexPointer;		// Pointer to vertex array
 	const GLvoid*			colorPointer;		// Pointer to color array
 	D3D_VERTEX*				verts;				// Pointer to vertex buffer data
+	DWORD					fillMode;			// Fill mode (wireframe or solid)
+	D3DSHADEMODE			shadeMode;			// Shade mode (flat or gouraud)
+	DWORD					zWriteEnable;		// Z-buffer write enable flag
+	DWORD					srcBlend;			// Source blend mode
+	DWORD					destBlend;			// Destination blend mode
+	DWORD					cullMode;			// Direct3D cull mode
+	DWORD					zFunc;				// Z-buffer function
+	DWORD					alphaRef;			// Alpha reference value
+	DWORD					alphaFunc;			// Alpha function
+	D3D_TEXTURE				textures[MAX_D3D_TEXTURES];	// Texture objects
 	WORD					indexBuffer[10];	// Temporary index buffer
 } D3D_GLOBALS;
 
