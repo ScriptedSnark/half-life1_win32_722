@@ -1736,7 +1736,7 @@ void S_Say( void )
 			SX_RoomFX(PAINTBUFFER_SIZE, TRUE, TRUE);
 		}
 		// display system time delta 
-		Con_Printf("%d milliseconds \n", timeGetTime() - __time_t_defined);
+		Con_Printf("%d milliseconds \n", timeGetTime() - _time);
 		return;
 	}
 	else if (!Q_strcmp(sound, "paint"))
