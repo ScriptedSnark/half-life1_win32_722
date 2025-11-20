@@ -280,7 +280,10 @@ void CHalfLifeMultiplay :: InitHUD( CBasePlayer *pl )
 	// loop through all active players and send their score info to the new client
 	for ( int i = 1; i <= gpGlobals->maxClients; i++ )
 	{
-		CBasePlayer *plr = GetClassPtr( (CBasePlayer *)i );
+		CBasePlayer* plr = NULL;
+		edict_t *pPlayerEdict = INDEXENT( i );
+		if ( pPlayerEdict && !pPlayerEdict->free )
+			plr = (CBasePlayer*)CBaseEntity::Instance( pPlayerEdict );
 
 		if ( plr )
 		{
