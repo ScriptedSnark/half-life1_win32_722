@@ -12,8 +12,10 @@
 #define DECLSPEC_IMPORT __declspec(dllexport)
 
 #define CINTERFACE
+#define INITGUID
 #include <../dx6sdk/include/ddraw.h>
 #include <../dx6sdk/include/d3d.h>
+#include <../dx6sdk/include/dxmgr.h>
 
 #undef DECLSPEC_IMPORT
 #define DECLSPEC_IMPORT __declspec(dllimport)
@@ -1835,8 +1837,11 @@ extern	void ( APIENTRY * dllViewport )( GLint x, GLint y, GLsizei width, GLsizei
 #define		TEXTURE0_SGIS		0x835E
 #define		TEXTURE1_SGIS		0x835F
 
-#define		MAX_D3D_STAGES		2
-#define		MAX_D3D_TEXTURES	4096
+#define		D3D_MAX_STAGES		2
+#define		D3D_MAX_TSSTAGES	24
+#define		D3D_MAX_RSTATES		256
+#define		D3D_MAX_TEXTURES	4096
+#define		D3D_MAX_VERTICES	32768
 
 typedef struct tagD3D_Vertex
 {
@@ -1862,62 +1867,72 @@ typedef struct tagD3D_Texture
 	LPDIRECT3DTEXTURE2		lpD3DT2;		// Direct3D texture interface
 } D3D_TEXTURE;
 
+typedef struct tagD3D_MatrixChain
+{
+	D3DMATRIX				matrix;			// Matrix data
+	struct tagD3D_MatrixChain* pNext;		// Pointer to next matrix in chain
+} D3D_MATRIXCHAIN;
+
 // D3D global state structure
 typedef struct tagD3D_Globals
 {
-	DWORD					vertCount;			// Total number of vertices
-	DWORD					vertStart;			// Starting vertex index
-	DWORD					indexCount;			// Total number of indices
-	DWORD					primVertCount;		// Number of vertices per primitive
-	int						wndWidth;			// Window width
-	int						wndHeight;			// Window height
-	HWND					hWnd;				// Window handle
-	HDC						hDC;				// Device context
-	void*					pDirectDrawMgr;		// DirectDraw manager
-	DDPIXELFORMAT			DDPF5551;			// 16bit pixel format (RGBA5551)
-	DDPIXELFORMAT			DDPF4444;			// 16bit pixel format (RGBA4444)
-	DDPIXELFORMAT			DDPF555_565;		// 16bit pixel format (RGB555/RGB565)
-	DDPIXELFORMAT			DDPF8888;			// 32bit pixel format (RGBA8888)
-	D3DDEVICEDESC			D3DDeviceDesc;		// Direct3D device description
-	LPDIRECTDRAW4			lpDD4;				// DirectDraw object
-	LPDIRECT3DDEVICE3		lpD3DD3;			// Direct3D device
-	LPDIRECT3DVIEWPORT3		lpD3DVP3;			// Direct3D viewport
-	LPDIRECT3DVERTEXBUFFER	lpD3DVBSrc;			// Direct3D source vertex buffer
-	LPDIRECT3DVERTEXBUFFER	lpD3DVB;			// Direct3D rendering vertex buffer
-	GLenum					cullFaceMode;		// Current cull face mode
-	D3DTRANSFORMSTATETYPE	transformState;		// Current transform state
-	int						primMode;			// Current primitive drawing mode
-	D3DVALUE				dvMaxZ;				// Maximum Z value
-	BOOL					cullEnabled;		//
-	BOOL					textureValid;		// TRUE if the texture doesn't need to be updated
-	BOOL					useSubsample;		// TRUE if using subsampled textures
-	BOOL					useSubStage;		// TRUE if using subsample texture stage
-	BOOL					useMultitexture;	// TRUE if using multitexturing
-	BOOL					useMipmap;			// TRUE if using mipmapped textures
-	BOOL					doFlip;				// TRUE if need to flip the backbuffer
-	BOOL					isFullscreen;		// TRUE if in fullscreen mode
-	BOOL					bLoad4444;			// TRUE if loading 16bit textures as f4444
-	DWORD					currentTexture[MAX_D3D_STAGES];	// Current texture for each stage
-	DWORD					textureStage;		// Current texture stage for multitexture
-	DWORD					texEnvMode[MAX_D3D_STAGES];	// Texture environment mode for each stage
-	D3DCOLOR				color;				// Current color
-	D3DCOLOR				clearColor;			// Clear color
-	D3DVALUE				tu, tv;				// Texture uv coords for stage 0
-	D3DVALUE				tu2, tv2;			// Texture uv coords for stage 1
-	const GLvoid*			vertexPointer;		// Pointer to vertex array
-	const GLvoid*			colorPointer;		// Pointer to color array
-	D3D_VERTEX*				verts;				// Pointer to vertex buffer data
-	DWORD					fillMode;			// Fill mode (wireframe or solid)
-	D3DSHADEMODE			shadeMode;			// Shade mode (flat or gouraud)
-	DWORD					zWriteEnable;		// Z-buffer write enable flag
-	DWORD					srcBlend;			// Source blend mode
-	DWORD					destBlend;			// Destination blend mode
-	DWORD					cullMode;			// Direct3D cull mode
-	DWORD					zFunc;				// Z-buffer function
-	DWORD					alphaRef;			// Alpha reference value
-	DWORD					alphaFunc;			// Alpha function
-	D3D_TEXTURE				textures[MAX_D3D_TEXTURES];	// Texture objects
-	WORD					indexBuffer[10];	// Temporary index buffer
+	DWORD					vertCount;						// Total number of vertices
+	DWORD					vertStart;						// Starting vertex index
+	DWORD					indexCount;						// Total number of indices
+	DWORD					primVertCount;					// Number of vertices per primitive
+	int						wndWidth;						// Window width
+	int						wndHeight;						// Window height
+	HWND					hWnd;							// Window handle
+	HDC						hDC;							// Device context
+	IDXMgr*					pDXMgr;							// DX manager
+	DDPIXELFORMAT			ddpf5551;						// 16bit pixel format (RGBA5551)
+	DDPIXELFORMAT			ddpf4444;						// 16bit pixel format (RGBA4444)
+	DDPIXELFORMAT			ddpf555_565;					// 16bit pixel format (RGB555/RGB565)
+	DDPIXELFORMAT			ddpf8888;						// 32bit pixel format (RGBA8888)
+	D3DDEVICEDESC			devdesc;						// Direct3D device description
+	LPDIRECTDRAW4			lpDD4;							// DirectDraw object
+	LPDIRECT3DDEVICE3		lpD3DD3;						// Direct3D device
+	LPDIRECT3DVIEWPORT3		lpD3DVP3;						// Direct3D viewport
+	LPDIRECT3DVERTEXBUFFER	lpD3DVBSrc;						// Direct3D source vertex buffer
+	LPDIRECT3DVERTEXBUFFER	lpD3DVB;						// Direct3D rendering vertex buffer
+	GLenum					cullFaceMode;					// Current cull face mode
+	D3DTRANSFORMSTATETYPE	transformState;					// Current transform state
+	int						primMode;						// Current primitive drawing mode
+	D3DVALUE				dvMaxZ;							// Maximum Z value
+	BOOL					cullEnabled;					// TRUE if culling is enabled
+	BOOL					textureValid;					// TRUE if the texture doesn't need to be updated
+	BOOL					stage0Active;					// TRUE if texture stage 0 is active
+	BOOL					useSubsample;					// TRUE if using subsampled textures
+	BOOL					useSubStage;					// TRUE if using subsample texture stage
+	BOOL					useMultitexture;				// TRUE if using multitexturing
+	BOOL					useMipmap;						// TRUE if using mipmapped textures
+	BOOL					squareTexturesOnly;				// TRUE if only square textures are supported
+	BOOL					doFlip;							// TRUE if need to flip the backbuffer
+	BOOL					isFullscreen;					// TRUE if in fullscreen mode
+	BOOL					bLoad4444;						// TRUE if loading 16bit textures as f4444
+	DWORD					currentTexture[D3D_MAX_STAGES];	// Current texture for each stage
+	DWORD					textureStage;					// Current texture stage for multitexture
+	DWORD					texEnvMode[D3D_MAX_STAGES];		// Texture environment mode for each stage
+	D3DCOLOR				color;							// Current color
+	D3DCOLOR				clearColor;						// Clear color
+	D3DVALUE				tu, tv;							// Texture uv coords for stage 0
+	D3DVALUE				tu2, tv2;						// Texture uv coords for stage 1
+	const GLvoid*			vertexPointer;					// Pointer to vertex array
+	const GLvoid*			colorPointer;					// PoitsStates1nter to color array
+	D3D_VERTEX*				verts;							// Pointer to vertex buffer data
+	DWORD					totalWorldMatrices;				// Total world matrices in stack
+	D3D_MATRIXCHAIN*		worldMatrixStack;				// World matrix stack
+	DWORD					totalCustomMatrices;			// Total custom matrices in stack
+	D3D_MATRIXCHAIN*		customMatrixStack;				// Custom matrix stack
+	DWORD					rStates[D3D_MAX_RSTATES];		// Render states
+	DWORD					tsStates0[D3D_MAX_TSSTAGES];	// Texture stage 0 states
+	DWORD					tsStates1[D3D_MAX_TSSTAGES];	// Texture stage 1 states
+	LPDIRECT3DTEXTURE2		lpD3DT2;						// Direct3D texture for stage 0
+	LPDIRECT3DTEXTURE2		lpD3DT2SubStage;				// Direct3D texture for stage 1 (subsample)
+	D3D_TEXTURE				textures[D3D_MAX_TEXTURES];		// Texture objects
+	WORD					indexBuffer[10];				// Temporary index buffer
+	double					angleDegToRad;					// Angle degrees to radians constant
+	BYTE					angleConstFlag;					// Flag indicating if angle constant is initialized
 } D3D_GLOBALS;
 
 #endif // _OPENGL32_H_

@@ -342,17 +342,16 @@ DLL_EXPORT int GL_SetMode( HWND mainwindow, HDC* pmaindc, HGLRC* pbaseRC, int fD
 	*pmaindc = NULL;
 	*pbaseRC = NULL;
 
-	if (!vid_d3d.value)
+	if (vid_d3d.value)
 	{
-		if (pszDriver)
-		{
-			gfMiniDriver = strstr(pszDriver, "opengl32") == NULL;
-		}
-		hDll = QGL_Init(pszDriver);
+		hDll = QGL_D3DInit();
 	}
 	else
 	{
-		hDll = QGL_D3DInit();
+		if (pszDriver)
+			gfMiniDriver = strstr(pszDriver, "opengl32") == NULL;
+
+		hDll = QGL_Init(pszDriver);
 	}
 
 	if (!hDll)

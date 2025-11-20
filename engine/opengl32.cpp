@@ -1,5 +1,11 @@
 #include "opengl32.h"
 #include "d3d_structs.h"
+#include <math.h>
+
+#include "../dx6sdk/include/dxmgr_i.c"
+
+// conversion from 'type1' to 'type2', possible loss of data (triggered by glEnd's vanilla behavior)
+#pragma warning( disable : 4244 )
 
 #ifdef _WIN32
 #define DLL_EXPORT extern "C" __declspec(dllexport)
@@ -15,7 +21,6 @@ static void QuakeFlushIndexedPrimitives( void )
 
 	if (gD3D.indexCount)
 	{
-		// Flush any remaining primitives
 		if (gD3D.vertStart != gD3D.vertCount)
 		{
 			gD3D.lpD3DVB->lpVtbl->ProcessVertices(gD3D.lpD3DVB, 5, gD3D.vertStart, gD3D.vertCount - gD3D.vertStart, gD3D.lpD3DVBSrc, gD3D.vertStart, gD3D.lpD3DD3, 0);
@@ -34,7 +39,33 @@ static void QuakeFlushIndexedPrimitives( void )
 
 static void QuakeSetTextureStageState( DWORD stage, D3DTEXTURESTAGESTATETYPE stageStartType, DWORD value )
 {
-	// TODO: Implement
+	DWORD* pType;
+	DWORD	dummy;
+
+	pType = &gD3D.tsStates0[(D3D_MAX_TSSTAGES * stage) + stageStartType];
+
+	if (*pType != value)
+	{
+		if (gD3D.indexCount)
+		{
+			if (gD3D.vertStart != gD3D.vertCount)
+			{
+				gD3D.lpD3DVB->lpVtbl->ProcessVertices(gD3D.lpD3DVB, 5, gD3D.vertStart, gD3D.vertCount - gD3D.vertStart, gD3D.lpD3DVBSrc, gD3D.vertStart, gD3D.lpD3DD3, 0);
+				gD3D.vertStart = gD3D.vertCount;
+			}
+
+			gD3D.lpD3DVBSrc->lpVtbl->Unlock(gD3D.lpD3DVBSrc);
+			gD3D.lpD3DD3->lpVtbl->DrawIndexedPrimitiveVB(gD3D.lpD3DD3, D3DPT_TRIANGLELIST, gD3D.lpD3DVB, gD3D.indexBuffer, gD3D.indexCount, 8);
+			gD3D.lpD3DVBSrc->lpVtbl->Lock(gD3D.lpD3DVBSrc, DDLOCK_NOSYSLOCK | DDLOCK_SURFACEMEMORYPTR | DDLOCK_WAIT | DDLOCK_WRITEONLY, (LPVOID*)&gD3D.verts, &dummy);
+
+			gD3D.vertStart = 0;
+			gD3D.vertCount = 0;
+			gD3D.indexCount = 0;
+		}
+
+		*pType = value;
+		gD3D.lpD3DD3->lpVtbl->SetTextureStageState(gD3D.lpD3DD3, stage, stageStartType, value);
+	}
 }
 
 static void QuakeFlushVertexBuffer( void )
@@ -44,6 +75,262 @@ static void QuakeFlushVertexBuffer( void )
 		gD3D.lpD3DVB->lpVtbl->ProcessVertices(gD3D.lpD3DVB, 5, gD3D.vertStart, gD3D.vertCount - gD3D.vertStart, gD3D.lpD3DVBSrc, gD3D.vertStart, gD3D.lpD3DD3, 0);
 		gD3D.vertStart = gD3D.vertCount;
 	}
+}
+
+static void ConvertSurfaceTo32Bit( DWORD internalFormat, DWORD width, DWORD height, BYTE* pixels, DWORD* pic )
+{
+	int i;
+
+	if (internalFormat == 1)
+	{
+		for (i = 0; i < (int)(width * height); i++)
+			pic[i] = RGBA_MAKE(pixels[i], pixels[i], pixels[i], pixels[i]);
+	}
+	else if (internalFormat > 2 && internalFormat <= 4)
+	{
+		memcpy(pic, pixels, width * height * 4);
+	}
+}
+
+static void ResizeSurface( DWORD dwWidth, DWORD dwHeight, DWORD* src, DWORD dwNewWidth, DWORD dwNewHeight, DWORD* dest )
+{
+	DWORD x, y, srcX, srcY, destOffset;
+	double scaleX, scaleY;
+
+	scaleX = (double)dwWidth / (double)dwNewWidth;
+	scaleY = (double)dwHeight / (double)dwNewHeight;
+
+	if (dwNewHeight == 0)
+		return;
+
+	destOffset = 0;
+	for (y = 0; y < dwNewHeight; y++)
+	{
+		srcY = (DWORD)((double)y * scaleY);
+		for (x = 0; x < dwNewWidth; x++)
+		{
+			srcX = (DWORD)((double)x * scaleX);
+			dest[x + destOffset] = src[srcY * dwWidth + srcX];
+		}
+		destOffset += dwNewWidth;
+	}
+}
+
+static void SurfaceSingle8( RECT* rect, DWORD* src, LPDDSURFACEDESC2 lpDDSD )
+{
+	LONG i, j, k, l;
+	BYTE* dest;
+
+	dest = (BYTE*)lpDDSD->lpSurface;
+	for (k = rect->top, i = 0; k < rect->bottom; k++)
+	{
+		for (j = rect->left, l = 0; j < rect->right; j++, i++, l++)
+		{
+			dest[l] = (src[i] & 0xFF);
+		}
+		dest += lpDDSD->lPitch;
+	}
+}
+
+static void SurfaceRGBA4444( RECT* rect, DWORD* src, LPDDSURFACEDESC2 lpDDSD )
+{
+	LONG i, j, k, l;
+	WORD* dest;
+
+	dest = (WORD*)lpDDSD->lpSurface;
+	for (k = rect->top, i = 0; k < rect->bottom; k++)
+	{
+		for (j = rect->left, l = 0; j < rect->right; j++, i++, l++)
+		{
+			dest[l] = (WORD)(((src[i] & 0xF0000000) >> 16) | ((src[i] & 0x00F00000) >> 12) | ((src[i] & 0x0000F000) >> 8) | ((src[i] & 0x000000F0) >> 4));
+		}
+		dest = (WORD*)((BYTE*)dest + lpDDSD->lPitch);
+	}
+}
+
+static void SurfaceRGBA5551( RECT* rect, DWORD* src, LPDDSURFACEDESC2 lpDDSD )
+{
+	LONG i, j, k, l;
+	WORD* dest;
+
+	dest = (WORD*)lpDDSD->lpSurface;
+	for (k = rect->top, i = 0; k < rect->bottom; k++)
+	{
+		for (j = rect->left, l = 0; j < rect->right; j++, i++, l++)
+		{
+			dest[l] = (WORD)(((src[i] & 0xF8) << 7) | ((src[i] >> 6) & 0x3E0) | ((src[i] >> 19) & 0x1F) | ((src[i] >> 16) & 0x8000));
+		}
+		dest = (WORD*)((BYTE*)dest + lpDDSD->lPitch);
+	}
+}
+
+static void SurfaceRGB565( RECT* rect, DWORD* src, LPDDSURFACEDESC2 lpDDSD )
+{
+	LONG i, j, k, l;
+	WORD* dest;
+
+	dest = (WORD*)lpDDSD->lpSurface;
+	for (k = rect->top, i = 0; k < rect->bottom; k++)
+	{
+		for (j = rect->left, l = 0; j < rect->right; j++, i++, l++)
+		{
+			dest[l] = (WORD)(((src[i] >> 19) & 0x1F) | ((src[i] >> 5) & 0x7E0) | ((src[i] & 0xFFF8) << 8));
+		}
+		dest = (WORD*)((BYTE*)dest + lpDDSD->lPitch);
+	}
+}
+
+static void SurfaceRGB555( RECT* rect, DWORD* src, LPDDSURFACEDESC2 lpDDSD )
+{
+	LONG i, j, k, l;
+	WORD* dest;
+
+	dest = (WORD*)lpDDSD->lpSurface;
+	for (k = rect->top, i = 0; k < rect->bottom; k++)
+	{
+		for (j = rect->left, l = 0; j < rect->right; j++, i++, l++)
+		{
+			dest[l] = (WORD)(((src[i] >> 19) & 0x1F) | ((src[i] >> 6) & 0x3E0) | ((src[i] & 0xF8) << 7));
+		}
+		dest = (WORD*)((BYTE*)dest + lpDDSD->lPitch);
+	}
+}
+
+static void LoadSurface( LPDIRECTDRAWSURFACE4 lpDDS, DWORD internalFormat, DWORD width, DWORD height, DWORD newWidth, DWORD newHeight, BYTE* pixels )
+{
+	DDSURFACEDESC2	ddsd;
+	HRESULT	hResult;
+	RECT	rc;
+	DWORD* srcPic, * pic;
+
+	srcPic = (DWORD*)malloc(width * height * 4);
+
+	ConvertSurfaceTo32Bit(internalFormat, width, height, pixels, srcPic);
+
+	if (width == newWidth && height == newHeight)
+	{
+		pic = srcPic;
+	}
+	else
+	{
+		// The surface needs to be resized
+		pic = (DWORD*)malloc(newWidth * newHeight * 4);
+		ResizeSurface(width, height, srcPic, newWidth, newHeight, pic);
+		free(srcPic);
+	}
+
+	memset(&ddsd, 0, sizeof(ddsd));
+	ddsd.dwSize = sizeof(ddsd);
+
+	hResult = lpDDS->lpVtbl->Lock(lpDDS, NULL, &ddsd, DDLOCK_NOSYSLOCK | DDLOCK_SURFACEMEMORYPTR | DDLOCK_WAIT | DDLOCK_WRITEONLY, NULL);
+	if (hResult != DD_OK)
+	{
+		lpDDS->lpVtbl->Release(lpDDS);
+		OutputDebugString("Lock failed while loading surface\n");
+		free(pic);
+		return;
+	}
+
+	SetRect(&rc, 0, 0, ddsd.dwWidth, ddsd.dwHeight);
+
+	if (ddsd.ddpfPixelFormat.dwRBitMask == 0xFF)
+	{
+		SurfaceSingle8(&rc, pic, &ddsd);
+	}
+	else if (ddsd.ddpfPixelFormat.dwRGBAlphaBitMask == 0xF000)
+	{
+		SurfaceRGBA4444(&rc, pic, &ddsd);
+	}
+	else if (ddsd.ddpfPixelFormat.dwRGBAlphaBitMask == 0x8000)
+	{
+		SurfaceRGBA5551(&rc, pic, &ddsd);
+	}
+	else if (ddsd.ddpfPixelFormat.dwRBitMask == 0xF800)
+	{
+		SurfaceRGB565(&rc, pic, &ddsd);
+	}
+	else
+	{
+		SurfaceRGB555(&rc, pic, &ddsd);
+	}
+
+	free(pic);
+
+	lpDDS->lpVtbl->Unlock(lpDDS, NULL);
+}
+
+static HRESULT LoadSubSurface( LPDIRECTDRAWSURFACE4 lpDDS4, DWORD internalFormat, DWORD width, DWORD height, BYTE* pixels, RECT* rect )
+{
+	DDSURFACEDESC2	ddsd;
+	HRESULT	hResult;
+	DWORD newWidth, newHeight;
+	DWORD* srcPic, * pic;
+
+	newWidth = rect->right - rect->left;
+	newHeight = rect->bottom - rect->top;
+
+	memset(&ddsd, 0, sizeof(ddsd));
+	ddsd.dwSize = sizeof(ddsd);
+
+	hResult = lpDDS4->lpVtbl->Lock(lpDDS4, rect, &ddsd, DDLOCK_NOSYSLOCK | DDLOCK_SURFACEMEMORYPTR | DDLOCK_WAIT | DDLOCK_WRITEONLY, NULL);
+	if (hResult != DD_OK)
+	{
+		lpDDS4->lpVtbl->Release(lpDDS4);
+		OutputDebugString("Lock failed while loading surface\n");
+		return hResult;
+	}
+
+	if (internalFormat == 3 && ddsd.ddpfPixelFormat.dwRBitMask == 0xF800 && newWidth == width && newHeight == height)
+	{
+		SurfaceRGB565(rect, (DWORD*)pixels, &ddsd);
+	}
+	else if (internalFormat == 3 && ddsd.ddpfPixelFormat.dwRBitMask == 0x7C00 && newWidth == width && newHeight == height)
+	{
+		SurfaceRGB555(rect, (DWORD*)pixels, &ddsd);
+	}
+	else
+	{
+		srcPic = (DWORD*)malloc(width * height * 4);
+		ConvertSurfaceTo32Bit(internalFormat, width, height, pixels, srcPic);
+
+		if (newWidth == width && newHeight == height)
+		{
+			pic = srcPic;
+		}
+		else
+		{
+			// The surface needs to be resized
+			pic = (DWORD*)malloc(newWidth * newHeight * 4);
+			ResizeSurface(width, height, srcPic, newWidth, newHeight, pic);
+			free(srcPic);
+		}
+
+		if (ddsd.ddpfPixelFormat.dwRBitMask == 0xFF)
+		{
+			SurfaceSingle8(rect, pic, &ddsd);
+		}
+		else if (ddsd.ddpfPixelFormat.dwRGBAlphaBitMask == 0xF000)
+		{
+			SurfaceRGBA4444(rect, pic, &ddsd);
+		}
+		else if (ddsd.ddpfPixelFormat.dwRGBAlphaBitMask == 0x8000)
+		{
+			SurfaceRGBA5551(rect, pic, &ddsd);
+		}
+		else if (ddsd.ddpfPixelFormat.dwRBitMask == 0xF800)
+		{
+			SurfaceRGB565(rect, pic, &ddsd);
+		}
+		else
+		{
+			SurfaceRGB555(rect, pic, &ddsd);
+		}
+
+		free(pic);
+	}
+
+	lpDDS4->lpVtbl->Unlock(lpDDS4, NULL);
+	return DD_OK;
 }
 
 DLL_EXPORT void APIENTRY glAccum( GLenum op, GLfloat value )
@@ -88,11 +375,10 @@ DLL_EXPORT void APIENTRY glAlphaFunc( GLenum func, GLclampf ref )
 
 	if (alphaFunc >= 0)
 	{
-		if (gD3D.alphaFunc != alphaFunc)
+		if (gD3D.rStates[D3DRENDERSTATE_ALPHAFUNC] != alphaFunc)
 		{
 			if (gD3D.indexCount)
 			{
-				// Flush any remaining primitives
 				if (gD3D.vertStart != gD3D.vertCount)
 				{
 					gD3D.lpD3DVB->lpVtbl->ProcessVertices(gD3D.lpD3DVB, 5, gD3D.vertStart, gD3D.vertCount - gD3D.vertStart, gD3D.lpD3DVBSrc, gD3D.vertStart, gD3D.lpD3DD3, 0);
@@ -108,16 +394,15 @@ DLL_EXPORT void APIENTRY glAlphaFunc( GLenum func, GLclampf ref )
 				gD3D.indexCount = 0;
 			}
 
-			gD3D.alphaFunc = alphaFunc;
+			gD3D.rStates[D3DRENDERSTATE_ALPHAFUNC] = alphaFunc;
 			gD3D.lpD3DD3->lpVtbl->SetRenderState(gD3D.lpD3DD3, D3DRENDERSTATE_ALPHAFUNC, alphaFunc);
 		}
 
 		alphaRef = (DWORD)(ref * 255.0);
-		if (gD3D.alphaRef != alphaRef)
+		if (gD3D.rStates[D3DRENDERSTATE_ALPHAREF] != alphaRef)
 		{
 			if (gD3D.indexCount)
 			{
-				// Flush any remaining primitives
 				if (gD3D.vertStart != gD3D.vertCount)
 				{
 					gD3D.lpD3DVB->lpVtbl->ProcessVertices(gD3D.lpD3DVB, 5, gD3D.vertStart, gD3D.vertCount - gD3D.vertStart, gD3D.lpD3DVBSrc, gD3D.vertStart, gD3D.lpD3DD3, 0);
@@ -133,7 +418,7 @@ DLL_EXPORT void APIENTRY glAlphaFunc( GLenum func, GLclampf ref )
 				gD3D.indexCount = 0;
 			}
 
-			gD3D.alphaRef = alphaRef;
+			gD3D.rStates[D3DRENDERSTATE_ALPHAREF] = alphaRef;
 			gD3D.lpD3DD3->lpVtbl->SetRenderState(gD3D.lpD3DD3, D3DRENDERSTATE_ALPHAREF, alphaRef);
 		}
 	}
@@ -184,7 +469,422 @@ DLL_EXPORT void APIENTRY glArrayElement( GLint i )
 
 DLL_EXPORT void APIENTRY glBegin( GLenum mode )
 {
-	// TODO: Implement
+	D3D_TEXTURE* tex;
+
+	gD3D.primMode = mode;
+	gD3D.primVertCount = 0;
+
+	if (!gD3D.stage0Active || gD3D.textureValid)
+		return;
+
+	tex = &gD3D.textures[gD3D.currentTexture[0]];
+
+	if (gD3D.tsStates0[D3DTSS_ADDRESSU] != tex->addressU)
+	{
+		QuakeFlushIndexedPrimitives();
+		gD3D.tsStates0[D3DTSS_ADDRESSU] = tex->addressU;
+		gD3D.lpD3DD3->lpVtbl->SetTextureStageState(gD3D.lpD3DD3, 0, D3DTSS_ADDRESSU, tex->addressU);
+	}
+
+	if (gD3D.tsStates0[D3DTSS_ADDRESSV] != tex->addressV)
+	{
+		QuakeFlushIndexedPrimitives();
+		gD3D.tsStates0[D3DTSS_ADDRESSV] = tex->addressV;
+		gD3D.lpD3DD3->lpVtbl->SetTextureStageState(gD3D.lpD3DD3, 0, D3DTSS_ADDRESSV, tex->addressV);
+	}
+
+	if (gD3D.tsStates0[D3DTSS_MAGFILTER] != tex->magFilter)
+	{
+		QuakeFlushIndexedPrimitives();
+		gD3D.tsStates0[D3DTSS_MAGFILTER] = tex->magFilter;
+		gD3D.lpD3DD3->lpVtbl->SetTextureStageState(gD3D.lpD3DD3, 0, D3DTSS_MAGFILTER, tex->magFilter);
+	}
+
+	if (gD3D.tsStates0[D3DTSS_MINFILTER] != tex->minFilter)
+	{
+		QuakeFlushIndexedPrimitives();
+		gD3D.tsStates0[D3DTSS_MINFILTER] = tex->minFilter;
+		gD3D.lpD3DD3->lpVtbl->SetTextureStageState(gD3D.lpD3DD3, 0, D3DTSS_MINFILTER, tex->minFilter);
+	}
+
+	if (gD3D.tsStates0[D3DTSS_MIPFILTER] != tex->mipFilter)
+	{
+		QuakeFlushIndexedPrimitives();
+		gD3D.tsStates0[D3DTSS_MIPFILTER] = tex->mipFilter;
+		gD3D.lpD3DD3->lpVtbl->SetTextureStageState(gD3D.lpD3DD3, 0, D3DTSS_MIPFILTER, tex->mipFilter);
+	}
+
+	if (gD3D.lpD3DT2 != tex->lpD3DT2)
+	{
+		QuakeFlushIndexedPrimitives();
+		gD3D.lpD3DT2 = tex->lpD3DT2;
+		gD3D.lpD3DD3->lpVtbl->SetTexture(gD3D.lpD3DD3, 0, tex->lpD3DT2);
+	}
+
+	if (gD3D.texEnvMode[0] == GL_BLEND)
+	{
+		if (tex->internalFormat == 1 || tex->internalFormat == 3)
+		{
+			QuakeSetTextureStageState(0, D3DTSS_COLORARG1, D3DTA_TEXTURE | D3DTA_COMPLEMENT);
+			QuakeSetTextureStageState(0, D3DTSS_COLORARG2, D3DTA_DIFFUSE);
+			QuakeSetTextureStageState(0, D3DTSS_COLOROP, D3DTOP_MODULATE);
+			QuakeSetTextureStageState(0, D3DTSS_ALPHAARG1, D3DTA_TEXTURE);
+			QuakeSetTextureStageState(0, D3DTSS_ALPHAARG2, D3DTA_DIFFUSE);
+			QuakeSetTextureStageState(0, D3DTSS_ALPHAOP, D3DTOP_SELECTARG2);
+		}
+		else if (tex->internalFormat == 4)
+		{
+			QuakeSetTextureStageState(0, D3DTSS_COLORARG1, D3DTA_TEXTURE | D3DTA_COMPLEMENT);
+			QuakeSetTextureStageState(0, D3DTSS_COLORARG2, D3DTA_DIFFUSE);
+			QuakeSetTextureStageState(0, D3DTSS_COLOROP, D3DTOP_MODULATE);
+			QuakeSetTextureStageState(0, D3DTSS_ALPHAARG1, D3DTA_TEXTURE);
+			QuakeSetTextureStageState(0, D3DTSS_ALPHAARG2, D3DTA_DIFFUSE);
+			QuakeSetTextureStageState(0, D3DTSS_ALPHAOP, D3DTOP_MODULATE);
+		}
+	}
+	else if (gD3D.texEnvMode[0] == GL_REPLACE)
+	{
+		if (tex->internalFormat == 1 || tex->internalFormat == 3)
+		{
+			if (gD3D.tsStates0[D3DTSS_COLORARG1] != D3DTA_TEXTURE)
+			{
+				QuakeFlushIndexedPrimitives();
+				gD3D.tsStates0[D3DTSS_COLORARG1] = D3DTA_TEXTURE;
+				gD3D.lpD3DD3->lpVtbl->SetTextureStageState(gD3D.lpD3DD3, 0, D3DTSS_COLORARG1, D3DTA_TEXTURE);
+			}
+
+			if (gD3D.tsStates0[D3DTSS_COLORARG2] != D3DTA_DIFFUSE)
+			{
+				QuakeFlushIndexedPrimitives();
+				gD3D.tsStates0[D3DTSS_COLORARG2] = D3DTA_DIFFUSE;
+				gD3D.lpD3DD3->lpVtbl->SetTextureStageState(gD3D.lpD3DD3, 0, D3DTSS_COLORARG2, D3DTA_DIFFUSE);
+			}
+
+			if (gD3D.tsStates0[D3DTSS_COLOROP] != D3DTOP_SELECTARG1)
+			{
+				QuakeFlushIndexedPrimitives();
+				gD3D.tsStates0[D3DTSS_COLOROP] = D3DTOP_SELECTARG1;
+				gD3D.lpD3DD3->lpVtbl->SetTextureStageState(gD3D.lpD3DD3, 0, D3DTSS_COLOROP, D3DTOP_SELECTARG1);
+			}
+
+			if (gD3D.tsStates0[D3DTSS_ALPHAARG1] != D3DTA_TEXTURE)
+			{
+				QuakeFlushIndexedPrimitives();
+				gD3D.tsStates0[D3DTSS_ALPHAARG1] = D3DTA_TEXTURE;
+				gD3D.lpD3DD3->lpVtbl->SetTextureStageState(gD3D.lpD3DD3, 0, D3DTSS_ALPHAARG1, D3DTA_TEXTURE);
+			}
+
+			if (gD3D.tsStates0[D3DTSS_ALPHAARG2] != D3DTA_DIFFUSE)
+			{
+				QuakeFlushIndexedPrimitives();
+				gD3D.tsStates0[D3DTSS_ALPHAARG2] = D3DTA_DIFFUSE;
+				gD3D.lpD3DD3->lpVtbl->SetTextureStageState(gD3D.lpD3DD3, 0, D3DTSS_ALPHAARG2, D3DTA_DIFFUSE);
+			}
+
+			if (gD3D.tsStates0[D3DTSS_ALPHAOP] != D3DTOP_SELECTARG2)
+			{
+				QuakeFlushIndexedPrimitives();
+				gD3D.tsStates0[D3DTSS_ALPHAOP] = D3DTOP_SELECTARG2;
+				gD3D.lpD3DD3->lpVtbl->SetTextureStageState(gD3D.lpD3DD3, 0, D3DTSS_ALPHAOP, D3DTOP_SELECTARG2);
+			}
+		}
+		else if (tex->internalFormat == 4)
+		{
+			if (gD3D.tsStates0[D3DTSS_COLORARG1] != D3DTA_TEXTURE)
+			{
+				QuakeFlushIndexedPrimitives();
+				gD3D.tsStates0[D3DTSS_COLORARG1] = D3DTA_TEXTURE;
+				gD3D.lpD3DD3->lpVtbl->SetTextureStageState(gD3D.lpD3DD3, 0, D3DTSS_COLORARG1, D3DTA_TEXTURE);
+			}
+
+			if (gD3D.tsStates0[D3DTSS_COLORARG2] != D3DTA_DIFFUSE)
+			{
+				QuakeFlushIndexedPrimitives();
+				gD3D.tsStates0[D3DTSS_COLORARG2] = D3DTA_DIFFUSE;
+				gD3D.lpD3DD3->lpVtbl->SetTextureStageState(gD3D.lpD3DD3, 0, D3DTSS_COLORARG2, D3DTA_DIFFUSE);
+			}
+
+			if (gD3D.tsStates0[D3DTSS_COLOROP] != D3DTOP_SELECTARG1)
+			{
+				QuakeFlushIndexedPrimitives();
+				gD3D.tsStates0[D3DTSS_COLOROP] = D3DTOP_SELECTARG1;
+				gD3D.lpD3DD3->lpVtbl->SetTextureStageState(gD3D.lpD3DD3, 0, D3DTSS_COLOROP, D3DTOP_SELECTARG1);
+			}
+
+			if (gD3D.tsStates0[D3DTSS_ALPHAARG1] != D3DTA_TEXTURE)
+			{
+				QuakeFlushIndexedPrimitives();
+				gD3D.tsStates0[D3DTSS_ALPHAARG1] = D3DTA_TEXTURE;
+				gD3D.lpD3DD3->lpVtbl->SetTextureStageState(gD3D.lpD3DD3, 0, D3DTSS_ALPHAARG1, D3DTA_TEXTURE);
+			}
+
+			if (gD3D.tsStates0[D3DTSS_ALPHAARG2] != D3DTA_DIFFUSE)
+			{
+				QuakeFlushIndexedPrimitives();
+				gD3D.tsStates0[D3DTSS_ALPHAARG2] = D3DTA_DIFFUSE;
+				gD3D.lpD3DD3->lpVtbl->SetTextureStageState(gD3D.lpD3DD3, 0, D3DTSS_ALPHAARG2, D3DTA_DIFFUSE);
+			}
+
+			if (gD3D.tsStates0[D3DTSS_ALPHAOP] != D3DTOP_SELECTARG1)
+			{
+				QuakeFlushIndexedPrimitives();
+				gD3D.tsStates0[D3DTSS_ALPHAOP] = D3DTOP_SELECTARG1;
+				gD3D.lpD3DD3->lpVtbl->SetTextureStageState(gD3D.lpD3DD3, 0, D3DTSS_ALPHAOP, D3DTOP_SELECTARG1);
+			}
+		}
+	}
+	else if (gD3D.texEnvMode[0] == GL_MODULATE)
+	{
+		if (tex->internalFormat == 1 || tex->internalFormat == 3)
+		{
+			if (gD3D.tsStates0[D3DTSS_COLORARG1] != D3DTA_TEXTURE)
+			{
+				QuakeFlushIndexedPrimitives();
+				gD3D.tsStates0[D3DTSS_COLORARG1] = D3DTA_TEXTURE;
+				gD3D.lpD3DD3->lpVtbl->SetTextureStageState(gD3D.lpD3DD3, 0, D3DTSS_COLORARG1, D3DTA_TEXTURE);
+			}
+
+			if (gD3D.tsStates0[D3DTSS_COLORARG2] != D3DTA_DIFFUSE)
+			{
+				QuakeFlushIndexedPrimitives();
+				gD3D.tsStates0[D3DTSS_COLORARG2] = D3DTA_DIFFUSE;
+				gD3D.lpD3DD3->lpVtbl->SetTextureStageState(gD3D.lpD3DD3, 0, D3DTSS_COLORARG2, D3DTA_DIFFUSE);
+			}
+
+			if (gD3D.tsStates0[D3DTSS_COLOROP] != D3DTOP_MODULATE)
+			{
+				QuakeFlushIndexedPrimitives();
+				gD3D.tsStates0[D3DTSS_COLOROP] = D3DTOP_MODULATE;
+				gD3D.lpD3DD3->lpVtbl->SetTextureStageState(gD3D.lpD3DD3, 0, D3DTSS_COLOROP, D3DTOP_MODULATE);
+			}
+
+			if (gD3D.tsStates0[D3DTSS_ALPHAARG1] != D3DTA_TEXTURE)
+			{
+				QuakeFlushIndexedPrimitives();
+				gD3D.tsStates0[D3DTSS_ALPHAARG1] = D3DTA_TEXTURE;
+				gD3D.lpD3DD3->lpVtbl->SetTextureStageState(gD3D.lpD3DD3, 0, D3DTSS_ALPHAARG1, D3DTA_TEXTURE);
+			}
+
+			if (gD3D.tsStates0[D3DTSS_ALPHAARG2] != D3DTA_DIFFUSE)
+			{
+				QuakeFlushIndexedPrimitives();
+				gD3D.tsStates0[D3DTSS_ALPHAARG2] = D3DTA_DIFFUSE;
+				gD3D.lpD3DD3->lpVtbl->SetTextureStageState(gD3D.lpD3DD3, 0, D3DTSS_ALPHAARG2, D3DTA_DIFFUSE);
+			}
+
+			if (gD3D.tsStates0[D3DTSS_ALPHAOP] != D3DTOP_SELECTARG2)
+			{
+				QuakeFlushIndexedPrimitives();
+				gD3D.tsStates0[D3DTSS_ALPHAOP] = D3DTOP_SELECTARG2;
+				gD3D.lpD3DD3->lpVtbl->SetTextureStageState(gD3D.lpD3DD3, 0, D3DTSS_ALPHAOP, D3DTOP_SELECTARG2);
+			}
+		}
+		else if (tex->internalFormat == 4)
+		{
+			if (gD3D.tsStates0[D3DTSS_COLORARG1] != D3DTA_TEXTURE)
+			{
+				QuakeFlushIndexedPrimitives();
+				gD3D.tsStates0[D3DTSS_COLORARG1] = D3DTA_TEXTURE;
+				gD3D.lpD3DD3->lpVtbl->SetTextureStageState(gD3D.lpD3DD3, 0, D3DTSS_COLORARG1, D3DTA_TEXTURE);
+			}
+
+			if (gD3D.tsStates0[D3DTSS_COLORARG2] != D3DTA_DIFFUSE)
+			{
+				QuakeFlushIndexedPrimitives();
+				gD3D.tsStates0[D3DTSS_COLORARG2] = D3DTA_DIFFUSE;
+				gD3D.lpD3DD3->lpVtbl->SetTextureStageState(gD3D.lpD3DD3, 0, D3DTSS_COLORARG2, D3DTA_DIFFUSE);
+			}
+
+			if (gD3D.tsStates0[D3DTSS_COLOROP] != D3DTOP_MODULATE)
+			{
+				QuakeFlushIndexedPrimitives();
+				gD3D.tsStates0[D3DTSS_COLOROP] = D3DTOP_MODULATE;
+				gD3D.lpD3DD3->lpVtbl->SetTextureStageState(gD3D.lpD3DD3, 0, D3DTSS_COLOROP, D3DTOP_MODULATE);
+			}
+
+			if (gD3D.tsStates0[D3DTSS_ALPHAARG1] != D3DTA_TEXTURE)
+			{
+				QuakeFlushIndexedPrimitives();
+				gD3D.tsStates0[D3DTSS_ALPHAARG1] = D3DTA_TEXTURE;
+				gD3D.lpD3DD3->lpVtbl->SetTextureStageState(gD3D.lpD3DD3, 0, D3DTSS_ALPHAARG1, D3DTA_TEXTURE);
+			}
+
+			if (gD3D.tsStates0[D3DTSS_ALPHAARG2] != D3DTA_DIFFUSE)
+			{
+				QuakeFlushIndexedPrimitives();
+				gD3D.tsStates0[D3DTSS_ALPHAARG2] = D3DTA_DIFFUSE;
+				gD3D.lpD3DD3->lpVtbl->SetTextureStageState(gD3D.lpD3DD3, 0, D3DTSS_ALPHAARG2, D3DTA_DIFFUSE);
+			}
+
+			if (gD3D.tsStates0[D3DTSS_ALPHAOP] != D3DTOP_MODULATE)
+			{
+				QuakeFlushIndexedPrimitives();
+				gD3D.tsStates0[D3DTSS_ALPHAOP] = D3DTOP_MODULATE;
+				gD3D.lpD3DD3->lpVtbl->SetTextureStageState(gD3D.lpD3DD3, 0, D3DTSS_ALPHAOP, D3DTOP_MODULATE);
+			}
+		}
+	}
+	else if (gD3D.texEnvMode[0] == GL_DECAL)
+	{
+		if (tex->internalFormat == 3)
+		{
+			if (gD3D.tsStates0[D3DTSS_COLORARG1] != D3DTA_TEXTURE)
+			{
+				QuakeFlushIndexedPrimitives();
+				gD3D.tsStates0[D3DTSS_COLORARG1] = D3DTA_TEXTURE;
+				gD3D.lpD3DD3->lpVtbl->SetTextureStageState(gD3D.lpD3DD3, 0, D3DTSS_COLORARG1, D3DTA_TEXTURE);
+			}
+
+			if (gD3D.tsStates0[D3DTSS_COLORARG2] != D3DTA_DIFFUSE)
+			{
+				QuakeFlushIndexedPrimitives();
+				gD3D.tsStates0[D3DTSS_COLORARG2] = D3DTA_DIFFUSE;
+				gD3D.lpD3DD3->lpVtbl->SetTextureStageState(gD3D.lpD3DD3, 0, D3DTSS_COLORARG2, D3DTA_DIFFUSE);
+			}
+
+			if (gD3D.tsStates0[D3DTSS_COLOROP] != D3DTOP_SELECTARG1)
+			{
+				QuakeFlushIndexedPrimitives();
+				gD3D.tsStates0[D3DTSS_COLOROP] = D3DTOP_SELECTARG1;
+				gD3D.lpD3DD3->lpVtbl->SetTextureStageState(gD3D.lpD3DD3, 0, D3DTSS_COLOROP, D3DTOP_SELECTARG1);
+			}
+
+			if (gD3D.tsStates0[D3DTSS_ALPHAARG1] != D3DTA_TEXTURE)
+			{
+				QuakeFlushIndexedPrimitives();
+				gD3D.tsStates0[D3DTSS_ALPHAARG1] = D3DTA_TEXTURE;
+				gD3D.lpD3DD3->lpVtbl->SetTextureStageState(gD3D.lpD3DD3, 0, D3DTSS_ALPHAARG1, D3DTA_TEXTURE);
+			}
+
+			if (gD3D.tsStates0[D3DTSS_ALPHAARG2] != D3DTA_DIFFUSE)
+			{
+				QuakeFlushIndexedPrimitives();
+				gD3D.tsStates0[D3DTSS_ALPHAARG2] = D3DTA_DIFFUSE;
+				gD3D.lpD3DD3->lpVtbl->SetTextureStageState(gD3D.lpD3DD3, 0, D3DTSS_ALPHAARG2, D3DTA_DIFFUSE);
+			}
+
+			if (gD3D.tsStates0[D3DTSS_ALPHAOP] != D3DTOP_SELECTARG2)
+			{
+				QuakeFlushIndexedPrimitives();
+				gD3D.tsStates0[D3DTSS_ALPHAOP] = D3DTOP_SELECTARG2;
+				gD3D.lpD3DD3->lpVtbl->SetTextureStageState(gD3D.lpD3DD3, 0, D3DTSS_ALPHAOP, D3DTOP_SELECTARG2);
+			}
+		}
+		else if (tex->internalFormat == 4)
+		{
+			QuakeSetTextureStageState(0, D3DTSS_COLORARG1, D3DTA_TEXTURE);
+			QuakeSetTextureStageState(0, D3DTSS_COLORARG2, D3DTA_DIFFUSE);
+			QuakeSetTextureStageState(0, D3DTSS_COLOROP, D3DTOP_BLENDTEXTUREALPHA);
+			QuakeSetTextureStageState(0, D3DTSS_ALPHAARG1, D3DTA_TEXTURE);
+			QuakeSetTextureStageState(0, D3DTSS_ALPHAARG2, D3DTA_DIFFUSE);
+			QuakeSetTextureStageState(0, D3DTSS_ALPHAOP, D3DTOP_SELECTARG2);
+		}
+	}
+
+	if (gD3D.useSubStage)
+	{
+		tex = &gD3D.textures[gD3D.currentTexture[1]];
+
+		QuakeSetTextureStageState(1, D3DTSS_ADDRESSU, tex->addressU);
+		QuakeSetTextureStageState(1, D3DTSS_ADDRESSV, tex->addressV);
+		QuakeSetTextureStageState(1, D3DTSS_MAGFILTER, tex->magFilter);
+		QuakeSetTextureStageState(1, D3DTSS_MINFILTER, tex->minFilter);
+		QuakeSetTextureStageState(1, D3DTSS_MIPFILTER, tex->mipFilter);
+
+		if (gD3D.lpD3DT2SubStage != tex->lpD3DT2)
+		{
+			QuakeFlushIndexedPrimitives();
+			gD3D.lpD3DT2SubStage = tex->lpD3DT2;
+			gD3D.lpD3DD3->lpVtbl->SetTexture(gD3D.lpD3DD3, 1, tex->lpD3DT2);
+		}
+
+		if (gD3D.texEnvMode[1] == GL_BLEND)
+		{
+			if (tex->internalFormat == 1 || tex->internalFormat == 3)
+			{
+				QuakeSetTextureStageState(1, D3DTSS_COLORARG1, D3DTA_TEXTURE | D3DTA_COMPLEMENT);
+				QuakeSetTextureStageState(1, D3DTSS_COLORARG2, D3DTA_CURRENT);
+				QuakeSetTextureStageState(1, D3DTSS_COLOROP, D3DTOP_MODULATE);
+				QuakeSetTextureStageState(1, D3DTSS_ALPHAARG1, D3DTA_TEXTURE);
+				QuakeSetTextureStageState(1, D3DTSS_ALPHAARG2, D3DTA_CURRENT);
+				QuakeSetTextureStageState(1, D3DTSS_ALPHAOP, D3DTOP_SELECTARG2);
+			}
+			else if (tex->internalFormat == 4)
+			{
+				QuakeSetTextureStageState(1, D3DTSS_COLORARG1, D3DTA_TEXTURE | D3DTA_COMPLEMENT);
+				QuakeSetTextureStageState(1, D3DTSS_COLORARG2, D3DTA_CURRENT);
+				QuakeSetTextureStageState(1, D3DTSS_COLOROP, D3DTOP_MODULATE);
+				QuakeSetTextureStageState(1, D3DTSS_ALPHAARG1, D3DTA_TEXTURE);
+				QuakeSetTextureStageState(1, D3DTSS_ALPHAARG2, D3DTA_CURRENT);
+				QuakeSetTextureStageState(1, D3DTSS_ALPHAOP, D3DTOP_MODULATE);
+			}
+		}
+		else if (gD3D.texEnvMode[1] == GL_REPLACE)
+		{
+			if (tex->internalFormat == 1 || tex->internalFormat == 3)
+			{
+				QuakeSetTextureStageState(1, D3DTSS_COLORARG1, D3DTA_TEXTURE);
+				QuakeSetTextureStageState(1, D3DTSS_COLORARG2, D3DTA_CURRENT);
+				QuakeSetTextureStageState(1, D3DTSS_COLOROP, D3DTOP_SELECTARG1);
+				QuakeSetTextureStageState(1, D3DTSS_ALPHAARG1, D3DTA_TEXTURE);
+				QuakeSetTextureStageState(1, D3DTSS_ALPHAARG2, D3DTA_CURRENT);
+				QuakeSetTextureStageState(1, D3DTSS_ALPHAOP, D3DTOP_SELECTARG2);
+			}
+			else if (tex->internalFormat == 4)
+			{
+				QuakeSetTextureStageState(1, D3DTSS_COLORARG1, D3DTA_TEXTURE);
+				QuakeSetTextureStageState(1, D3DTSS_COLORARG2, D3DTA_CURRENT);
+				QuakeSetTextureStageState(1, D3DTSS_COLOROP, D3DTOP_SELECTARG1);
+				QuakeSetTextureStageState(1, D3DTSS_ALPHAARG1, D3DTA_TEXTURE);
+				QuakeSetTextureStageState(1, D3DTSS_ALPHAARG2, D3DTA_CURRENT);
+				QuakeSetTextureStageState(1, D3DTSS_ALPHAOP, D3DTOP_SELECTARG1);
+			}
+		}
+		else if (gD3D.texEnvMode[1] == GL_MODULATE)
+		{
+			if (tex->internalFormat == 1 || tex->internalFormat == 3)
+			{
+				QuakeSetTextureStageState(1, D3DTSS_COLORARG1, D3DTA_TEXTURE);
+				QuakeSetTextureStageState(1, D3DTSS_COLORARG2, D3DTA_CURRENT);
+				QuakeSetTextureStageState(1, D3DTSS_COLOROP, D3DTOP_MODULATE);
+				QuakeSetTextureStageState(1, D3DTSS_ALPHAARG1, D3DTA_TEXTURE);
+				QuakeSetTextureStageState(1, D3DTSS_ALPHAARG2, D3DTA_CURRENT);
+				QuakeSetTextureStageState(1, D3DTSS_ALPHAOP, D3DTOP_SELECTARG2);
+			}
+			else if (tex->internalFormat == 4)
+			{
+				QuakeSetTextureStageState(1, D3DTSS_COLORARG1, D3DTA_TEXTURE);
+				QuakeSetTextureStageState(1, D3DTSS_COLORARG2, D3DTA_CURRENT);
+				QuakeSetTextureStageState(1, D3DTSS_COLOROP, D3DTOP_MODULATE);
+				QuakeSetTextureStageState(1, D3DTSS_ALPHAARG1, D3DTA_TEXTURE);
+				QuakeSetTextureStageState(1, D3DTSS_ALPHAARG2, D3DTA_CURRENT);
+				QuakeSetTextureStageState(1, D3DTSS_ALPHAOP, D3DTOP_MODULATE);
+			}
+		}
+		else if (gD3D.texEnvMode[1] == GL_DECAL)
+		{
+			if (tex->internalFormat == 3)
+			{
+				QuakeSetTextureStageState(1, D3DTSS_COLORARG1, D3DTA_TEXTURE);
+				QuakeSetTextureStageState(1, D3DTSS_COLORARG2, D3DTA_CURRENT);
+				QuakeSetTextureStageState(1, D3DTSS_COLOROP, D3DTOP_SELECTARG1);
+				QuakeSetTextureStageState(1, D3DTSS_ALPHAARG1, D3DTA_TEXTURE);
+				QuakeSetTextureStageState(1, D3DTSS_ALPHAARG2, D3DTA_CURRENT);
+				QuakeSetTextureStageState(1, D3DTSS_ALPHAOP, D3DTOP_SELECTARG2);
+			}
+			else if (tex->internalFormat == 4)
+			{
+				QuakeSetTextureStageState(1, D3DTSS_COLORARG1, D3DTA_TEXTURE);
+				QuakeSetTextureStageState(1, D3DTSS_COLORARG2, D3DTA_CURRENT);
+				QuakeSetTextureStageState(1, D3DTSS_COLOROP, D3DTOP_BLENDTEXTUREALPHA);
+				QuakeSetTextureStageState(1, D3DTSS_ALPHAARG1, D3DTA_TEXTURE);
+				QuakeSetTextureStageState(1, D3DTSS_ALPHAARG2, D3DTA_CURRENT);
+				QuakeSetTextureStageState(1, D3DTSS_ALPHAOP, D3DTOP_SELECTARG2);
+			}
+		}
+	}
+
+	gD3D.textureValid = TRUE;
 }
 
 DLL_EXPORT void APIENTRY glBindTexture( GLenum target, GLuint texture )
@@ -267,11 +967,10 @@ DLL_EXPORT void APIENTRY glBlendFunc( GLenum sfactor, GLenum dfactor )
 
 	if (srcBlend >= 0)
 	{
-		if (gD3D.srcBlend != srcBlend)
+		if (gD3D.rStates[D3DRENDERSTATE_SRCBLEND] != srcBlend)
 		{
 			if (gD3D.indexCount)
 			{
-				// Flush any remaining primitives
 				if (gD3D.vertStart != gD3D.vertCount)
 				{
 					gD3D.lpD3DVB->lpVtbl->ProcessVertices(gD3D.lpD3DVB, 5, gD3D.vertStart, gD3D.vertCount - gD3D.vertStart, gD3D.lpD3DVBSrc, gD3D.vertStart, gD3D.lpD3DD3, 0);
@@ -287,18 +986,17 @@ DLL_EXPORT void APIENTRY glBlendFunc( GLenum sfactor, GLenum dfactor )
 				gD3D.indexCount = 0;
 			}
 
-			gD3D.srcBlend = srcBlend;
+			gD3D.rStates[D3DRENDERSTATE_SRCBLEND] = srcBlend;
 			gD3D.lpD3DD3->lpVtbl->SetRenderState(gD3D.lpD3DD3, D3DRENDERSTATE_SRCBLEND, srcBlend);
 		}
 	}
 
 	if (destBlend >= 0)
 	{
-		if (gD3D.destBlend != destBlend)
+		if (gD3D.rStates[D3DRENDERSTATE_DESTBLEND] != destBlend)
 		{
 			if (gD3D.indexCount)
 			{
-				// Flush any remaining primitives
 				if (gD3D.vertStart != gD3D.vertCount)
 				{
 					gD3D.lpD3DVB->lpVtbl->ProcessVertices(gD3D.lpD3DVB, 5, gD3D.vertStart, gD3D.vertCount - gD3D.vertStart, gD3D.lpD3DVBSrc, gD3D.vertStart, gD3D.lpD3DD3, 0);
@@ -314,7 +1012,7 @@ DLL_EXPORT void APIENTRY glBlendFunc( GLenum sfactor, GLenum dfactor )
 				gD3D.indexCount = 0;
 			}
 
-			gD3D.destBlend = destBlend;
+			gD3D.rStates[D3DRENDERSTATE_DESTBLEND] = destBlend;
 			gD3D.lpD3DD3->lpVtbl->SetRenderState(gD3D.lpD3DD3, D3DRENDERSTATE_DESTBLEND, destBlend);
 		}
 	}
@@ -336,7 +1034,6 @@ DLL_EXPORT void APIENTRY glClear( GLbitfield mask )
 
 	if (gD3D.indexCount)
 	{
-		// Flush any remaining primitives
 		if (gD3D.vertStart != gD3D.vertCount)
 		{
 			gD3D.lpD3DVB->lpVtbl->ProcessVertices(gD3D.lpD3DVB, 5, gD3D.vertStart, gD3D.vertCount - gD3D.vertStart, gD3D.lpD3DVBSrc, gD3D.vertStart, gD3D.lpD3DD3, 0);
@@ -652,11 +1349,10 @@ DLL_EXPORT void APIENTRY glCullFace( GLenum mode )
 			cullMode = D3DCULL_CCW;
 		}
 
-		if (gD3D.cullMode != cullMode)
+		if (gD3D.rStates[D3DRENDERSTATE_CULLMODE] != cullMode)
 		{
 			if (gD3D.indexCount)
 			{
-				// Flush any remaining primitives
 				if (gD3D.vertStart != gD3D.vertCount)
 				{
 					gD3D.lpD3DVB->lpVtbl->ProcessVertices(gD3D.lpD3DVB, 5, gD3D.vertStart, gD3D.vertCount - gD3D.vertStart, gD3D.lpD3DVBSrc, gD3D.vertStart, gD3D.lpD3DD3, 0);
@@ -672,7 +1368,7 @@ DLL_EXPORT void APIENTRY glCullFace( GLenum mode )
 				gD3D.indexCount = 0;
 			}
 
-			gD3D.cullMode = cullMode;
+			gD3D.rStates[D3DRENDERSTATE_CULLMODE] = cullMode;
 			gD3D.lpD3DD3->lpVtbl->SetRenderState(gD3D.lpD3DD3, D3DRENDERSTATE_CULLMODE, cullMode);
 		}
 	}
@@ -749,11 +1445,10 @@ DLL_EXPORT void APIENTRY glDepthFunc( GLenum func )
 
 	if (zFunc >= 0)
 	{
-		if (gD3D.zFunc != zFunc)
+		if (gD3D.rStates[D3DRENDERSTATE_ZFUNC] != zFunc)
 		{
 			if (gD3D.indexCount)
 			{
-				// Flush any remaining primitives
 				if (gD3D.vertStart != gD3D.vertCount)
 				{
 					gD3D.lpD3DVB->lpVtbl->ProcessVertices(gD3D.lpD3DVB, 5, gD3D.vertStart, gD3D.vertCount - gD3D.vertStart, gD3D.lpD3DVBSrc, gD3D.vertStart, gD3D.lpD3DD3, 0);
@@ -769,7 +1464,7 @@ DLL_EXPORT void APIENTRY glDepthFunc( GLenum func )
 				gD3D.indexCount = 0;
 			}
 
-			gD3D.zFunc = zFunc;
+			gD3D.rStates[D3DRENDERSTATE_ZFUNC] = zFunc;
 			gD3D.lpD3DD3->lpVtbl->SetRenderState(gD3D.lpD3DD3, D3DRENDERSTATE_ZFUNC, zFunc);
 		}
 	}
@@ -781,11 +1476,10 @@ DLL_EXPORT void APIENTRY glDepthMask( GLboolean flag )
 
 	if (flag)
 	{
-		if (gD3D.zWriteEnable != TRUE)
+		if (gD3D.rStates[D3DRENDERSTATE_ZWRITEENABLE] != TRUE)
 		{
 			if (gD3D.indexCount)
 			{
-				// Flush any remaining primitives
 				if (gD3D.vertStart != gD3D.vertCount)
 				{
 					gD3D.lpD3DVB->lpVtbl->ProcessVertices(gD3D.lpD3DVB, 5, gD3D.vertStart, gD3D.vertCount - gD3D.vertStart, gD3D.lpD3DVBSrc, gD3D.vertStart, gD3D.lpD3DD3, 0);
@@ -801,17 +1495,16 @@ DLL_EXPORT void APIENTRY glDepthMask( GLboolean flag )
 				gD3D.indexCount = 0;
 			}
 
-			gD3D.zWriteEnable = TRUE;
+			gD3D.rStates[D3DRENDERSTATE_ZWRITEENABLE] = TRUE;
 			gD3D.lpD3DD3->lpVtbl->SetRenderState(gD3D.lpD3DD3, D3DRENDERSTATE_ZWRITEENABLE, TRUE);
 		}
 	}
 	else
 	{
-		if (gD3D.zWriteEnable != FALSE)
+		if (gD3D.rStates[D3DRENDERSTATE_ZWRITEENABLE] != FALSE)
 		{
 			if (gD3D.indexCount)
 			{
-				// Flush any remaining primitives
 				if (gD3D.vertStart != gD3D.vertCount)
 				{
 					gD3D.lpD3DVB->lpVtbl->ProcessVertices(gD3D.lpD3DVB, 5, gD3D.vertStart, gD3D.vertCount - gD3D.vertStart, gD3D.lpD3DVBSrc, gD3D.vertStart, gD3D.lpD3DD3, 0);
@@ -827,7 +1520,7 @@ DLL_EXPORT void APIENTRY glDepthMask( GLboolean flag )
 				gD3D.indexCount = 0;
 			}
 
-			gD3D.zWriteEnable = FALSE;
+			gD3D.rStates[D3DRENDERSTATE_ZWRITEENABLE] = FALSE;
 			gD3D.lpD3DD3->lpVtbl->SetRenderState(gD3D.lpD3DD3, D3DRENDERSTATE_ZWRITEENABLE, FALSE);
 		}
 	}
@@ -841,7 +1534,6 @@ DLL_EXPORT void APIENTRY glDepthRange( GLclampd zNear, GLclampd zFar )
 
 	if (gD3D.indexCount)
 	{
-		// Flush any remaining primitives
 		if (gD3D.vertStart != gD3D.vertCount)
 		{
 			gD3D.lpD3DVB->lpVtbl->ProcessVertices(gD3D.lpD3DVB, 5, gD3D.vertStart, gD3D.vertCount - gD3D.vertStart, gD3D.lpD3DVBSrc, gD3D.vertStart, gD3D.lpD3DD3, 0);
@@ -871,7 +1563,150 @@ DLL_EXPORT void APIENTRY glDepthRange( GLclampd zNear, GLclampd zFar )
 
 DLL_EXPORT void APIENTRY glDisable( GLenum cap )
 {
-	// TODO: Implement
+	DWORD	dummy;
+
+	if (cap == GL_CULL_FACE)
+	{
+		gD3D.cullEnabled = FALSE;
+
+		if (gD3D.rStates[D3DRENDERSTATE_CULLMODE] != D3DCULL_NONE)
+		{
+			QuakeFlushIndexedPrimitives();
+			gD3D.rStates[D3DRENDERSTATE_CULLMODE] = D3DCULL_NONE;
+			gD3D.lpD3DD3->lpVtbl->SetRenderState(gD3D.lpD3DD3, D3DRENDERSTATE_CULLMODE, D3DCULL_NONE);
+		}
+	}
+	else if (cap == GL_FOG)
+	{
+		if (gD3D.rStates[D3DRENDERSTATE_FOGENABLE] != FALSE)
+		{
+			QuakeFlushIndexedPrimitives();
+			gD3D.rStates[D3DRENDERSTATE_FOGENABLE] = FALSE;
+			gD3D.lpD3DD3->lpVtbl->SetRenderState(gD3D.lpD3DD3, D3DRENDERSTATE_FOGENABLE, FALSE);
+		}
+
+		if (gD3D.rStates[D3DRENDERSTATE_RANGEFOGENABLE] != FALSE)
+		{
+			QuakeFlushIndexedPrimitives();
+			gD3D.rStates[D3DRENDERSTATE_RANGEFOGENABLE] = FALSE;
+			gD3D.lpD3DD3->lpVtbl->SetRenderState(gD3D.lpD3DD3, D3DRENDERSTATE_RANGEFOGENABLE, FALSE);
+		}
+	}
+	else if (cap == GL_DEPTH_TEST)
+	{
+		if (gD3D.rStates[D3DRENDERSTATE_ZENABLE] != FALSE)
+		{
+			QuakeFlushIndexedPrimitives();
+			gD3D.rStates[D3DRENDERSTATE_ZENABLE] = FALSE;
+			gD3D.lpD3DD3->lpVtbl->SetRenderState(gD3D.lpD3DD3, D3DRENDERSTATE_ZENABLE, FALSE);
+		}
+	}
+	else if (cap == GL_ALPHA_TEST)
+	{
+		if (gD3D.rStates[D3DRENDERSTATE_ALPHATESTENABLE] != FALSE)
+		{
+			QuakeFlushIndexedPrimitives();
+			gD3D.rStates[D3DRENDERSTATE_ALPHATESTENABLE] = FALSE;
+			gD3D.lpD3DD3->lpVtbl->SetRenderState(gD3D.lpD3DD3, D3DRENDERSTATE_ALPHATESTENABLE, FALSE);
+		}
+	}
+	else if (cap == GL_BLEND)
+	{
+		if (gD3D.rStates[D3DRENDERSTATE_ALPHABLENDENABLE] != FALSE)
+		{
+			QuakeFlushIndexedPrimitives();
+			gD3D.rStates[D3DRENDERSTATE_ALPHABLENDENABLE] = FALSE;
+			gD3D.lpD3DD3->lpVtbl->SetRenderState(gD3D.lpD3DD3, D3DRENDERSTATE_ALPHABLENDENABLE, FALSE);
+		}
+	}
+	else if (cap == GL_SCISSOR_TEST)
+	{
+	}
+	else if (cap == GL_TEXTURE_2D)
+	{
+		if (gD3D.textureStage)
+		{
+			if (gD3D.tsStates1[D3DTSS_COLOROP] != D3DTOP_DISABLE)
+			{
+				QuakeFlushIndexedPrimitives();
+				gD3D.tsStates1[D3DTSS_COLOROP] = D3DTOP_DISABLE;
+				gD3D.lpD3DD3->lpVtbl->SetTextureStageState(gD3D.lpD3DD3, 1, D3DTSS_COLOROP, D3DTOP_DISABLE);
+			}
+
+			if (gD3D.tsStates1[D3DTSS_ALPHAOP] != D3DTOP_DISABLE)
+			{
+				QuakeFlushIndexedPrimitives();
+				gD3D.tsStates1[D3DTSS_ALPHAOP] = D3DTOP_DISABLE;
+				gD3D.lpD3DD3->lpVtbl->SetTextureStageState(gD3D.lpD3DD3, 1, D3DTSS_ALPHAOP, D3DTOP_DISABLE);
+			}
+
+			gD3D.useSubStage = FALSE;
+		}
+		else
+		{
+			if (gD3D.tsStates0[D3DTSS_COLOROP] != D3DTOP_DISABLE)
+			{
+				if (gD3D.indexCount)
+				{
+					QuakeFlushVertexBuffer();
+
+					gD3D.lpD3DVBSrc->lpVtbl->Unlock(gD3D.lpD3DVBSrc);
+					gD3D.lpD3DD3->lpVtbl->DrawIndexedPrimitiveVB(gD3D.lpD3DD3, D3DPT_TRIANGLELIST, gD3D.lpD3DVB, gD3D.indexBuffer, gD3D.indexCount, 8);
+					gD3D.lpD3DVBSrc->lpVtbl->Lock(gD3D.lpD3DVBSrc, DDLOCK_NOSYSLOCK | DDLOCK_SURFACEMEMORYPTR | DDLOCK_WAIT | DDLOCK_WRITEONLY, (LPVOID*)&gD3D.verts, &dummy);
+
+					gD3D.vertStart = 0;
+					gD3D.vertCount = 0;
+					gD3D.indexCount = 0;
+				}
+
+				gD3D.tsStates0[D3DTSS_COLOROP] = D3DTOP_DISABLE;
+				gD3D.lpD3DD3->lpVtbl->SetTextureStageState(gD3D.lpD3DD3, 0, D3DTSS_COLOROP, D3DTOP_DISABLE);
+			}
+
+			if (gD3D.tsStates0[D3DTSS_ALPHAOP] != D3DTOP_DISABLE)
+			{
+				QuakeFlushIndexedPrimitives();
+				gD3D.tsStates0[D3DTSS_ALPHAOP] = D3DTOP_DISABLE;
+				gD3D.lpD3DD3->lpVtbl->SetTextureStageState(gD3D.lpD3DD3, 0, D3DTSS_ALPHAOP, D3DTOP_DISABLE);
+			}
+
+			gD3D.stage0Active = FALSE;
+		}
+
+		gD3D.textureValid = FALSE;
+	}
+	else if (cap == GL_POLYGON_OFFSET_FILL)
+	{
+		D3DVIEWPORT2	vport;
+
+		if (gD3D.indexCount)
+		{
+			if (gD3D.vertStart != gD3D.vertCount)
+			{
+				gD3D.lpD3DVB->lpVtbl->ProcessVertices(gD3D.lpD3DVB, 5, gD3D.vertStart, gD3D.vertCount - gD3D.vertStart, gD3D.lpD3DVBSrc, gD3D.vertStart, gD3D.lpD3DD3, 0);
+				gD3D.vertStart = gD3D.vertCount;
+			}
+
+			gD3D.lpD3DVBSrc->lpVtbl->Unlock(gD3D.lpD3DVBSrc);
+			gD3D.lpD3DD3->lpVtbl->DrawIndexedPrimitiveVB(gD3D.lpD3DD3, D3DPT_TRIANGLELIST, gD3D.lpD3DVB, gD3D.indexBuffer, gD3D.indexCount, 8);
+			gD3D.lpD3DVBSrc->lpVtbl->Lock(gD3D.lpD3DVBSrc, DDLOCK_NOSYSLOCK | DDLOCK_SURFACEMEMORYPTR | DDLOCK_WAIT | DDLOCK_WRITEONLY, (LPVOID*)&gD3D.verts, &dummy);
+
+			gD3D.vertStart = 0;
+			gD3D.vertCount = 0;
+			gD3D.indexCount = 0;
+		}
+
+		vport.dwSize = sizeof(vport);
+		gD3D.lpD3DVP3->lpVtbl->GetViewport2(gD3D.lpD3DVP3, &vport);
+
+		vport.dvMaxZ = gD3D.dvMaxZ;
+		gD3D.lpD3DVP3->lpVtbl->SetViewport2(gD3D.lpD3DVP3, &vport);
+	}
+	else
+	{
+		OutputDebugString("Wrapper: glDisable on this cap not supported\n");
+		return;
+	}
 }
 
 DLL_EXPORT void APIENTRY glDisableClientState( GLenum array )
@@ -918,7 +1753,164 @@ DLL_EXPORT void APIENTRY glEdgeFlagv( const GLboolean* flag )
 
 DLL_EXPORT void APIENTRY glEnable( GLenum cap )
 {
-	// TODO: Implement
+	DWORD	dummy;
+
+	if (cap == GL_CULL_FACE)
+	{
+		gD3D.cullEnabled = TRUE;
+
+		if (gD3D.cullFaceMode == GL_BACK)
+		{
+			if (gD3D.rStates[D3DRENDERSTATE_CULLMODE] != D3DCULL_CW)
+			{
+				if (gD3D.indexCount)
+				{
+					QuakeFlushVertexBuffer();
+
+					gD3D.lpD3DVBSrc->lpVtbl->Unlock(gD3D.lpD3DVBSrc);
+					gD3D.lpD3DD3->lpVtbl->DrawIndexedPrimitiveVB(gD3D.lpD3DD3, D3DPT_TRIANGLELIST, gD3D.lpD3DVB, gD3D.indexBuffer, gD3D.indexCount, 8);
+					gD3D.lpD3DVBSrc->lpVtbl->Lock(gD3D.lpD3DVBSrc, DDLOCK_NOSYSLOCK | DDLOCK_SURFACEMEMORYPTR | DDLOCK_WAIT | DDLOCK_WRITEONLY, (LPVOID*)&gD3D.verts, &dummy);
+
+					gD3D.vertStart = 0;
+					gD3D.vertCount = 0;
+					gD3D.indexCount = 0;
+				}
+
+				gD3D.rStates[D3DRENDERSTATE_CULLMODE] = D3DCULL_CW;
+				gD3D.lpD3DD3->lpVtbl->SetRenderState(gD3D.lpD3DD3, D3DRENDERSTATE_CULLMODE, D3DCULL_CW);
+			}
+		}
+		else
+		{
+			if (gD3D.rStates[D3DRENDERSTATE_CULLMODE] != D3DCULL_CCW)
+			{
+				if (gD3D.indexCount)
+				{
+					QuakeFlushVertexBuffer();
+
+					gD3D.lpD3DVBSrc->lpVtbl->Unlock(gD3D.lpD3DVBSrc);
+					gD3D.lpD3DD3->lpVtbl->DrawIndexedPrimitiveVB(gD3D.lpD3DD3, D3DPT_TRIANGLELIST, gD3D.lpD3DVB, gD3D.indexBuffer, gD3D.indexCount, 8);
+					gD3D.lpD3DVBSrc->lpVtbl->Lock(gD3D.lpD3DVBSrc, DDLOCK_NOSYSLOCK | DDLOCK_SURFACEMEMORYPTR | DDLOCK_WAIT | DDLOCK_WRITEONLY, (LPVOID*)&gD3D.verts, &dummy);
+
+					gD3D.vertStart = 0;
+					gD3D.vertCount = 0;
+					gD3D.indexCount = 0;
+				}
+
+				gD3D.rStates[D3DRENDERSTATE_CULLMODE] = D3DCULL_CCW;
+				gD3D.lpD3DD3->lpVtbl->SetRenderState(gD3D.lpD3DD3, D3DRENDERSTATE_CULLMODE, D3DCULL_CCW);
+			}
+		}
+	}
+	else if (cap == GL_FOG)
+	{
+		if (gD3D.rStates[D3DRENDERSTATE_FOGENABLE] != TRUE)
+		{
+			QuakeFlushIndexedPrimitives();
+			gD3D.rStates[D3DRENDERSTATE_FOGENABLE] = TRUE;
+			gD3D.lpD3DD3->lpVtbl->SetRenderState(gD3D.lpD3DD3, D3DRENDERSTATE_FOGENABLE, TRUE);
+		}
+
+		if (gD3D.rStates[D3DRENDERSTATE_RANGEFOGENABLE] != TRUE)
+		{
+			if (gD3D.indexCount)
+			{
+				QuakeFlushVertexBuffer();
+
+				gD3D.lpD3DVBSrc->lpVtbl->Unlock(gD3D.lpD3DVBSrc);
+				gD3D.lpD3DD3->lpVtbl->DrawIndexedPrimitiveVB(gD3D.lpD3DD3, D3DPT_TRIANGLELIST, gD3D.lpD3DVB, gD3D.indexBuffer, gD3D.indexCount, 8);
+				gD3D.lpD3DVBSrc->lpVtbl->Lock(gD3D.lpD3DVBSrc, DDLOCK_NOSYSLOCK | DDLOCK_SURFACEMEMORYPTR | DDLOCK_WAIT | DDLOCK_WRITEONLY, (LPVOID*)&gD3D.verts, &dummy);
+
+				gD3D.vertStart = 0;
+				gD3D.vertCount = 0;
+				gD3D.indexCount = 0;
+			}
+
+			gD3D.rStates[D3DRENDERSTATE_RANGEFOGENABLE] = TRUE;
+			gD3D.lpD3DD3->lpVtbl->SetRenderState(gD3D.lpD3DD3, D3DRENDERSTATE_RANGEFOGENABLE, TRUE);
+		}
+	}
+	else if (cap == GL_DEPTH_TEST)
+	{
+		if (gD3D.rStates[D3DRENDERSTATE_ZENABLE] != TRUE)
+		{
+			if (gD3D.indexCount)
+			{
+				QuakeFlushVertexBuffer();
+
+				gD3D.lpD3DVBSrc->lpVtbl->Unlock(gD3D.lpD3DVBSrc);
+				gD3D.lpD3DD3->lpVtbl->DrawIndexedPrimitiveVB(gD3D.lpD3DD3, D3DPT_TRIANGLELIST, gD3D.lpD3DVB, gD3D.indexBuffer, gD3D.indexCount, 8);
+				gD3D.lpD3DVBSrc->lpVtbl->Lock(gD3D.lpD3DVBSrc, DDLOCK_NOSYSLOCK | DDLOCK_SURFACEMEMORYPTR | DDLOCK_WAIT | DDLOCK_WRITEONLY, (LPVOID*)&gD3D.verts, &dummy);
+
+				gD3D.vertStart = 0;
+				gD3D.vertCount = 0;
+				gD3D.indexCount = 0;
+			}
+
+			gD3D.rStates[D3DRENDERSTATE_ZENABLE] = TRUE;
+			gD3D.lpD3DD3->lpVtbl->SetRenderState(gD3D.lpD3DD3, D3DRENDERSTATE_ZENABLE, TRUE);
+		}
+	}
+	else if (cap == GL_ALPHA_TEST)
+	{
+		if (gD3D.rStates[D3DRENDERSTATE_ALPHATESTENABLE] != TRUE)
+		{
+			if (gD3D.indexCount)
+			{
+				QuakeFlushVertexBuffer();
+
+				gD3D.lpD3DVBSrc->lpVtbl->Unlock(gD3D.lpD3DVBSrc);
+				gD3D.lpD3DD3->lpVtbl->DrawIndexedPrimitiveVB(gD3D.lpD3DD3, D3DPT_TRIANGLELIST, gD3D.lpD3DVB, gD3D.indexBuffer, gD3D.indexCount, 8);
+				gD3D.lpD3DVBSrc->lpVtbl->Lock(gD3D.lpD3DVBSrc, DDLOCK_NOSYSLOCK | DDLOCK_SURFACEMEMORYPTR | DDLOCK_WAIT | DDLOCK_WRITEONLY, (LPVOID*)&gD3D.verts, &dummy);
+
+				gD3D.vertStart = 0;
+				gD3D.vertCount = 0;
+				gD3D.indexCount = 0;
+			}
+
+			gD3D.rStates[D3DRENDERSTATE_ALPHATESTENABLE] = TRUE;
+			gD3D.lpD3DD3->lpVtbl->SetRenderState(gD3D.lpD3DD3, D3DRENDERSTATE_ALPHATESTENABLE, TRUE);
+		}
+	}
+	else if (cap == GL_BLEND)
+	{
+		if (gD3D.rStates[D3DRENDERSTATE_ALPHABLENDENABLE] != TRUE)
+		{
+			QuakeFlushIndexedPrimitives();
+			gD3D.rStates[D3DRENDERSTATE_ALPHABLENDENABLE] = TRUE;
+			gD3D.lpD3DD3->lpVtbl->SetRenderState(gD3D.lpD3DD3, D3DRENDERSTATE_ALPHABLENDENABLE, TRUE);
+		}
+	}
+	else if (cap == GL_SCISSOR_TEST)
+	{
+	}
+	else if (cap == GL_TEXTURE_2D)
+	{
+		if (gD3D.textureStage)
+		{
+			gD3D.useSubStage = TRUE;
+		}
+		else
+		{
+			gD3D.stage0Active = TRUE;
+		}
+
+		gD3D.textureValid = FALSE;
+	}
+	else if (cap == GL_POLYGON_OFFSET_FILL)
+	{
+		D3DVIEWPORT2	vport;
+
+		vport.dwSize = sizeof(vport);
+		gD3D.lpD3DVP3->lpVtbl->GetViewport2(gD3D.lpD3DVP3, &vport);
+
+		gD3D.dvMaxZ = vport.dvMaxZ;
+	}
+	else
+	{
+		OutputDebugString("Wrapper: glEnable on this cap not supported\n");
+		return;
+	}
 }
 
 DLL_EXPORT void APIENTRY glEnableClientState( GLenum array )
@@ -937,7 +1929,59 @@ DLL_EXPORT void APIENTRY glEnableClientState( GLenum array )
 
 DLL_EXPORT void APIENTRY glEnd( void )
 {
-	// TODO: Implement
+	DWORD	i;
+
+	switch (gD3D.primMode)
+	{
+	case GL_TRIANGLES:
+		for (i = 0; i < gD3D.primVertCount; i++)
+		{
+			gD3D.indexBuffer[gD3D.indexCount++] = gD3D.vertCount++;
+		}
+		break;
+	case GL_TRIANGLE_STRIP:
+		gD3D.primVertCount -= 2;
+		for (i = 0; i < gD3D.primVertCount; i += 2)
+		{
+			gD3D.indexBuffer[gD3D.indexCount++] = gD3D.vertCount + 0;
+			gD3D.indexBuffer[gD3D.indexCount++] = gD3D.vertCount + 1;
+			gD3D.indexBuffer[gD3D.indexCount++] = gD3D.vertCount + 2;
+			gD3D.vertCount++;
+
+			if (i + 1 < gD3D.primVertCount)
+			{
+				gD3D.indexBuffer[gD3D.indexCount++] = gD3D.vertCount + 1;
+				gD3D.indexBuffer[gD3D.indexCount++] = gD3D.vertCount + 0;
+				gD3D.indexBuffer[gD3D.indexCount++] = gD3D.vertCount + 2;
+				gD3D.vertCount++;
+			}
+		}
+		gD3D.vertCount += 2;
+		break;
+	case GL_TRIANGLE_FAN:
+	case GL_POLYGON:
+		gD3D.primVertCount -= 1;
+		for (i = 1; i < gD3D.primVertCount; i++)
+		{
+			gD3D.indexBuffer[gD3D.indexCount++] = gD3D.vertCount;
+			gD3D.indexBuffer[gD3D.indexCount++] = gD3D.vertCount + i;
+			gD3D.indexBuffer[gD3D.indexCount++] = gD3D.vertCount + i + 1;
+		}
+		gD3D.vertCount += (gD3D.primVertCount + 1);
+		break;
+	case GL_QUADS:
+		for (i = 0; i < gD3D.primVertCount; i += 4)
+		{
+			gD3D.indexBuffer[gD3D.indexCount++] = gD3D.vertCount + 0;
+			gD3D.indexBuffer[gD3D.indexCount++] = gD3D.vertCount + 1;
+			gD3D.indexBuffer[gD3D.indexCount++] = gD3D.vertCount + 2;
+			gD3D.indexBuffer[gD3D.indexCount++] = gD3D.vertCount + 0;
+			gD3D.indexBuffer[gD3D.indexCount++] = gD3D.vertCount + 2;
+			gD3D.indexBuffer[gD3D.indexCount++] = gD3D.vertCount + 3;
+			gD3D.vertCount += 4;
+		}
+		break;
+	}
 }
 
 DLL_EXPORT void APIENTRY glEndList( void )
@@ -1006,17 +2050,196 @@ DLL_EXPORT void APIENTRY glFlush( void )
 
 DLL_EXPORT void APIENTRY glFogf( GLenum pname, GLfloat param )
 {
-	// TODO: Implement
+	DWORD	dummy;
+
+	if (pname == GL_FOG_START)
+	{
+		if (gD3D.rStates[D3DRENDERSTATE_FOGTABLESTART] != (DWORD)param)
+		{
+			if (gD3D.indexCount)
+			{
+				if (gD3D.vertStart != gD3D.vertCount)
+				{
+					gD3D.lpD3DVB->lpVtbl->ProcessVertices(gD3D.lpD3DVB, 5, gD3D.vertStart, gD3D.vertCount - gD3D.vertStart, gD3D.lpD3DVBSrc, gD3D.vertStart, gD3D.lpD3DD3, 0);
+					gD3D.vertStart = gD3D.vertCount;
+				}
+
+				gD3D.lpD3DVBSrc->lpVtbl->Unlock(gD3D.lpD3DVBSrc);
+				gD3D.lpD3DD3->lpVtbl->DrawIndexedPrimitiveVB(gD3D.lpD3DD3, D3DPT_TRIANGLELIST, gD3D.lpD3DVB, gD3D.indexBuffer, gD3D.indexCount, 8);
+				gD3D.lpD3DVBSrc->lpVtbl->Lock(gD3D.lpD3DVBSrc, DDLOCK_NOSYSLOCK | DDLOCK_SURFACEMEMORYPTR | DDLOCK_WAIT | DDLOCK_WRITEONLY, (LPVOID*)&gD3D.verts, &dummy);
+
+				gD3D.vertStart = 0;
+				gD3D.vertCount = 0;
+				gD3D.indexCount = 0;
+			}
+
+			gD3D.rStates[D3DRENDERSTATE_FOGTABLESTART] = (DWORD)param;
+			gD3D.lpD3DD3->lpVtbl->SetRenderState(gD3D.lpD3DD3, D3DRENDERSTATE_FOGTABLESTART, (DWORD)param);
+		}
+	}
+	else if (pname == GL_FOG_END)
+	{
+		if (gD3D.rStates[D3DRENDERSTATE_FOGTABLEEND] != (DWORD)param)
+		{
+			if (gD3D.indexCount)
+			{
+				if (gD3D.vertStart != gD3D.vertCount)
+				{
+					gD3D.lpD3DVB->lpVtbl->ProcessVertices(gD3D.lpD3DVB, 5, gD3D.vertStart, gD3D.vertCount - gD3D.vertStart, gD3D.lpD3DVBSrc, gD3D.vertStart, gD3D.lpD3DD3, 0);
+					gD3D.vertStart = gD3D.vertCount;
+				}
+
+				gD3D.lpD3DVBSrc->lpVtbl->Unlock(gD3D.lpD3DVBSrc);
+				gD3D.lpD3DD3->lpVtbl->DrawIndexedPrimitiveVB(gD3D.lpD3DD3, D3DPT_TRIANGLELIST, gD3D.lpD3DVB, gD3D.indexBuffer, gD3D.indexCount, 8);
+				gD3D.lpD3DVBSrc->lpVtbl->Lock(gD3D.lpD3DVBSrc, DDLOCK_NOSYSLOCK | DDLOCK_SURFACEMEMORYPTR | DDLOCK_WAIT | DDLOCK_WRITEONLY, (LPVOID*)&gD3D.verts, &dummy);
+
+				gD3D.vertStart = 0;
+				gD3D.vertCount = 0;
+				gD3D.indexCount = 0;
+			}
+
+			gD3D.rStates[D3DRENDERSTATE_FOGTABLEEND] = (DWORD)param;
+			gD3D.lpD3DD3->lpVtbl->SetRenderState(gD3D.lpD3DD3, D3DRENDERSTATE_FOGTABLEEND, (DWORD)param);
+		}
+	}
 }
 
 DLL_EXPORT void APIENTRY glFogfv( GLenum pname, const GLfloat* params )
 {
-	// TODO: Implement
+	static int lastFogColor = 0;
+	DWORD	fogColor;
+	DWORD	dummy;
+
+	fogColor = RGBA_MAKE((int)(params[0] * 255.0f), (int)(params[1] * 255.0f), (int)(params[2] * 255.0f), (int)(params[3] * 255.0f));
+	lastFogColor = fogColor;
+
+	if (gD3D.rStates[D3DRENDERSTATE_FOGCOLOR] != fogColor)
+	{
+		if (gD3D.indexCount)
+		{
+			if (gD3D.vertStart != gD3D.vertCount)
+			{
+				gD3D.lpD3DVB->lpVtbl->ProcessVertices(gD3D.lpD3DVB, 5, gD3D.vertStart, gD3D.vertCount - gD3D.vertStart, gD3D.lpD3DVBSrc, gD3D.vertStart, gD3D.lpD3DD3, 0);
+				gD3D.vertStart = gD3D.vertCount;
+			}
+
+			gD3D.lpD3DVBSrc->lpVtbl->Unlock(gD3D.lpD3DVBSrc);
+			gD3D.lpD3DD3->lpVtbl->DrawIndexedPrimitiveVB(gD3D.lpD3DD3, D3DPT_TRIANGLELIST, gD3D.lpD3DVB, gD3D.indexBuffer, gD3D.indexCount, 8);
+			gD3D.lpD3DVBSrc->lpVtbl->Lock(gD3D.lpD3DVBSrc, DDLOCK_NOSYSLOCK | DDLOCK_SURFACEMEMORYPTR | DDLOCK_WAIT | DDLOCK_WRITEONLY, (LPVOID*)&gD3D.verts, &dummy);
+
+			gD3D.vertStart = 0;
+			gD3D.vertCount = 0;
+			gD3D.indexCount = 0;
+		}
+
+		gD3D.rStates[D3DRENDERSTATE_FOGCOLOR] = fogColor;
+		gD3D.lpD3DD3->lpVtbl->SetRenderState(gD3D.lpD3DD3, D3DRENDERSTATE_FOGCOLOR, fogColor);
+	}
 }
 
 DLL_EXPORT void APIENTRY glFogi( GLenum pname, GLint param )
 {
-	// TODO: Implement
+	DWORD	dummy;
+
+	if (pname == GL_FOG_MODE)
+	{
+		if (param == GL_EXP)
+		{
+			if (gD3D.rStates[D3DRENDERSTATE_FOGTABLEMODE] != D3DFOG_EXP)
+			{
+				if (gD3D.indexCount)
+				{
+					if (gD3D.vertStart != gD3D.vertCount)
+					{
+						gD3D.lpD3DVB->lpVtbl->ProcessVertices(gD3D.lpD3DVB, 5, gD3D.vertStart, gD3D.vertCount - gD3D.vertStart, gD3D.lpD3DVBSrc, gD3D.vertStart, gD3D.lpD3DD3, 0);
+						gD3D.vertStart = gD3D.vertCount;
+					}
+
+					gD3D.lpD3DVBSrc->lpVtbl->Unlock(gD3D.lpD3DVBSrc);
+					gD3D.lpD3DD3->lpVtbl->DrawIndexedPrimitiveVB(gD3D.lpD3DD3, D3DPT_TRIANGLELIST, gD3D.lpD3DVB, gD3D.indexBuffer, gD3D.indexCount, 8);
+					gD3D.lpD3DVBSrc->lpVtbl->Lock(gD3D.lpD3DVBSrc, DDLOCK_NOSYSLOCK | DDLOCK_SURFACEMEMORYPTR | DDLOCK_WAIT | DDLOCK_WRITEONLY, (LPVOID*)&gD3D.verts, &dummy);
+
+					gD3D.vertStart = 0;
+					gD3D.vertCount = 0;
+					gD3D.indexCount = 0;
+				}
+
+				gD3D.rStates[D3DRENDERSTATE_FOGTABLEMODE] = D3DFOG_EXP;
+				gD3D.lpD3DD3->lpVtbl->SetRenderState(gD3D.lpD3DD3, D3DRENDERSTATE_FOGTABLEMODE, D3DFOG_EXP);
+			}
+		}
+		else if (param == GL_EXP2)
+		{
+			if (gD3D.rStates[D3DRENDERSTATE_FOGTABLEMODE] != D3DFOG_EXP2)
+			{
+				if (gD3D.indexCount)
+				{
+					if (gD3D.vertStart != gD3D.vertCount)
+					{
+						gD3D.lpD3DVB->lpVtbl->ProcessVertices(gD3D.lpD3DVB, 5, gD3D.vertStart, gD3D.vertCount - gD3D.vertStart, gD3D.lpD3DVBSrc, gD3D.vertStart, gD3D.lpD3DD3, 0);
+						gD3D.vertStart = gD3D.vertCount;
+					}
+
+					gD3D.lpD3DVBSrc->lpVtbl->Unlock(gD3D.lpD3DVBSrc);
+					gD3D.lpD3DD3->lpVtbl->DrawIndexedPrimitiveVB(gD3D.lpD3DD3, D3DPT_TRIANGLELIST, gD3D.lpD3DVB, gD3D.indexBuffer, gD3D.indexCount, 8);
+					gD3D.lpD3DVBSrc->lpVtbl->Lock(gD3D.lpD3DVBSrc, DDLOCK_NOSYSLOCK | DDLOCK_SURFACEMEMORYPTR | DDLOCK_WAIT | DDLOCK_WRITEONLY, (LPVOID*)&gD3D.verts, &dummy);
+
+					gD3D.vertStart = 0;
+					gD3D.vertCount = 0;
+					gD3D.indexCount = 0;
+				}
+
+				gD3D.rStates[D3DRENDERSTATE_FOGTABLEMODE] = D3DFOG_EXP2;
+				gD3D.lpD3DD3->lpVtbl->SetRenderState(gD3D.lpD3DD3, D3DRENDERSTATE_FOGTABLEMODE, D3DFOG_EXP2);
+			}
+		}
+		else if (param == GL_LINEAR)
+		{
+			if (gD3D.rStates[D3DRENDERSTATE_FOGTABLEMODE] != D3DFOG_LINEAR)
+			{
+				if (gD3D.indexCount)
+				{
+					if (gD3D.vertStart != gD3D.vertCount)
+					{
+						gD3D.lpD3DVB->lpVtbl->ProcessVertices(gD3D.lpD3DVB, 5, gD3D.vertStart, gD3D.vertCount - gD3D.vertStart, gD3D.lpD3DVBSrc, gD3D.vertStart, gD3D.lpD3DD3, 0);
+						gD3D.vertStart = gD3D.vertCount;
+					}
+
+					gD3D.lpD3DVBSrc->lpVtbl->Unlock(gD3D.lpD3DVBSrc);
+					gD3D.lpD3DD3->lpVtbl->DrawIndexedPrimitiveVB(gD3D.lpD3DD3, D3DPT_TRIANGLELIST, gD3D.lpD3DVB, gD3D.indexBuffer, gD3D.indexCount, 8);
+					gD3D.lpD3DVBSrc->lpVtbl->Lock(gD3D.lpD3DVBSrc, DDLOCK_NOSYSLOCK | DDLOCK_SURFACEMEMORYPTR | DDLOCK_WAIT | DDLOCK_WRITEONLY, (LPVOID*)&gD3D.verts, &dummy);
+
+					gD3D.vertStart = 0;
+					gD3D.vertCount = 0;
+					gD3D.indexCount = 0;
+				}
+
+				gD3D.rStates[D3DRENDERSTATE_FOGTABLEMODE] = D3DFOG_LINEAR;
+				gD3D.lpD3DD3->lpVtbl->SetRenderState(gD3D.lpD3DD3, D3DRENDERSTATE_FOGTABLEMODE, D3DFOG_LINEAR);
+			}
+		}
+		else
+		{
+			if (gD3D.rStates[D3DRENDERSTATE_FOGTABLEMODE] != D3DFOG_NONE)
+			{
+				if (gD3D.indexCount)
+				{
+					QuakeFlushVertexBuffer();
+
+					gD3D.lpD3DVBSrc->lpVtbl->Unlock(gD3D.lpD3DVBSrc);
+					gD3D.lpD3DD3->lpVtbl->DrawIndexedPrimitiveVB(gD3D.lpD3DD3, D3DPT_TRIANGLELIST, gD3D.lpD3DVB, gD3D.indexBuffer, gD3D.indexCount, 8);
+					gD3D.lpD3DVBSrc->lpVtbl->Lock(gD3D.lpD3DVBSrc, DDLOCK_NOSYSLOCK | DDLOCK_SURFACEMEMORYPTR | DDLOCK_WAIT | DDLOCK_WRITEONLY, (LPVOID*)&gD3D.verts, &dummy);
+
+					gD3D.vertStart = 0;
+					gD3D.vertCount = 0;
+					gD3D.indexCount = 0;
+				}
+
+				gD3D.rStates[D3DRENDERSTATE_FOGTABLEMODE] = D3DFOG_NONE;
+				gD3D.lpD3DD3->lpVtbl->SetRenderState(gD3D.lpD3DD3, D3DRENDERSTATE_FOGTABLEMODE, D3DFOG_NONE);
+			}
+		}
+	}
 }
 
 DLL_EXPORT void APIENTRY glFogiv( GLenum pname, const GLint* params )
@@ -1029,7 +2252,39 @@ DLL_EXPORT void APIENTRY glFrontFace( GLenum mode )
 
 DLL_EXPORT void APIENTRY glFrustum( GLdouble left, GLdouble right, GLdouble bottom, GLdouble top, GLdouble zNear, GLdouble zFar )
 {
-	// TODO: Implement
+	D3DMATRIX	matrix;
+	D3DVALUE	sum, diff, twoNear, zFarTwoNear;
+	D3DVALUE	xSum, xRange, ySum, yRange;
+
+	if (gD3D.vertStart != gD3D.vertCount)
+	{
+		gD3D.lpD3DVB->lpVtbl->ProcessVertices(gD3D.lpD3DVB, 5, gD3D.vertStart, gD3D.vertCount - gD3D.vertStart, gD3D.lpD3DVBSrc, gD3D.vertStart, gD3D.lpD3DD3, 0);
+		gD3D.vertStart = gD3D.vertCount;
+	}
+
+	sum = (D3DVALUE)(zFar + zNear);
+	diff = (D3DVALUE)(zFar - zNear);
+	twoNear = (D3DVALUE)(zNear * 2.0f);
+	zFarTwoNear = (D3DVALUE)(zFar * twoNear);
+
+	xSum = (D3DVALUE)(right + left);
+	ySum = (D3DVALUE)(top + bottom);
+	xRange = (D3DVALUE)(right - left);
+	yRange = (D3DVALUE)(top - bottom);
+
+	// Create frustum matrix
+	/*
+		| (2*near)/(right-left)       0                   (right+left)/(right-left)              0               |
+		|     0               (2*near)/(top-bottom)       (top+bottom)/(top-bottom)              0               |
+		|     0                       0					   -(far+near)/(far-near)    -(2*far*near)/(far-near)    |
+		|     0                       0                               -1                         0               |
+	*/
+	matrix._11 = twoNear / xRange;	matrix._12 = 0.0f;				matrix._13 = 0.0f;					matrix._14 = 0.0f;
+	matrix._21 = 0.0f;				matrix._22 = twoNear / yRange;	matrix._23 = 0.0f;					matrix._24 = 0.0f;
+	matrix._31 = xSum / xRange;		matrix._32 = ySum / yRange;		matrix._33 = -(sum / diff);			matrix._34 = -1.0f;
+	matrix._41 = 0.0f;				matrix._42 = 0.0f;				matrix._43 = -(zFarTwoNear / diff);	matrix._44 = 0.0f;
+
+	gD3D.lpD3DD3->lpVtbl->MultiplyTransform(gD3D.lpD3DD3, gD3D.transformState, &matrix);
 }
 
 DLL_EXPORT GLuint APIENTRY glGenLists( GLsizei range )
@@ -1322,10 +2577,10 @@ DLL_EXPORT void APIENTRY glLoadIdentity( void )
 
 	// Create identity matrix
 	/*
-		[ 1 0 0 0 ]
-		[ 0 1 0 0 ]
-		[ 0 0 1 0 ]
-		[ 0 0 0 1 ]
+		| 1 0 0 0 |
+		| 0 1 0 0 |
+		| 0 0 1 0 |
+		| 0 0 0 1 |
 	*/
 	matrix._11 = 1.0;	matrix._12 = 0.0;	matrix._13 = 0.0;	matrix._14 = 0.0;
 	matrix._21 = 0.0;	matrix._22 = 1.0;	matrix._23 = 0.0;	matrix._24 = 0.0;
@@ -1476,7 +2731,37 @@ DLL_EXPORT void APIENTRY glNormalPointer( GLenum type, GLsizei stride, const GLv
 
 DLL_EXPORT void APIENTRY glOrtho( GLdouble left, GLdouble right, GLdouble bottom, GLdouble top, GLdouble zNear, GLdouble zFar )
 {
-	// TODO: Implement
+	D3DMATRIX	matrix;
+	D3DVALUE	sum, diff;
+	D3DVALUE	xSum, xRange, ySum, yRange;
+
+	if (gD3D.vertStart != gD3D.vertCount)
+	{
+		gD3D.lpD3DVB->lpVtbl->ProcessVertices(gD3D.lpD3DVB, 5, gD3D.vertStart, gD3D.vertCount - gD3D.vertStart, gD3D.lpD3DVBSrc, gD3D.vertStart, gD3D.lpD3DD3, 0);
+		gD3D.vertStart = gD3D.vertCount;
+	}
+
+	sum = (D3DVALUE)(zFar + zNear);
+	diff = (D3DVALUE)(zFar - zNear);
+
+	xSum = (D3DVALUE)(right + left);
+	ySum = (D3DVALUE)(top + bottom);
+	xRange = (D3DVALUE)(right - left);
+	yRange = (D3DVALUE)(top - bottom);
+
+	// Create orthographic matrix
+	/*
+		| 2/(r-l)      0         0        -(r+l)/(r-l) |
+		|    0      2/(t-b)      0        -(t+b)/(t-b) |
+		|    0         0      -2/(f-n)    -(f+n)/(f-n) |
+		|    0         0         0             1       |
+	*/
+	matrix._11 = 2.0f / xRange;		matrix._12 = 0.0f;				matrix._13 = 0.0f;				matrix._14 = 0.0f;
+	matrix._21 = 0.0f;				matrix._22 = 2.0f / yRange;		matrix._23 = 0.0f;				matrix._24 = 0.0f;
+	matrix._31 = 0.0f;				matrix._32 = 0.0f;				matrix._33 = -(2.0f / diff);	matrix._34 = 0.0f;
+	matrix._41 = -(xSum / xRange);	matrix._42 = -(ySum / yRange);	matrix._43 = -(sum / diff);		matrix._44 = 1.0f;
+
+	gD3D.lpD3DD3->lpVtbl->MultiplyTransform(gD3D.lpD3DD3, gD3D.transformState, &matrix);
 }
 
 DLL_EXPORT void APIENTRY glPassThrough( GLfloat token )
@@ -1541,11 +2826,10 @@ DLL_EXPORT void APIENTRY glPolygonMode( GLenum face, GLenum mode )
 
 	if (fillMode >= 0)
 	{
-		if (gD3D.fillMode != fillMode)
+		if (gD3D.rStates[D3DRENDERSTATE_FILLMODE] != fillMode)
 		{
 			if (gD3D.indexCount)
 			{
-				// Flush any remaining primitives
 				if (gD3D.vertStart != gD3D.vertCount)
 				{
 					gD3D.lpD3DVB->lpVtbl->ProcessVertices(gD3D.lpD3DVB, 5, gD3D.vertStart, gD3D.vertCount - gD3D.vertStart, gD3D.lpD3DVBSrc, gD3D.vertStart, gD3D.lpD3DD3, 0);
@@ -1554,14 +2838,14 @@ DLL_EXPORT void APIENTRY glPolygonMode( GLenum face, GLenum mode )
 
 				gD3D.lpD3DVBSrc->lpVtbl->Unlock(gD3D.lpD3DVBSrc);
 				gD3D.lpD3DD3->lpVtbl->DrawIndexedPrimitiveVB(gD3D.lpD3DD3, D3DPT_TRIANGLELIST, gD3D.lpD3DVB, gD3D.indexBuffer, gD3D.indexCount, 8);
-				gD3D.lpD3DVBSrc->lpVtbl->Lock(gD3D.lpD3DVBSrc, 2081, (LPVOID*)&gD3D.verts, &dummy);
+				gD3D.lpD3DVBSrc->lpVtbl->Lock(gD3D.lpD3DVBSrc, DDLOCK_NOSYSLOCK | DDLOCK_SURFACEMEMORYPTR | DDLOCK_WAIT | DDLOCK_WRITEONLY, (LPVOID*)&gD3D.verts, &dummy);
 
 				gD3D.vertStart = 0;
 				gD3D.vertCount = 0;
 				gD3D.indexCount = 0;
 			}
 
-			gD3D.fillMode = fillMode;
+			gD3D.rStates[D3DRENDERSTATE_FILLMODE] = fillMode;
 			gD3D.lpD3DD3->lpVtbl->SetRenderState(gD3D.lpD3DD3, D3DRENDERSTATE_FILLMODE, fillMode);
 		}
 	}
@@ -1574,7 +2858,6 @@ DLL_EXPORT void APIENTRY glPolygonOffset( GLfloat factor, GLfloat units )
 
 	if (gD3D.indexCount)
 	{
-		// Flush any remaining primitives
 		if (gD3D.vertStart != gD3D.vertCount)
 		{
 			gD3D.lpD3DVB->lpVtbl->ProcessVertices(gD3D.lpD3DVB, 5, gD3D.vertStart, gD3D.vertCount - gD3D.vertStart, gD3D.lpD3DVBSrc, gD3D.vertStart, gD3D.lpD3DD3, 0);
@@ -1613,7 +2896,32 @@ DLL_EXPORT void APIENTRY glPopClientAttrib( void )
 
 DLL_EXPORT void APIENTRY glPopMatrix( void )
 {
-	// TODO: Implement
+	D3D_MATRIXCHAIN* pTop;
+
+	if (gD3D.vertStart != gD3D.vertCount)
+	{
+		gD3D.lpD3DVB->lpVtbl->ProcessVertices(gD3D.lpD3DVB, 5, gD3D.vertStart, gD3D.vertCount - gD3D.vertStart, gD3D.lpD3DVBSrc, gD3D.vertStart, gD3D.lpD3DD3, 0);
+		gD3D.vertStart = gD3D.vertCount;
+	}
+
+	if (gD3D.transformState == D3DTRANSFORMSTATE_WORLD)
+	{
+		gD3D.lpD3DD3->lpVtbl->SetTransform(gD3D.lpD3DD3, D3DTRANSFORMSTATE_WORLD, &gD3D.worldMatrixStack->matrix);
+
+		pTop = gD3D.worldMatrixStack;
+		gD3D.worldMatrixStack = pTop->pNext;
+		delete pTop;
+		gD3D.totalWorldMatrices--;
+	}
+	else
+	{
+		gD3D.lpD3DD3->lpVtbl->SetTransform(gD3D.lpD3DD3, gD3D.transformState, &gD3D.customMatrixStack->matrix);
+
+		pTop = gD3D.customMatrixStack;
+		gD3D.customMatrixStack = gD3D.customMatrixStack->pNext;
+		delete pTop;
+		gD3D.totalCustomMatrices--;
+	}
 }
 
 DLL_EXPORT void APIENTRY glPopName( void )
@@ -1634,7 +2942,37 @@ DLL_EXPORT void APIENTRY glPushClientAttrib( GLbitfield mask )
 
 DLL_EXPORT void APIENTRY glPushMatrix( void )
 {
-	// TODO: Implement
+	D3DMATRIX	matrix;
+	D3D_MATRIXCHAIN* pCurrent, * pNext;
+
+	gD3D.lpD3DD3->lpVtbl->GetTransform(gD3D.lpD3DD3, gD3D.transformState, &matrix);
+
+	if (gD3D.transformState == D3DTRANSFORMSTATE_WORLD)
+	{
+		pCurrent = new D3D_MATRIXCHAIN;
+		if (pCurrent)
+		{
+			pNext = gD3D.worldMatrixStack;
+			pCurrent->matrix = matrix;
+			pCurrent->pNext = pNext;
+			gD3D.worldMatrixStack = pCurrent;
+		}
+
+		gD3D.totalWorldMatrices++;
+	}
+	else
+	{
+		pCurrent = new D3D_MATRIXCHAIN;
+		if (pCurrent)
+		{
+			pNext = gD3D.customMatrixStack;
+			pCurrent->matrix = matrix;
+			pCurrent->pNext = pNext;
+			gD3D.customMatrixStack = pCurrent;
+		}
+
+		gD3D.totalCustomMatrices++;
+	}
 }
 
 DLL_EXPORT void APIENTRY glPushName( GLuint name )
@@ -1743,7 +3081,158 @@ DLL_EXPORT void APIENTRY glReadBuffer( GLenum mode )
 
 DLL_EXPORT void APIENTRY glReadPixels( GLint x, GLint y, GLsizei width, GLsizei height, GLenum format, GLenum type, GLvoid* pixels )
 {
-	// TODO: Implement
+	LPDIRECTDRAWSURFACE4 lpDDS;
+	DDSURFACEDESC2 ddsd2;
+	DWORD rBitMask, gBitMask, bBitMask;
+	DWORD rLeftShift, gLeftShift, bLeftShift;
+	DWORD rRightShift, gRightShift, bRightShift;
+	int i, j;
+
+	gD3D.pDXMgr->lpVtbl->GetPrimary(gD3D.pDXMgr, &lpDDS);
+
+	memset(&ddsd2, 0, sizeof(DDSURFACEDESC2));
+	ddsd2.dwSize = sizeof(ddsd2);
+
+	if (gD3D.isFullscreen)
+	{
+		if (lpDDS->lpVtbl->Lock(lpDDS, NULL, &ddsd2, DDLOCK_WAIT | DDLOCK_READONLY, NULL) != DD_OK)
+		{
+			OutputDebugString("Wrapper: Lock on primary failed");
+			lpDDS->lpVtbl->Release(lpDDS);
+			return;
+		}
+	}
+	else
+	{
+		POINT point_lt, point_rb;
+		RECT rect;
+
+		point_lt.x = 0;
+		point_lt.y = 0;
+		ClientToScreen(gD3D.hWnd, &point_lt);
+
+		point_rb.x = gD3D.wndWidth;
+		point_rb.y = gD3D.wndHeight;
+		ClientToScreen(gD3D.hWnd, &point_rb);
+
+		rect.left = point_lt.x;
+		rect.top = point_lt.y;
+		rect.right = point_rb.x;
+		rect.bottom = point_rb.y;
+
+		if (lpDDS->lpVtbl->Lock(lpDDS, &rect, &ddsd2, DDLOCK_WAIT | DDLOCK_READONLY, NULL) != DD_OK)
+		{
+			OutputDebugString("Wrapper: Lock on primary failed");
+			lpDDS->lpVtbl->Release(lpDDS);
+			return;
+		}
+	}
+
+	rRightShift = 0;
+	rBitMask = ddsd2.ddpfPixelFormat.dwRBitMask;
+	while (!(rBitMask & 1))
+	{
+		rBitMask >>= 1;
+		rRightShift++;
+	}
+	rLeftShift = 8;
+	while (rBitMask & 1)
+	{
+		rBitMask >>= 1;
+		rLeftShift--;
+	}
+
+	gRightShift = 0;
+	gBitMask = ddsd2.ddpfPixelFormat.dwGBitMask;
+	while (!(gBitMask & 1))
+	{
+		gBitMask >>= 1;
+		gRightShift++;
+	}
+	gLeftShift = 8;
+	while (gBitMask & 1)
+	{
+		gBitMask >>= 1;
+		gLeftShift--;
+	}
+
+	bRightShift = 0;
+	bBitMask = ddsd2.ddpfPixelFormat.dwBBitMask;
+	while (!(bBitMask & 1))
+	{
+		bBitMask >>= 1;
+		bRightShift++;
+	}
+	bLeftShift = 8;
+	while (bBitMask & 1)
+	{
+		bBitMask >>= 1;
+		bLeftShift--;
+	}
+
+	if (ddsd2.ddpfPixelFormat.dwRGBBitCount == 16)
+	{
+		WORD* src;
+		BYTE* dest;
+
+		src = (WORD*)ddsd2.lpSurface;
+		dest = (BYTE*)pixels + gD3D.wndWidth * (gD3D.wndHeight - 1) * 3;
+		for (j = 0; j < gD3D.wndHeight; j++)
+		{
+			for (i = 0; i < gD3D.wndWidth; i++)
+			{
+				*dest++ = ((WORD)(*src & ddsd2.ddpfPixelFormat.dwRBitMask) >> rRightShift) << rLeftShift;
+				*dest++ = ((WORD)(*src & ddsd2.ddpfPixelFormat.dwGBitMask) >> gRightShift) << gLeftShift;
+				*dest++ = ((WORD)(*src & ddsd2.ddpfPixelFormat.dwBBitMask) >> bRightShift) << bLeftShift;
+				src++;
+			}
+			src = (WORD*)((BYTE*)src + ddsd2.lPitch);
+			dest -= gD3D.wndWidth * 6;
+		}
+	}
+	else if (ddsd2.ddpfPixelFormat.dwRGBBitCount == 24)
+	{
+		DWORD* src;
+		BYTE* dest;
+
+		src = (DWORD*)ddsd2.lpSurface;
+		dest = (BYTE*)pixels + gD3D.wndWidth * (gD3D.wndHeight - 1) * 3;
+		for (j = 0; j < gD3D.wndHeight; j++)
+		{
+			for (i = 0; i < gD3D.wndWidth; i++)
+			{
+				*dest++ = ((*src & ddsd2.ddpfPixelFormat.dwRBitMask) >> rRightShift) << rLeftShift;
+				*dest++ = ((*src & ddsd2.ddpfPixelFormat.dwGBitMask) >> gRightShift) << gLeftShift;
+				*dest++ = ((*src & ddsd2.ddpfPixelFormat.dwBBitMask) >> bRightShift) << bLeftShift;
+				src = (DWORD*)((BYTE*)src + 3);
+			}
+			src = (DWORD*)((BYTE*)src + ddsd2.lPitch);
+			dest -= gD3D.wndWidth * 6;
+		}
+	}
+	else if (ddsd2.ddpfPixelFormat.dwRGBBitCount == 32)
+	{
+		DWORD* src;
+		BYTE* dest;
+
+		src = (DWORD*)ddsd2.lpSurface;
+		dest = (BYTE*)pixels + gD3D.wndWidth * (gD3D.wndHeight - 1) * 3;
+		for (j = 0; j < gD3D.wndHeight; j++)
+		{
+			for (i = 0; i < gD3D.wndWidth; i++)
+			{
+				*dest++ = ((*src & ddsd2.ddpfPixelFormat.dwRBitMask) >> rRightShift) << rLeftShift;
+				*dest++ = ((*src & ddsd2.ddpfPixelFormat.dwGBitMask) >> gRightShift) << gLeftShift;
+				*dest++ = ((*src & ddsd2.ddpfPixelFormat.dwBBitMask) >> bRightShift) << bLeftShift;
+				src++;
+			}
+			src = (DWORD*)((BYTE*)src + ddsd2.lPitch);
+			dest -= gD3D.wndWidth * 6;
+		}
+	}
+
+	lpDDS->lpVtbl->Release(lpDDS);
+	lpDDS->lpVtbl->Unlock(lpDDS, NULL);
 }
 
 DLL_EXPORT void APIENTRY glRectd( GLdouble x1, GLdouble y1, GLdouble x2, GLdouble y2 )
@@ -1789,7 +3278,75 @@ DLL_EXPORT void APIENTRY glRotated( GLdouble angle, GLdouble x, GLdouble y, GLdo
 
 DLL_EXPORT void APIENTRY glRotatef( GLfloat angle, GLfloat x, GLfloat y, GLfloat z )
 {
-	// TODO: Implement
+	D3DMATRIX	matrix;
+	double		rad, s, c;
+
+	if (gD3D.vertStart != gD3D.vertCount)
+	{
+		gD3D.lpD3DVB->lpVtbl->ProcessVertices(gD3D.lpD3DVB, 5, gD3D.vertStart, gD3D.vertCount - gD3D.vertStart, gD3D.lpD3DVBSrc, gD3D.vertStart, gD3D.lpD3DD3, 0);
+		gD3D.vertStart = gD3D.vertCount;
+	}
+
+	if (!(gD3D.angleConstFlag & 1))
+	{
+		gD3D.angleConstFlag |= 1;
+		gD3D.angleDegToRad = atan(1.0) * 4.0;
+	}
+
+	rad = angle * gD3D.angleDegToRad / 180.0;
+	s = sin(rad);
+	c = cos(rad);
+
+	if (x == 1.0f)
+	{
+		// Create X rotation matrix
+		/* 
+			|  1  0  0  0  |
+			|  0  c  s  0  |
+			|  0 -s  c  0  |
+			|  0  0  0  1  |
+		*/
+		matrix._11 = 1.0f;	matrix._12 = 0.0f;	matrix._13 = 0.0f;	matrix._14 = 0.0f;
+		matrix._21 = 0.0f;	matrix._22 = c;		matrix._23 = s;		matrix._24 = 0.0f;
+		matrix._31 = 0.0f;	matrix._32 = -s;	matrix._33 = c;		matrix._34 = 0.0f;
+		matrix._41 = 0.0f;	matrix._42 = 0.0f;	matrix._43 = 0.0f;	matrix._44 = 1.0f;
+	}
+	else if (y == 1.0f)
+	{
+		// Create Y rotation matrix
+		/*
+			|  c  0 -s  0  |
+			|  0  1  0  0  |
+			|  s  0  c  0  |
+			|  0  0  0  1  |
+		*/
+		matrix._11 = c;		matrix._12 = 0.0f;	matrix._13 = -s;	matrix._14 = 0.0f;
+		matrix._21 = 0.0f;	matrix._22 = 1.0f;	matrix._23 = 0.0f;	matrix._24 = 0.0f;
+		matrix._31 = s;		matrix._32 = 0.0f;	matrix._33 = c;		matrix._34 = 0.0f;
+		matrix._41 = 0.0f;	matrix._42 = 0.0f;	matrix._43 = 0.0f;	matrix._44 = 1.0f;
+	}
+	else if (z == 1.0f)
+	{
+		// Create Z rotation matrix
+		/*
+			|  c  s  0  0  |
+			| -s  c  0  0  |
+			|  0  0  1  0  |
+			|  0  0  0  1  |
+		*/
+		matrix._11 = c;		matrix._12 = s;		matrix._13 = 0.0f;	matrix._14 = 0.0f;
+		matrix._21 = -s;	matrix._22 = c;		matrix._23 = 0.0f;	matrix._24 = 0.0f;
+		matrix._31 = 0.0f;	matrix._32 = 0.0f;	matrix._33 = 1.0f;	matrix._34 = 0.0f;
+		matrix._41 = 0.0f;	matrix._42 = 0.0f;	matrix._43 = 0.0f;	matrix._44 = 1.0f;
+	}
+	else
+	{
+		// Nothing to rotate around
+		return;
+	}
+
+	// Apply rotation
+	gD3D.lpD3DD3->lpVtbl->MultiplyTransform(gD3D.lpD3DD3, gD3D.transformState, &matrix);
 }
 
 DLL_EXPORT void APIENTRY glScaled( GLdouble x, GLdouble y, GLdouble z )
@@ -1808,10 +3365,10 @@ DLL_EXPORT void APIENTRY glScalef( GLfloat x, GLfloat y, GLfloat z )
 
 	// Create scale matrix
 	/*
-		[ x 0 0 0 ]
-		[ 0 y 0 0 ]
-		[ 0 0 z 0 ]
-		[ 0 0 0 1 ]
+		| x 0 0 0 |
+		| 0 y 0 0 |
+		| 0 0 z 0 |
+		| 0 0 0 1 |
 	*/
 	matrix._11 = x;		matrix._12 = 0.0f;	matrix._13 = 0.0f;	matrix._14 = 0.0f;
 	matrix._21 = 0.0f;	matrix._22 = y;		matrix._23 = 0.0f;	matrix._24 = 0.0f;
@@ -1835,17 +3392,16 @@ DLL_EXPORT void APIENTRY glShadeModel( GLenum mode )
 
 	if (mode == GL_SMOOTH)
 	{
-		if (gD3D.shadeMode != D3DSHADE_GOURAUD)
+		if (gD3D.rStates[D3DRENDERSTATE_SHADEMODE] != D3DSHADE_GOURAUD)
 		{
 			if (gD3D.indexCount)
 			{
-				// Flush any remaining primitives
 				if (gD3D.vertStart != gD3D.vertCount)
 				{
 					gD3D.lpD3DVB->lpVtbl->ProcessVertices(gD3D.lpD3DVB, 5, gD3D.vertStart, gD3D.vertCount - gD3D.vertStart, gD3D.lpD3DVBSrc, gD3D.vertStart, gD3D.lpD3DD3, 0);
 					gD3D.vertStart = gD3D.vertCount;
 				}
-				
+
 				gD3D.lpD3DVBSrc->lpVtbl->Unlock(gD3D.lpD3DVBSrc);
 				gD3D.lpD3DD3->lpVtbl->DrawIndexedPrimitiveVB(gD3D.lpD3DD3, D3DPT_TRIANGLELIST, gD3D.lpD3DVB, gD3D.indexBuffer, gD3D.indexCount, 8);
 				gD3D.lpD3DVBSrc->lpVtbl->Lock(gD3D.lpD3DVBSrc, DDLOCK_NOSYSLOCK | DDLOCK_SURFACEMEMORYPTR | DDLOCK_WAIT | DDLOCK_WRITEONLY, (LPVOID*)&gD3D.verts, &dummy);
@@ -1855,17 +3411,16 @@ DLL_EXPORT void APIENTRY glShadeModel( GLenum mode )
 				gD3D.indexCount = 0;
 			}
 
-			gD3D.shadeMode = D3DSHADE_GOURAUD;
+			gD3D.rStates[D3DRENDERSTATE_SHADEMODE] = D3DSHADE_GOURAUD;
 			gD3D.lpD3DD3->lpVtbl->SetRenderState(gD3D.lpD3DD3, D3DRENDERSTATE_SHADEMODE, D3DSHADE_GOURAUD);
 		}
 	}
 	else
 	{
-		if (gD3D.shadeMode != D3DSHADE_FLAT)
+		if (gD3D.rStates[D3DRENDERSTATE_SHADEMODE] != D3DSHADE_FLAT)
 		{
 			if (gD3D.indexCount)
 			{
-				// Flush any remaining primitives
 				if (gD3D.vertStart != gD3D.vertCount)
 				{
 					gD3D.lpD3DVB->lpVtbl->ProcessVertices(gD3D.lpD3DVB, 5, gD3D.vertStart, gD3D.vertCount - gD3D.vertStart, gD3D.lpD3DVBSrc, gD3D.vertStart, gD3D.lpD3DD3, 0);
@@ -1881,7 +3436,7 @@ DLL_EXPORT void APIENTRY glShadeModel( GLenum mode )
 				gD3D.indexCount = 0;
 			}
 
-			gD3D.shadeMode = D3DSHADE_FLAT;
+			gD3D.rStates[D3DRENDERSTATE_SHADEMODE] = D3DSHADE_FLAT;
 			gD3D.lpD3DD3->lpVtbl->SetRenderState(gD3D.lpD3DD3, D3DRENDERSTATE_SHADEMODE, D3DSHADE_FLAT);
 		}
 	}
@@ -2089,12 +3644,261 @@ DLL_EXPORT void APIENTRY glTexImage1D( GLenum target, GLint level, GLint interna
 
 DLL_EXPORT void APIENTRY glTexImage2D( GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const GLvoid* pixels )
 {
-	// TODO: Implement
+	int		i;
+	int		newWidth, newHeight;
+	DDSURFACEDESC2 ddsd;
+	LPDIRECTDRAWSURFACE4 lpDDS4, lpDDS42;
+	D3D_TEXTURE* tex;
+
+	tex = &gD3D.textures[gD3D.currentTexture[gD3D.textureStage]];
+
+	if (gD3D.useSubsample)
+	{
+		if (width > 256 || height > 256)
+		{
+			if (width > height)
+			{
+				newWidth = 256;
+				newHeight = (height << 8) / width;
+			}
+			else
+			{
+				newWidth = (width << 8) / height;
+				newHeight = 256;
+			}
+		}
+		else
+		{
+			newWidth = width;
+			newHeight = height;
+		}
+	}
+	else
+	{
+		newWidth = width;
+		newHeight = height;
+	}
+
+	if (gD3D.squareTexturesOnly)
+	{
+		if (newHeight > newWidth)
+			newWidth = newHeight;
+		else
+			newHeight = newWidth;
+	}
+
+	if (level == 0)
+	{
+		memset(&ddsd, 0, sizeof(ddsd));
+
+		switch (internalformat)
+		{
+			case 1:
+				ddsd.ddpfPixelFormat = gD3D.ddpf8888;
+				break;
+			case 3:
+				ddsd.ddpfPixelFormat = gD3D.ddpf555_565;
+				break;
+			case 4:
+				if (gD3D.bLoad4444)
+				{
+					ddsd.ddpfPixelFormat = gD3D.ddpf4444;
+					gD3D.bLoad4444 = FALSE;
+				}
+				else
+				{
+					ddsd.ddpfPixelFormat = gD3D.ddpf5551;
+				}
+				break;
+			default:
+				OutputDebugString("Wrapper: texture format not supported\n");
+				break;
+		}
+
+		ddsd.dwSize = sizeof(ddsd);
+		ddsd.dwFlags = DDSD_CAPS | DDSD_HEIGHT | DDSD_WIDTH | DDSD_PIXELFORMAT | DDSD_TEXTURESTAGE;
+		ddsd.dwHeight = newHeight;
+		ddsd.dwWidth = newWidth;
+		ddsd.dwTextureStage = gD3D.textureStage;
+		ddsd.ddsCaps.dwCaps = DDSCAPS_TEXTURE;
+		ddsd.ddsCaps.dwCaps2 = DDSCAPS2_HINTDYNAMIC | DDSCAPS2_TEXTUREMANAGE;
+
+		if (gD3D.lpDD4->lpVtbl->CreateSurface(gD3D.lpDD4, &ddsd, &lpDDS4, NULL) != DD_OK)
+		{
+			OutputDebugString("Wrapper: CreateSurface for texture failed\n");
+			return;
+		}
+
+		LoadSurface(lpDDS4, internalformat, width, height, newWidth, newHeight, (BYTE*)pixels);
+
+		if (tex->lpD3DT2)
+			tex->lpD3DT2->lpVtbl->Release(tex->lpD3DT2);
+		if (tex->lpDDS4)
+			tex->lpDDS4->lpVtbl->Release(tex->lpDDS4);
+
+		if (lpDDS4->lpVtbl->QueryInterface(lpDDS4, IID_IDirect3DTexture2, (LPVOID*)&tex->lpD3DT2) != DD_OK)
+		{
+			OutputDebugString("Wrapper: QueryInterface for Texture2 failed.\n");
+			lpDDS4->lpVtbl->Release(lpDDS4);
+			return;
+		}
+
+		tex->internalFormat = internalformat;
+		tex->width = newWidth;
+		tex->height = newHeight;
+		tex->oldWidth = width;
+		tex->oldHeight = height;
+		tex->lpDDS4 = lpDDS4;
+	}
+	else if (level == 1 && gD3D.useMipmap)
+	{
+		memset(&ddsd, 0, sizeof(ddsd));
+
+		switch (internalformat)
+		{
+			case 1:
+				ddsd.ddpfPixelFormat = gD3D.ddpf8888;
+				break;
+			case 3:
+				ddsd.ddpfPixelFormat = gD3D.ddpf555_565;
+				break;
+			case 4:
+				if (gD3D.bLoad4444)
+				{
+					ddsd.ddpfPixelFormat = gD3D.ddpf4444;
+					gD3D.bLoad4444 = FALSE;
+				}
+				else
+				{
+					ddsd.ddpfPixelFormat = gD3D.ddpf5551;
+				}
+				break;
+		}
+
+		ddsd.dwSize = sizeof(ddsd);
+		ddsd.dwFlags = DDSD_CAPS | DDSD_HEIGHT | DDSD_WIDTH | DDSD_PIXELFORMAT | DDSD_TEXTURESTAGE;
+		ddsd.dwHeight = tex->height;
+		ddsd.dwWidth = tex->width;
+		ddsd.dwTextureStage = gD3D.textureStage;
+		ddsd.ddsCaps.dwCaps = DDSCAPS_COMPLEX | DDSCAPS_TEXTURE | DDSCAPS_MIPMAP;
+		ddsd.ddsCaps.dwCaps2 = DDSCAPS2_HINTDYNAMIC | DDSCAPS2_TEXTUREMANAGE;
+
+		if (gD3D.lpDD4->lpVtbl->CreateSurface(gD3D.lpDD4, &ddsd, &lpDDS4, NULL) != DD_OK)
+		{
+			OutputDebugString("Wrapper: CreateSurface for texture failed\n");
+			return;
+		}
+
+		lpDDS4->lpVtbl->Blt(lpDDS4, NULL, tex->lpDDS4, NULL, DDBLT_WAIT, NULL);
+
+		tex->lpD3DT2->lpVtbl->Release(tex->lpD3DT2);
+		tex->lpDDS4->lpVtbl->Release(tex->lpDDS4);
+
+		tex->lpDDS4 = lpDDS4;
+		lpDDS4->lpVtbl->QueryInterface(lpDDS4, IID_IDirect3DTexture2, (LPVOID*)&tex->lpD3DT2);
+
+		memset(&ddsd.ddsCaps, 0, sizeof(ddsd.ddsCaps));
+		ddsd.ddsCaps.dwCaps = DDSCAPS_TEXTURE | DDSCAPS_MIPMAP;
+
+		tex->lpDDS4->lpVtbl->GetAttachedSurface(tex->lpDDS4, &ddsd.ddsCaps, &lpDDS42);
+
+		LoadSurface(lpDDS42, internalformat, width, height, newWidth, newHeight, (BYTE*)pixels);
+
+		lpDDS42->lpVtbl->Release(lpDDS42);
+	}
+	else if (gD3D.useMipmap)
+	{
+		tex->lpDDS4->lpVtbl->AddRef(tex->lpDDS4);
+
+		lpDDS4 = tex->lpDDS4;
+		for (i = 0; i < level; i++)
+		{
+			HRESULT hResult;
+
+			memset(&ddsd.ddsCaps, 0, sizeof(ddsd.ddsCaps));
+			ddsd.ddsCaps.dwCaps = DDSCAPS_TEXTURE | DDSCAPS_MIPMAP;
+
+			hResult = lpDDS4->lpVtbl->GetAttachedSurface(lpDDS4, &ddsd.ddsCaps, &lpDDS42);
+			lpDDS4->lpVtbl->Release(lpDDS4);
+			if (hResult == DDERR_NOTFOUND)
+				return;
+
+			lpDDS4 = lpDDS42;
+		}
+
+		LoadSurface(lpDDS4, internalformat, width, height, newWidth, newHeight, (BYTE*)pixels);
+		lpDDS4->lpVtbl->Release(lpDDS4);
+	}
+
+	gD3D.textureValid = FALSE;
 }
 
 DLL_EXPORT void APIENTRY glTexParameterf( GLenum target, GLenum pname, GLfloat param )
 {
-	// TODO: Implement
+	switch (pname)
+	{
+	case GL_TEXTURE_MAG_FILTER:
+		if (param == GL_NEAREST)
+		{
+			gD3D.textures[gD3D.currentTexture[gD3D.textureStage]].magFilter = D3DTFG_POINT;
+		}
+		else
+		{
+			gD3D.textures[gD3D.currentTexture[gD3D.textureStage]].magFilter = D3DTFG_LINEAR;
+		}
+		break;
+	case GL_TEXTURE_MIN_FILTER:
+		switch ((DWORD)param)
+		{
+		case GL_NEAREST:
+			gD3D.textures[gD3D.currentTexture[gD3D.textureStage]].minFilter = D3DTFN_POINT;
+			gD3D.textures[gD3D.currentTexture[gD3D.textureStage]].mipFilter = D3DTFP_NONE;
+			break;
+		case GL_LINEAR:
+			gD3D.textures[gD3D.currentTexture[gD3D.textureStage]].minFilter = D3DTFN_LINEAR;
+			gD3D.textures[gD3D.currentTexture[gD3D.textureStage]].mipFilter = D3DTFP_NONE;
+			break;
+		case GL_NEAREST_MIPMAP_NEAREST:
+			gD3D.textures[gD3D.currentTexture[gD3D.textureStage]].minFilter = D3DTFN_POINT;
+			gD3D.textures[gD3D.currentTexture[gD3D.textureStage]].mipFilter = D3DTFP_POINT;
+			break;
+		case GL_LINEAR_MIPMAP_NEAREST:
+			gD3D.textures[gD3D.currentTexture[gD3D.textureStage]].minFilter = D3DTFN_LINEAR;
+			gD3D.textures[gD3D.currentTexture[gD3D.textureStage]].mipFilter = D3DTFP_POINT;
+			break;
+		case GL_NEAREST_MIPMAP_LINEAR:
+			gD3D.textures[gD3D.currentTexture[gD3D.textureStage]].minFilter = D3DTFN_POINT;
+			gD3D.textures[gD3D.currentTexture[gD3D.textureStage]].mipFilter = D3DTFP_LINEAR;
+			break;
+		case GL_LINEAR_MIPMAP_LINEAR:
+			gD3D.textures[gD3D.currentTexture[gD3D.textureStage]].minFilter = D3DTFN_LINEAR;
+			gD3D.textures[gD3D.currentTexture[gD3D.textureStage]].mipFilter = D3DTFP_LINEAR;
+			break;
+		}
+		break;
+	case GL_TEXTURE_WRAP_S:
+		if (param == GL_CLAMP)
+		{
+			gD3D.textures[gD3D.currentTexture[gD3D.textureStage]].addressU = D3DTADDRESS_CLAMP;
+		}
+		else
+		{
+			gD3D.textures[gD3D.currentTexture[gD3D.textureStage]].addressU = D3DTADDRESS_WRAP;
+		}
+		break;
+	case GL_TEXTURE_WRAP_T:
+		if (param == GL_CLAMP)
+		{
+			gD3D.textures[gD3D.currentTexture[gD3D.textureStage]].addressV = D3DTADDRESS_CLAMP;
+		}
+		else
+		{
+			gD3D.textures[gD3D.currentTexture[gD3D.textureStage]].addressV = D3DTADDRESS_WRAP;
+		}
+		break;
+	}
+
+	gD3D.textureValid = FALSE;
 }
 
 DLL_EXPORT void APIENTRY glTexParameterfv( GLenum target, GLenum pname, const GLfloat* params )
@@ -2115,7 +3919,42 @@ DLL_EXPORT void APIENTRY glTexSubImage1D( GLenum target, GLint level, GLint xoff
 
 DLL_EXPORT void APIENTRY glTexSubImage2D( GLenum target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum format, GLenum type, const GLvoid* pixels )
 {
-	// TODO: Implement
+	int		i;
+	int		xLeft, yTop, xRight, yBottom;
+	DDSCAPS2 ddsc2;
+	RECT	rc;
+	D3D_TEXTURE* tex;
+	LPDIRECTDRAWSURFACE4 lpDDS4, lpDDS42;
+
+	tex = &gD3D.textures[gD3D.currentTexture[gD3D.textureStage]];
+
+	lpDDS4 = tex->lpDDS4;
+	for (i = 0; i < level; i++)
+	{
+		HRESULT hResult;
+
+		memset(&ddsc2, 0, sizeof(ddsc2));
+		ddsc2.dwCaps = DDSCAPS_TEXTURE | DDSCAPS_MIPMAP;
+
+		hResult = lpDDS4->lpVtbl->GetAttachedSurface(lpDDS4, &ddsc2, &lpDDS42);
+		if (hResult == DDERR_NOTFOUND)
+			return;
+
+		lpDDS4 = lpDDS42;
+		lpDDS4->lpVtbl->Release(lpDDS4);
+	}
+
+	xLeft = tex->width * xoffset / tex->oldWidth;
+	yTop = tex->height * yoffset / tex->oldHeight;
+	xRight = xLeft + tex->width * width / tex->oldWidth;
+	yBottom = yTop + tex->height * height / tex->oldHeight;
+	SetRect(&rc, xLeft, yTop, xRight, yBottom);
+
+	if (LoadSubSurface(lpDDS4, tex->internalFormat, width, height, (BYTE*)pixels, &rc) != DD_OK)
+	{
+		OutputDebugString("Wrapper: LoadSubSurface Failure.\n");
+		return;
+	}
 }
 
 DLL_EXPORT void APIENTRY glTranslated( GLdouble x, GLdouble y, GLdouble z )
@@ -2134,10 +3973,10 @@ DLL_EXPORT void APIENTRY glTranslatef( GLfloat x, GLfloat y, GLfloat z )
 
 	// Create translation matrix
 	/*
-		[ 1 0 0 0 ]
-		[ 0 1 0 0 ]
-		[ 0 0 1 0 ]
-		[ x y z 1 ]
+		| 1 0 0 0 |
+		| 0 1 0 0 |
+		| 0 0 1 0 |
+		| x y z 1 |
 	*/
 	matrix._11 = 1.0f;	matrix._12 = 0.0f;	matrix._13 = 0.0f;	matrix._14 = 0.0f;
 	matrix._21 = 0.0f;	matrix._22 = 1.0f;	matrix._23 = 0.0f;	matrix._24 = 0.0f;
@@ -2309,12 +4148,11 @@ DLL_EXPORT void APIENTRY glVertexPointer( GLint size, GLenum type, GLsizei strid
 
 DLL_EXPORT void APIENTRY glViewport( GLint x, GLint y, GLsizei width, GLsizei height )
 {
-	D3DVIEWPORT2	vport2;
+	D3DVIEWPORT2	vport;
 	DWORD	dummy;
 
 	if (gD3D.indexCount)
 	{
-		// Flush any remaining primitives
 		if (gD3D.vertStart != gD3D.vertCount)
 		{
 			gD3D.lpD3DVB->lpVtbl->ProcessVertices(gD3D.lpD3DVB, 5, gD3D.vertStart, gD3D.vertCount - gD3D.vertStart, gD3D.lpD3DVBSrc, gD3D.vertStart, gD3D.lpD3DD3, 0);
@@ -2331,18 +4169,18 @@ DLL_EXPORT void APIENTRY glViewport( GLint x, GLint y, GLsizei width, GLsizei he
 	}
 
 	// Set viewport
-	vport2.dwSize = sizeof(vport2);
-	gD3D.lpD3DVP3->lpVtbl->GetViewport2(gD3D.lpD3DVP3, &vport2);
-	vport2.dwX = x;
-	vport2.dwY = gD3D.wndHeight - height - y;
-	vport2.dwWidth = width;
-	vport2.dwHeight = height;
-	vport2.dvClipX = -1.0;
-	vport2.dvClipY = 1.0;
-	vport2.dvClipWidth = 2.0;
-	vport2.dvClipHeight = 2.0;
+	vport.dwSize = sizeof(vport);
+	gD3D.lpD3DVP3->lpVtbl->GetViewport2(gD3D.lpD3DVP3, &vport);
+	vport.dwX = x;
+	vport.dwY = gD3D.wndHeight - height - y;
+	vport.dwWidth = width;
+	vport.dwHeight = height;
+	vport.dvClipX = -1.0;
+	vport.dvClipY = 1.0;
+	vport.dvClipWidth = 2.0;
+	vport.dvClipHeight = 2.0;
 
-	gD3D.lpD3DVP3->lpVtbl->SetViewport2(gD3D.lpD3DVP3, &vport2);
+	gD3D.lpD3DVP3->lpVtbl->SetViewport2(gD3D.lpD3DVP3, &vport);
 }
 
 DLL_EXPORT void APIENTRY glSelectTextureSGIS( GLenum target )
@@ -2381,24 +4219,27 @@ DLL_EXPORT HGLRC WINAPI wglCreateContext( HDC hdc )
 	LPDIRECTDRAW lpDD;
 	DDSURFACEDESC ddsd;
 	RECT rect;
+	int i;
 
 	gD3D.hDC = hdc;
 	gD3D.hWnd = WindowFromDC(hdc);
 
 	GetClientRect(gD3D.hWnd, &rect);
-
 	gD3D.wndWidth = (USHORT)rect.right;
 	gD3D.wndHeight = (USHORT)rect.bottom;
 
+	// Initialize COM
 	if (FAILED(CoInitialize(NULL)))
 		return NULL;
 
+	// Create DirectDraw object
 	if (FAILED(DirectDrawCreate(NULL, &lpDD, NULL)))
 	{
 		CoUninitialize();
 		return NULL;
 	}
 
+	// Get display mode
 	ddsd.dwSize = sizeof(ddsd);
 	if (FAILED(lpDD->lpVtbl->GetDisplayMode(lpDD, &ddsd)))
 	{
@@ -2409,7 +4250,682 @@ DLL_EXPORT HGLRC WINAPI wglCreateContext( HDC hdc )
 
 	lpDD->lpVtbl->Release(lpDD);
 
-	// TODO: Implement
+	// Create DX Manager
+	if (FAILED(DXMgrCreate(IID_IDXMgr, (LPVOID*)&gD3D.pDXMgr)))
+	{
+		CoUninitialize();
+		return NULL;
+	}
+
+	// Initialize DX Manager
+	if (FAILED(gD3D.pDXMgr->lpVtbl->Initialize2(gD3D.pDXMgr, gD3D.lpDD4, gD3D.hWnd, 0)))
+	{
+		gD3D.pDXMgr->lpVtbl->Release(gD3D.pDXMgr);
+		CoUninitialize();
+		return NULL;
+	}
+
+	// Set DXMgr enable structure
+	DXMGRENABLE enable;
+	memset(&enable, 0, sizeof(enable));
+	enable.uFlags = DXMGRENABLE_3D | DXMGRENABLE_ZBUFFER;
+
+	LONG lResult;	// Registry function result code
+	HKEY hKey;		// Handle of opened/created key
+	DWORD dwType;	// Type of key
+	DWORD dwSize;	// Size of element data
+	DWORD dwData;	// DWORD data
+
+	lResult = RegOpenKey(HKEY_LOCAL_MACHINE, "Software\\Microsoft\\Quake", &hKey);
+	if (lResult == ERROR_SUCCESS)
+	{
+		// We opened the existing key.
+		dwSize = 4;
+		lResult = RegQueryValueEx(hKey, "Emulation", NULL, &dwType, (LPBYTE)&dwData, &dwSize);
+
+		// Success?
+		if (lResult == ERROR_SUCCESS &&
+			dwType == REG_DWORD &&	// Only copy DWORD values
+			dwData
+			)
+		{
+			// Use RGB device
+			enable.iidDeviceType = IID_IDirect3DRGBDevice;
+			enable.uFlags |= DXMGRENABLE_DEVICETYPE;
+		}
+
+		RegCloseKey(hKey);
+	}
+
+	if (gD3D.isFullscreen)
+	{
+		enable.uFlags |= DXMGRENABLE_FULLSCREEN;
+
+		// Create display mode enumerator
+		IEnumDisplayModes* pEnumDisplayModes;
+		if (FAILED(gD3D.pDXMgr->lpVtbl->CreateEnumDisplayModes(gD3D.pDXMgr, &pEnumDisplayModes, 0)))
+		{
+			gD3D.pDXMgr->lpVtbl->Release(gD3D.pDXMgr);
+			CoUninitialize();
+			return NULL;
+		}
+
+		// Find matching display mode
+		while (1)
+		{
+			// Get next display mode
+			if (FAILED(pEnumDisplayModes->lpVtbl->Next(pEnumDisplayModes, 1, &enable.DisplayMode, (UINT*)&dwSize)))
+			{
+				pEnumDisplayModes->lpVtbl->Release(pEnumDisplayModes);
+				gD3D.pDXMgr->lpVtbl->Release(gD3D.pDXMgr);
+				CoUninitialize();
+				return NULL;
+			}
+
+			// No more modes
+			if (dwSize == 0)
+				break;
+
+			// Check for match
+			if (enable.DisplayMode.dwWidth == ddsd.dwWidth &&
+				enable.DisplayMode.dwHeight == ddsd.dwHeight &&
+				enable.DisplayMode.dwBPP == ddsd.ddpfPixelFormat.dwRGBBitCount)
+			{
+				enable.uFlags |= DXMGRENABLE_DISPLAYMODE;
+				break;
+			}
+		}
+
+		pEnumDisplayModes->lpVtbl->Release(pEnumDisplayModes);
+		enable.hwndDevice = NULL;
+	}
+	else
+	{
+		enable.hwndDevice = gD3D.hWnd;
+	}
+
+	enable.fNear = 1.0f;
+	enable.fFar = 10.0f;
+
+	// Enable DXMgr
+	if (FAILED(gD3D.pDXMgr->lpVtbl->Enable(gD3D.pDXMgr, &enable)))
+	{
+		gD3D.pDXMgr->lpVtbl->Release(gD3D.pDXMgr);
+		CoUninitialize();
+		return NULL;
+	}
+
+	// Get D3D device
+	if (FAILED(gD3D.pDXMgr->lpVtbl->GetDirect3DDevice(gD3D.pDXMgr, &gD3D.lpD3DD3)))
+	{
+		gD3D.pDXMgr->lpVtbl->Release(gD3D.pDXMgr);
+		CoUninitialize();
+		return NULL;
+	}
+
+	// Get device capabilities
+	D3DDEVICEDESC heldevdesc, hwdevdesc;
+	heldevdesc.dwSize = sizeof(heldevdesc);
+	hwdevdesc.dwSize = sizeof(hwdevdesc);
+	gD3D.lpD3DD3->lpVtbl->GetCaps(gD3D.lpD3DD3, &hwdevdesc, &heldevdesc);
+	
+	if (hwdevdesc.dwFlags)
+	{
+		gD3D.devdesc = hwdevdesc;
+	}
+	else
+	{
+		gD3D.devdesc = heldevdesc;
+	}
+	
+	lResult = RegOpenKey(HKEY_LOCAL_MACHINE, "Software\\Microsoft\\Quake", &hKey);
+	if (lResult == ERROR_SUCCESS)
+	{
+		// We opened the existing key.
+		dwSize = 4;
+		lResult = RegQueryValueEx(hKey, "DisableMipMap", NULL, &dwType, (LPBYTE)&dwData, &dwSize);
+
+		// Success?
+		if (lResult == ERROR_SUCCESS &&
+			dwType == REG_DWORD &&	// Only copy DWORD values
+			dwData
+			)
+		{
+			gD3D.useMipmap = FALSE;
+			OutputDebugString("Wrapper: Mipmapping disabled\n");
+		}
+		else
+		{
+			gD3D.useMipmap = TRUE;
+		}
+
+		RegCloseKey(hKey);
+	}
+	else
+	{
+		gD3D.useMipmap = TRUE;
+	}
+
+	// Create texture format enumerator
+	IEnumPixelFormats* pEnumPixelFormats;
+	if (FAILED(gD3D.pDXMgr->lpVtbl->CreateEnumTextureFormats(gD3D.pDXMgr, &pEnumPixelFormats, 0)))
+	{
+		gD3D.lpD3DD3->lpVtbl->Release(gD3D.lpD3DD3);
+		gD3D.pDXMgr->lpVtbl->Release(gD3D.pDXMgr);
+		CoUninitialize();
+		return NULL;
+	}
+
+	// Find 16-bit 5551 pixel format
+	BOOL f5551 = FALSE;
+	while (1)
+	{
+		// Get next pixel format
+		if (FAILED(pEnumPixelFormats->lpVtbl->Next(pEnumPixelFormats, 1, &gD3D.ddpf5551, (UINT*)&dwSize)))
+		{
+			pEnumPixelFormats->lpVtbl->Release(pEnumPixelFormats);
+			gD3D.lpD3DD3->lpVtbl->Release(gD3D.lpD3DD3);
+			gD3D.pDXMgr->lpVtbl->Release(gD3D.pDXMgr);
+			CoUninitialize();
+			return NULL;
+		}
+
+		// No more formats
+		if (dwSize == 0)
+			break;
+
+		// Check for 5551 format
+		if ((gD3D.ddpf5551.dwFlags & DDPF_RGB) &&
+			(gD3D.ddpf5551.dwRGBBitCount == 16) &&
+			(gD3D.ddpf5551.dwFlags & DDPF_ALPHAPIXELS) &&
+			(gD3D.ddpf5551.dwRGBAlphaBitMask == 0x8000) &&
+			(gD3D.ddpf5551.dwRBitMask == 0x7C00) &&
+			(gD3D.ddpf5551.dwGBitMask == 0x03E0) &&
+			(gD3D.ddpf5551.dwBBitMask == 0x001F))
+		{
+			f5551 = TRUE;
+			break;
+		}
+	}
+
+	if (!f5551)
+	{
+		OutputDebugString("Wrapper: Unable to find 5551 texture.\n");
+		pEnumPixelFormats->lpVtbl->Release(pEnumPixelFormats);
+		gD3D.lpD3DD3->lpVtbl->Release(gD3D.lpD3DD3);
+		gD3D.pDXMgr->lpVtbl->Release(gD3D.pDXMgr);
+		CoUninitialize();
+		return NULL;
+	}
+
+	// Reset enumerator
+	if (FAILED(pEnumPixelFormats->lpVtbl->Reset(pEnumPixelFormats)))
+	{
+		pEnumPixelFormats->lpVtbl->Release(pEnumPixelFormats);
+		gD3D.lpD3DD3->lpVtbl->Release(gD3D.lpD3DD3);
+		gD3D.pDXMgr->lpVtbl->Release(gD3D.pDXMgr);
+		CoUninitialize();
+		return NULL;
+	}
+
+	// Find 16-bit 4444 pixel format
+	BOOL f4444 = FALSE;
+	while (1)
+	{
+		// Get next pixel format
+		if (FAILED(pEnumPixelFormats->lpVtbl->Next(pEnumPixelFormats, 1, &gD3D.ddpf4444, (UINT*)&dwSize)))
+		{
+			pEnumPixelFormats->lpVtbl->Release(pEnumPixelFormats);
+			gD3D.lpD3DD3->lpVtbl->Release(gD3D.lpD3DD3);
+			gD3D.pDXMgr->lpVtbl->Release(gD3D.pDXMgr);
+			CoUninitialize();
+			return NULL;
+		}
+
+		// No more formats
+		if (dwSize == 0)
+			break;
+
+		// Check for 4444 format
+		if ((gD3D.ddpf4444.dwFlags & DDPF_RGB) &&
+			(gD3D.ddpf4444.dwRGBBitCount == 16) &&
+			(gD3D.ddpf4444.dwFlags & DDPF_ALPHAPIXELS) &&
+			(gD3D.ddpf4444.dwRGBAlphaBitMask == 0xF000) &&
+			(gD3D.ddpf4444.dwRBitMask == 0x0F00) &&
+			(gD3D.ddpf4444.dwGBitMask == 0x00F0) &&
+			(gD3D.ddpf4444.dwBBitMask == 0x000F))
+		{
+			f4444 = TRUE;
+			break;
+		}
+	}
+
+	if (!f4444)
+	{
+		OutputDebugString("Wrapper: Not using 4444 texture.\n");
+		gD3D.ddpf4444 = gD3D.ddpf5551;
+	}
+
+	// Reset enumerator
+	if (FAILED(pEnumPixelFormats->lpVtbl->Reset(pEnumPixelFormats)))
+	{
+		pEnumPixelFormats->lpVtbl->Release(pEnumPixelFormats);
+		gD3D.lpD3DD3->lpVtbl->Release(gD3D.lpD3DD3);
+		gD3D.pDXMgr->lpVtbl->Release(gD3D.pDXMgr);
+		CoUninitialize();
+		return NULL;
+	}
+
+	// Find 16-bit 555/565 pixel format
+	BOOL f555_565 = FALSE;
+	while (1)
+	{
+		// Get next pixel format
+		if (FAILED(pEnumPixelFormats->lpVtbl->Next(pEnumPixelFormats, 1, &gD3D.ddpf555_565, (UINT*)&dwSize)))
+		{
+			pEnumPixelFormats->lpVtbl->Release(pEnumPixelFormats);
+			gD3D.lpD3DD3->lpVtbl->Release(gD3D.lpD3DD3);
+			gD3D.pDXMgr->lpVtbl->Release(gD3D.pDXMgr);
+			CoUninitialize();
+			return NULL;
+		}
+
+		// No more formats
+		if (dwSize == 0)
+			break;
+
+		// Check for 555/565 format
+		if ((gD3D.ddpf555_565.dwFlags & DDPF_RGB) &&
+			(gD3D.ddpf555_565.dwRGBBitCount == 16) &&
+			(gD3D.ddpf555_565.dwFlags & DDPF_ALPHAPIXELS) == 0 &&
+			(gD3D.ddpf555_565.dwRBitMask == 0xF800 || gD3D.ddpf555_565.dwRBitMask == 0x7C00) &&
+			(gD3D.ddpf555_565.dwGBitMask == 0x07E0 || gD3D.ddpf555_565.dwGBitMask == 0x03E0) &&
+			(gD3D.ddpf555_565.dwBBitMask == 0x001F))
+		{
+			f555_565 = TRUE;
+			break;
+		}
+	}
+
+	if (!f555_565)
+	{
+		OutputDebugString("Wrapper: Unable to find 555 or 565 texture.\n");
+		pEnumPixelFormats->lpVtbl->Release(pEnumPixelFormats);
+		gD3D.lpD3DD3->lpVtbl->Release(gD3D.lpD3DD3);
+		gD3D.pDXMgr->lpVtbl->Release(gD3D.pDXMgr);
+		CoUninitialize();
+		return NULL;
+	}
+
+	// Reset enumerator
+	if (FAILED(pEnumPixelFormats->lpVtbl->Reset(pEnumPixelFormats)))
+	{
+		pEnumPixelFormats->lpVtbl->Release(pEnumPixelFormats);
+		gD3D.lpD3DD3->lpVtbl->Release(gD3D.lpD3DD3);
+		gD3D.pDXMgr->lpVtbl->Release(gD3D.pDXMgr);
+		CoUninitialize();
+		return NULL;
+	}
+
+	// Find 32-bit 8888 pixel format
+	BOOL f8888 = FALSE;
+	while (1)
+	{
+		// Get next pixel format
+		if (FAILED(pEnumPixelFormats->lpVtbl->Next(pEnumPixelFormats, 1, &gD3D.ddpf8888, (UINT*)&dwSize)))
+		{
+			pEnumPixelFormats->lpVtbl->Release(pEnumPixelFormats);
+			gD3D.lpD3DD3->lpVtbl->Release(gD3D.lpD3DD3);
+			gD3D.pDXMgr->lpVtbl->Release(gD3D.pDXMgr);
+			CoUninitialize();
+			return NULL;
+		}
+
+		// No more formats
+		if (dwSize == 0)
+			break;
+
+		// Check for 8888 format
+		if ((gD3D.ddpf8888.dwFlags & DDPF_LUMINANCE) &&
+			(gD3D.ddpf8888.dwRGBBitCount == 8) &&
+			(gD3D.ddpf8888.dwRBitMask == 0xFF))
+		{
+			f8888 = TRUE;
+			break;
+		}
+	}
+
+	if (!f8888)
+	{
+		OutputDebugString("Wrapper: Not using luminance texture\n");
+		gD3D.ddpf8888 = gD3D.ddpf555_565;
+	}
+
+	// We're done with the enumerator
+	pEnumPixelFormats->lpVtbl->Release(pEnumPixelFormats);
+
+	if (gD3D.devdesc.dwMaxTextureWidth < 512 || gD3D.devdesc.dwMaxTextureHeight < 512)
+	{
+		gD3D.useSubsample = TRUE;
+		OutputDebugString("Wrapper: Subsampling textures to 256 x 256\n");
+	}
+	else
+	{
+		gD3D.useSubsample = FALSE;
+	}
+
+	if (gD3D.devdesc.dpcTriCaps.dwTextureCaps & D3DPTEXTURECAPS_SQUAREONLY)
+	{
+		gD3D.squareTexturesOnly = TRUE;
+		OutputDebugString("Wrapper: Forcing all textures to be square\n");
+	}
+	else
+	{
+		gD3D.squareTexturesOnly = FALSE;
+	}
+
+	if (gD3D.devdesc.wMaxSimultaneousTextures > 1)
+	{
+		gD3D.useMultitexture = TRUE;
+		OutputDebugString("Wrapper: Multitexturing enabled\n");
+	}
+	else
+	{
+		gD3D.useMultitexture = FALSE;
+		OutputDebugString("Wrapper: Multitexturing not available with this driver\n");
+	}
+
+	if (!(gD3D.devdesc.dpcTriCaps.dwTextureFilterCaps & (D3DPTFILTERCAPS_MIPNEAREST | D3DPTFILTERCAPS_MIPLINEAR | D3DPTFILTERCAPS_LINEARMIPNEAREST | D3DPTFILTERCAPS_LINEARMIPLINEAR)))
+	{
+		gD3D.useMipmap = FALSE;
+		OutputDebugString("Wrapper: Mipmapping disabled\n");
+	}
+
+	lResult = RegOpenKey(HKEY_LOCAL_MACHINE, "Software\\Microsoft\\Quake", &hKey);
+	if (lResult == ERROR_SUCCESS)
+	{
+		// We opened the existing key.
+		dwSize = 4;
+		lResult = RegQueryValueEx(hKey, "DoFlip", NULL, &dwType, (LPBYTE)&dwData, &dwSize);
+
+		// Success?
+		if (lResult == ERROR_SUCCESS &&
+			dwType == 4 &&	// Only copy DWORD values
+			dwData
+			)
+		{
+			gD3D.doFlip = TRUE;
+		}
+		else
+		{
+			gD3D.doFlip = FALSE;
+		}
+
+		RegCloseKey(hKey);
+	}
+	else
+	{
+		gD3D.doFlip = FALSE;
+	}
+
+	// Get D3D interface
+	LPDIRECT3D3 lpD3D3;
+	if (FAILED(gD3D.pDXMgr->lpVtbl->GetDirect3D(gD3D.pDXMgr, &lpD3D3)))
+	{
+		gD3D.lpD3DD3->lpVtbl->Release(gD3D.lpD3DD3);
+		gD3D.pDXMgr->lpVtbl->Release(gD3D.pDXMgr);
+		CoUninitialize();
+		return NULL;
+	}
+
+	D3DVERTEXBUFFERDESC vbdesc;
+	vbdesc.dwSize = sizeof(vbdesc);
+
+	if (hwdevdesc.dwFlags)
+	{
+		vbdesc.dwCaps = D3DVBCAPS_WRITEONLY;
+	}
+	else
+	{
+		vbdesc.dwCaps = D3DVBCAPS_SYSTEMMEMORY;
+	}
+
+	vbdesc.dwFVF = D3DFVF_XYZ | D3DFVF_DIFFUSE | D3DFVF_TEX2;
+	vbdesc.dwNumVertices = D3D_MAX_VERTICES;
+
+	// Create source vertex buffer
+	if (FAILED(lpD3D3->lpVtbl->CreateVertexBuffer(lpD3D3, &vbdesc, &gD3D.lpD3DVBSrc, 0L, NULL)))
+	{
+		gD3D.lpD3DD3->lpVtbl->Release(gD3D.lpD3DD3);
+		gD3D.pDXMgr->lpVtbl->Release(gD3D.pDXMgr);
+		CoUninitialize();
+		return NULL;
+	}
+
+	DWORD dummy;
+	gD3D.lpD3DVBSrc->lpVtbl->Lock(gD3D.lpD3DVBSrc, DDLOCK_NOSYSLOCK | DDLOCK_SURFACEMEMORYPTR | DDLOCK_WAIT | DDLOCK_WRITEONLY, (LPVOID*)&gD3D.verts, &dummy);
+
+	if (gD3D.useMultitexture)
+	{
+		vbdesc.dwFVF = D3DFVF_XYZRHW | D3DFVF_DIFFUSE | D3DFVF_TEX2;
+	}
+	else
+	{
+		vbdesc.dwFVF = D3DFVF_XYZRHW | D3DFVF_DIFFUSE | D3DFVF_SPECULAR | D3DFVF_TEX1;
+	}
+
+	// Create rendering vertex buffer
+	if (FAILED(lpD3D3->lpVtbl->CreateVertexBuffer(lpD3D3, &vbdesc, &gD3D.lpD3DVB, 0L, NULL)))
+	{
+		gD3D.lpD3DD3->lpVtbl->Release(gD3D.lpD3DD3);
+		gD3D.pDXMgr->lpVtbl->Release(gD3D.pDXMgr);
+		CoUninitialize();
+		return NULL;
+	}
+
+	lpD3D3->lpVtbl->Release(lpD3D3);
+
+	gD3D.cullFaceMode = GL_BACK;
+	gD3D.cullEnabled = FALSE;
+	gD3D.textureValid = FALSE;
+	gD3D.stage0Active = FALSE;
+	gD3D.useSubStage = FALSE;
+	gD3D.bLoad4444 = FALSE;
+	gD3D.texEnvMode[0] = GL_MODULATE;
+	gD3D.texEnvMode[1] = GL_MODULATE;
+	gD3D.vertCount = 0;
+	gD3D.vertStart = 0;
+	gD3D.indexCount = 0;
+	gD3D.textureStage = 0;
+
+	for (i = 0; i < D3D_MAX_TEXTURES; i++)
+	{
+		gD3D.textures[i].lpDDS4 = NULL;
+		gD3D.textures[i].minFilter = D3DTFN_POINT;
+		gD3D.textures[i].magFilter = D3DTFG_LINEAR;
+		gD3D.textures[i].mipFilter = D3DTFP_LINEAR;
+		gD3D.textures[i].addressU = D3DTADDRESS_WRAP;
+		gD3D.textures[i].addressV = D3DTADDRESS_WRAP;
+		gD3D.textures[i].lpD3DT2 = NULL;
+	}
+
+	// Create identity matrix
+	/*
+		| 1 0 0 0 |
+		| 0 1 0 0 |
+		| 0 0 1 0 |
+		| 0 0 0 1 |
+	*/
+	D3DMATRIX matrix;
+	matrix._11 = 1.0f;	matrix._12 = 0.0f;	matrix._13 = 0.0f;	matrix._14 = 0.0f;
+	matrix._21 = 0.0f;	matrix._22 = 1.0f;	matrix._23 = 0.0f;	matrix._24 = 0.0f;
+	matrix._31 = 0.0f;	matrix._32 = 0.0f;	matrix._33 = 1.0f;	matrix._34 = 0.0f;
+	matrix._41 = 0.0f;	matrix._42 = 0.0f;	matrix._43 = 0.0f;	matrix._44 = 1.0f;
+
+	gD3D.lpD3DD3->lpVtbl->SetTransform(gD3D.lpD3DD3, D3DTRANSFORMSTATE_VIEW, &matrix);
+	gD3D.lpD3DD3->lpVtbl->SetTransform(gD3D.lpD3DD3, D3DTRANSFORMSTATE_WORLD, &matrix);
+	gD3D.lpD3DD3->lpVtbl->SetTransform(gD3D.lpD3DD3, D3DTRANSFORMSTATE_PROJECTION, &matrix);
+
+	for (i = 1; i < D3D_MAX_RSTATES; i++)
+	{
+		gD3D.lpD3DD3->lpVtbl->GetRenderState(gD3D.lpD3DD3, (D3DRENDERSTATETYPE)i, &gD3D.rStates[i]);
+	}
+
+	for (i = 1; i < D3D_MAX_TSSTAGES; i++)
+	{
+		gD3D.lpD3DD3->lpVtbl->GetTextureStageState(gD3D.lpD3DD3, 0, (D3DTEXTURESTAGESTATETYPE)i, &gD3D.tsStates0[i]);
+	}
+
+	if (gD3D.useMultitexture)
+	{
+		for (i = 1; i < D3D_MAX_TSSTAGES; i++)
+		{
+			gD3D.lpD3DD3->lpVtbl->GetTextureStageState(gD3D.lpD3DD3, 1, (D3DTEXTURESTAGESTATETYPE)i, &gD3D.tsStates1[i]);
+		}
+	}
+
+	gD3D.lpD3DT2 = NULL;
+	gD3D.lpD3DT2SubStage = NULL;
+
+	if (gD3D.rStates[D3DRENDERSTATE_TEXTUREPERSPECTIVE] != TRUE)
+	{
+		if (gD3D.indexCount)
+		{
+			if (gD3D.vertStart != gD3D.vertCount)
+			{
+				gD3D.lpD3DVB->lpVtbl->ProcessVertices(gD3D.lpD3DVB, 5, gD3D.vertStart, gD3D.vertCount - gD3D.vertStart, gD3D.lpD3DVBSrc, gD3D.vertStart, gD3D.lpD3DD3, 0);
+				gD3D.vertStart = gD3D.vertCount;
+			}
+
+			gD3D.lpD3DVBSrc->lpVtbl->Unlock(gD3D.lpD3DVBSrc);
+			gD3D.lpD3DD3->lpVtbl->DrawIndexedPrimitiveVB(gD3D.lpD3DD3, D3DPT_TRIANGLELIST, gD3D.lpD3DVB, gD3D.indexBuffer, gD3D.indexCount, 8);
+			gD3D.lpD3DVBSrc->lpVtbl->Lock(gD3D.lpD3DVBSrc, DDLOCK_NOSYSLOCK | DDLOCK_SURFACEMEMORYPTR | DDLOCK_WAIT | DDLOCK_WRITEONLY, (LPVOID*)&gD3D.verts, &dwSize);
+
+			gD3D.vertStart = 0;
+			gD3D.vertCount = 0;
+			gD3D.indexCount = 0;
+		}
+
+		gD3D.rStates[D3DRENDERSTATE_TEXTUREPERSPECTIVE] = TRUE;
+		gD3D.lpD3DD3->lpVtbl->SetRenderState(gD3D.lpD3DD3, D3DRENDERSTATE_TEXTUREPERSPECTIVE, TRUE);
+	}
+
+	if (gD3D.rStates[D3DRENDERSTATE_SPECULARENABLE] != FALSE)
+	{
+		if (gD3D.indexCount)
+		{
+			if (gD3D.vertStart != gD3D.vertCount)
+			{
+				gD3D.lpD3DVB->lpVtbl->ProcessVertices(gD3D.lpD3DVB, 5, gD3D.vertStart, gD3D.vertCount - gD3D.vertStart, gD3D.lpD3DVBSrc, gD3D.vertStart, gD3D.lpD3DD3, 0);
+				gD3D.vertStart = gD3D.vertCount;
+			}
+
+			gD3D.lpD3DVBSrc->lpVtbl->Unlock(gD3D.lpD3DVBSrc);
+			gD3D.lpD3DD3->lpVtbl->DrawIndexedPrimitiveVB(gD3D.lpD3DD3, D3DPT_TRIANGLELIST, gD3D.lpD3DVB, gD3D.indexBuffer, gD3D.indexCount, 8);
+			gD3D.lpD3DVBSrc->lpVtbl->Lock(gD3D.lpD3DVBSrc, DDLOCK_NOSYSLOCK | DDLOCK_SURFACEMEMORYPTR | DDLOCK_WAIT | DDLOCK_WRITEONLY, (LPVOID*)&gD3D.verts, &dwSize);
+
+			gD3D.vertStart = 0;
+			gD3D.vertCount = 0;
+			gD3D.indexCount = 0;
+		}
+
+		gD3D.rStates[D3DRENDERSTATE_SPECULARENABLE] = FALSE;
+		gD3D.lpD3DD3->lpVtbl->SetRenderState(gD3D.lpD3DD3, D3DRENDERSTATE_SPECULARENABLE, FALSE);
+	}
+
+	if (gD3D.rStates[D3DRENDERSTATE_DITHERENABLE] != TRUE)
+	{
+		if (gD3D.indexCount)
+		{
+			if (gD3D.vertStart != gD3D.vertCount)
+			{
+				gD3D.lpD3DVB->lpVtbl->ProcessVertices(gD3D.lpD3DVB, 5, gD3D.vertStart, gD3D.vertCount - gD3D.vertStart, gD3D.lpD3DVBSrc, gD3D.vertStart, gD3D.lpD3DD3, 0);
+				gD3D.vertStart = gD3D.vertCount;
+			}
+
+			gD3D.lpD3DVBSrc->lpVtbl->Unlock(gD3D.lpD3DVBSrc);
+			gD3D.lpD3DD3->lpVtbl->DrawIndexedPrimitiveVB(gD3D.lpD3DD3, D3DPT_TRIANGLELIST, gD3D.lpD3DVB, gD3D.indexBuffer, gD3D.indexCount, 8);
+			gD3D.lpD3DVBSrc->lpVtbl->Lock(gD3D.lpD3DVBSrc, DDLOCK_NOSYSLOCK | DDLOCK_SURFACEMEMORYPTR | DDLOCK_WAIT | DDLOCK_WRITEONLY, (LPVOID*)&gD3D.verts, &dwSize);
+
+			gD3D.vertStart = 0;
+			gD3D.vertCount = 0;
+			gD3D.indexCount = 0;
+		}
+
+		gD3D.rStates[D3DRENDERSTATE_DITHERENABLE] = TRUE;
+		gD3D.lpD3DD3->lpVtbl->SetRenderState(gD3D.lpD3DD3, D3DRENDERSTATE_DITHERENABLE, TRUE);
+	}
+
+	if (gD3D.tsStates0[D3DTSS_TEXCOORDINDEX] != 0)
+	{
+		if (gD3D.indexCount)
+		{
+			if (gD3D.vertStart != gD3D.vertCount)
+			{
+				gD3D.lpD3DVB->lpVtbl->ProcessVertices(gD3D.lpD3DVB, 5, gD3D.vertStart, gD3D.vertCount - gD3D.vertStart, gD3D.lpD3DVBSrc, gD3D.vertStart, gD3D.lpD3DD3, 0);
+				gD3D.vertStart = gD3D.vertCount;
+			}
+
+			gD3D.lpD3DVBSrc->lpVtbl->Unlock(gD3D.lpD3DVBSrc);
+			gD3D.lpD3DD3->lpVtbl->DrawIndexedPrimitiveVB(gD3D.lpD3DD3, D3DPT_TRIANGLELIST, gD3D.lpD3DVB, gD3D.indexBuffer, gD3D.indexCount, 8);
+			gD3D.lpD3DVBSrc->lpVtbl->Lock(gD3D.lpD3DVBSrc, DDLOCK_NOSYSLOCK | DDLOCK_SURFACEMEMORYPTR | DDLOCK_WAIT | DDLOCK_WRITEONLY, (LPVOID*)&gD3D.verts, &dwSize);
+
+			gD3D.vertStart = 0;
+			gD3D.vertCount = 0;
+			gD3D.indexCount = 0;
+		}
+
+		gD3D.tsStates0[D3DTSS_TEXCOORDINDEX] = 0;
+		gD3D.lpD3DD3->lpVtbl->SetTextureStageState(gD3D.lpD3DD3, 0, D3DTSS_TEXCOORDINDEX, 0);
+	}
+
+	if (gD3D.useMultitexture == TRUE)
+	{
+		if (gD3D.tsStates1[D3DTSS_TEXCOORDINDEX] != 1)
+		{
+			if (gD3D.indexCount)
+			{
+				if (gD3D.vertStart != gD3D.vertCount)
+				{
+					gD3D.lpD3DVB->lpVtbl->ProcessVertices(gD3D.lpD3DVB, 5, gD3D.vertStart, gD3D.vertCount - gD3D.vertStart, gD3D.lpD3DVBSrc, gD3D.vertStart, gD3D.lpD3DD3, 0);
+					gD3D.vertStart = gD3D.vertCount;
+				}
+
+				gD3D.lpD3DVBSrc->lpVtbl->Unlock(gD3D.lpD3DVBSrc);
+				gD3D.lpD3DD3->lpVtbl->DrawIndexedPrimitiveVB(gD3D.lpD3DD3, D3DPT_TRIANGLELIST, gD3D.lpD3DVB, gD3D.indexBuffer, gD3D.indexCount, 8);
+				gD3D.lpD3DVBSrc->lpVtbl->Lock(gD3D.lpD3DVBSrc, DDLOCK_NOSYSLOCK | DDLOCK_SURFACEMEMORYPTR | DDLOCK_WAIT | DDLOCK_WRITEONLY, (LPVOID*)&gD3D.verts, &dwSize);
+
+				gD3D.vertStart = 0;
+				gD3D.vertCount = 0;
+				gD3D.indexCount = 0;
+			}
+
+			gD3D.tsStates1[D3DTSS_TEXCOORDINDEX] = 1;
+			gD3D.lpD3DD3->lpVtbl->SetTextureStageState(gD3D.lpD3DD3, 1, D3DTSS_TEXCOORDINDEX, 1);
+		}
+	}
+
+	// Get DirectDraw interface
+	if (FAILED(gD3D.pDXMgr->lpVtbl->GetDirectDraw(gD3D.pDXMgr, &gD3D.lpDD4)))
+	{
+		gD3D.lpD3DD3->lpVtbl->Release(gD3D.lpD3DD3);
+		gD3D.pDXMgr->lpVtbl->Release(gD3D.pDXMgr);
+		CoUninitialize();
+		return NULL;
+	}
+
+	// Get current viewport
+	if (FAILED(gD3D.lpD3DD3->lpVtbl->GetCurrentViewport(gD3D.lpD3DD3, &gD3D.lpD3DVP3)))
+	{
+		gD3D.lpD3DD3->lpVtbl->Release(gD3D.lpD3DD3);
+		gD3D.lpDD4->lpVtbl->Release(gD3D.lpDD4);
+		gD3D.pDXMgr->lpVtbl->Release(gD3D.pDXMgr);
+		CoUninitialize();
+		return NULL;
+	}
+
+	// Tell D3D we're ready to start rendering
+	gD3D.lpD3DD3->lpVtbl->BeginScene(gD3D.lpD3DD3);
 
 	return (HGLRC)1;
 }
@@ -2421,7 +4937,24 @@ DLL_EXPORT HGLRC WINAPI wglCreateLayerContext( HDC hdc, int iLayerPlan )
 
 DLL_EXPORT BOOL WINAPI wglDeleteContext( HGLRC hglrc )
 {
-	// TODO: Implement
+	gD3D.lpD3DD3->lpVtbl->EndScene(gD3D.lpD3DD3);
+
+	for (int i = 0; i < D3D_MAX_TEXTURES; i++)
+	{
+		D3D_TEXTURE* tex = &gD3D.textures[i];
+
+		if (tex->lpD3DT2)
+		{
+			tex->lpD3DT2->lpVtbl->Release(tex->lpD3DT2);
+			tex->lpD3DT2 = NULL;
+		}
+
+		if (tex->lpDDS4)
+		{
+			tex->lpDDS4->lpVtbl->Release(tex->lpDDS4);
+			tex->lpDDS4 = NULL;
+		}
+	}
 	
 	gD3D.lpD3DVP3->lpVtbl->Release(gD3D.lpD3DVP3);
 	gD3D.lpD3DVP3 = NULL;
@@ -2439,8 +4972,8 @@ DLL_EXPORT BOOL WINAPI wglDeleteContext( HGLRC hglrc )
 	gD3D.lpDD4->lpVtbl->Release(gD3D.lpDD4);
 	gD3D.lpDD4 = NULL;
 
-	// TODO: Implement
-	gD3D.pDirectDrawMgr = NULL;
+	gD3D.pDXMgr->lpVtbl->Release(gD3D.pDXMgr);
+	gD3D.pDXMgr = NULL;
 
 	CoUninitialize();
 
@@ -2580,7 +5113,6 @@ DLL_EXPORT BOOL APIENTRY wglSwapBuffers( HDC hdc )
 
 	if (gD3D.indexCount)
 	{
-		// Flush any remaining primitives
 		if (gD3D.vertStart != gD3D.vertCount)
 		{
 			gD3D.lpD3DVB->lpVtbl->ProcessVertices(gD3D.lpD3DVB, 5, gD3D.vertStart, gD3D.vertCount - gD3D.vertStart, gD3D.lpD3DVBSrc, gD3D.vertStart, gD3D.lpD3DD3, 0);
@@ -2597,7 +5129,7 @@ DLL_EXPORT BOOL APIENTRY wglSwapBuffers( HDC hdc )
 	}
 
 	gD3D.lpD3DD3->lpVtbl->EndScene(gD3D.lpD3DD3);
-	// gD3D.pDirectDrawMgr->Frame(gD3D.pDirectDrawMgr, gD3D.doFlip ? 0 : 2, 0); TODO: Implement
+	gD3D.pDXMgr->lpVtbl->Update(gD3D.pDXMgr, gD3D.doFlip ? 0 : DXMGRUPDATE_FORCEBLT, NULL);
 	gD3D.lpD3DD3->lpVtbl->BeginScene(gD3D.lpD3DD3);
 
 	return TRUE;
