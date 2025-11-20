@@ -37,8 +37,8 @@ NULL=nul
 ################################################################################
 # Begin Project
 # PROP Target_Last_Scanned "Quiver - Win32 Debug"
-MTL=mktyplib.exe
 RSC=rc.exe
+MTL=mktyplib.exe
 CPP=cl.exe
 
 !IF  "$(CFG)" == "Quiver - Win32 Release"
@@ -711,14 +711,14 @@ BSC32_SBRS= \
 	
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib winmm.lib ws2_32.lib /nologo /subsystem:windows /dll /debug /machine:I386 /out:"GLDebug/hw.dll"
-# ADD LINK32 ddraw.lib dxguid.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib winmm.lib ws2_32.lib /nologo /subsystem:windows /dll /debug /machine:I386 /out:"GLDebug/hw.dll" /libpath:"..\dx6sdk\lib"
+# ADD LINK32 ddraw.lib dxguid.lib ../dx6sdk/lib/dxmgr.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib winmm.lib ws2_32.lib /nologo /subsystem:windows /dll /debug /machine:I386 /nodefaultlib:"MSVCRT" /out:"GLDebug/hw.dll" /libpath:"..\dx6sdk\lib"
 # SUBTRACT LINK32 /pdb:none
-LINK32_FLAGS=ddraw.lib dxguid.lib kernel32.lib user32.lib gdi32.lib\
- winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib\
- uuid.lib odbc32.lib odbccp32.lib winmm.lib ws2_32.lib /nologo\
- /subsystem:windows /dll /incremental:yes /pdb:"$(OUTDIR)/hw.pdb" /debug\
- /machine:I386 /out:"$(OUTDIR)/hw.dll" /implib:"$(OUTDIR)/hw.lib"\
- /libpath:"..\dx6sdk\lib" 
+LINK32_FLAGS=ddraw.lib dxguid.lib ../dx6sdk/lib/dxmgr.lib kernel32.lib\
+ user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib\
+ ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib winmm.lib ws2_32.lib\
+ /nologo /subsystem:windows /dll /incremental:yes /pdb:"$(OUTDIR)/hw.pdb" /debug\
+ /machine:I386 /nodefaultlib:"MSVCRT" /out:"$(OUTDIR)/hw.dll"\
+ /implib:"$(OUTDIR)/hw.lib" /libpath:"..\dx6sdk\lib" 
 LINK32_OBJS= \
 	"$(INTDIR)\a3dwrapper.obj" \
 	"$(INTDIR)\buildnum.obj" \
@@ -928,13 +928,14 @@ BSC32_SBRS= \
 	
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib winmm.lib ws2_32.lib /nologo /subsystem:windows /dll /machine:I386 /out:"GLRelease/hw.dll"
-# ADD LINK32 ddraw.lib dxguid.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib winmm.lib ws2_32.lib /nologo /subsystem:windows /dll /machine:I386 /out:"GLRelease/hw.dll" /libpath:"..\dx6sdk\lib"
+# ADD LINK32 ddraw.lib dxguid.lib ../dx6sdk/lib/dxmgr.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib winmm.lib ws2_32.lib /nologo /subsystem:windows /dll /machine:I386 /nodefaultlib:"MSVCRT" /out:"GLRelease/hw.dll" /libpath:"..\dx6sdk\lib"
 # SUBTRACT LINK32 /pdb:none
-LINK32_FLAGS=ddraw.lib dxguid.lib kernel32.lib user32.lib gdi32.lib\
- winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib\
- uuid.lib odbc32.lib odbccp32.lib winmm.lib ws2_32.lib /nologo\
- /subsystem:windows /dll /incremental:no /pdb:"$(OUTDIR)/hw.pdb" /machine:I386\
- /out:"$(OUTDIR)/hw.dll" /implib:"$(OUTDIR)/hw.lib" /libpath:"..\dx6sdk\lib" 
+LINK32_FLAGS=ddraw.lib dxguid.lib ../dx6sdk/lib/dxmgr.lib kernel32.lib\
+ user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib\
+ ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib winmm.lib ws2_32.lib\
+ /nologo /subsystem:windows /dll /incremental:no /pdb:"$(OUTDIR)/hw.pdb"\
+ /machine:I386 /nodefaultlib:"MSVCRT" /out:"$(OUTDIR)/hw.dll"\
+ /implib:"$(OUTDIR)/hw.lib" /libpath:"..\dx6sdk\lib" 
 LINK32_OBJS= \
 	"$(INTDIR)\a3dwrapper.obj" \
 	"$(INTDIR)\buildnum.obj" \
@@ -7554,13 +7555,18 @@ NODEP_CPP_NONIN=\
 
 SOURCE=.\opengl32.cpp
 DEP_CPP_OPENG=\
-	"..\common\../dx6sdk/include/d3d.h"\
 	"..\common\../dx6sdk/include/ddraw.h"\
+	"..\common\../dx6sdk/include/dxmgr.h"\
 	"..\common\d3d_structs.h"\
+	"..\dx6sdk\include\d3d.h"\
 	"..\dx6sdk\include\d3dcaps.h"\
 	"..\dx6sdk\include\d3dtypes.h"\
 	"..\dx6sdk\include\d3dvec.inl"\
 	".\opengl32.h"\
+	{$(INCLUDE)}"\ocidl.h"\
+	
+NODEP_CPP_OPENG=\
+	"..\dx6sdk\include\dxmgr_i.c"\
 	
 
 !IF  "$(CFG)" == "Quiver - Win32 Release"

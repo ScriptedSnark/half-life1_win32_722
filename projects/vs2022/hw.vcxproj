@@ -258,6 +258,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
       <AdditionalDependencies>winmm.lib;ws2_32.lib;..\..\engine\a3d\verifya3d.lib;..\..\engine\a3d\a3dwrapper.lib;..\..\dx6sdk\lib\ddraw.lib;..\..\dx6sdk\lib\dxmgr.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalOptions>/NODEFAULTLIB:LIBCMTD /NODEFAULTLIB:MSVCRT %(AdditionalOptions)</AdditionalOptions>
     </Link>
     <PostBuildEvent>
       <Command>IF EXIST "$(ProjectDir)..\..\PostBuild.bat" (CALL "$(ProjectDir)..\..\PostBuild.bat" engine "$(OutDir)" "$(TargetName)$(TargetExt)")</Command>
@@ -280,6 +281,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
       <AdditionalDependencies>winmm.lib;ws2_32.lib;..\..\engine\a3d\verifya3d.lib;..\..\engine\a3d\a3dwrapper.lib;..\..\dx6sdk\lib\ddraw.lib;..\..\dx6sdk\lib\dxmgr.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalOptions>/NODEFAULTLIB:LIBCMTD /NODEFAULTLIB:MSVCRT %(AdditionalOptions)</AdditionalOptions>
     </Link>
     <PostBuildEvent>
       <Command>IF EXIST "$(ProjectDir)..\..\PostBuild.bat" (CALL "$(ProjectDir)..\..\PostBuild.bat" engine "$(OutDir)" "$(TargetName)$(TargetExt)")</Command>
@@ -305,6 +307,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
       <AdditionalDependencies>winmm.lib;ws2_32.lib;..\..\engine\a3d\verifya3d.lib;..\..\engine\a3d\a3dwrapper.lib;..\..\dx6sdk\lib\ddraw.lib;..\..\dx6sdk\lib\dxmgr.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalOptions>/NODEFAULTLIB:LIBCMTD /NODEFAULTLIB:MSVCRT %(AdditionalOptions)</AdditionalOptions>
     </Link>
     <PostBuildEvent>
       <Command>IF EXIST "$(ProjectDir)..\..\PostBuild.bat" (CALL "$(ProjectDir)..\..\PostBuild.bat" engine "$(OutDir)" "$(TargetName)$(TargetExt)")</Command>
