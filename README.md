@@ -6,6 +6,18 @@ The build was published in October 2024 by playtester [Chad Jessup](https://x.co
 
 <img alt="NETTEST1_VS2022" src="media/nettest1_vs2022.png" />
 
+This repository contains:
+- Restored source code of HL SDK in Net Test 1 era
+	- [x] client.dll
+	- [x] hl.dll
+- Restored source code of the engine (no A3D impl.)
+	- [x] sw.dll
+	- [x] hw.dll (with Direct3D support)
+- Restored source code of the localization module
+	- [x] hl_res.dll
+- Reimplemented lightweight source code of the launcher without MFC/SW code
+	- [x] hl.exe (see [`linux`](github.com/ScriptedSnark/half-life1_win32_722/tree/linux) branch)
+
 ---
 
 ## Getting started
@@ -48,6 +60,8 @@ Now press `Build`  -> `Build X.dll` (or press `Shift+F8` hotkey).
 ## Required files for playing
 You will need the original data files from Half-Life 1 Net Test 1.
 They are publicly available online and can be found on archival sources such as the Internet Archive.
+
+**For the best NT1 experience, you can also use WON dlls/hl_res/launcher from the [build 738](https://www.betaarchive.com/wiki/index.php/Half-Life/build_738) or later to avoid some window bugs.**
 
 ## People involved in development of the project
 - [\*(int\*)0 = 0xDEADBEEF](https://github.com/KV-Stepchenko)
