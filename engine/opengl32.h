@@ -1842,6 +1842,7 @@ extern	void ( APIENTRY * dllViewport )( GLint x, GLint y, GLsizei width, GLsizei
 #define		D3D_MAX_RSTATES		256
 #define		D3D_MAX_TEXTURES	4096
 #define		D3D_MAX_VERTICES	32768
+#define		D3D_MAX_INDICES		65536 + 12
 
 typedef struct tagD3D_Vertex
 {
@@ -1930,7 +1931,7 @@ typedef struct tagD3D_Globals
 	LPDIRECT3DTEXTURE2		lpD3DT2;						// Direct3D texture for stage 0
 	LPDIRECT3DTEXTURE2		lpD3DT2SubStage;				// Direct3D texture for stage 1 (subsample)
 	D3D_TEXTURE				textures[D3D_MAX_TEXTURES];		// Texture objects
-	WORD					indexBuffer[10];				// Temporary index buffer
+	WORD					indexBuffer[D3D_MAX_INDICES];	// Temporary index buffer
 	double					angleDegToRad;					// Angle degrees to radians constant
 	BYTE					angleConstFlag;					// Flag indicating if angle constant is initialized
 } D3D_GLOBALS;
