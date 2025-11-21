@@ -16,7 +16,7 @@ This repository contains:
 - Restored source code of the localization module
 	- [x] hl_res.dll
 - Reimplemented lightweight source code of the launcher without MFC/SW code
-	- [x] hl.exe (see [`linux`](github.com/ScriptedSnark/half-life1_win32_722/tree/linux) branch)
+	- [x] hl.exe (see [`linux`](https://github.com/ScriptedSnark/half-life1_win32_722/tree/linux) branch)
 
 ---
 
