@@ -80,3 +80,4 @@ They are publicly available online and can be found on archival sources such as 
 ## Special thanks
 - [Overfloater](https://github.com/TheOverfloater) (for playtesting)
 - [Barspinoff](https://github.com/barspinoff) (for playtesting and assistance with software rendering)
+- [GoldSrc Underground Discord](https://discord.gg/TwMz3e2sVW)
