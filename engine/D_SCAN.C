@@ -8,7 +8,6 @@
 
 int     d_depth, d_fader, d_fadeg, d_fadeb, d_fadelevel;
 float   d_fadestart, d_fadetime;
-int     d_zidist;
 
 #define MAX_WATER_PALETTE 512
 short   gWaterPalette[MAX_WATER_PALETTE];
@@ -580,11 +579,8 @@ void D_DrawTiled8( espan_t* pspan )
 		zi = d_ziorigin + dv * d_zistepv + du * d_zistepu;
 		z = (float)0x10000 / zi;	// prescale to 16.16 fixed-point
 
-		d_zidist = (int)(sdivz * z);
-		s = (int)(sdivz * z) + sadjust;
-
-		d_zidist = (int)(tdivz * z);
-		t = (int)(tdivz * z) + tadjust;
+		s = quick_ftol(sdivz * z) + sadjust;
+		t = quick_ftol(tdivz * z) + tadjust;
 
 		do
 		{
@@ -603,11 +599,8 @@ void D_DrawTiled8( espan_t* pspan )
 			zi += zi16stepu;
 			z = (float)0x10000 / zi;	// prescale to 16.16 fixed-point
 
-			d_zidist = (int)(sdivz * z);
-			snext = (int)(sdivz * z) + sadjust;
-
-			d_zidist = (int)(tdivz * z);
-			tnext = (int)(tdivz * z) + tadjust;
+			snext = quick_ftol(sdivz * z) + sadjust;
+			tnext = quick_ftol(tdivz * z) + tadjust;
 
 			sstep = (snext - s) >> 4;
 			tstep = (tnext - t) >> 4;

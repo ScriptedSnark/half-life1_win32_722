@@ -34,9 +34,8 @@ void D_SpriteDrawSpans( sspan_t* pspan )
 	pbase = cacheblock;
 
 	z = (float)0x10000 / d_ziorigin;
-	d_zidist = (int)(d_ziorigin * (float)0x8000);
 
-	izi = d_zidist;
+	izi = quick_ftol(d_ziorigin * (float)0x8000);
 
 	do
 	{
@@ -55,15 +54,13 @@ void D_SpriteDrawSpans( sspan_t* pspan )
 		sdivz = d_sdivzorigin + dv * d_sdivzstepv + du * d_sdivzstepu;
 		tdivz = d_tdivzorigin + dv * d_tdivzstepv + du * d_tdivzstepu;
 
-		d_zidist = (int)(sdivz * z);
-		s = d_zidist + sadjust;
+		s = quick_ftol(sdivz * z) + sadjust;
 		if (s > bbextents)
 			s = bbextents;
 		else if (s < 0)
 			s = 0;
 
-		d_zidist = (int)(tdivz * z);
-		t = d_zidist + tadjust;
+		t = quick_ftol(tdivz * z) + tadjust;
 		if (t > bbextentt)
 			t = bbextentt;
 		else if (t < 0)
@@ -78,9 +75,8 @@ void D_SpriteDrawSpans( sspan_t* pspan )
 		spancountminus1 = (float)(spancount - 1);
 		sdivz += d_sdivzstepu * spancountminus1;
 		tdivz += d_tdivzstepu * spancountminus1;
-		d_zidist = (int)(sdivz * z);
 
-		snext = d_zidist + sadjust;
+		snext = quick_ftol(sdivz * z) + sadjust;
 		if (snext > bbextents)
 			snext = bbextents;
 		else if (snext < 8)
@@ -88,9 +84,7 @@ void D_SpriteDrawSpans( sspan_t* pspan )
 								//  from causing overstepping & running off the
 								//  edge of the texture
 
-		d_zidist = (int)(tdivz * z);
-
-		tnext = d_zidist + tadjust;
+		tnext = quick_ftol(tdivz * z) + tadjust;
 		if (tnext > bbextentt)
 			tnext = bbextentt;
 		else if (tnext < 8)
@@ -152,9 +146,7 @@ void D_SpriteDrawSpansTrans( sspan_t* pspan )
 	pbase = cacheblock;
 
 	z = (float)0x10000 / d_ziorigin;
-	d_zidist = (int)(d_ziorigin * (float)0x8000);
-
-	izi = d_zidist;
+	izi = quick_ftol(d_ziorigin * (float)0x8000);
 
 	do
 	{
@@ -173,15 +165,13 @@ void D_SpriteDrawSpansTrans( sspan_t* pspan )
 		sdivz = d_sdivzorigin + dv * d_sdivzstepv + du * d_sdivzstepu;
 		tdivz = d_tdivzorigin + dv * d_tdivzstepv + du * d_tdivzstepu;
 
-		d_zidist = (int)(sdivz * z);
-		s = d_zidist + sadjust;
+		s = quick_ftol(sdivz * z) + sadjust;
 		if (s > bbextents)
 			s = bbextents;
 		else if (s < 0)
 			s = 0;
 
-		d_zidist = (int)(tdivz * z);
-		t = d_zidist + tadjust;
+		t = quick_ftol(tdivz * z) + tadjust;
 		if (t > bbextentt)
 			t = bbextentt;
 		else if (t < 0)
@@ -196,9 +186,8 @@ void D_SpriteDrawSpansTrans( sspan_t* pspan )
 		spancountminus1 = (float)(spancount - 1);
 		sdivz += d_sdivzstepu * spancountminus1;
 		tdivz += d_tdivzstepu * spancountminus1;
-		d_zidist = (int)(sdivz * z);
 
-		snext = d_zidist + sadjust;
+		snext = quick_ftol(sdivz * z) + sadjust;
 		if (snext > bbextents)
 			snext = bbextents;
 		else if (snext < 8)
@@ -206,9 +195,7 @@ void D_SpriteDrawSpansTrans( sspan_t* pspan )
 								//  from causing overstepping & running off the
 								//  edge of the texture
 
-		d_zidist = (int)(tdivz * z);
-
-		tnext = d_zidist + tadjust;
+		tnext = quick_ftol(tdivz * z) + tadjust;
 		if (tnext > bbextentt)
 			tnext = bbextentt;
 		else if (tnext < 8)
@@ -289,9 +276,7 @@ void D_SpriteDrawSpansAdd( sspan_t* pspan )
 	pbase = cacheblock;
 
 	z = (float)0x10000 / d_ziorigin;
-	d_zidist = (int)(d_ziorigin * (float)0x8000);
-
-	izi = d_zidist;
+	izi = quick_ftol(d_ziorigin * (float)0x8000);
 
 	do
 	{
@@ -310,15 +295,13 @@ void D_SpriteDrawSpansAdd( sspan_t* pspan )
 		sdivz = d_sdivzorigin + dv * d_sdivzstepv + du * d_sdivzstepu;
 		tdivz = d_tdivzorigin + dv * d_tdivzstepv + du * d_tdivzstepu;
 
-		d_zidist = (int)(sdivz * z);
-		s = d_zidist + sadjust;
+		s = quick_ftol(sdivz * z) + sadjust;
 		if (s > bbextents)
 			s = bbextents;
 		else if (s < 0)
 			s = 0;
 
-		d_zidist = (int)(tdivz * z);
-		t = d_zidist + tadjust;
+		t = quick_ftol(tdivz * z) + tadjust;
 		if (t > bbextentt)
 			t = bbextentt;
 		else if (t < 0)
@@ -333,9 +316,8 @@ void D_SpriteDrawSpansAdd( sspan_t* pspan )
 		spancountminus1 = (float)(spancount - 1);
 		sdivz += d_sdivzstepu * spancountminus1;
 		tdivz += d_tdivzstepu * spancountminus1;
-		d_zidist = (int)(sdivz * z);
 
-		snext = d_zidist + sadjust;
+		snext = quick_ftol(sdivz * z) + sadjust;
 		if (snext > bbextents)
 			snext = bbextents;
 		else if (snext < 8)
@@ -343,9 +325,7 @@ void D_SpriteDrawSpansAdd( sspan_t* pspan )
 								//  from causing overstepping & running off the
 								//  edge of the texture
 
-		d_zidist = (int)(tdivz * z);
-
-		tnext = d_zidist + tadjust;
+		tnext = quick_ftol(tdivz * z) + tadjust;
 		if (tnext > bbextentt)
 			tnext = bbextentt;
 		else if (tnext < 8)
@@ -475,9 +455,7 @@ void D_SpriteDrawSpansGlow( sspan_t* pspan )
 	pbase = cacheblock;
 
 	z = (float)0x10000 / d_ziorigin;
-	d_zidist = (int)(d_ziorigin * (float)0x8000);
-
-	izi = d_zidist;
+	izi = quick_ftol(d_ziorigin * (float)0x8000);
 
 	do
 	{
@@ -495,15 +473,13 @@ void D_SpriteDrawSpansGlow( sspan_t* pspan )
 		sdivz = d_sdivzorigin + dv * d_sdivzstepv + du * d_sdivzstepu;
 		tdivz = d_tdivzorigin + dv * d_tdivzstepv + du * d_tdivzstepu;
 
-		d_zidist = (int)(sdivz * z);
-		s = d_zidist + sadjust;
+		s = quick_ftol(sdivz * z) + sadjust;
 		if (s > bbextents)
 			s = bbextents;
 		else if (s < 0)
 			s = 0;
 
-		d_zidist = (int)(tdivz * z);
-		t = d_zidist + tadjust;
+		t = quick_ftol(tdivz * z) + tadjust;
 		if (t > bbextentt)
 			t = bbextentt;
 		else if (t < 0)
@@ -518,9 +494,8 @@ void D_SpriteDrawSpansGlow( sspan_t* pspan )
 		spancountminus1 = (float)(spancount - 1);
 		sdivz += d_sdivzstepu * spancountminus1;
 		tdivz += d_tdivzstepu * spancountminus1;
-		d_zidist = (int)(sdivz * z);
 
-		snext = d_zidist + sadjust;
+		snext = quick_ftol(sdivz * z) + sadjust;
 		if (snext > bbextents)
 			snext = bbextents;
 		else if (snext < 8)
@@ -528,9 +503,7 @@ void D_SpriteDrawSpansGlow( sspan_t* pspan )
 								//  from causing overstepping & running off the
 								//  edge of the texture
 
-		d_zidist = (int)(tdivz * z);
-
-		tnext = d_zidist + tadjust;
+		tnext = quick_ftol(tdivz * z) + tadjust;
 		if (tnext > bbextentt)
 			tnext = bbextentt;
 		else if (tnext < 8)
@@ -658,9 +631,7 @@ void D_SpriteDrawSpansAlpha( sspan_t* pspan )
 	pbase = cacheblock;
 
 	z = (float)0x10000 / d_ziorigin;
-	d_zidist = (int)(d_ziorigin * (float)0x8000);
-
-	izi = d_zidist;
+	izi = quick_ftol(d_ziorigin * (float)0x8000);
 
 	do
 	{
@@ -679,15 +650,13 @@ void D_SpriteDrawSpansAlpha( sspan_t* pspan )
 		sdivz = d_sdivzorigin + dv * d_sdivzstepv + du * d_sdivzstepu;
 		tdivz = d_tdivzorigin + dv * d_tdivzstepv + du * d_tdivzstepu;
 
-		d_zidist = (int)(sdivz * z);
-		s = d_zidist + sadjust;
+		s = quick_ftol(sdivz * z) + sadjust;
 		if (s > bbextents)
 			s = bbextents;
 		else if (s < 0)
 			s = 0;
 
-		d_zidist = (int)(tdivz * z);
-		t = d_zidist + tadjust;
+		t = quick_ftol(tdivz * z) + tadjust;
 		if (t > bbextentt)
 			t = bbextentt;
 		else if (t < 0)
@@ -702,9 +671,8 @@ void D_SpriteDrawSpansAlpha( sspan_t* pspan )
 		spancountminus1 = (float)(spancount - 1);
 		sdivz += d_sdivzstepu * spancountminus1;
 		tdivz += d_tdivzstepu * spancountminus1;
-		d_zidist = (int)(sdivz * z);
 
-		snext = d_zidist + sadjust;
+		snext = quick_ftol(sdivz * z) + sadjust;
 		if (snext > bbextents)
 			snext = bbextents;
 		else if (snext < 8)
@@ -712,9 +680,7 @@ void D_SpriteDrawSpansAlpha( sspan_t* pspan )
 								//  from causing overstepping & running off the
 								//  edge of the texture
 
-		d_zidist = (int)(tdivz * z);
-
-		tnext = d_zidist + tadjust;
+		tnext = quick_ftol(tdivz * z) + tadjust;
 		if (tnext > bbextentt)
 			tnext = bbextentt;
 		else if (tnext < 8)
@@ -869,14 +835,12 @@ void D_SpriteScanLeftEdge( void )
 			du = pnext->u - pvert->u;
 			dv = pnext->v - pvert->v;
 			slope = du / dv;
-			u_step = (int)(slope * 0x10000);
-			d_zidist = u_step;
+			u_step = quick_ftol(slope * 0x10000);
 		// adjust u to ceil the integer portion
 			u = (int)((pvert->u + (slope * (vtop - pvert->v))) * 0x10000) +
 				(0x10000 - 1);
 			itop = (int)vtop;
-			ibottom = (int)vbottom;
-			d_zidist = ibottom;
+			ibottom = quick_ftol(vbottom);
 
 			for (v = itop; v < ibottom; v++)
 			{
@@ -961,7 +925,6 @@ void D_SpriteScanRightEdge( void )
 				(0x10000 - 1);
 			itop = (int)vtop;
 			ibottom = (int)vbottom;
-			d_zidist = ibottom;
 
 			for (v = itop; v < ibottom; v++)
 			{

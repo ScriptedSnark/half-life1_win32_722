@@ -310,8 +310,7 @@ void D_DrawTranslucentTexture( espan_t* pspan )
 	zi8stepu = d_zistepu * 8;
 
 // we count on FP exceptions being turned off to avoid range problems
-    izistep = (int)(d_zistepu * 0x8000 * 0x10000);
-    d_zidist = izistep;
+    izistep = quick_ftol(d_zistepu * 0x8000 * 0x10000);
 
     do
     {
@@ -330,15 +329,13 @@ void D_DrawTranslucentTexture( espan_t* pspan )
         zi = d_ziorigin + dv * d_zistepv + du * d_zistepu;
         z = (float)0x10000 / zi;	// prescale to 16.16 fixed-point
 
-        d_zidist = (int)(sdivz * z);
-		s = (int)(sdivz * z) + sadjust;
+		s = quick_ftol(sdivz * z) + sadjust;
 		if (s > bbextents)
 			s = bbextents;
 		else if (s < 0)
 			s = 0;
 
-        d_zidist = (int)(tdivz * z);
-		t = (int)(tdivz * z) + tadjust;
+		t = quick_ftol(tdivz * z) + tadjust;
 		if (t > bbextentt)
 			t = bbextentt;
 		else if (t < 0)
@@ -352,8 +349,7 @@ void D_DrawTranslucentTexture( espan_t* pspan )
         else
         {
         // we count on FP exceptions being turned off to avoid range problems
-            izi = (int)(zi * 0x8000 * 0x10000);
-            d_zidist = izi;
+            izi = quick_ftol(zi * 0x8000 * 0x10000);
         }
 
         do
@@ -375,8 +371,7 @@ void D_DrawTranslucentTexture( espan_t* pspan )
 				zi += zi8stepu;
 				z = (float)0x10000 / zi;	// prescale to 16.16 fixed-point
 
-                d_zidist = (int)(sdivz * z);
-				snext = (int)(sdivz * z) + sadjust;
+				snext = quick_ftol(sdivz * z) + sadjust;
 				if (snext > bbextents)
 					snext = bbextents;
 				else if (snext < 8)
@@ -384,8 +379,7 @@ void D_DrawTranslucentTexture( espan_t* pspan )
 								//  from causing overstepping & running off the
 								//  edge of the texture
 
-                d_zidist = (int)(tdivz * z);
-				tnext = (int)(tdivz * z) + tadjust;
+				tnext = quick_ftol(tdivz * z) + tadjust;
 				if (tnext > bbextentt)
 					tnext = bbextentt;
 				else if (tnext < 8)
@@ -406,8 +400,7 @@ void D_DrawTranslucentTexture( espan_t* pspan )
 				zi += d_zistepu * spancountminus1;
 				z = (float)0x10000 / zi;	// prescale to 16.16 fixed-point
 
-                d_zidist = (int)(sdivz * z);
-				snext = (int)(sdivz * z) + sadjust;
+				snext = quick_ftol(sdivz * z) + sadjust;
 				if (snext > bbextents)
 					snext = bbextents;
 				else if (snext < 8)
@@ -415,8 +408,7 @@ void D_DrawTranslucentTexture( espan_t* pspan )
 								//  from causing overstepping & running off the
 								//  edge of the texture
 
-                d_zidist = (int)(tdivz * z);
-				tnext = (int)(tdivz * z) + tadjust;
+				tnext = quick_ftol(tdivz * z) + tadjust;
 				if (tnext > bbextentt)
 					tnext = bbextentt;
 				else if (tnext < 8)
@@ -559,8 +551,7 @@ void D_DrawTranslucentColor( espan_t* pspan )
 	zi8stepu = d_zistepu * 8;
 
 // we count on FP exceptions being turned off to avoid range problems
-	izistep = (int)(d_zistepu * 0x8000 * 0x10000);
-	d_zidist = izistep;
+	izistep = quick_ftol(d_zistepu * 0x8000 * 0x10000);
 
 	do
 	{
@@ -584,8 +575,7 @@ void D_DrawTranslucentColor( espan_t* pspan )
 		else
 		{
 		// we count on FP exceptions being turned off to avoid range problems
-			izi = (int)(zi * 0x8000 * 0x10000);
-			d_zidist = izi;
+			izi = quick_ftol(zi * 0x8000 * 0x10000);
 		}
 
 		r = currententity->rendercolor.r;
@@ -677,8 +667,7 @@ void D_DrawTranslucentAdd( espan_t* pspan )
 	zi8stepu = d_zistepu * 8;
 
 // we count on FP exceptions being turned off to avoid range problems
-	izistep = (int)(d_zistepu * 0x8000 * 0x10000);
-	d_zidist = izistep;
+	izistep = quick_ftol(d_zistepu * 0x8000 * 0x10000);
 
 	do
 	{
@@ -697,15 +686,13 @@ void D_DrawTranslucentAdd( espan_t* pspan )
 		zi = d_ziorigin + dv * d_zistepv + du * d_zistepu;
 		z = (float)0x10000 / zi;	// prescale to 16.16 fixed-point
 
-		d_zidist = (int)(sdivz * z);
-		s = (int)(sdivz * z) + sadjust;
+		s = quick_ftol(sdivz * z) + sadjust;
 		if (s > bbextents)
 			s = bbextents;
 		else if (s < 0)
 			s = 0;
 
-		d_zidist = (int)(tdivz * z);
-		t = (int)(tdivz * z) + tadjust;
+		t = quick_ftol(tdivz * z) + tadjust;
 		if (t > bbextentt)
 			t = bbextentt;
 		else if (t < 0)
@@ -719,8 +706,7 @@ void D_DrawTranslucentAdd( espan_t* pspan )
 		else
 		{
 		// we count on FP exceptions being turned off to avoid range problems
-			izi = (int)(zi * 0x8000 * 0x10000);
-			d_zidist = izi;
+			izi = quick_ftol(zi * 0x8000 * 0x10000);
 		}
 
 		do
@@ -742,8 +728,7 @@ void D_DrawTranslucentAdd( espan_t* pspan )
 				zi += zi8stepu;
 				z = (float)0x10000 / zi;	// prescale to 16.16 fixed-point
 
-				d_zidist = (int)(sdivz * z);
-				snext = (int)(sdivz * z) + sadjust;
+				snext = quick_ftol(sdivz * z) + sadjust;
 				if (snext > bbextents)
 					snext = bbextents;
 				else if (snext < 8)
@@ -751,8 +736,7 @@ void D_DrawTranslucentAdd( espan_t* pspan )
 								//  from causing overstepping & running off the
 								//  edge of the texture
 
-				d_zidist = (int)(tdivz * z);
-				tnext = (int)(tdivz * z) + tadjust;
+				tnext = quick_ftol(tdivz * z) + tadjust;
 				if (tnext > bbextentt)
 					tnext = bbextentt;
 				else if (tnext < 8)
@@ -773,8 +757,7 @@ void D_DrawTranslucentAdd( espan_t* pspan )
 				zi += d_zistepu * spancountminus1;
 				z = (float)0x10000 / zi;	// prescale to 16.16 fixed-point
 
-				d_zidist = (int)(sdivz * z);
-				snext = (int)(sdivz * z) + sadjust;
+				snext = quick_ftol(sdivz * z) + sadjust;
 				if (snext > bbextents)
 					snext = bbextents;
 				else if (snext < 8)
@@ -782,8 +765,7 @@ void D_DrawTranslucentAdd( espan_t* pspan )
 								//  from causing overstepping & running off the
 								//  edge of the texture
 
-				d_zidist = (int)(tdivz * z);
-				tnext = (int)(tdivz * z) + tadjust;
+				tnext = quick_ftol(tdivz * z) + tadjust;
 				if (tnext > bbextentt)
 					tnext = bbextentt;
 				else if (tnext < 8)
@@ -966,8 +948,7 @@ void D_DrawTransHoles( espan_t* pspan )
 	zi8stepu = d_zistepu * 8;
 
 // we count on FP exceptions being turned off to avoid range problems
-	izistep = (int)(d_zistepu * 0x8000 * 0x10000);
-	d_zidist = izistep;
+	izistep = quick_ftol(d_zistepu * 0x8000 * 0x10000);
 
 	do
 	{
@@ -986,15 +967,13 @@ void D_DrawTransHoles( espan_t* pspan )
 		zi = d_ziorigin + dv * d_zistepv + du * d_zistepu;
 		z = (float)0x10000 / zi;	// prescale to 16.16 fixed-point
 
-		d_zidist = (int)(sdivz * z);
-		s = (int)(sdivz * z) + sadjust;
+		s = quick_ftol(sdivz * z) + sadjust;
 		if (s > bbextents)
 			s = bbextents;
 		else if (s < 0)
 			s = 0;
 
-		d_zidist = (int)(tdivz * z);
-		t = (int)(tdivz * z) + tadjust;
+		t = quick_ftol(tdivz * z) + tadjust;
 		if (t > bbextentt)
 			t = bbextentt;
 		else if (t < 0)
@@ -1008,8 +987,7 @@ void D_DrawTransHoles( espan_t* pspan )
 		else
 		{
 		// we count on FP exceptions being turned off to avoid range problems
-			izi = (int)(zi * 0x8000 * 0x10000);
-			d_zidist = izi;
+			izi = quick_ftol(zi * 0x8000 * 0x10000);
 		}
 
 		do
@@ -1031,8 +1009,7 @@ void D_DrawTransHoles( espan_t* pspan )
 				zi += zi8stepu;
 				z = (float)0x10000 / zi;	// prescale to 16.16 fixed-point
 
-				d_zidist = (int)(sdivz * z);
-				snext = (int)(sdivz * z) + sadjust;
+				snext = quick_ftol(sdivz * z) + sadjust;
 				if (snext > bbextents)
 					snext = bbextents;
 				else if (snext < 8)
@@ -1040,8 +1017,7 @@ void D_DrawTransHoles( espan_t* pspan )
 								//  from causing overstepping & running off the
 								//  edge of the texture
 
-				d_zidist = (int)(tdivz * z);
-				tnext = (int)(tdivz * z) + tadjust;
+				tnext = quick_ftol(tdivz * z) + tadjust;
 				if (tnext > bbextentt)
 					tnext = bbextentt;
 				else if (tnext < 8)
@@ -1062,8 +1038,7 @@ void D_DrawTransHoles( espan_t* pspan )
 				zi += d_zistepu * spancountminus1;
 				z = (float)0x10000 / zi;	// prescale to 16.16 fixed-point
 
-				d_zidist = (int)(sdivz * z);
-				snext = (int)(sdivz * z) + sadjust;
+				snext = quick_ftol(sdivz * z) + sadjust;
 				if (snext > bbextents)
 					snext = bbextents;
 				else if (snext < 8)
@@ -1071,8 +1046,7 @@ void D_DrawTransHoles( espan_t* pspan )
 								//  from causing overstepping & running off the
 								//  edge of the texture
 
-				d_zidist = (int)(tdivz * z);
-				tnext = (int)(tdivz * z) + tadjust;
+				tnext = quick_ftol(tdivz * z) + tadjust;
 				if (tnext > bbextentt)
 					tnext = bbextentt;
 				else if (tnext < 8)

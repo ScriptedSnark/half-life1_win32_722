@@ -39,8 +39,6 @@ extern qboolean		d_roverwrapped;
 extern surfcache_t* sc_rover;
 extern surfcache_t* d_initial_rover;
 
-extern int		d_zidist;
-
 extern float	d_sdivzstepu, d_tdivzstepu, d_zistepu;
 extern float	d_sdivzstepv, d_tdivzstepv, d_zistepv;
 extern float	d_sdivzorigin, d_tdivzorigin, d_ziorigin;
