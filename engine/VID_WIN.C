@@ -216,6 +216,8 @@ void VID_TakeSnapshot( const char* pFilename )
 
 		if (!WriteFile(file, row, vid.width * 3, &dwSize, 0) || vid.width * 3 != dwSize)
 			Sys_Error("Couldn't write bitmap data snapshot.\n");
+
+		pStart = (word*)((byte*)pDest - vid.rowbytes);
 	}
 
 	// close the file
