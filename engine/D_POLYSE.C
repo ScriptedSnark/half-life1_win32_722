@@ -740,8 +740,6 @@ void D_PolysetDrawSpansTrans( spanpackage_t* pspanpackage )
 
 						*lpdest = r | g | b;
 					}
-
-					*lpz = lzi >> 16;
 				}
 				lpdest++;
 				lzi += r_zistepx;
@@ -936,8 +934,6 @@ void D_PolysetDrawSpansTransAdd( spanpackage_t* pspanpackage )
 
 						*lpdest = ((oldcolor >> 16) & redblue) | (oldcolor & green);
 					}
-
-					*lpz = lzi >> 16;
 				}
 				lpdest++;
 				lzi += r_zistepx;
