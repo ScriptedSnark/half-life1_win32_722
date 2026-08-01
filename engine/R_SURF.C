@@ -844,8 +844,7 @@ BLOCKSIZESCAN15:                                            ; start scanning
 		MMX_RMV(pand, 0xDB, mm3, MMX_GREEN15, sbb)
 		MMX_RMV(pmaddwd, 0xF5, mm1, MMX_LIGHTMULTIPLIER15, or)
 		MMX_RR(por, 0xEB, mm1, mm3, 0xCB)
-		MMX_RI(pslld, 0x72, mm1, 0Bh, 0xF1)
-		MMX_RI(psrad, 0x72, mm1, 10h, 0xE1)
+		MMX_RI(psrld, 0x72, mm1, 6, 0xD1)
 		MMX_RR(packssdw, 0x6B, mm1, mm1, 0xC9)
 		MMX_MRSIB(movd, 0x7E, DWORD PTR[edi + ecx * 2], mm1, 0x0C, 0x4F)
 		add         ecx, 2
