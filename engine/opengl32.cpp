@@ -2051,10 +2051,20 @@ DLL_EXPORT void APIENTRY glFlush( void )
 DLL_EXPORT void APIENTRY glFogf( GLenum pname, GLfloat param )
 {
 	DWORD	dummy;
+	DWORD	value;
+
+	// ScriptedSnark: Original D3D6 wrapper had this mistake which was fixed
+	// while reversing the func. Won't remove fix here, instead cover under
+	// HLNT1_FIXES macro to let you know what was solved accidentally
+#if defined ( HLNT1_FIXES )
+	value = (DWORD)param;
+#else
+	value = *(DWORD*)&param;
+#endif
 
 	if (pname == GL_FOG_START)
 	{
-		if (g.m_rStates[D3DRENDERSTATE_FOGTABLESTART] != (DWORD)param)
+		if (g.m_rStates[D3DRENDERSTATE_FOGTABLESTART] != value)
 		{
 			if (g.m_indexCount)
 			{
@@ -2073,13 +2083,13 @@ DLL_EXPORT void APIENTRY glFogf( GLenum pname, GLfloat param )
 				g.m_indexCount = 0;
 			}
 
-			g.m_rStates[D3DRENDERSTATE_FOGTABLESTART] = (DWORD)param;
-			g.m_pD3DDev->lpVtbl->SetRenderState(g.m_pD3DDev, D3DRENDERSTATE_FOGTABLESTART, (DWORD)param);
+			g.m_rStates[D3DRENDERSTATE_FOGTABLESTART] = value;
+			g.m_pD3DDev->lpVtbl->SetRenderState(g.m_pD3DDev, D3DRENDERSTATE_FOGTABLESTART, value);
 		}
 	}
 	else if (pname == GL_FOG_END)
 	{
-		if (g.m_rStates[D3DRENDERSTATE_FOGTABLEEND] != (DWORD)param)
+		if (g.m_rStates[D3DRENDERSTATE_FOGTABLEEND] != value)
 		{
 			if (g.m_indexCount)
 			{
@@ -2098,8 +2108,8 @@ DLL_EXPORT void APIENTRY glFogf( GLenum pname, GLfloat param )
 				g.m_indexCount = 0;
 			}
 
-			g.m_rStates[D3DRENDERSTATE_FOGTABLEEND] = (DWORD)param;
-			g.m_pD3DDev->lpVtbl->SetRenderState(g.m_pD3DDev, D3DRENDERSTATE_FOGTABLEEND, (DWORD)param);
+			g.m_rStates[D3DRENDERSTATE_FOGTABLEEND] = value;
+			g.m_pD3DDev->lpVtbl->SetRenderState(g.m_pD3DDev, D3DRENDERSTATE_FOGTABLEEND, value);
 		}
 	}
 }
