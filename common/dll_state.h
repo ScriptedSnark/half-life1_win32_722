@@ -1,10 +1,3 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
-//
-// Purpose: 
-//
-// $NoKeywords: $
-//=============================================================================
-
 // DLL State Flags
 
 #define DLL_INACTIVE 0		// no dll
@@ -21,10 +14,15 @@
 
 // DLL Substate info ( not relevant )
 #define ENG_NORMAL         (1<<0)
+#define ENG_RESET          (1<<1)   // Force state to latch back to ENG_NORMAL
+#define ENG_NOLOADCONSOLE  (1<<2)
+#define ENG_NOINPUTCONTROL (1<<3)
+#define ENG_ESCAPEEXITS    (1<<4)   // Hitting escape exits the level.  Valve.bsp
 
 // DLL State info
-#define STATE_TRAINING		1	// training
-#define STATE_ENDLOGO		2	// end of the "Half-Life" logo
-#define STATE_ENDDEMO		3	// end of the demo
-
-#define STATE_WORLDCRAFT	5	// end of the demo
+#define STATE_DORMANT		0
+#define STATE_ENDTRAINING	1	// OEM
+#define STATE_ENDLOGO		2	// OEM
+#define STATE_ENDDEMO		3	// OEM
+#define STATE_QUITTING		4	// exiting the engine
+#define STATE_GOINGTOWC		5	// changing the window to Worldcraft

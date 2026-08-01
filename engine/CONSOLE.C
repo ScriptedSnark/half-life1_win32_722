@@ -116,7 +116,7 @@ void Con_ToggleConsole_f( void )
 			giActive = DLL_PAUSED;
 		}
 	}
-	else if (!(giSubState & 4) && !con_loading)
+	else if (!(giSubState & ENG_NOLOADCONSOLE) && !con_loading)
 	{
 		key_dest = key_console;
 	}
@@ -473,7 +473,7 @@ void Con_Printf( char* fmt, ... )
 	if (cls.state == ca_dedicated)
 		return;		// no graphics mode
 
-	if (!con_loading && !(giSubState & 4) || g_fIsDebugPrint)
+	if (!con_loading && !(giSubState & ENG_NOLOADCONSOLE) || g_fIsDebugPrint)
 	{
 	// write it to the scrollable buffer
 		Con_Print(msg);
@@ -725,7 +725,7 @@ void Con_DrawConsole( int lines, qboolean drawinput )
 // draw the background
 	Draw_ConsoleBackground(lines);
 
-	if ((giSubState & 4) || con_loading)
+	if ((giSubState & ENG_NOLOADCONSOLE) || con_loading)
 		return;
 
 // draw the text

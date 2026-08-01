@@ -237,7 +237,7 @@ void Host_Quit_f( void )
 	}
 
 	giActive = DLL_PAUSED;
-	giStateInfo = 4;
+	giStateInfo = STATE_QUITTING;
 }
 
 /*
@@ -1501,7 +1501,7 @@ int Host_Load( const char* pName )
 
 	if (!SaveReadHeader(pFile, &gameHeader, TRUE))
 	{
-		giStateInfo = 1;
+		giStateInfo = STATE_ENDTRAINING;
 		Cbuf_AddText("\ndisconnect\n");
 		return FALSE;
 	}
@@ -3980,14 +3980,14 @@ void Host_EndSection( const char* pszSection )
 {
 	giActive = DLL_PAUSED;
 	giSubState = ENG_NORMAL;
-	giStateInfo = STATE_TRAINING;
+	giStateInfo = STATE_ENDTRAINING;
 
 	if (!pszSection || !pszSection[0])
 		Con_Printf(" endsection with no arguments\n");
 	else
 	{
 		if (!_stricmp(pszSection, "_oem_end_training"))
-			giStateInfo = STATE_TRAINING;
+			giStateInfo = STATE_ENDTRAINING;
 		else if (!_stricmp(pszSection, "_oem_end_logo"))
 			giStateInfo = STATE_ENDLOGO;
 		else if (!_stricmp(pszSection, "_oem_end_demo"))
@@ -4014,7 +4014,7 @@ void Host_WC_f( void )
 		return;
 
 	giActive = DLL_PAUSED;
-	giStateInfo = STATE_WORLDCRAFT;
+	giStateInfo = STATE_GOINGTOWC;
 }
 
 /*

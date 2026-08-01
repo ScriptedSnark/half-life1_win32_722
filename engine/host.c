@@ -1972,7 +1972,7 @@ void _Host_Frame( float time )
 			ent_count);
 	}
 
-	if ((giSubState & 4) && cls.state == ca_disconnected)
+	if ((giSubState & ENG_NOLOADCONSOLE) && cls.state == ca_disconnected)
 	{
 		giActive = DLL_PAUSED;
 	}
@@ -2013,7 +2013,7 @@ DLL_EXPORT int Host_Frame( float time, int iState, int* stateInfo )
 		if (giStateInfo)
 		{
 			*stateInfo = giStateInfo;
-			giStateInfo = 0;
+			giStateInfo = STATE_DORMANT;
 			Cbuf_Execute();
 		}
 
@@ -2032,7 +2032,7 @@ DLL_EXPORT int Host_Frame( float time, int iState, int* stateInfo )
 	if (giStateInfo)
 	{
 		*stateInfo = giStateInfo;
-		giStateInfo = 0;
+		giStateInfo = STATE_DORMANT;
 		Cbuf_Execute();
 	}
 

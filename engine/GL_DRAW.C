@@ -976,7 +976,7 @@ void Draw_ConsoleBackground( int lines )
 	sprintf(ver, "Half-Life 1.0 (build %d)", build_number());
 
 	x = vid.conwidth - Draw_StringLen(ver);
-	if (!con_loading && !(giSubState & 4))
+	if (!con_loading && !(giSubState & ENG_NOLOADCONSOLE))
 	{
 		Draw_String(x, 0, ver);
 	}

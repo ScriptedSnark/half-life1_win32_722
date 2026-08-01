@@ -1244,9 +1244,9 @@ void Dispatch_Substate( int iSubState )
 
 DLL_EXPORT void GameSetSubState( int iSubState )
 {
-	if (iSubState & 2)
+	if (iSubState & ENG_RESET)
 	{
-		Dispatch_Substate(1);
+		Dispatch_Substate(ENG_NORMAL);
 	}
 	else if (iSubState != 1)
 	{

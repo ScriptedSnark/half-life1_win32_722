@@ -519,14 +519,14 @@ void Key_Unbindall_f( void )
 
 void Key_Escape_f( void )
 {
-	if (giSubState & 0x10)
+	if (giSubState & ENG_ESCAPEEXITS)
 	{
 		extern int giStateInfo;
 
 		Cbuf_AddText("disconnect\n");
 		giActive = DLL_PAUSED;
-		giStateInfo = 2;
-		giSubState = 1;
+		giStateInfo = STATE_ENDLOGO;
+		giSubState = ENG_NORMAL;
 		Cbuf_Execute();
 	}
 	else if (key_dest == key_game)
@@ -758,7 +758,7 @@ void Key_Event( int key, qboolean down )
 		return;
 	}
 
-	if ((giSubState & 0x10) && key != K_ESCAPE)
+	if ((giSubState & ENG_ESCAPEEXITS) && key != K_ESCAPE)
 		return;
 
 //
