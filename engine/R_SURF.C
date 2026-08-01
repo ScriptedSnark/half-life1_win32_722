@@ -362,7 +362,7 @@ void R_DrawSurface( void )
 			decals = NULL;
 			break;
 		default:
-#if defined( _WIN32 ) && (_MSC_VER != 1020)
+#if defined( _WIN32 )
 			if (r_mmx.value)
 			{
 				pblockdrawer = R_DrawSurfaceBlock16MMX;
@@ -669,9 +669,36 @@ void R_DrawSurfaceBlock16( void )
 	__asm fldcw fpu_cw
 }
 
-// ScriptedSnark: FIXME: MSVC++ 4.2 can't handle this yet.
-#if defined( _WIN32 ) && (_MSC_VER != 1020)
-#include <xmmintrin.h>
+typedef union
+{
+	unsigned int	u[2];		// [0] = low dword, [1] = high dword
+	double			align;
+} mmxval_t;
+
+#if (_MSC_VER == 1020)
+
+// ScriptedSnark: MSVC++ 4.2 "illegal opcode for processor" workaround
+#define MMX_RR( mn, op, d, s, modrm )			__asm _emit 0x0F __asm _emit op __asm _emit modrm
+#define MMX_RI( mn, op, d, imm, modrm )			__asm _emit 0x0F __asm _emit op __asm _emit modrm __asm _emit imm
+#define MMX_RM( mn, op, d, m, modrm )			__asm _emit 0x0F __asm _emit op __asm _emit modrm
+#define MMX_RM8( mn, op, d, m, modrm, disp )	__asm _emit 0x0F __asm _emit op __asm _emit modrm __asm _emit disp
+#define MMX_MRSIB( mn, op, m, s, modrm, sib )	__asm _emit 0x0F __asm _emit op __asm _emit modrm __asm _emit sib
+#define MMX_RMV( mn, op, d, sym, alu )			__asm _emit 0x0F __asm _emit op __asm alu eax, offset sym
+#define MMX_MRV( mn, op, sym, s, alu )			__asm _emit 0x0F __asm _emit op __asm alu eax, offset sym
+#define MMX_EMMS()								__asm _emit 0x0F __asm _emit 0x77
+
+#else
+
+#define MMX_RR( mn, op, d, s, modrm )			__asm mn d, s
+#define MMX_RI( mn, op, d, imm, modrm )			__asm mn d, imm
+#define MMX_RM( mn, op, d, m, modrm )			__asm mn d, m
+#define MMX_RM8( mn, op, d, m, modrm, disp )	__asm mn d, m
+#define MMX_MRSIB( mn, op, m, s, modrm, sib )	__asm mn m, s
+#define MMX_RMV( mn, op, d, sym, alu )			__asm mn d, sym
+#define MMX_MRV( mn, op, sym, s, alu )			__asm mn sym, s
+#define MMX_EMMS()								__asm emms
+
+#endif
 
 /*
 ================
@@ -688,15 +715,15 @@ void R_DrawSurfaceBlock16MMX( void )
     int             v;
     byte* texture;
 
-	static __m64 MMX_BLOCKMULTIPLIER = { 0x555555555555 };	// 0.33333 in 16.16 fixed point
-	static __m64 MMX_REDBLUE1516 = { 0x00F800F800F800F8 };	// red and blue masks for both RGB555 and RGB565
-	static __m64 MMX_GREEN15 = { 0x0000F8000000F800 };		// green mask for RGB555
-	static __m64 MMX_GREEN16 = { 0x0000FC000000FC00 };		// green mask for RGB565
-	static __m64 MMX_LIGHTMULTIPLIER15 = { 0x2000000820000008 };	// light multiplier for RGB555
-	static __m64 MMX_LIGHTMULTIPLIER16 = { 0x2000000420000004 };	// light multiplier for RGB565
-	static __m64 MMX_LIGHTLEFT = { 0 };						// left light values
-	static __m64 MMX_LIGHTRIGHT = { 0 };					// right light values
-    
+	static mmxval_t MMX_BLOCKMULTIPLIER = { { 0x55555555, 0x00005555 } };	// 0.33333 in 16.16 fixed point
+	static mmxval_t MMX_REDBLUE1516 = { { 0x00F800F8, 0x00F800F8 } };		// red and blue masks for both RGB555 and RGB565
+	static mmxval_t MMX_GREEN15 = { { 0x0000F800, 0x0000F800 } };			// green mask for RGB555
+	static mmxval_t MMX_GREEN16 = { { 0x0000FC00, 0x0000FC00 } };			// green mask for RGB565
+	static mmxval_t MMX_LIGHTMULTIPLIER15 = { { 0x20000008, 0x20000008 } };	// light multiplier for RGB555
+	static mmxval_t MMX_LIGHTMULTIPLIER16 = { { 0x20000004, 0x20000004 } };	// light multiplier for RGB565
+	static mmxval_t MMX_LIGHTLEFT = { { 0, 0 } };							// left light values
+	static mmxval_t MMX_LIGHTRIGHT = { { 0, 0 } };							// right light values
+
 	if (!gHasMMXTechnology)
 		return;
 	
@@ -716,23 +743,23 @@ void R_DrawSurfaceBlock16MMX( void )
 		mov         esi, r_lightptr                         ; store the light pointer
 
 		; store lightptr (left)
-		movd        mm0, DWORD PTR[esi + 0]                 ; red (lightptr[0])
-		movd        mm2, DWORD PTR[esi + 4]                 ; green (lightptr[1])
-		movd        mm4, DWORD PTR[esi + 8]                 ; blue (lightptr[2])
+		MMX_RM(movd, 0x6E, mm0, DWORD PTR[esi + 0], 0x06)   ; red (lightptr[0])
+		MMX_RM8(movd, 0x6E, mm2, DWORD PTR[esi + 4], 0x56, 0x04)    ; green (lightptr[1])
+		MMX_RM8(movd, 0x6E, mm4, DWORD PTR[esi + 8], 0x66, 0x08)    ; blue (lightptr[2])
 
 		; store lightptr (right)
-		movd        mm1, DWORD PTR[esi + 16]                ; red (lightptr[4])
-		punpcklwd   mm4, mm2
-		movd        mm3, DWORD PTR[esi + 20]                ; green (lightptr[5])
-		punpckldq   mm4, mm0
-		movd        mm5, DWORD PTR[esi + 24]                ; blue (lightptr[6])
+		MMX_RM8(movd, 0x6E, mm1, DWORD PTR[esi + 16], 0x4E, 0x10)   ; red (lightptr[4])
+		MMX_RR(punpcklwd, 0x61, mm4, mm2, 0xE2)
+		MMX_RM8(movd, 0x6E, mm3, DWORD PTR[esi + 20], 0x5E, 0x14)   ; green (lightptr[5])
+		MMX_RR(punpckldq, 0x62, mm4, mm0, 0xE0)
+		MMX_RM8(movd, 0x6E, mm5, DWORD PTR[esi + 24], 0x6E, 0x18)   ; blue (lightptr[6])
 
-		psrlw       mm4, 1
-		pmulhw      mm4, MMX_BLOCKMULTIPLIER                ; apply the block multiplier
-		punpcklwd   mm5, mm3
-		punpckldq   mm5, mm1
-		psrlw       mm5, 1
-		pmulhw      mm5, MMX_BLOCKMULTIPLIER                ; apply the block multiplier
+		MMX_RI(psrlw, 0x71, mm4, 1, 0xD4)
+		MMX_RMV(pmulhw, 0xE5, mm4, MMX_BLOCKMULTIPLIER, and)        ; apply the block multiplier
+		MMX_RR(punpcklwd, 0x61, mm5, mm3, 0xEB)
+		MMX_RR(punpckldq, 0x62, mm5, mm1, 0xE9)
+		MMX_RI(psrlw, 0x71, mm5, 1, 0xD5)
+		MMX_RMV(pmulhw, 0xE5, mm5, MMX_BLOCKMULTIPLIER, sub)        ; apply the block multiplier
 
 		mov         ecx, r_numvblocks
 		mov         v, eax
@@ -756,43 +783,43 @@ BITSCAN15:                                                  ; 15-bit scan of all
 		mov         esi, r_lightptr                         ; store the light pointer
 		add         esi, lightstep
 
-		movd        mm0, DWORD PTR[esi + 0]                 ; red left (lightptr[0])
+		MMX_RM(movd, 0x6E, mm0, DWORD PTR[esi + 0], 0x06)   ; red left (lightptr[0])
 		mov         r_lightptr, esi
-		movd        mm2, DWORD PTR[esi + 4]                 ; green left (lightptr[1])
+		MMX_RM8(movd, 0x6E, mm2, DWORD PTR[esi + 4], 0x56, 0x04)    ; green left (lightptr[1])
 		mov         edx, blocksize
-		movd        mm6, DWORD PTR[esi + 8]                 ; blue left (lightptr[2])
+		MMX_RM8(movd, 0x6E, mm6, DWORD PTR[esi + 8], 0x76, 0x08)    ; blue left (lightptr[2])
 
-		movd        mm1, DWORD PTR[esi + 16]                ; red left (lightptr[4])
-		punpcklwd   mm6, mm2
-		movd        mm3, DWORD PTR[esi + 20]                ; green left (lightptr[5])
-		punpckldq   mm6, mm0
-		movd        mm7, DWORD PTR[esi + 24]                ; blue left (lightptr[6])
+		MMX_RM8(movd, 0x6E, mm1, DWORD PTR[esi + 16], 0x4E, 0x10)   ; red left (lightptr[4])
+		MMX_RR(punpcklwd, 0x61, mm6, mm2, 0xF2)
+		MMX_RM8(movd, 0x6E, mm3, DWORD PTR[esi + 20], 0x5E, 0x14)   ; green left (lightptr[5])
+		MMX_RR(punpckldq, 0x62, mm6, mm0, 0xF0)
+		MMX_RM8(movd, 0x6E, mm7, DWORD PTR[esi + 24], 0x7E, 0x18)   ; blue left (lightptr[6])
 
-		psrlw       mm6, 1
-		pmulhw      mm6, MMX_BLOCKMULTIPLIER                ; apply the block multiplier
-		punpcklwd   mm7, mm3
-		punpckldq   mm7, mm1
+		MMX_RI(psrlw, 0x71, mm6, 1, 0xD6)
+		MMX_RMV(pmulhw, 0xE5, mm6, MMX_BLOCKMULTIPLIER, xor)        ; apply the block multiplier
+		MMX_RR(punpcklwd, 0x61, mm7, mm3, 0xFB)
+		MMX_RR(punpckldq, 0x62, mm7, mm1, 0xF9)
 		mov         ebx, texture
-		movd        mm1, blockdivshift
-		psrlw       mm7, 1
-		pmulhw      mm7, MMX_BLOCKMULTIPLIER                ; apply the block multiplier
+		MMX_RMV(movd, 0x6E, mm1, blockdivshift, or)
+		MMX_RI(psrlw, 0x71, mm7, 1, 0xD7)
+		MMX_RMV(pmulhw, 0xE5, mm7, MMX_BLOCKMULTIPLIER, cmp)        ; apply the block multiplier
 
-		movq        MMX_LIGHTLEFT, mm6                      ; copy
-		psubw       mm6, mm4
-		movq        MMX_LIGHTRIGHT, mm7                           ; copy
-		psubw       mm7, mm5
-		psraw       mm6, mm1
-		psraw       mm7, mm1
+		MMX_MRV(movq, 0x7F, MMX_LIGHTLEFT, mm6, xor)                ; copy
+		MMX_RR(psubw, 0xF9, mm6, mm4, 0xF4)
+		MMX_MRV(movq, 0x7F, MMX_LIGHTRIGHT, mm7, cmp)               ; copy
+		MMX_RR(psubw, 0xF9, mm7, mm5, 0xFD)
+		MMX_RR(psraw, 0xE1, mm6, mm1, 0xF1)
+		MMX_RR(psraw, 0xE1, mm7, mm1, 0xF9)
 		mov         ecx, 0
 
 BLOCKSIZEINIT15:                                            ; initialize data for 15-bit blocksize scan loop
-		movd        mm1, blockdivshift
-		movq        mm0, mm5                                ; copy
-		psubw       mm0, mm4
+		MMX_RMV(movd, 0x6E, mm1, blockdivshift, or)
+		MMX_RR(movq, 0x6F, mm0, mm5, 0xC5)                  ; copy
+		MMX_RR(psubw, 0xF9, mm0, mm4, 0xC4)
 		mov         esi, psource
-		psraw       mm0, mm1
+		MMX_RR(psraw, 0xE1, mm0, mm1, 0xC1)
 		mov         edi, prowdest
-		movq        mm2, mm4                                ; copy
+		MMX_RR(movq, 0x6F, mm2, mm4, 0xD4)                  ; copy
 		push        ecx
 		mov         ecx, 0
 
@@ -800,33 +827,33 @@ BLOCKSIZESCAN15:                                            ; start scanning
 		movzx       eax, BYTE PTR[esi + ecx]
 		shl         eax, 3
 		add         eax, ebx
-		movq        mm1, QWORD PTR[eax]                     ; copy
-		psllw       mm1, 3
-		pmulhw      mm1, mm2
-		paddw       mm2, mm0
+		MMX_RM(movq, 0x6F, mm1, QWORD PTR[eax], 0x08)       ; copy
+		MMX_RI(psllw, 0x71, mm1, 3, 0xF1)
+		MMX_RR(pmulhw, 0xE5, mm1, mm2, 0xCA)
+		MMX_RR(paddw, 0xFD, mm2, mm0, 0xD0)
 		movzx       eax, BYTE PTR[esi + ecx + 1]
 		shl         eax, 3
 		add         eax, ebx
-		movq        mm3, QWORD PTR[eax]                     ; copy
-		psllw       mm3, 3
-		pmulhw      mm3, mm2
-		paddw       mm2, mm0
-		packuswb    mm1, mm3
-		movq        mm3, mm1                                ; copy
-		pand        mm1, MMX_REDBLUE1516
-		pand        mm3, MMX_GREEN15
-		pmaddwd     mm1, MMX_LIGHTMULTIPLIER15
-		por         mm1, mm3
-		pslld       mm1, 0Bh
-		psrad       mm1, 10h
-		packssdw    mm1, mm1
-		movd        DWORD PTR[edi + ecx * 2], mm1
+		MMX_RM(movq, 0x6F, mm3, QWORD PTR[eax], 0x18)       ; copy
+		MMX_RI(psllw, 0x71, mm3, 3, 0xF3)
+		MMX_RR(pmulhw, 0xE5, mm3, mm2, 0xDA)
+		MMX_RR(paddw, 0xFD, mm2, mm0, 0xD0)
+		MMX_RR(packuswb, 0x67, mm1, mm3, 0xCB)
+		MMX_RR(movq, 0x6F, mm3, mm1, 0xD9)                  ; copy
+		MMX_RMV(pand, 0xDB, mm1, MMX_REDBLUE1516, or)
+		MMX_RMV(pand, 0xDB, mm3, MMX_GREEN15, sbb)
+		MMX_RMV(pmaddwd, 0xF5, mm1, MMX_LIGHTMULTIPLIER15, or)
+		MMX_RR(por, 0xEB, mm1, mm3, 0xCB)
+		MMX_RI(pslld, 0x72, mm1, 0Bh, 0xF1)
+		MMX_RI(psrad, 0x72, mm1, 10h, 0xE1)
+		MMX_RR(packssdw, 0x6B, mm1, mm1, 0xC9)
+		MMX_MRSIB(movd, 0x7E, DWORD PTR[edi + ecx * 2], mm1, 0x0C, 0x4F)
 		add         ecx, 2
 		cmp         ecx, edx
 		jl          short BLOCKSIZESCAN15                   ; new blocksize iteration
 		pop         ecx
-		paddw       mm4, mm6
-		paddw       mm5, mm7
+		MMX_RR(paddw, 0xFD, mm4, mm6, 0xE6)
+		MMX_RR(paddw, 0xFD, mm5, mm7, 0xEF)
 		mov         eax, sourcetstep
 		add         psource, eax
 		mov         eax, surfrowbytes
@@ -834,8 +861,8 @@ BLOCKSIZESCAN15:                                            ; start scanning
 		inc         ecx
 		cmp         ecx, edx
 		jl          BLOCKSIZEINIT15
-		movq        mm4, MMX_LIGHTLEFT                      ; copy
-		movq        mm5, MMX_LIGHTRIGHT                     ; copy
+		MMX_RMV(movq, 0x6F, mm4, MMX_LIGHTLEFT, and)        ; copy
+		MMX_RMV(movq, 0x6F, mm5, MMX_LIGHTRIGHT, sub)       ; copy
 		mov         ecx, r_offset
 		mov         esi, sourcevstep
 		mov         eax, r_stepback
@@ -860,23 +887,23 @@ IS16BIT:
 		mov         esi, r_lightptr; store the light pointer
 
 		; store lightptr (left)
-		movd        mm0, DWORD PTR[esi + 0]                 ; red (lightptr[0])
-		movd        mm2, DWORD PTR[esi + 4]                 ; green (lightptr[1])
-		movd        mm4, DWORD PTR[esi + 8]                 ; blue (lightptr[2])
+		MMX_RM(movd, 0x6E, mm0, DWORD PTR[esi + 0], 0x06)   ; red (lightptr[0])
+		MMX_RM8(movd, 0x6E, mm2, DWORD PTR[esi + 4], 0x56, 0x04)    ; green (lightptr[1])
+		MMX_RM8(movd, 0x6E, mm4, DWORD PTR[esi + 8], 0x66, 0x08)    ; blue (lightptr[2])
 
 		; store lightptr (right)
-		movd        mm1, DWORD PTR[esi + 16]                ; red (lightptr[4])
-		punpcklwd   mm4, mm2
-		movd        mm3, DWORD PTR[esi + 20]                ; green (lightptr[5])
-		punpckldq   mm4, mm0
-		movd        mm5, DWORD PTR[esi + 24]                ; blue (lightptr[6])
+		MMX_RM8(movd, 0x6E, mm1, DWORD PTR[esi + 16], 0x4E, 0x10)   ; red (lightptr[4])
+		MMX_RR(punpcklwd, 0x61, mm4, mm2, 0xE2)
+		MMX_RM8(movd, 0x6E, mm3, DWORD PTR[esi + 20], 0x5E, 0x14)   ; green (lightptr[5])
+		MMX_RR(punpckldq, 0x62, mm4, mm0, 0xE0)
+		MMX_RM8(movd, 0x6E, mm5, DWORD PTR[esi + 24], 0x6E, 0x18)   ; blue (lightptr[6])
 
-		psrlw       mm4, 1
-		pmulhw      mm4, MMX_BLOCKMULTIPLIER                ; apply the block multiplier
-		punpcklwd   mm5, mm3
-		punpckldq   mm5, mm1
-		psrlw       mm5, 1
-		pmulhw      mm5, MMX_BLOCKMULTIPLIER                ; apply the block multiplier
+		MMX_RI(psrlw, 0x71, mm4, 1, 0xD4)
+		MMX_RMV(pmulhw, 0xE5, mm4, MMX_BLOCKMULTIPLIER, and)        ; apply the block multiplier
+		MMX_RR(punpcklwd, 0x61, mm5, mm3, 0xEB)
+		MMX_RR(punpckldq, 0x62, mm5, mm1, 0xE9)
+		MMX_RI(psrlw, 0x71, mm5, 1, 0xD5)
+		MMX_RMV(pmulhw, 0xE5, mm5, MMX_BLOCKMULTIPLIER, sub)        ; apply the block multiplier
 		mov         ecx, r_numvblocks
 		mov         v, eax
 		cmp         ecx, eax
@@ -900,43 +927,43 @@ BITSCAN16:                                                  ; 16-bit scan of all
 		mov         esi, r_lightptr                         ; store the light pointer
 		add         esi, lightstep
 
-		movd        mm0, DWORD PTR[esi + 0]                 ; red left (lightptr[0])
+		MMX_RM(movd, 0x6E, mm0, DWORD PTR[esi + 0], 0x06)   ; red left (lightptr[0])
 		mov         r_lightptr, esi
-		movd        mm2, DWORD PTR[esi + 4]                 ; green left (lightptr[1])
+		MMX_RM8(movd, 0x6E, mm2, DWORD PTR[esi + 4], 0x56, 0x04)    ; green left (lightptr[1])
 		mov         edx, blocksize
-		movd        mm6, DWORD PTR[esi + 8]                 ; blue left (lightptr[2])
+		MMX_RM8(movd, 0x6E, mm6, DWORD PTR[esi + 8], 0x76, 0x08)    ; blue left (lightptr[2])
 
-		movd        mm1, DWORD PTR[esi + 16]                ; red left (lightptr[4])
-		punpcklwd   mm6, mm2
-		movd        mm3, DWORD PTR[esi + 20]                ; green left (lightptr[5])
-		punpckldq   mm6, mm0
-		movd        mm7, DWORD PTR[esi + 24]                ; blue left (lightptr[6])
+		MMX_RM8(movd, 0x6E, mm1, DWORD PTR[esi + 16], 0x4E, 0x10)   ; red left (lightptr[4])
+		MMX_RR(punpcklwd, 0x61, mm6, mm2, 0xF2)
+		MMX_RM8(movd, 0x6E, mm3, DWORD PTR[esi + 20], 0x5E, 0x14)   ; green left (lightptr[5])
+		MMX_RR(punpckldq, 0x62, mm6, mm0, 0xF0)
+		MMX_RM8(movd, 0x6E, mm7, DWORD PTR[esi + 24], 0x7E, 0x18)   ; blue left (lightptr[6])
 
-		psrlw       mm6, 1
-		pmulhw      mm6, MMX_BLOCKMULTIPLIER                ; apply the block multiplier
-		punpcklwd   mm7, mm3
-		punpckldq   mm7, mm1
+		MMX_RI(psrlw, 0x71, mm6, 1, 0xD6)
+		MMX_RMV(pmulhw, 0xE5, mm6, MMX_BLOCKMULTIPLIER, xor)        ; apply the block multiplier
+		MMX_RR(punpcklwd, 0x61, mm7, mm3, 0xFB)
+		MMX_RR(punpckldq, 0x62, mm7, mm1, 0xF9)
 		mov         ebx, texture
-		movd        mm1, blockdivshift
-		psrlw       mm7, 1
-		pmulhw      mm7, MMX_BLOCKMULTIPLIER                ; apply the block multiplier
+		MMX_RMV(movd, 0x6E, mm1, blockdivshift, or)
+		MMX_RI(psrlw, 0x71, mm7, 1, 0xD7)
+		MMX_RMV(pmulhw, 0xE5, mm7, MMX_BLOCKMULTIPLIER, cmp)        ; apply the block multiplier
 
-		movq        MMX_LIGHTLEFT, mm6                      ; copy
-		psubw       mm6, mm4
-		movq        MMX_LIGHTRIGHT, mm7                     ; copy
-		psubw       mm7, mm5
-		psraw       mm6, mm1
-		psraw       mm7, mm1
+		MMX_MRV(movq, 0x7F, MMX_LIGHTLEFT, mm6, xor)                ; copy
+		MMX_RR(psubw, 0xF9, mm6, mm4, 0xF4)
+		MMX_MRV(movq, 0x7F, MMX_LIGHTRIGHT, mm7, cmp)               ; copy
+		MMX_RR(psubw, 0xF9, mm7, mm5, 0xFD)
+		MMX_RR(psraw, 0xE1, mm6, mm1, 0xF1)
+		MMX_RR(psraw, 0xE1, mm7, mm1, 0xF9)
 		mov         ecx, 0
 
 BLOCKSIZEINIT16:                                            ; initialize data for 16-bit blocksize scan loop
-		movd        mm1, blockdivshift
-		movq        mm0, mm5                                ; copy
-		psubw       mm0, mm4
+		MMX_RMV(movd, 0x6E, mm1, blockdivshift, or)
+		MMX_RR(movq, 0x6F, mm0, mm5, 0xC5)                  ; copy
+		MMX_RR(psubw, 0xF9, mm0, mm4, 0xC4)
 		mov         esi, psource
-		psraw       mm0, mm1
+		MMX_RR(psraw, 0xE1, mm0, mm1, 0xC1)
 		mov         edi, prowdest
-		movq        mm2, mm4                                ; copy
+		MMX_RR(movq, 0x6F, mm2, mm4, 0xD4)                  ; copy
 		push        ecx
 		mov         ecx, 0
 
@@ -944,33 +971,33 @@ BLOCKSIZESCAN16:                                            ; start scanning
 		movzx       eax, BYTE PTR[esi + ecx]
 		shl         eax, 3
 		add         eax, ebx
-		movq        mm1, QWORD PTR[eax]                     ; copy
-		psllw       mm1, 3
-		pmulhw      mm1, mm2
-		paddw       mm2, mm0
+		MMX_RM(movq, 0x6F, mm1, QWORD PTR[eax], 0x08)       ; copy
+		MMX_RI(psllw, 0x71, mm1, 3, 0xF1)
+		MMX_RR(pmulhw, 0xE5, mm1, mm2, 0xCA)
+		MMX_RR(paddw, 0xFD, mm2, mm0, 0xD0)
 		movzx       eax, BYTE PTR[esi + ecx + 1]
 		shl         eax, 3
 		add         eax, ebx
-		movq        mm3, QWORD PTR[eax]                     ; copy
-		psllw       mm3, 3
-		pmulhw      mm3, mm2
-		paddw       mm2, mm0
-		packuswb    mm1, mm3
-		movq        mm3, mm1                                ; copy
-		pand        mm1, MMX_REDBLUE1516
-		pand        mm3, MMX_GREEN16
-		pmaddwd     mm1, MMX_LIGHTMULTIPLIER16
-		por         mm1, mm3
-        pslld       mm1, 11
-        psrad       mm1, 16
-		packssdw    mm1, mm1
-		movd        DWORD PTR[edi + ecx * 2], mm1
+		MMX_RM(movq, 0x6F, mm3, QWORD PTR[eax], 0x18)       ; copy
+		MMX_RI(psllw, 0x71, mm3, 3, 0xF3)
+		MMX_RR(pmulhw, 0xE5, mm3, mm2, 0xDA)
+		MMX_RR(paddw, 0xFD, mm2, mm0, 0xD0)
+		MMX_RR(packuswb, 0x67, mm1, mm3, 0xCB)
+		MMX_RR(movq, 0x6F, mm3, mm1, 0xD9)                  ; copy
+		MMX_RMV(pand, 0xDB, mm1, MMX_REDBLUE1516, or)
+		MMX_RMV(pand, 0xDB, mm3, MMX_GREEN16, sbb)
+		MMX_RMV(pmaddwd, 0xF5, mm1, MMX_LIGHTMULTIPLIER16, or)
+		MMX_RR(por, 0xEB, mm1, mm3, 0xCB)
+		MMX_RI(pslld, 0x72, mm1, 11, 0xF1)
+		MMX_RI(psrad, 0x72, mm1, 16, 0xE1)
+		MMX_RR(packssdw, 0x6B, mm1, mm1, 0xC9)
+		MMX_MRSIB(movd, 0x7E, DWORD PTR[edi + ecx * 2], mm1, 0x0C, 0x4F)
 		add         ecx, 2
 		cmp         ecx, edx
 		jl          short BLOCKSIZESCAN16                   ; new blocksize iteration
 		pop         ecx
-		paddw       mm4, mm6
-		paddw       mm5, mm7
+		MMX_RR(paddw, 0xFD, mm4, mm6, 0xE6)
+		MMX_RR(paddw, 0xFD, mm5, mm7, 0xEF)
 		mov         eax, sourcetstep
 		add         psource, eax
 		mov         eax, surfrowbytes
@@ -978,8 +1005,8 @@ BLOCKSIZESCAN16:                                            ; start scanning
 		inc         ecx
 		cmp         ecx, edx
 		jl          BLOCKSIZEINIT16
-		movq        mm4, MMX_LIGHTLEFT                      ; copy
-		movq        mm5, MMX_LIGHTRIGHT                     ; copy
+		MMX_RMV(movq, 0x6F, mm4, MMX_LIGHTLEFT, and)        ; copy
+		MMX_RMV(movq, 0x6F, mm5, MMX_LIGHTRIGHT, sub)       ; copy
 		mov         ecx, r_offset
 		mov         esi, sourcevstep
 		mov         eax, r_stepback
@@ -999,10 +1026,9 @@ BLOCKSIZESCAN16_NEXT:                                       ; increment v
 		jl          BITSCAN16                               ; new iteration
 
 END:
-		emms
+		MMX_EMMS()
 	}
 }
-#endif
 
 void R_DrawSurfaceBlock16Holes( void )
 {
