@@ -1036,6 +1036,10 @@ void R_SetupFrame( void )
 		qglFogf(GL_FOG_END, 1536 - 4 * cshift_water.percent);
 		qglEnable(GL_FOG);
 	}
+	else
+	{
+		qglDisable(GL_FOG);
+	}
 
 	V_CalcBlend();
 
