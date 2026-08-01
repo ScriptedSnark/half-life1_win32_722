@@ -71,6 +71,11 @@ FIXME: walk all entities and NULL out references to this entity
 */
 void ED_Free( edict_t* ed )
 {
+#if defined (_DEBUG)
+	int i;
+	edict_t* pEdict;
+#endif // _DEBUG
+
 	if (ed->free)
 		return; // allready freed
 
@@ -98,6 +103,28 @@ void ED_Free( edict_t* ed )
 	ed->v.solid = SOLID_NOT;
 
 	ed->freetime = sv.time;
+
+#if defined (_DEBUG)
+	for (i = 0, pEdict = sv.edicts; i < sv.num_edicts; i++, pEdict++)
+	{
+		if (pEdict->free)
+		{
+			continue;
+		}
+		if (pEdict->v.enemy == ed)
+		{
+			Con_DPrintf("'%s' enemy set to dead '%s'\n",
+						 (pr_strings + pEdict->v.classname),
+						 (pr_strings + ed->v.classname));
+		}
+		if (pEdict->v.aiment == ed)
+		{
+			Con_DPrintf("'%s' aiment set to dead '%s'\n",
+						 (pr_strings + pEdict->v.classname),
+						 (pr_strings + ed->v.classname));
+		}
+	}
+#endif // _DEBUG
 }
 
 //===========================================================================
