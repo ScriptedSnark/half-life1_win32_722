@@ -185,12 +185,12 @@ int GlideReadPixels( int x, int y, int width, int height, word* pixels )
     }
 
 	// convert from RGB565 to RGB888
-	for (row = 0; row < height; row++)
+	for (row = height - 1; row >= 0; row--)
 	{
 		for (col = 0; col < width; col++)
 		{
 			pixel = pixels[row * width + col];
-			rgb = (byte*)&pixels[3 * (row * width + col)];
+			rgb = (byte*)pixels + 3 * (row * width + col);
 			rgb[0] = (pixel >> 8) & 0xF8;
 			rgb[1] = (pixel >> 3) & 0xFC;
 			rgb[2] = (pixel << 3);
