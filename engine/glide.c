@@ -11,7 +11,7 @@ typedef unsigned char FxU8;
 typedef signed char FxI8;
 typedef unsigned short FxU16;
 typedef short FxI16;
-typedef uint32 FxI32;
+typedef int FxI32;
 typedef uint32 FxU32;
 typedef int FxBool;
 typedef float FxFloat;
